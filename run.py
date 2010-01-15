@@ -193,13 +193,46 @@ def get_static_conf():
         'tools.staticdir.dir': doc_directory}}
     return conf
 
+def gen_extension_paths():
+    extensions_dir = os.path.join(g_script_directory, 'extensions')
+    for d in os.listdir(extensions_dir):
+        extension_path = os.path.join(extensions_dir, d)
+        if os.path.isdir(extension_path):
+            yield extension_path
+
+def build_extensions():
+    extension_paths = list(gen_extension_paths())
+    for ext in extension_paths:
+        cmd = ('python', 'setup.py', 'build')
+        proc = subprocess.Popen(cmd, cwd=ext, stdout=subprocess.PIPE)
+        output = proc.communicate()[0]
+        build_dir = os.path.join(ext, 'build')
+        for dlib in os.listdir(build_dir):
+            library_dir = os.path.join(build_dir, dlib)
+            if dlib.startswith('lib') and os.path.isdir(library_dir):
+                for sofile in os.listdir(library_dir):
+                    sofile_path = os.path.join(library_dir, sofile)
+                    if sofile.endswith('.so') and os.path.isfile(sofile_path):
+                        sofile_target = os.path.join(g_live_code, sofile)
+                        shutil.copyfile(sofile_path, sofile_target)
+
+def gen_module_paths(source_dir):
+    """
+    @param source_dir: a directory
+    """
+    for f in os.listdir(source_dir):
+        fpath = os.path.join(source_dir, f)
+        if os.path.isfile(fpath):
+            if f.endswith('.so') or f.endswith('.py'):
+                yield fpath
+
 def create_documentation():
-    pynames = [f for f in os.listdir(g_script_directory) if f.endswith('.py')]
-    pyrelpaths = [os.path.join(g_script_directory, f) for f in pynames]
-    pypaths = [os.path.abspath(f) for f in pyrelpaths]
-    cmd = ['epydoc', '--output=' + g_live_doc] + pypaths
+    module_paths = list(gen_module_paths(g_live_code))
+    cmd = ['epydoc', '--output=' + g_live_doc] + module_paths
     output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-    print output
+    logfilename = os.path.join(g_live, 'epydoc.log')
+    with open(logfilename, 'wt') as fout:
+        fout.write(output)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -207,18 +240,22 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--mkdocs', action='store_true', help='build docs')
     args = parser.parse_args()
-    if os.path.isdir(g_live):
-        shutil.rmtree(g_live)
-    os.makedirs(g_live)
+    if os.path.isdir(g_live_code):
+        shutil.rmtree(g_live_code)
     os.makedirs(g_live_code)
-    if args.mkdocs:
-        create_documentation()
     for filename in os.listdir(g_script_directory):
         if filename.endswith('.py'):
             src = os.path.abspath(os.path.join(g_script_directory, filename))
             dst = os.path.abspath(os.path.join(g_live_code, filename))
             shutil.copyfile(src, dst)
+    build_extensions()
+    if args.mkdocs:
+        if os.path.isdir(g_live_doc):
+            shutil.rmtree(g_live_doc)
+        create_documentation()
+    sys.path.remove(g_script_directory)
     sys.path.append(os.path.abspath(g_live_code))
+    print 'sys.path:', sys.path
     import SnippetUtil
     import Form
     gadgets = list(reversed(sorted(gen_gadgets())))
