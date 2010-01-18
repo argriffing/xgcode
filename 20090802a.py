@@ -27,7 +27,7 @@ import SchurAlgebra
 import Euclid
 import MatrixUtil
 
-g_const_data_path = 'const-data'
+g_const_data = 'const-data'
 
 g_valid_domains = set(['archaea', 'bacteria', 'eukaryota'])
 
@@ -455,7 +455,7 @@ def get_itol_tree_string(filename):
     @param filename: the name of the data file
     @return: a newick tree string
     """
-    pathname = os.path.join(g_const_data_path, filename)
+    pathname = os.path.join(g_const_data, filename)
     fin = open(pathname)
     tree_string = fin.read()
     fin.close()

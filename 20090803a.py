@@ -11,7 +11,8 @@ import FelTree
 import Newick
 import BuildTreeTopology
 
-g_const_data_path = '/var/www/python_scripts/const-data/'
+g_const_data = 'const-data'
+
 
 def get_form():
     """
@@ -53,7 +54,7 @@ def get_itol_tree(filename):
     @return: a FelTree newick tree
     """
     # get the newick string with extraneous bootstrap values
-    pathname = os.path.join(g_const_data_path, filename)
+    pathname = os.path.join(g_const_data, filename)
     fin = open(pathname)
     tree_string = fin.read()
     fin.close()

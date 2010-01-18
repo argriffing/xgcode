@@ -17,6 +17,9 @@ import Form
 import Util
 import MatrixUtil
 
+g_const_data = 'const-data'
+
+
 def get_form():
     """
     @return: the body of a form
@@ -326,7 +329,7 @@ def main():
     """
     n = 34
     # create the adjacency matrix
-    data_filename = 'const-data/20090406a.dat'
+    data_filename = os.path.join(g_const_data, '20090406a.dat'
     fin = open(data_filename)
     stripped_lines = [line.strip() for line in fin]
     fin.close()
