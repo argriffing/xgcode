@@ -21,6 +21,8 @@ g_live_log = 'log'
 g_script_path = os.path.abspath(sys.argv[0])
 g_script_directory = os.path.dirname(g_script_path)
 
+g_current_directory = os.path.abspath(os.curdir)
+
 
 def get_first_line(multi_line_string):
     """
@@ -243,6 +245,8 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--mkdocs', action='store_true', help='build docs')
     args = parser.parse_args()
+    if g_current_directory == g_script_directory:
+        raise ValueError('Run this script from a temporary "live" directory.')
     if os.path.isdir(g_live_code):
         shutil.rmtree(g_live_code)
     os.makedirs(g_live_code)
