@@ -1,0 +1,61 @@
+20090330a.dat
+A clustalw multiple alignment.
+http://pbil.univ-lyon1.fr/mva/pco.php 
+
+20090402a.dat
+A FASTA alignment of 5S ribosomal RNA.
+5S.T.alnfasta
+http://www.rna.ccbb.utexas.edu/DAT/3C/Alignment/Files/5S/5S.T.alnfasta.zip
+It includes taxa from: Archaea Bacteria Chloroplast Eukaryota Mitochondria.
+In the alignment, taxa marked as dividers separate the taxonomic groups.
+
+20090403a.dat
+A newick file that I typed in by hand.
+It is from the paper:
+"The relative inefficiency of sequence weights approaches
+in determining a nucleotide position weight matrix"
+In turn, this paper cites the tree as coming from the paper:
+"Molecular phylogeny of old world monkeys (cercopithecidae)
+as inferred from gamma-globin DNA sequences."
+Branch lengths are 1e4 times the expected number of substitutions on the branch.
+
+20090406a.dat
+The adjacency matrix from the Zachary karate club data.
+http://vlado.fmf.uni-lj.si/pub/networks/data/Ucinet/zachary.dat
+
+20090413a.dat
+A pair of highly divergent sequences in the PHYLIP format.
+This is used to see what the DNADIST program does for infinite ML estimates.
+
+20090605a.dat
+This is a perturbed distance matrix from a paper by Pachter et al.
+The title of the paper is "Why neighbor joining works."
+The order of the taxa in the distance matrix is 'xyabcmnp'.
+
+20090605b.dat
+This is a phylogenetic tree from a paper by Pachter et al.
+The title of the paper is "Why neighbor joining works."
+
+20090802a.dat
+A phylogenetic tree from the interactive tree of life.
+It was downloaded on August 2, 2009.
+It has branch lengths and bootstrap values.
+It has archaea.
+
+20090802b.dat
+A phylogenetic tree from the interactive tree of life.
+It was downloaded on August 2, 2009.
+It has branch lengths and bootstrap values.
+it has bacteria.
+
+20090802c.dat
+A phylogenetic tree from the interactive tree of life.
+It was downloaded on August 2, 2009.
+It has branch lengths and bootstrap values.
+it has eukaryota.
+
+20090802d.dat
+A phylogenetic tree from the interactive tree of life.
+It was downloaded on August 2, 2009.
+It has branch lengths and bootstrap values.
+it has archaea, bacteria, and eukaryota.
