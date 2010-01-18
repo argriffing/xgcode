@@ -14,9 +14,9 @@ import argparse
 import cherrypy
 
 g_web_doc = 'doc'
-g_live = 'live'
-g_live_doc = os.path.join(g_live, 'doc')
-g_live_code = os.path.join(g_live, 'code')
+g_live_doc = 'doc'
+g_live_code = 'code'
+g_live_log = 'log'
 
 g_script_path = os.path.abspath(sys.argv[0])
 g_script_directory = os.path.dirname(g_script_path)
@@ -206,6 +206,9 @@ def build_extensions():
         cmd = ('python', 'setup.py', 'build')
         proc = subprocess.Popen(cmd, cwd=ext, stdout=subprocess.PIPE)
         output = proc.communicate()[0]
+        log_filename = os.path.join(g_live_log, os.path.basename(ext) + '.log')
+        with open(log_filename, 'wt') as fout:
+            fout.write(output)
         build_dir = os.path.join(ext, 'build')
         for dlib in os.listdir(build_dir):
             library_dir = os.path.join(build_dir, dlib)
@@ -230,8 +233,8 @@ def create_documentation():
     module_paths = list(gen_module_paths(g_live_code))
     cmd = ['epydoc', '--output=' + g_live_doc] + module_paths
     output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
-    logfilename = os.path.join(g_live, 'epydoc.log')
-    with open(logfilename, 'wt') as fout:
+    log_filename = os.path.join(g_live_log, 'epydoc.log')
+    with open(log_filename, 'wt') as fout:
         fout.write(output)
 
 if __name__ == '__main__':
@@ -243,11 +246,19 @@ if __name__ == '__main__':
     if os.path.isdir(g_live_code):
         shutil.rmtree(g_live_code)
     os.makedirs(g_live_code)
+    if os.path.isdir(g_live_log):
+        shutil.rmtree(g_live_log)
+    os.makedirs(g_live_log)
     for filename in os.listdir(g_script_directory):
         if filename.endswith('.py'):
             src = os.path.abspath(os.path.join(g_script_directory, filename))
             dst = os.path.abspath(os.path.join(g_live_code, filename))
             shutil.copyfile(src, dst)
+    const_data_src = os.path.join(g_script_directory, 'const-data')
+    const_data_dst = 'const-data'
+    if os.path.isdir(const_data_dst):
+        shutil.rmtree(const_data_dst)
+    shutil.copytree(const_data_src, const_data_dst)
     build_extensions()
     if args.mkdocs:
         if os.path.isdir(g_live_doc):
