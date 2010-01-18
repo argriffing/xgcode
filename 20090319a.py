@@ -329,7 +329,7 @@ def main():
     """
     n = 34
     # create the adjacency matrix
-    data_filename = os.path.join(g_const_data, '20090406a.dat'
+    data_filename = os.path.join(g_const_data, '20090406a.dat')
     fin = open(data_filename)
     stripped_lines = [line.strip() for line in fin]
     fin.close()
