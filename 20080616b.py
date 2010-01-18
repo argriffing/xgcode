@@ -1,0 +1,37 @@
+"""Convert a path resistance matrix to a weighted adjacency matrix.
+"""
+
+import StringIO
+
+import numpy
+
+from SnippetUtil import HandlingError
+import MatrixUtil
+import Euclid
+import Form
+
+def get_form():
+    """
+    @return: the body of a form
+    """
+    D = numpy.array([
+            [0, 2, 2],
+            [2, 0, 2],
+            [2, 2, 0]])
+    return [Form.Matrix('matrix', 'path resistance matrix', D, MatrixUtil.assert_predistance)]
+
+def get_response(fs):
+    """
+    @param fs: a FieldStorage object containing the cgi arguments
+    @return: a (response_headers, response_text) pair
+    """
+    # read the matrix
+    D = fs.matrix
+    # create the weighted adjacency matrix
+    A = Euclid.edm_to_adjacency(D)
+    # start to prepare the reponse
+    out = StringIO.StringIO()
+    print >> out, MatrixUtil.m_to_string(A)
+    # write the response
+    response_headers = [('Content-Type', 'text/plain')]
+    return response_headers, out.getvalue().strip()
