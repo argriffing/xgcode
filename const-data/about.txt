@@ -59,3 +59,8 @@ A phylogenetic tree from the interactive tree of life.
 It was downloaded on August 2, 2009.
 It has branch lengths and bootstrap values.
 it has archaea, bacteria, and eukaryota.
+
+20100119a.dat
+Latitude and longitude of some cities in the United States.
+These can be used as procrustes transformation targets
+and for multidimensional scaling.
