@@ -1,0 +1,112 @@
+"""Look at MDS projections of two inter-city distances.
+"""
+
+
+import StringIO
+import os
+import math
+
+import numpy as np
+
+from SnippetUtil import HandlingError
+import SnippetUtil
+import Form
+import GPS
+import Euclid
+
+g_const_data = 'const-data'
+
+def get_default_lines():
+    data_filename = os.path.join(g_const_data, '20100119b.dat')
+    with open(data_filename) as fin:
+        lines = [line.strip() for line in fin.readlines()]
+    return lines
+
+def parse_lines(lines):
+    """
+    The input lines have a special format.
+    The first nonempty line is a header.
+    The subsequent lines are whitespace separated values.
+    The first value is the city name.
+    The next four values are latitude and longitude minutes and degrees.
+    @param lines: stripped input lines
+    @return: (city, lat_deg, lat_min, lon_deg, lon_min) tuples
+    """
+    lines = [line for line in lines if line]
+    if not lines:
+        raise HandlingError('no input was found')
+    if len(lines) < 2:
+        raise HandlingError('expected at least one header and data line')
+    result = []
+    for line in lines[1:]:
+        values = line.split()
+        if len(values) != 5:
+            raise HandlingError('expected five values per data line')
+        city, latd, latm, lond, lonm = values
+        try:
+            latd = float(latd)
+            latm = float(latm)
+            lond = float(lond)
+            lonm = float(lonm)
+        except ValueError, e:
+            raise HandlingError('error reading a value as a number')
+        row = (city, latd, latm, lond, lonm)
+        result.append(row)
+    return result
+
+def get_form():
+    """
+    @return: a list of form objects
+    """
+    # define the list of form objects
+    lines = get_default_lines()
+    form_objects = [
+            Form.MultiLine('datalines', 'locations', '\n'.join(lines))]
+    return form_objects
+
+def get_response(fs):
+    """
+    @param fs: a FieldStorage object containing the cgi arguments
+    @return: a (response_headers, response_text) pair
+    """
+    # read the lat-lon points from the input
+    lines = [x.strip() for x in StringIO.StringIO(fs.datalines).readlines()]
+    rows = parse_lines(lines)
+    latlon_points = []
+    for city, latd, latm, lond, lonm in rows:
+        lat = math.radians(GPS.degrees_minutes_to_degrees(latd, latm))
+        lon = math.radians(GPS.degrees_minutes_to_degrees(lond, lonm))
+        latlon_points.append((lat, lon))
+    npoints = len(latlon_points)
+    # start writing the response
+    np.set_printoptions(linewidth=200)
+    out = StringIO.StringIO()
+    radius = GPS.g_earth_radius_miles
+    for dfunc, name in (
+            (GPS.get_arc_distance, 'great arc'),
+            (GPS.get_euclidean_distance, 'euclidean')):
+        # define the edm whose elements are squared euclidean-like distances
+        D = np.zeros((npoints, npoints))
+        for i, pointa in enumerate(latlon_points):
+            for j, pointb in enumerate(latlon_points):
+                D[i, j] = dfunc(pointa, pointb, radius)**2
+        print >> out, name, 'EDM:'
+        print >> out, D
+        print >> out
+        G = Euclid.edm_to_dccov(D)
+        print >> out, name, 'Gower centered matrix:'
+        print >> out, G
+        print >> out
+        spectrum = np.array(list(reversed(sorted(np.linalg.eigvals(G)))))
+        print >> out, name, 'spectrum:'
+        for x in spectrum:
+            print >> out, x
+        print >> out
+        print >> out, name, 'rounded spectrum:'
+        for x in spectrum:
+            print >> out, '%.1f' % x
+        print >> out
+        # break between distance methods
+        print >> out
+    # write the response
+    return [('Content-Type', 'text/plain')], out.getvalue().strip()

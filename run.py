@@ -270,7 +270,6 @@ if __name__ == '__main__':
         create_documentation()
     sys.path.remove(g_script_directory)
     sys.path.append(os.path.abspath(g_live_code))
-    print 'sys.path:', sys.path
     import SnippetUtil
     import Form
     gadgets = list(reversed(sorted(gen_gadgets())))

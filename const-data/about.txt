@@ -62,5 +62,12 @@ it has archaea, bacteria, and eukaryota.
 
 20100119a.dat
 Latitude and longitude of some cities in the United States.
+These cities are near Raleigh.
+These can be used as procrustes transformation targets
+and for multidimensional scaling.
+
+20100119b.dat
+Latitude and longitude of some cities in the United States.
+These cities are widely spread across the continental United States.
 These can be used as procrustes transformation targets
 and for multidimensional scaling.
