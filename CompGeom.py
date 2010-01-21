@@ -129,6 +129,20 @@ class CaliperState:
         next_state.corner_indices[best_corner] = (next_state.corner_indices[best_corner] + 1) % npoints
         return next_state
 
+def line_segments_intersect(a, b, c, d):
+    """
+    Decide whether a pair of line segments intersects.
+    @param a: the first endpoint of the first line segment
+    @param b: the second endpoint of the first line segment
+    @param c: the first endpoint of the second line segment
+    @param d: the second endpoint of the second line segment
+    @return: True if line segments intersect
+    """
+    if ccw(a,c,d) == ccw(b,c,d):
+        return False
+    if ccw(a,b,c) == ccw(a,b,d):
+        return False
+    return True
 
 def ccw(p0, p1, p2):
     """
