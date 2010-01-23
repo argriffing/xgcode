@@ -5,7 +5,6 @@ import StringIO
 import math
 
 import cairo
-from matplotlib.delaunay import Triangulation
 
 from SnippetUtil import HandlingError
 import Codon

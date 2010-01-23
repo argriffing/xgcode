@@ -20,6 +20,7 @@ import itertools
 import time
 
 import numpy as np
+from matplotlib.delaunay.triangulate import Triangulation
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -97,9 +98,9 @@ def get_form():
             Form.Float('conn_radius', 'connection radius',
                 0.2, low_exclusive=0.0),
             Form.Integer('disc_npoints', 'number of points in the disc',
-                20, low=1, high=100),
+                20, low=1, high=500),
             Form.Integer('ann_npoints', 'number of points in the annulus',
-                20, low=1, high=100),
+                20, low=1, high=500),
             Form.CheckGroup('options', 'graph options', [
                 Form.CheckItem('force_planar', 'force planar graph', True)])]
     return form_objects
@@ -117,30 +118,22 @@ def get_response(fs):
         points.append(sample_point_on_disc(fs.disc_sigma))
     for i in range(fs.ann_npoints):
         points.append(sample_point_on_annulus(fs.ann_radius, fs.ann_sigma))
-    # create some edges; each is a pair of point indices
-    edges = set()
+    # create some short edges; each is a pair of point indices
+    short_edges = set()
     for i, pa in enumerate(points):
         for j, pb in enumerate(points):
             if i < j:
                 if np.linalg.norm(pb-pa) < fs.conn_radius:
                     edge = (i, j)
-                    edges.add(edge)
-    # Repeatedly delete random intersecting edges one at a time.
-    # This is inefficient.
+                    short_edges.add(edge)
+    # use delaunay triangulation to force planarity
     if fs.force_planar:
-        nseconds = 2.0
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > nseconds:
-                raise HandlingError('forcing planarity took too long')
-            conflict_pool = list(get_intersecting_edges(points, edges))
-            if not conflict_pool:
-                break
-            # find the longest edge in the conflict pool
-            diffs = [points[e[1]] - points[e[0]] for e in conflict_pool]
-            lengths = [np.linalg.norm(diff) for diff in diffs]
-            max_length, max_edge = max(zip(lengths, conflict_pool))
-            edges.remove(max_edge)
+        x_list, y_list = zip(*[p.tolist() for p in points])
+        tri = Triangulation(x_list, y_list)
+        delaunay_edges = set(tuple(sorted(edge)) for edge in tri.edge_db)
+        edges = short_edges & delaunay_edges
+    else:
+        edges = short_edges
     # write some extra info
     # write the points
     print >> out, 'POINTS'
