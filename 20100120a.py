@@ -34,8 +34,8 @@ def sample_point_on_circle(radius):
     @return: a uniformly random point on the circle
     """
     theta = random.random() * 2 * math.pi
-    x = radius * math.cos(radius)
-    y = radius * math.sin(radius)
+    x = radius * math.cos(theta)
+    y = radius * math.sin(theta)
     return np.array([x, y])
 
 def sample_point_on_annulus(radius, sigma):
@@ -63,6 +63,7 @@ def sample_point_on_disc(sigma):
 
 def get_intersecting_edges(points, edges):
     """
+    Edges that share an endpoint do not count as conflicting.
     @param points: a list of numpy arrays each of length 2
     @param edges: a list of point index pairs
     @return: the set of edges that intersect at least one other edge
@@ -70,13 +71,15 @@ def get_intersecting_edges(points, edges):
     conflicts = set()
     sedgewick_points = [CompGeom.Point(p.tolist()) for p in points]
     for ea, eb in itertools.combinations(edges, 2):
-        a = sedgewick_points[ea[0]]
-        b = sedgewick_points[ea[1]]
-        c = sedgewick_points[eb[0]]
-        d = sedgewick_points[eb[1]]
-        if CompGeom.line_segments_intersect(a, b, c, d):
-            conflicts.add(ea)
-            conflicts.add(eb)
+        # only check intersection when each endpoint is unique
+        if len(set([ea[0], ea[1], eb[0], eb[1]])) == 4:
+            a = sedgewick_points[ea[0]]
+            b = sedgewick_points[ea[1]]
+            c = sedgewick_points[eb[0]]
+            d = sedgewick_points[eb[1]]
+            if CompGeom.line_segments_intersect(a, b, c, d):
+                conflicts.add(ea)
+                conflicts.add(eb)
     return conflicts
 
 def get_form():
@@ -133,7 +136,11 @@ def get_response(fs):
             conflict_pool = list(get_intersecting_edges(points, edges))
             if not conflict_pool:
                 break
-            edges.remove(random.choice(conflict_pool))
+            # find the longest edge in the conflict pool
+            diffs = [points[e[1]] - points[e[0]] for e in conflict_pool]
+            lengths = [np.linalg.norm(diff) for diff in diffs]
+            max_length, max_edge = max(zip(lengths, conflict_pool))
+            edges.remove(max_edge)
     # write some extra info
     # write the points
     print >> out, 'POINTS'
