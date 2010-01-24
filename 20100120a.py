@@ -90,19 +90,19 @@ def get_form():
     # define the list of form objects
     form_objects = [
             Form.Float('ann_radius', 'radius of annulus center',
-                3.0, low_exclusive=0.0),
+                10.0, low_exclusive=0.0),
             Form.Float('ann_sigma', 'stddev of annulus',
-                1.0, low_exclusive=0.0),
+                1.2, low_exclusive=0.0),
             Form.Float('disc_sigma', 'stddev of disc',
                 1.0, low_exclusive=0.0),
-            Form.Float('conn_radius', 'connection radius',
-                0.2, low_exclusive=0.0),
+            Form.Float('conn_radius', 'remove edges longer than this',
+                5.0, low_exclusive=0.0),
+            Form.Integer('conn_sparse', 'keep this many disc-annulus edges',
+                2, low=0),
             Form.Integer('disc_npoints', 'number of points in the disc',
-                20, low=1, high=500),
+                50, low=1, high=500),
             Form.Integer('ann_npoints', 'number of points in the annulus',
-                20, low=1, high=500),
-            Form.CheckGroup('options', 'graph options', [
-                Form.CheckItem('force_planar', 'force planar graph', True)])]
+                150, low=1, high=500)]
     return form_objects
 
 def get_response(fs):
@@ -113,31 +113,34 @@ def get_response(fs):
     # start writing the response
     out = StringIO.StringIO()
     # define the points; each is a numpy array of length 2
-    points = []
+    G = []
+    P = []
     for i in range(fs.disc_npoints):
-        points.append(sample_point_on_disc(fs.disc_sigma))
+        P.append(sample_point_on_disc(fs.disc_sigma))
+        G.append(0)
     for i in range(fs.ann_npoints):
-        points.append(sample_point_on_annulus(fs.ann_radius, fs.ann_sigma))
-    # create some short edges; each is a pair of point indices
-    short_edges = set()
-    for i, pa in enumerate(points):
-        for j, pb in enumerate(points):
-            if i < j:
-                if np.linalg.norm(pb-pa) < fs.conn_radius:
-                    edge = (i, j)
-                    short_edges.add(edge)
+        P.append(sample_point_on_annulus(fs.ann_radius, fs.ann_sigma))
+        G.append(1)
     # use delaunay triangulation to force planarity
-    if fs.force_planar:
-        x_list, y_list = zip(*[p.tolist() for p in points])
-        tri = Triangulation(x_list, y_list)
-        delaunay_edges = set(tuple(sorted(edge)) for edge in tri.edge_db)
-        edges = short_edges & delaunay_edges
-    else:
-        edges = short_edges
+    x_list, y_list = zip(*[p.tolist() for p in P])
+    tri = Triangulation(x_list, y_list)
+    edges = set(tuple(sorted(edge)) for edge in tri.edge_db)
+    # define edge distances
+    e_to_d = dict(((i, j), np.linalg.norm(P[j]-P[i])) for i, j in edges)
+    # get the edges joining the disc and annulus groups
+    joining_edges = set((i,j) for i, j in edges if G[i] != G[j])
+    dae_pairs = [(e_to_d[e], e) for e in joining_edges]
+    sorted_dae_pairs = list(sorted(dae_pairs))
+    sorted_joining_edges = zip(*sorted_dae_pairs)[1]
+    short_joining_edges = set(sorted_joining_edges[:fs.conn_sparse])
+    # get edges which are longer than the connection radius
+    overlong_edges = set(e for e in edges if e_to_d[e] > fs.conn_radius)
+    # define the final set of edges
+    edges = (edges - overlong_edges - joining_edges) | short_joining_edges
     # write some extra info
     # write the points
     print >> out, 'POINTS'
-    for i, p in enumerate(points):
+    for i, p in enumerate(P):
         print >> out, '\t'.join(str(x) for x in [i, p[0], p[1]])
     # write the edges
     print >> out, 'EDGES'

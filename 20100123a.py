@@ -87,6 +87,8 @@ def get_form():
             Form.RadioGroup('edge_weight_options', 'edge weights', [
                 Form.RadioItem('unweighted', 'all weights are 1.0', True),
                 Form.RadioItem('weighted', 'weights are inverse distances')]),
+            Form.CheckGroup('color_options', 'color options', [
+                Form.CheckItem('flip', 'flip valuation signs', False)]),
             Form.Integer('total_width', 'total image width',
                 640, low=3, high=2000),
             Form.Integer('total_height', 'total image height',
@@ -299,6 +301,7 @@ def get_response(fs):
     # define the point colors using the unweighted graph Fiedler loadings
     L = edges_to_laplacian(edges, weights)
     valuations = BuildTreeTopology.laplacian_to_fiedler(L)
+    valuations = [-v if fs.flip else v for v in valuations]
     colors = valuations_to_colors(valuations)
     # draw the image
     try:
