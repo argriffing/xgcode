@@ -71,3 +71,9 @@ Latitude and longitude of some cities in the United States.
 These cities are widely spread across the continental United States.
 These can be used as procrustes transformation targets
 and for multidimensional scaling.
+
+20100125a.dat
+A graphical layout of a tree in a notebook of Darwin.
+Each line in the POINTS section gives the index of the point,
+the x coordinate of the point, and the y coordinate of the point.
+Each line in the EDGE section gives two point indices connected by an edge.

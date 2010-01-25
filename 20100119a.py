@@ -73,10 +73,12 @@ def get_response(fs):
     lines = [x.strip() for x in StringIO.StringIO(fs.datalines).readlines()]
     rows = parse_lines(lines)
     latlon_points = []
+    city_names = []
     for city, latd, latm, lond, lonm in rows:
         lat = math.radians(GPS.degrees_minutes_to_degrees(latd, latm))
         lon = math.radians(GPS.degrees_minutes_to_degrees(lond, lonm))
         latlon_points.append((lat, lon))
+        city_names.append(city)
     npoints = len(latlon_points)
     # start writing the response
     np.set_printoptions(linewidth=200)
@@ -86,25 +88,37 @@ def get_response(fs):
             (GPS.get_arc_distance, 'great arc'),
             (GPS.get_euclidean_distance, 'euclidean')):
         # define the edm whose elements are squared euclidean-like distances
+        edm = np.zeros((npoints, npoints))
         D = np.zeros((npoints, npoints))
         for i, pointa in enumerate(latlon_points):
             for j, pointb in enumerate(latlon_points):
-                D[i, j] = dfunc(pointa, pointb, radius)**2
-        print >> out, name, 'EDM:'
+                D[i, j] = dfunc(pointa, pointb, radius)
+                edm[i, j] = D[i, j]**2
+        print >> out, name, 'distances:'
         print >> out, D
         print >> out
-        G = Euclid.edm_to_dccov(D)
+        print >> out, name, 'EDM:'
+        print >> out, edm
+        print >> out
+        G = Euclid.edm_to_dccov(edm)
         print >> out, name, 'Gower centered matrix:'
         print >> out, G
         print >> out
         spectrum = np.array(list(reversed(sorted(np.linalg.eigvals(G)))))
-        print >> out, name, 'spectrum:'
+        print >> out, name, 'spectrum of Gower centered matrix:'
         for x in spectrum:
             print >> out, x
         print >> out
         print >> out, name, 'rounded spectrum:'
         for x in spectrum:
             print >> out, '%.1f' % x
+        print >> out
+        mds_points = Euclid.edm_to_points(edm)
+        print >> out, '2D MDS coordinates:'
+        for name, mds_point in zip(city_names, mds_points):
+            x = mds_point[0]
+            y = mds_point[1]
+            print >> out, '\t'.join(str(x) for x in [name, x, y])
         print >> out
         # break between distance methods
         print >> out
