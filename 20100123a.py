@@ -7,6 +7,8 @@ dark blue, light blue, light red, and dark red,
 from negative to positive.
 Half of the negatively valuated nodes will be colored dark blue,
 and half of the positively valuated nodes will be colored dark red.
+Allow labels to be shown or not shown.
+Allow coloration to be overridden.
 """
 
 import StringIO
@@ -52,15 +54,21 @@ EDGES
 
 class ImageInfo:
 
-    def __init__(self, total_width, total_height, border, image_format):
+    def __init__(self, total_width, total_height,
+            all_black, show_labels,
+            border, image_format):
         """
         @param total_width: total image width in pixels
         @param total_height: total image height in pixels
+        @param all_black: True if everything is drawn in black
+        @param show_labels: True if labels are drawn on each node
         @param border: image border size in pixels
         @param image_format: image format
         """
         self.total_width = total_width
         self.total_height = total_height
+        self.all_black = all_black
+        self.show_labels = show_labels
         self.border = border
         self.image_format = image_format
         if self.get_drawable_width() < 1 or self.get_drawable_height < 1:
@@ -87,7 +95,12 @@ def get_form():
             Form.RadioGroup('edge_weight_options', 'edge weights', [
                 Form.RadioItem('unweighted', 'all weights are 1.0', True),
                 Form.RadioItem('weighted', 'weights are inverse distances')]),
-            Form.CheckGroup('color_options', 'color options', [
+            Form.CheckGroup('vis_options', 'visualization options', [
+                Form.CheckItem('show_labels', 'show labels')]),
+            Form.RadioGroup('color_options', 'color options', [
+                Form.RadioItem('black', 'all black', True),
+                Form.RadioItem('color', 'first axis coloration')]),
+            Form.CheckGroup('more_color_options', 'more color options', [
                 Form.CheckItem('flip', 'flip valuation signs', False)]),
             Form.Integer('total_width', 'total image width',
                 640, low=3, high=2000),
@@ -153,7 +166,8 @@ def get_image_string(points, edges, point_colors, image_info):
     # draw the edges
     for i, j in edges:
         context.save()
-        context.set_source_rgb(0.6, 0.6, 0.6)
+        if not image_info.all_black:
+            context.set_source_rgb(0.6, 0.6, 0.6)
         context.move_to(x_final[i], y_final[i])
         context.line_to(x_final[j], y_final[j])
         context.close_path()
@@ -164,11 +178,20 @@ def get_image_string(points, edges, point_colors, image_info):
     for x, y, point_color in zip(x_final, y_final, point_colors):
         # draw a filled circle
         context.save()
-        context.set_source_rgb(*point_color)
+        if not image_info.all_black:
+            context.set_source_rgb(*point_color)
         context.arc(x, y, radius, 0, 2 * math.pi)
         context.close_path()
         context.fill()
         context.restore()
+    # Draw the labels.
+    if image_info.show_labels:
+        labels = [str(i) for i, x in enumerate(x_final)]
+        for label, x, y in zip(labels, x_final, y_final):
+            context.save()
+            context.move_to(x, y)
+            context.show_text(label)
+            context.restore()
     # get the image string
     return cairo_helper.get_image_string()
 
@@ -297,7 +320,8 @@ def get_response(fs):
         msg = 'the image dimensions do not allow for enough drawable area'
         raise HandlingError(msg)
     # read the image info
-    info = ImageInfo(fs.total_width, fs.total_height, fs.border, fs.imageformat)
+    info = ImageInfo(fs.total_width, fs.total_height,
+            fs.black, fs.show_labels, fs.border, fs.imageformat)
     # define the point colors using the unweighted graph Fiedler loadings
     L = edges_to_laplacian(edges, weights)
     valuations = BuildTreeTopology.laplacian_to_fiedler(L)
