@@ -6,7 +6,6 @@ For example, this can be used for a city MDS plot.
 import StringIO
 import math
 
-import numpy as np
 import cairo
 
 from SnippetUtil import HandlingError
@@ -36,11 +35,11 @@ class ImageInfo:
     def __init__(self, width, height, axis_info, border_info, image_format):
         self.width = width
         self.height = height
-        self.axis_info = border_info
+        self.axis_info = axis_info
         self.border_info = border_info
         self.image_format = image_format
 
-def get_image_string(self, x_coords, y_coords, labels, image_info):
+def get_image_string(x_coords, y_coords, labels, image_info):
     # unpack the total width and height of the image
     t_width = image_info.width
     t_height = image_info.height
@@ -60,10 +59,10 @@ def get_image_string(self, x_coords, y_coords, labels, image_info):
     # Define the scaling factors in the x+, x-, y+, and y- directions
     # which would fill the entire drawable (non-border) region.
     # The smallest of these scaling factors will be used for all directions.
-    xpos_coords = [x in x_coords if x > 0]
-    xneg_coords = [x in x_coords if x < 0]
-    ypos_coords = [y in y_coords if y > 0]
-    yneg_coords = [y in y_coords if y < 0]
+    xpos_coords = [x for x in x_coords if x > 0]
+    xneg_coords = [x for x in x_coords if x < 0]
+    ypos_coords = [y for y in y_coords if y > 0]
+    yneg_coords = [y for y in y_coords if y < 0]
     sf_list = []
     if xpos_coords:
         available = (t_width / 2.0) - border_x
@@ -91,7 +90,7 @@ def get_image_string(self, x_coords, y_coords, labels, image_info):
     y_coords = [y + t_height / 2.0 for y in y_coords]
     # create the surface
     cairo_helper = CairoUtil.CairoHelper(image_format)
-    surface = cairo_helper.create_surface(width, height)
+    surface = cairo_helper.create_surface(t_width, t_height)
     context = cairo.Context(surface)
     # draw the background
     context.save()
@@ -135,8 +134,6 @@ def get_form():
     """
     @return: a list of form objects
     """
-    # sample some points to use as the defaults
-    M = numpy.array(list(SpiralSampler.gen_points(200, .01)))
     # define the form objects
     form_objects = [
             Form.MultiLine('points', 'labeled points', g_default_data),
@@ -190,7 +187,7 @@ def get_response(fs):
         parsed_triples.append((label, x, y))
     labels, X, Y = zip(*parsed_triples)
     # Get the image.
-    image_string = get_image_string(self, X, Y, labels, image_info)
+    image_string = get_image_string(X, Y, labels, image_info)
     # start writing the response type
     response_headers = []
     # specify the content type
