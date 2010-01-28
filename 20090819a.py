@@ -212,7 +212,7 @@ class Chromosome:
         hmm = MissingHMM.MissingHMM(T, hidden_models)
         # define the observations and distances
         observations = self.nt_coverages
-        distances = [b - a for a, b in Util.get_neighbor_pairs(self.offsets)]
+        distances = [b - a for a, b in Util.pairwise(self.offsets)]
         # do the annotation
         self.posterior_distributions = hmm.scaled_posterior_durbin(observations, distances)
 
