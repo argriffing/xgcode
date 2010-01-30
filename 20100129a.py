@@ -15,6 +15,7 @@ The output filenames include the chromosome name.
 
 import StringIO
 import argparse
+import os
 
 from SnippetUtil import HandlingError
 import Form
@@ -48,20 +49,104 @@ def get_response(fs):
     print >> out, 'hello world'
     return [('Content-Type', 'text/plain')], out.getvalue().strip()
 
-
-def gen_rows(line_source):
+def gen_stripped_lines(line_source):
     for line in line_source:
         line = line.strip()
         if line:
-            yield line.split()
+            yield line
+
+def line_to_tuple(line):
+    """
+    Parse a line and do error checking.
+    @param line: a stripped line of input
+    @return: a tuple with proper types
+    """
+    values = line.split()
+    if len(values) != 16:
+        raise Exception('expected 16 values per line')
+    e = Exception('literal A, C, G, T letters were not found where expected')
+    if values[5] != 'A' or values[7] != 'C':
+        raise e
+    if values[9] != 'G' or values[11] != 'T':
+        raise e
+    typed_values = [
+            values[0], int(values[1]), values[2],
+            values[3], int(values[4]),
+            values[5], int(values[6]), values[7], int(values[8]),
+            values[9], int(values[10]), values[11], int(values[12]),
+            int(values[13]), int(values[14]), int(values[15])]
+    return typed_values
 
 def main(args):
-    pass
+    """
+    @param args: positional and flaglike arguments
+    """
+    # read the arguments
+    input_filename = os.path.abspath(os.path.expanduser(args.infile))
+    output_directory = os.path.abspath(os.path.expanduser(args.outdir))
+    force = args.force
+    # make sure that the output directory exists
+    if not os.path.isdir(output_directory):
+        if force:
+            os.makedirs(output_directory)
+    if not os.path.isdir(output_directory):
+        msg = 'output directory does not exist: ' + output_directory
+        raise Exception(msg)
+    # scan the input file for chromosome names and formatting
+    name_to_last_pos = {}
+    with open(input_filename) as fin:
+        for line in gen_stripped_lines(fin):
+            values = line_to_tuple(line)
+            name, pos = values[0], values[1]
+            last_pos = name_to_last_pos.get(name, None)
+            msg = 'expected strictly increasing positions per chromosome'
+            if last_pos is not None:
+                if last_pos >= pos:
+                    raise Exception(msg)
+            name_to_last_pos[name] = pos
+    chromosome_names = list(sorted(name_to_last_pos.keys()))
+    # define the full output file paths
+    ch_paths = []
+    for name in chromosome_names:
+        a = output_directory
+        b = os.path.basename(input_filename)
+        c = '_' + name
+        ch_path = os.path.join(a, b+c)
+        ch_paths.append(ch_path)
+    # check for existence of output
+    if not force:
+        for p in ch_paths:
+            if os.path.exists(p):
+                raise Exception('output already exists: ' + p)
+    # create the files open for writing
+    ch_files = []
+    for p in ch_paths:
+        ch_files.append(open(p, 'wt'))
+    # write the headers
+    header = '\t'.join(['position', 'A', 'C', 'G', 'T'])
+    for f in ch_files:
+        f.write(header + '\n')
+    # write the lines
+    name_to_file = dict(zip(chromosome_names, ch_files))
+    with open(input_filename) as fin:
+        for line_in in gen_stripped_lines(fin):
+            V = line_to_tuple(line_in)
+            name, pos = V[0], V[1]
+            A, C, G, T = V[6], V[8], V[10], V[12]
+            f = name_to_file[name]
+            line_out = '\t'.join(str(x) for x in (pos, A, C, G, T))
+            f.write(line_out + '\n')
+    # close the files
+    for f in ch_files:
+        f.close()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--infile')
-    parser.add_argument('--outdir')
-    parser.add_argument('--force')
+    parser.add_argument('infile')
+    parser.add_argument('--outdir', default=os.getcwd(),
+            help='write the chromosome files to this directory')
+    parser.add_argument('--force', action='store_true',
+            help='overwrite existing files')
     args = parser.parse_args()
     main(args)
