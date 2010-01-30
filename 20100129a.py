@@ -33,6 +33,8 @@ g_sample_lines = [
         '2L 5092 C C/T 16 A 0 C 9 G 0 T 7 30 78 28',
         '2L 5095 T A/T 17 A 8 C 0 G 0 T 9 31 82 31']
 
+g_header = '\t'.join(['position', 'A', 'C', 'G', 'T'])
+
 
 def get_form():
     """
@@ -48,11 +50,31 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
+    # quickly skim the lines to get some info
+    fin = StringIO.StringIO(fs.data_in)
+    skimmer = DGRP.ChromoSkimmer()
+    for chromo_name in skimmer.skim(gen_untyped_rows(fin)):
+        pass
+    chromo_names = skimmer.name_list
+    nlines = skimmer.linecount
+    # check formatting and monotonicity
+    fin = StringIO.StringIO(fs.data_in)
+    for i in DGRP.check_chromo_monotonicity(gen_typed_rows(fin)):
+        pass
+    # begin writing
     out = StringIO.StringIO()
-    print >> out, 'hello world'
+    print >> out, 'writing the first of', len(chromo_names), 'chromosomes:'
+    print >> out
+    # write only the first chromosome
+    fin = StringIO.StringIO(fs.data_in)
+    print >> out, g_header
+    for row in gen_typed_rows(fin):
+        name = row[0]
+        if name == chromo_names[0]:
+            print >> out, '\t'.join(str(x) for x in convert_row(row))
     return [('Content-Type', 'text/plain')], out.getvalue().strip()
 
-def line_to_tuple(line):
+def line_to_row(line):
     """
     Parse a line and do error checking.
     @param line: a stripped line of input
@@ -74,6 +96,23 @@ def line_to_tuple(line):
             int(values[13]), int(values[14]), int(values[15])]
     return typed_values
 
+def gen_typed_rows(fin):
+    for line in Util.stripped_lines(fin):
+        yield line_to_row(line)
+
+def gen_untyped_rows(fin):
+    for line in Util.stripped_lines(fin):
+        yield line.split()
+
+def convert_row(row):
+    """
+    @param row: a sequence of values
+    @return: a subset of the values
+    """
+    name, pos = row[0], row[1]
+    A, C, G, T = row[6], row[8], row[10], row[12]
+    return (pos, A, C, G, T)
+
 def main(args):
     """
     @param args: positional and flaglike arguments
@@ -93,7 +132,7 @@ def main(args):
     ch_paths = []
     skimmer = DGRP.ChromoSkimmer()
     with open(input_filename) as fin:
-        for chromo_name in skimmer.skim(fin):
+        for chromo_name in skimmer.skim(gen_untyped_rows(fin)):
             output_filename = args.out_prefix + chromo_name + args.out_suffix
             ch_path = os.path.join(output_directory, output_filename)
             ch_paths.append(ch_path)
@@ -105,36 +144,25 @@ def main(args):
     # start the progress bar
     nticks = 2*nlines
     pbar = Progress.Bar(nticks)
-    # scan the input file for formatting
-    name_to_last_pos = {}
+    # scan the input file for correct types and for monotonicity
     with open(input_filename) as fin:
-        for line in Util.stripped_lines(fin):
-            values = line_to_tuple(line)
-            name, pos = values[0], values[1]
-            last_pos = name_to_last_pos.get(name, None)
-            msg = 'expected strictly increasing positions per chromosome'
-            if last_pos is not None:
-                if last_pos >= pos:
-                    raise Exception(msg)
-            name_to_last_pos[name] = pos
+        for i in DGRP.check_chromo_monotonicity(gen_typed_rows(fin)):
             pbar.increment()
     # create the files open for writing
     ch_files = []
     for p in ch_paths:
         ch_files.append(open(p, 'wt'))
     # write the headers
-    header = '\t'.join(['position', 'A', 'C', 'G', 'T'])
     for f in ch_files:
-        f.write(header + '\n')
+        f.write(g_header + '\n')
     # write the lines
     name_to_file = dict(zip(chromo_names, ch_files))
     with open(input_filename) as fin:
-        for line_in in Util.stripped_lines(fin):
-            V = line_to_tuple(line_in)
-            name, pos = V[0], V[1]
-            A, C, G, T = V[6], V[8], V[10], V[12]
+        for row in gen_typed_rows(fin):
+            name = row[0]
+            row_out = convert_row(row)
             f = name_to_file[name]
-            line_out = '\t'.join(str(x) for x in (pos, A, C, G, T))
+            line_out = '\t'.join(str(x) for x in row_out)
             f.write(line_out + '\n')
             pbar.increment()
     # close the files
