@@ -19,6 +19,9 @@ import os
 
 from SnippetUtil import HandlingError
 import Form
+import Progress
+import DGRP
+import Util
 
 
 g_sample_lines = [
@@ -49,12 +52,6 @@ def get_response(fs):
     print >> out, 'hello world'
     return [('Content-Type', 'text/plain')], out.getvalue().strip()
 
-def gen_stripped_lines(line_source):
-    for line in line_source:
-        line = line.strip()
-        if line:
-            yield line
-
 def line_to_tuple(line):
     """
     Parse a line and do error checking.
@@ -64,11 +61,11 @@ def line_to_tuple(line):
     values = line.split()
     if len(values) != 16:
         raise Exception('expected 16 values per line')
-    e = Exception('literal A, C, G, T letters were not found where expected')
+    msg = 'literal A, C, G, T letters were not found where expected'
     if values[5] != 'A' or values[7] != 'C':
-        raise e
+        raise Exception(msg)
     if values[9] != 'G' or values[11] != 'T':
-        raise e
+        raise Exception(msg)
     typed_values = [
             values[0], int(values[1]), values[2],
             values[3], int(values[4]),
@@ -92,10 +89,26 @@ def main(args):
     if not os.path.isdir(output_directory):
         msg = 'output directory does not exist: ' + output_directory
         raise Exception(msg)
-    # scan the input file for chromosome names and formatting
+    # scan the input file for chromosome names
+    ch_paths = []
+    skimmer = DGRP.ChromoSkimmer()
+    with open(input_filename) as fin:
+        for chromo_name in skimmer.skim(fin):
+            output_filename = args.out_prefix + chromo_name + args.out_suffix
+            ch_path = os.path.join(output_directory, output_filename)
+            ch_paths.append(ch_path)
+            if not force:
+                if os.path.exists(ch_path):
+                    raise Exception('output already exists: ' + ch_path)
+    chromo_names = skimmer.name_list
+    nlines = skimmer.linecount
+    # start the progress bar
+    nticks = 2*nlines
+    pbar = Progress.Bar(nticks)
+    # scan the input file for formatting
     name_to_last_pos = {}
     with open(input_filename) as fin:
-        for line in gen_stripped_lines(fin):
+        for line in Util.stripped_lines(fin):
             values = line_to_tuple(line)
             name, pos = values[0], values[1]
             last_pos = name_to_last_pos.get(name, None)
@@ -104,20 +117,7 @@ def main(args):
                 if last_pos >= pos:
                     raise Exception(msg)
             name_to_last_pos[name] = pos
-    chromosome_names = list(sorted(name_to_last_pos.keys()))
-    # define the full output file paths
-    ch_paths = []
-    for name in chromosome_names:
-        a = output_directory
-        b = os.path.basename(input_filename)
-        c = '_' + name
-        ch_path = os.path.join(a, b+c)
-        ch_paths.append(ch_path)
-    # check for existence of output
-    if not force:
-        for p in ch_paths:
-            if os.path.exists(p):
-                raise Exception('output already exists: ' + p)
+            pbar.increment()
     # create the files open for writing
     ch_files = []
     for p in ch_paths:
@@ -127,15 +127,16 @@ def main(args):
     for f in ch_files:
         f.write(header + '\n')
     # write the lines
-    name_to_file = dict(zip(chromosome_names, ch_files))
+    name_to_file = dict(zip(chromo_names, ch_files))
     with open(input_filename) as fin:
-        for line_in in gen_stripped_lines(fin):
+        for line_in in Util.stripped_lines(fin):
             V = line_to_tuple(line_in)
             name, pos = V[0], V[1]
             A, C, G, T = V[6], V[8], V[10], V[12]
             f = name_to_file[name]
             line_out = '\t'.join(str(x) for x in (pos, A, C, G, T))
             f.write(line_out + '\n')
+            pbar.increment()
     # close the files
     for f in ch_files:
         f.close()
@@ -148,5 +149,9 @@ if __name__ == '__main__':
             help='write the chromosome files to this directory')
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
+    parser.add_argument('--out_prefix', default='chromosome.',
+            help='prefix added to the chromosome name in the output file')
+    parser.add_argument('--out_suffix', default='.txt',
+            help='suffix added to the chromosome name in the output file')
     args = parser.parse_args()
     main(args)

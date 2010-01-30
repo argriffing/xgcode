@@ -49,20 +49,22 @@ class Bar:
         progress_line = '[' + '='*nfilled + '.'*(nbar_columns-nfilled) + ']'
         return progress_line
 
+    def increment(self, increment_amount=1):
+        """
+        @param increment_amount: the amount of progress to be added
+        """
+        self.update(self.progress + increment_amount)
+
     def update(self, progress):
         """
-        @param progress: the amount of progress made so far
+        @param progress: the total amount of progress made so far
         """
         assert 0 <= progress <= self.high
         if not self.finished:
             self.progress = progress
             nfilled = self.get_nfilled()
             if self.progress == self.high:
-                self.cached_nfilled = nfilled
-                progress_line = self.get_progress_line()
-                self.outfile.write(progress_line + '\n')
-                signal.signal(signal.SIGWINCH, signal.SIG_DFL)
-                self.finished = True
+                self.cancel()
             elif self.cached_nfilled != nfilled:
                 self.cached_nfilled = nfilled
                 progress_line = self.get_progress_line()
@@ -70,4 +72,12 @@ class Bar:
 
     def finish(self):
         self.update(self.high)
+
+    def cancel(self):
+        nfilled = self.get_nfilled()
+        self.cached_nfilled = nfilled
+        progress_line = self.get_progress_line()
+        self.outfile.write(progress_line + '\n')
+        signal.signal(signal.SIGWINCH, signal.SIG_DFL)
+        self.finished = True
 
