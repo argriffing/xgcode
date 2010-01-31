@@ -153,8 +153,9 @@ def main(args):
     for p in ch_paths:
         ch_files.append(open(p, 'wt'))
     # write the headers
-    for f in ch_files:
-        f.write(g_header + '\n')
+    if not args.noheader:
+        for f in ch_files:
+            f.write(g_header + '\n')
     # write the lines
     name_to_file = dict(zip(chromo_names, ch_files))
     with open(input_filename) as fin:
@@ -177,9 +178,11 @@ if __name__ == '__main__':
             help='write the chromosome files to this directory')
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
+    parser.add_argument('--noheader', action='store_true',
+            help='omit the header row from the output'),
     parser.add_argument('--out_prefix', default='chromosome.',
-            help='prefix added to the chromosome name in the output file')
+            help='prefix added to the chromosome name in the output filename')
     parser.add_argument('--out_suffix', default='.txt',
-            help='suffix added to the chromosome name in the output file')
+            help='suffix added to the chromosome name in the output filename')
     args = parser.parse_args()
     main(args)
