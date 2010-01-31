@@ -143,7 +143,7 @@ class Chromosome:
         hmm = FastHMM.Model(transition_object, hidden_models, cache_size)
         # define the observations and distances
         observations = [tuple(sorted(coverage)) for coverage in self.nt_coverages]
-        distances = [b - a for a, b in Util.get_neighbor_pairs(self.offsets)]
+        distances = [b - a for a, b in Util.pairwise(self.offsets)]
         # get the posterior distribution for each observation
         dp_info = hmm.get_dp_info(observations, distances)
         distribution_list = hmm.scaled_posterior_durbin(dp_info)
