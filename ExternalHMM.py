@@ -22,10 +22,10 @@ class Model:
     Methods of this class implement forward and backward HMM algorithms.
     Some of the calling conventions may seem convoluted,
     with seemingly arbitrary required orderings of the input sequences.
-    The purpose of the ordering is to allow everything to be done with generators.
-    This facilitates dynamic programming algorithms
-    that run forward and backward on external files
-    whose rows are accessed sequentially,
+    The purpose of the ordering is to allow everything 
+    to be done with generators.
+    This facilitates dynamic programming algorithms that run forward and 
+    backward on external files whose rows are accessed sequentially,
     thus allowing analysis of observed sequences too large too fit in memory.
     """
 
@@ -142,6 +142,18 @@ class Model:
                 A[i, j] += f_old[i] * self.T[i, j] * likelihoods[j] * b_new[j]
         return A
 
+
+class FileModel:
+    """
+    This is a wrapper that uses open file handles.
+    """
+
+    def __init__(self, T, hidden_state_objects):
+        """
+        @param T: a transition matrix as a numpy array
+        @param hidden_state_objects: a conformant list of hidden state objects
+        """
+        self.model = Model(T, hidden_state_objects)
 
 class InternalModel:
     """
