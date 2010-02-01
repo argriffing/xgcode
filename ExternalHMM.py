@@ -31,14 +31,13 @@ class Model:
 
     def __init__(self, T, hidden_state_objects, cache_size=0):
         """
-        @param T: a transition matrix as a numpy array
+        @param T: a transition object
         @param hidden_state_objects: a conformant list of hidden state objects
         @param cache_size: the number of observations that are cached
         """
-        nhidden = len(hidden_state_objects)
         self.T = T
         self.hidden_state_objects = hidden_state_objects
-        self.initial_distribution = TransitionMatrix.get_stationary_distribution(T)
+        self.initial_distribution = T.get_stationary_distribution()
         self.cache_size = cache_size
         self.cache = {}
 
@@ -54,7 +53,8 @@ class Model:
         likelihoods = self.cache.get(obs, None)
         if likelihoods:
             return likelihoods
-        likelihoods = tuple(m.get_likelihood(obs) for m in self.hidden_state_objects)
+        likelihoods = tuple(m.get_likelihood(obs)
+                for m in self.hidden_state_objects)
         if len(self.cache) < self.cache_size:
             self.cache[obs] = likelihoods
         return likelihoods
@@ -74,10 +74,13 @@ class Model:
                 for sink_index in range(nhidden):
                     p = 0
                     for source_index in range(nhidden):
-                        p += f_prev[source_index] * self.T[source_index, sink_index]
+                        tprob = self.T.get_transition_probability(
+                                source_index, sink_index)
+                        p += f_prev[source_index] * tprob
                     f_curr_unscaled[sink_index] *= p
             else:
-                f_curr_unscaled = [likelihood * p for likelihood, p in zip(likelihoods, self.initial_distribution)]
+                f_curr_unscaled = [x * p
+                        for x, p in zip(likelihoods, self.initial_distribution)]
             scaling_factor = sum(f_curr_unscaled)
             if not scaling_factor:
                 raise ValueError('scaling factor is zero at position %d' % i)
@@ -98,13 +101,15 @@ class Model:
         """
         nhidden = len(self.hidden_state_objects)
         # yield b vectors
-        for i, (obs, sf) in enumerate(itertools.izip(reverse_observations, reverse_scaling_factors)):
+        for i, (obs, sf) in enumerate(
+                itertools.izip(reverse_observations, reverse_scaling_factors)):
             if i:
                 likelihoods = self.get_likelihoods(obs_prev)
                 b_curr_unscaled = [0.0] * nhidden
                 for source_index in range(nhidden):
                     for sink_index in range(nhidden):
-                        p = self.T[source_index, sink_index]
+                        p = self.T.get_transition_probability(
+                                source_index, sink_index)
                         p *= likelihoods[sink_index] * b_prev[sink_index]
                         b_curr_unscaled[source_index] += p
             else:
@@ -136,10 +141,13 @@ class Model:
         A = np.zeros((nhidden, nhidden))
         # get the expected counts for each transition
         dp_source = itertools.izip(observations, forward, backward)
-        for (o_old, f_old, b_old), (o_new, f_new, b_new) in Util.pairwise(dp_source):
+        for old, new in Util.pairwise(dp_source):
+            o_old, f_old, b_old = old
+            o_new, f_new, b_new = new
             likelihoods = self.get_likelihoods(o_new)
             for i, j in itertools.product(range(nhidden), repeat=2):
-                A[i, j] += f_old[i] * self.T[i, j] * likelihoods[j] * b_new[j]
+                tprob = self.T.get_transition_probability(i, j)
+                A[i, j] += f_old[i] * tprob * likelihoods[j] * b_new[j]
         return A
 
 
@@ -154,6 +162,7 @@ class FileModel:
         @param hidden_state_objects: a conformant list of hidden state objects
         """
         self.model = Model(T, hidden_state_objects)
+
 
 class InternalModel:
     """
@@ -211,12 +220,13 @@ class TestExternalHMM(unittest.TestCase):
         # define the dishonest casino model
         fair_state = HMM.HiddenDieState(1/6.0)
         loaded_state = HMM.HiddenDieState(0.5)
-        T = np.array([[0.95, 0.05], [0.1, 0.9]])
+        M = np.array([[0.95, 0.05], [0.1, 0.9]])
+        T = TransitionMatrix.MatrixTransitionObject(M)
         hidden_states = [fair_state, loaded_state]
         # define a sequence of observations
         observations = [1, 2, 6, 6, 1, 2, 3, 4, 5, 6]
         # create the reference hidden markov model object
-        hmm_old = HMM.TrainedModel(T, hidden_states)
+        hmm_old = HMM.TrainedModel(M, hidden_states)
         # create the testing hidden markov model object
         hmm_new = InternalModel(T, hidden_states)
         # get posterior distributions
@@ -227,15 +237,15 @@ class TestExternalHMM(unittest.TestCase):
 
     def test_chain_compatibility(self):
         # define the sequence distribution
-        T = np.array([
+        M = np.array([
             [.1, .6, .3],
             [.1, .1, .8],
             [.8, .1, .1]])
-        nstates = len(T)
+        T = TransitionMatrix.MatrixTransitionObject(M)
+        nstates = T.get_nstates()
         nsteps = 5
         # create the chain object
-        transition_object = TransitionMatrix.MatrixTransitionObject(T)
-        chain = DiscreteEndpoint.Chain(transition_object)
+        chain = DiscreteEndpoint.Chain(T)
         # create the internal memory model object to be tested
         hidden_states = [FastHMM.FixedState(i) for i in range(nstates)]
         model = InternalModel(T, hidden_states)
@@ -247,15 +257,19 @@ class TestExternalHMM(unittest.TestCase):
             # compute the chain and model transition expectations
             A_chain = chain.get_transition_expectations(chain_dp_info)
             A_model = model.get_transition_expectations(model_dp_info)
-            # assert that for each method the sum of the expectations is equal to the number of steps
+            # Assert that for each method the sum of the expectations
+            # is equal to the number of steps.
             self.assertAlmostEqual(np.sum(A_chain), nsteps)
             self.assertAlmostEqual(np.sum(A_model), nsteps)
             # assert that the methods give the same result
             self.assertTrue(np.allclose(A_chain, A_model))
-            # compute the chain and model state expectations for the missing states
+            # Compute the chain
+            # and model state expectations for the missing states.
             v_chain = chain.get_expectations(chain_dp_info)
-            v_model = sum(np.array(v) for v in model.posterior(model_dp_info)[1:-1])
-            # assert that for each method the sum of the expectations is equal to the number of steps minus one
+            v_model = sum(np.array(v)
+                    for v in model.posterior(model_dp_info)[1:-1])
+            # Assert that for each method the sum of the expectations
+            # is equal to the number of steps minus one.
             self.assertAlmostEqual(np.sum(v_chain), nsteps-1)
             self.assertAlmostEqual(np.sum(v_model), nsteps-1)
             # assert that the methods give the same result
@@ -268,7 +282,8 @@ class TestExternalHMM(unittest.TestCase):
         # define the dishonest casino model
         fair_state = HMM.HiddenDieState(1/6.0)
         loaded_state = HMM.HiddenDieState(0.5)
-        T = np.array([[0.95, 0.05], [0.1, 0.9]])
+        M = np.array([[0.95, 0.05], [0.1, 0.9]])
+        T = TransitionMatrix.MatrixTransitionObject(M)
         hidden_states = [fair_state, loaded_state]
         # create the hidden markov model object
         hmm_new = InternalModel(T, hidden_states)
@@ -278,7 +293,8 @@ class TestExternalHMM(unittest.TestCase):
         # get posterior distributions
         distributions_a = hmm_new.posterior(hmm_new.get_dp_info(observations_a))
         distributions_b = hmm_new.posterior(hmm_new.get_dp_info(observations_b))
-        # compare the posterior probability that the die was fair at each interesting position
+        # Compare the posterior probability that the die was fair
+        # at each interesting position.
         p_fair_a = distributions_a[3][0]
         p_fair_b = distributions_b[-2][0]
         self.assertTrue(p_fair_a < p_fair_b)
