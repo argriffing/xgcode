@@ -151,18 +151,6 @@ class Model:
         return A
 
 
-class FileModel:
-    """
-    This is a wrapper that uses open file handles.
-    """
-
-    def __init__(self, T, hidden_state_objects):
-        """
-        @param T: a transition object
-        @param hidden_state_objects: a conformant list of hidden state objects
-        """
-        self.model = Model(T, hidden_state_objects)
-
 
 class InternalModel:
     """
@@ -217,6 +205,63 @@ class InternalModel:
         return expectations
 
 
+class FileModel:
+    """
+    This is a wrapper that uses open file handles.
+    """
+
+    def __init__(self, T, hidden_state_objects, dp_io):
+        """
+        @param T: a transition object
+        @param hidden_state_objects: a conformant list of hidden state objects
+        @param dp_io: a tuple of (f, s, b) sequential IO objects
+        """
+        self.model = Model(T, hidden_state_objects)
+
+
+def float_tuple_to_line(float_tuple):
+    return '\n'.join(x.hex() for x in float_tuple)
+
+def float_to_line(f):
+    return x.hex()
+
+def line_to_float_tuple(line):
+    values = line.split()
+    return tuple(float.fromhex(x) for x in values)
+
+def line_to_tuple(line):
+    return float.fromhex(line)
+
+class FloatConverter:
+    def line_to_value(self, line):
+        return line_to_float(line)
+    def value_to_line(self, value):
+        return float_to_line(value)
+
+class FloatTupleConverter:
+    def line_to_value(self, line):
+        return line_to_float_tuple(line)
+    def value_to_line(self, value):
+        return float_tuple_to_line(value)
+
+class ForwardConverter(FloatTupleConverter):
+    """
+    Serialize the dynamic programming forward array elements.
+    """
+    pass
+
+class BackwardConverter(FloatTupleConverter):
+    """
+    Serialize the dynamic programming backward array elements.
+    """
+    pass
+
+class ScaleConverter(FloatConverter):
+    """
+    Serialize the dynamic programming scaling factor array elements.
+    """
+    pass
+
 CLOSED = 0
 WRITING_FORWARD = 1
 READING_FORWARD = 2
@@ -230,44 +275,66 @@ class SequentialIO:
     Writing is only possible in the forward direction,
     but items may be read in the forward or backward direction.
     """
-    def __init__(self, obj):
+    def __init__(self, obj, converter):
         """
         @param obj: a file-like object open for writing
+        @param converter: an ad hoc serialization
         """
         self.state = WRITING_FORWARD
         self.obj = obj
+        self.converter = converter
     def open_write_forward(self):
         if self.state != CLOSED:
             raise Exception('invalid action in the current state')
+        if self.is_disk_io():
+            filename = self.obj.name
+            self.obj = open(filename, 'wt')
+        else:
+            self.obj = StringIO.StringIO()
+        self.state = WRITING_FORWARD
     def open_read_forward(self):
         if self.state != CLOSED:
             raise Exception('invalid action in the current state')
+        if self.is_disk_io():
+            filename = self.obj.name
+            self.obj = open(filename)
+        else:
+            self.obj = StringIO.StringIO(self.obj)
+        self.state = READING_FORWARD
     def open_read_backward(self):
         if self.state != CLOSED:
             raise Exception('invalid action in the current state')
+        if self.is_disk_io():
+            filename = self.obj.name
+            self.obj = open(filename)
+        else:
+            self.obj = StringIO.StringIO(self.obj)
+        self.state = READING_BACKWARD
     def close(self):
         if self.state == CLOSED:
             raise Exception('invalid action in the current state')
+        if self.is_disk_io()
+            self.obj.close()
+        else:
+            self.obj = self.obj.getvalue()
+        self.state = CLOSED
     def read(self):
         if self.state in (CLOSED, WRITING_FORWARD):
             raise Exception('invalid action in the current state')
+        if self.state == READING_FORWARD:
+            for line in self.obj:
+                yield self.converter.line_to_value(line)
+        if self.state == READING_BACKWARD:
+            for line in Util.read_backwards(self.obj):
+                yield self.converter.line_to_value(line)
     def write(self, value):
         if self.state != WRITING_FORWARD:
             raise Exception('invalid action in the current state')
-    def line_to_value(self, line):
-        raise NotImplementedError()
-    def value_to_line(self, value):
-        raise NotImplementedError()
+        line = self.converter.value_to_line(value)
+        self.obj.write(line + '\n')
 
+class SequentialDiskIO(SequentialIO):
 
-class SequentialFloatListIO(SequentialIO):
-    """
-    Each value is a sequence of floats.
-    """
-    def line_to_value(self, line):
-        pass
-    def value_to_line(self, value):
-        pass
 
 
 
