@@ -186,14 +186,15 @@ class InternalModel:
         observations = list(observations)
         f_s_pairs = list(self.model.forward(observations))
         f, s = zip(*f_s_pairs)
-        b_reversed = list(self.model.backward(reversed(observations), reversed(s)))
+        b_reversed = list(
+                self.model.backward(reversed(observations), reversed(s)))
         b = list(reversed(b_reversed))
         return (observations, f, s, b)
 
     def posterior(self, dp_info):
         """
         @param dp_info: dynamic programming info returned by get_dp_info
-        @return: a list of position specific posterior hidden state distributions
+        @return: a list of position specific posterior distributions
         """
         observations, f, s, b = dp_info
         return list(self.model.posterior(f, s, b))
@@ -211,7 +212,9 @@ class InternalModel:
         @param dp_info: dynamic programming info returned by get_dp_info
         @return: a vector of hidden state occupancy expectations
         """
-        return sum(np.array(distribution) for distribution in self.posterior(dp_info))
+        expectations = sum(np.array(distribution)
+                for distribution in self.posterior(dp_info))
+        return expectations
 
 
 class TestExternalHMM(unittest.TestCase):
@@ -277,7 +280,9 @@ class TestExternalHMM(unittest.TestCase):
 
     def test_inequality(self):
         """
-        The hidden state for the unobserved coin is less likely to be fair in the first case.
+        Compare two posterior distributions.
+        The hidden state for the unobserved coin is less likely to be fair
+        in the first case.
         """
         # define the dishonest casino model
         fair_state = HMM.HiddenDieState(1/6.0)
