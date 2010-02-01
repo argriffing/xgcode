@@ -18,6 +18,8 @@ class TransitionObject:
         raise NotImplementedError()
     def get_stationary_probability(self, state):
         raise NotImplementedError()
+    def get_stationary_distribution(self):
+        raise NotImplementedError()
     def get_ntransitions_expected(self, source, sink, distance):
         raise NotImplementedError()
     def get_nstates(self):
@@ -53,6 +55,12 @@ class MatrixTransitionObject:
 
     def get_stationary_probability(self, state):
         return self.stationary_distribution[state]
+
+    def get_stationary_distribution(self):
+        """
+        @return: a stochastic vector as a list
+        """
+        return self.stationary_distribution
 
     def get_ntransitions_expected(self, source, sink, distance):
         raise NotImplementedError()
@@ -92,6 +100,12 @@ class UniformTransitionObject:
             return prandom_total / self.nstates + (1 - prandom_total)
         else:
             return prandom_total / self.nstates
+
+    def get_stationary_distribution(self):
+        """
+        @return: a stochastic vector as a list
+        """
+        return [1.0 / self.nstates] * self.nstates
 
     def get_stationary_probability(self, state):
         return 1.0 / self.nstates
@@ -137,6 +151,7 @@ def get_uniform_transition_matrix(prandom, nstates, ntransitions=1):
     @param prandom: probability of randomization per transition
     @param nstates: the number of states
     @param ntransitions: the transition matrix is over this many transitions
+    @return: a numpy array representing the transition matrix
     """
     if not (0 <= prandom <= 1):
         raise ValueError('expected a probability')
@@ -188,6 +203,27 @@ class TestTransitionMatrix(unittest.TestCase):
         observed = get_stationary_distribution(T)
         expected = np.ones(3)/3.0
         self.assertTrue(np.allclose(observed, expected), str(observed))
+
+    def test_stationary_distribution_d(self):
+        """
+        Compare stationary distributions provided by the objects.
+        """
+        prandom = .1
+        nstates = 4
+        M = np.array([
+            [.925, .025, .025, .025],
+            [.025, .925, .025, .025],
+            [.025, .025, .925, .025],
+            [.025, .025, .025, .925]])
+        T = get_uniform_transition_matrix(prandom, nstates, 1)
+        self.assertTrue(np.allclose(T, M))
+        trans_a = UniformTransitionObject(prandom, nstates)
+        trans_b = MatrixTransitionObject(M)
+        stat_m = get_stationary_distribution(M)
+        stat_a = trans_a.get_stationary_distribution()
+        stat_b = trans_b.get_stationary_distribution()
+        self.assertTrue(np.allclose(stat_m, stat_a))
+        self.assertTrue(np.allclose(stat_m, stat_b))
 
     def test_uniform_transition_matrix(self):
         prandom = .1
