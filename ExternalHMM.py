@@ -15,6 +15,7 @@ import HMM
 import FastHMM
 import DiscreteEndpoint
 import TransitionMatrix
+import lineario
 
 
 class Model:
@@ -205,137 +206,79 @@ class InternalModel:
         return expectations
 
 
-class FileModel:
-    """
-    This is a wrapper that uses open file handles.
-    """
+class ExternalModel:
 
-    def __init__(self, T, hidden_state_objects, dp_io):
+    def __init__(self, T, hidden_state_objects, dp_filenames):
         """
+        If a filename is None then that stream will be done in memory.
+        The dynamic programming streams are the forward stream,
+        the backward stream, and the scaling factor stream.
         @param T: a transition object
         @param hidden_state_objects: a conformant list of hidden state objects
-        @param dp_io: a tuple of (f, s, b) sequential IO objects
+        @param dp_filenames: a tuple of (f, s, b); each is a filename or None
         """
         self.model = Model(T, hidden_state_objects)
+        # Define the data type of each stream.
+        f_type = lineario.FloatTupleConverter()
+        s_type = lineario.FloatConverter()
+        b_type = lineario.FloatTupleConverter()
+        # initialize the streams for dynamic programming
+        f_name, s_name, b_name = dp_filenames
+        if f_name is None:
+            self.f_stream = lineario.SequentialStringIO(f_type)
+        else:
+            self.f_stream = lineario.SequentialDiskIO(f_type, f_name)
+        if s_name is None:
+            self.s_stream = lineario.SequentialStringIO(s_type)
+        else:
+            self.s_stream = lineario.SequentialDiskIO(s_type, s_name)
+        if b_name is None:
+            self.b_stream = lineario.SequentialStringIO(b_type)
+        else:
+            self.b_stream = lineario.SequentialDiskIO(b_type, b_name)
 
-
-def float_tuple_to_line(float_tuple):
-    return '\n'.join(x.hex() for x in float_tuple)
-
-def float_to_line(f):
-    return x.hex()
-
-def line_to_float_tuple(line):
-    values = line.split()
-    return tuple(float.fromhex(x) for x in values)
-
-def line_to_tuple(line):
-    return float.fromhex(line)
-
-class FloatConverter:
-    def line_to_value(self, line):
-        return line_to_float(line)
-    def value_to_line(self, value):
-        return float_to_line(value)
-
-class FloatTupleConverter:
-    def line_to_value(self, line):
-        return line_to_float_tuple(line)
-    def value_to_line(self, value):
-        return float_tuple_to_line(value)
-
-class ForwardConverter(FloatTupleConverter):
-    """
-    Serialize the dynamic programming forward array elements.
-    """
-    pass
-
-class BackwardConverter(FloatTupleConverter):
-    """
-    Serialize the dynamic programming backward array elements.
-    """
-    pass
-
-class ScaleConverter(FloatConverter):
-    """
-    Serialize the dynamic programming scaling factor array elements.
-    """
-    pass
-
-CLOSED = 0
-WRITING_FORWARD = 1
-READING_FORWARD = 2
-READING_BACKWARD = 3
-
-class SequentialIO:
-    """
-    Enable writing forward and reading forward and backward.
-    Reading and writing is by value at the API level,
-    but is by line internally.
-    Writing is only possible in the forward direction,
-    but items may be read in the forward or backward direction.
-    """
-    def __init__(self, obj, converter):
+    def init_dp(self, o_stream):
         """
-        @param obj: a file-like object open for writing
-        @param converter: an ad hoc serialization
+        Initialize the streams using a sequential observation stream.
+        @param o_stream: a sequential observation stream
         """
-        self.state = WRITING_FORWARD
-        self.obj = obj
-        self.converter = converter
-    def open_write_forward(self):
-        if self.state != CLOSED:
-            raise Exception('invalid action in the current state')
-        if self.is_disk_io():
-            filename = self.obj.name
-            self.obj = open(filename, 'wt')
-        else:
-            self.obj = StringIO.StringIO()
-        self.state = WRITING_FORWARD
-    def open_read_forward(self):
-        if self.state != CLOSED:
-            raise Exception('invalid action in the current state')
-        if self.is_disk_io():
-            filename = self.obj.name
-            self.obj = open(filename)
-        else:
-            self.obj = StringIO.StringIO(self.obj)
-        self.state = READING_FORWARD
-    def open_read_backward(self):
-        if self.state != CLOSED:
-            raise Exception('invalid action in the current state')
-        if self.is_disk_io():
-            filename = self.obj.name
-            self.obj = open(filename)
-        else:
-            self.obj = StringIO.StringIO(self.obj)
-        self.state = READING_BACKWARD
-    def close(self):
-        if self.state == CLOSED:
-            raise Exception('invalid action in the current state')
-        if self.is_disk_io()
-            self.obj.close()
-        else:
-            self.obj = self.obj.getvalue()
-        self.state = CLOSED
-    def read(self):
-        if self.state in (CLOSED, WRITING_FORWARD):
-            raise Exception('invalid action in the current state')
-        if self.state == READING_FORWARD:
-            for line in self.obj:
-                yield self.converter.line_to_value(line)
-        if self.state == READING_BACKWARD:
-            for line in Util.read_backwards(self.obj):
-                yield self.converter.line_to_value(line)
-    def write(self, value):
-        if self.state != WRITING_FORWARD:
-            raise Exception('invalid action in the current state')
-        line = self.converter.value_to_line(value)
-        self.obj.write(line + '\n')
+        # Create the forward stream and the scaling factor stream.
+        o_stream.open_read()
+        self.f_stream.open_write()
+        self.s_stream.open_write()
+        for f, s in self.model.forward(o_stream.read_forward()):
+            self.f_stream.write(f)
+            self.s_stream.write(s)
+        o_stream.close()
+        self.f_stream.close()
+        self.s_stream.close()
+        # Create the backward stream.
+        o_stream.open_read()
+        self.s_stream.open_read()
+        self.b_stream.open_write()
+        o_reversed = o_stream.read_backward()
+        s_reversed = self.s_stream.read_backward()
+        for b in self.model.backward(o_reversed, s_reversed):
+            self.b_stream.write(b)
+        o_stream.close()
+        self.s_stream.close()
+        self.b_stream.close()
 
-class SequentialDiskIO(SequentialIO):
-
-
+    def posterior(self):
+        """
+        Yield posterior distributions using initialized dp streams.
+        """
+        self.f_stream.open_read()
+        self.s_stream.open_read()
+        self.b_stream.open_read()
+        f_forward = self.f_stream.read_forward()
+        s_forward = self.s_stream.read_forward()
+        b_backward = self.b_stream.read_backward()
+        for d in self.model.posterior(f_forward, s_forward, b_backward):
+            yield d
+        self.f_stream.close()
+        self.s_stream.close()
+        self.b_stream.close()
 
 
 class TestExternalHMM(unittest.TestCase):
@@ -425,6 +368,67 @@ class TestExternalHMM(unittest.TestCase):
         p_fair_b = distributions_b[-2][0]
         self.assertTrue(p_fair_a < p_fair_b)
         self.assertNotAlmostEqual(p_fair_a, p_fair_b)
+
+    def test_external_string_model_compatibility(self):
+        """
+        Test StringIO streams for dynamic programming.
+        """
+        # define the dishonest casino model
+        fair_state = HMM.HiddenDieState(1/6.0)
+        loaded_state = HMM.HiddenDieState(0.5)
+        M = np.array([[0.95, 0.05], [0.1, 0.9]])
+        T = TransitionMatrix.MatrixTransitionObject(M)
+        hidden_states = [fair_state, loaded_state]
+        # define a sequence of observations
+        observations = [1, 2, 6, 6, 1, 2, 3, 4, 5, 6]
+        # define the observation stream
+        o_converter = lineario.IntConverter()
+        o_stream = lineario.SequentialStringIO(o_converter)
+        o_stream.open_write()
+        for x in observations:
+            o_stream.write(x)
+        o_stream.close()
+        # create the reference hidden markov model object
+        hmm_old = HMM.TrainedModel(M, hidden_states)
+        # create the testing hidden markov model object
+        hmm_new = ExternalModel(T, hidden_states, (None, None, None))
+        # get posterior distributions
+        distributions_old = hmm_old.scaled_posterior_durbin(observations)
+        hmm_new.init_dp(o_stream)
+        distributions_new = list(hmm_new.posterior())
+        # assert that the distributions are the same
+        self.assertTrue(np.allclose(distributions_old, distributions_new))
+
+    def test_external_file_model_compatibility(self):
+        """
+        Test StringIO streams for dynamic programming.
+        """
+        # define the dishonest casino model
+        fair_state = HMM.HiddenDieState(1/6.0)
+        loaded_state = HMM.HiddenDieState(0.5)
+        M = np.array([[0.95, 0.05], [0.1, 0.9]])
+        T = TransitionMatrix.MatrixTransitionObject(M)
+        hidden_states = [fair_state, loaded_state]
+        # define a sequence of observations
+        observations = [1, 2, 6, 6, 1, 2, 3, 4, 5, 6]
+        # define the observation stream
+        o_converter = lineario.IntConverter()
+        o_stream = lineario.SequentialStringIO(o_converter)
+        o_stream.open_write()
+        for x in observations:
+            o_stream.write(x)
+        o_stream.close()
+        # create the reference hidden markov model object
+        hmm_old = HMM.TrainedModel(M, hidden_states)
+        # create the testing hidden markov model object
+        names = ('tmp_f.tmp', 'tmp_s.tmp', 'tmp_b.tmp')
+        hmm_new = ExternalModel(T, hidden_states, names)
+        # get posterior distributions
+        distributions_old = hmm_old.scaled_posterior_durbin(observations)
+        hmm_new.init_dp(o_stream)
+        distributions_new = list(hmm_new.posterior())
+        # assert that the distributions are the same
+        self.assertTrue(np.allclose(distributions_old, distributions_new))
 
 
 if __name__ == '__main__':
