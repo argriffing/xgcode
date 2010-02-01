@@ -158,7 +158,7 @@ class FileModel:
 
     def __init__(self, T, hidden_state_objects):
         """
-        @param T: a transition matrix as a numpy array
+        @param T: a transition object
         @param hidden_state_objects: a conformant list of hidden state objects
         """
         self.model = Model(T, hidden_state_objects)
@@ -172,7 +172,7 @@ class InternalModel:
 
     def __init__(self, T, hidden_state_objects):
         """
-        @param T: a transition matrix as a numpy array
+        @param T: a transition object
         @param hidden_state_objects: a conformant list of hidden state objects
         """
         self.model = Model(T, hidden_state_objects)
