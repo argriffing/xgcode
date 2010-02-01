@@ -217,6 +217,60 @@ class InternalModel:
         return expectations
 
 
+CLOSED = 0
+WRITING_FORWARD = 1
+READING_FORWARD = 2
+READING_BACKWARD = 3
+
+class SequentialIO:
+    """
+    Enable writing forward and reading forward and backward.
+    Reading and writing is by value at the API level,
+    but is by line internally.
+    Writing is only possible in the forward direction,
+    but items may be read in the forward or backward direction.
+    """
+    def __init__(self, obj):
+        """
+        @param obj: a file-like object open for writing
+        """
+        self.state = WRITING_FORWARD
+        self.obj = obj
+    def open_write_forward(self):
+        if self.state != CLOSED:
+            raise Exception('invalid action in the current state')
+    def open_read_forward(self):
+        if self.state != CLOSED:
+            raise Exception('invalid action in the current state')
+    def open_read_backward(self):
+        if self.state != CLOSED:
+            raise Exception('invalid action in the current state')
+    def close(self):
+        if self.state == CLOSED:
+            raise Exception('invalid action in the current state')
+    def read(self):
+        if self.state in (CLOSED, WRITING_FORWARD):
+            raise Exception('invalid action in the current state')
+    def write(self, value):
+        if self.state != WRITING_FORWARD:
+            raise Exception('invalid action in the current state')
+    def line_to_value(self, line):
+        raise NotImplementedError()
+    def value_to_line(self, value):
+        raise NotImplementedError()
+
+
+class SequentialFloatListIO(SequentialIO):
+    """
+    Each value is a sequence of floats.
+    """
+    def line_to_value(self, line):
+        pass
+    def value_to_line(self, value):
+        pass
+
+
+
 class TestExternalHMM(unittest.TestCase):
 
     def test_model_compatibility(self):
