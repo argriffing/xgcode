@@ -13,7 +13,8 @@ class Bar:
         """
         @param high: when the progress reaches this value then we are done
         """
-        assert high > 0
+        if high <= 0:
+            raise ValueError()
         self.high = high
         self.outfile = sys.stderr
         self.finished = False
@@ -22,6 +23,19 @@ class Bar:
         signal.signal(signal.SIGWINCH, self.on_resize)
         # set the progress to zero
         self.update(0)
+
+    def set_high(self, high):
+        """
+        Call this function only rarely.
+        @param high: when the progress reaches this value then we are done
+        """
+        if high <= 0:
+            raise ValueError()
+        self.high = high
+        if self.progress >= high:
+            self.finish()
+        else:
+            self.update(self.progress)
 
     def on_resize(self, signal_number, frame):
         """

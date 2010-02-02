@@ -150,6 +150,7 @@ def main(args):
     chromo_names = skimmer.name_list
     nlines = skimmer.linecount
     # start the progress bar
+    nticks = args.length
     nticks = 2*nlines
     pbar = Progress.Bar(nticks)
     # scan the input file for correct types and for monotonicity
@@ -160,10 +161,6 @@ def main(args):
     ch_files = []
     for p in ch_paths:
         ch_files.append(open(p, 'wt'))
-    # write the headers
-    if not args.noheader:
-        for f in ch_files:
-            f.write(g_header + '\n')
     # write the lines
     name_to_file = dict(zip(chromo_names, ch_files))
     with open(input_filename) as fin:
@@ -186,11 +183,13 @@ if __name__ == '__main__':
             help='write the chromosome files to this directory')
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
-    parser.add_argument('--noheader', action='store_true',
-            help='omit the header row from the output'),
     parser.add_argument('--out_prefix', default='chromosome.',
             help='prefix added to the chromosome name in the output filename')
     parser.add_argument('--out_suffix', default='.txt',
             help='suffix added to the chromosome name in the output filename')
+    parser.add_argument('--base', default=1, type=int, choices=(0,1),
+            help='the index base of the chromosome position'),
+    parser.add_argument('--length', type=int, required=True,
+            help='the length of the chromosome'),
     args = parser.parse_args()
     main(args)
