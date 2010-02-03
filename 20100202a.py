@@ -122,17 +122,13 @@ class Scanner:
     """
     Go through a filtered pileup file and check and save chromosome info.
     """
-    def __init__(self, first, last, overwrite, name_to_path):
+    def __init__(self, first, last):
         """
         @param first: an integer or 'min' or 'drosophila'
         @param last: an integer or 'max' or 'drosophila'
-        @param overwrite: True to blindly overwrite files
-        @param name_to_path: returns a file path given a chromosome name
         """
         self.first = first
         self.last = last
-        self.overwrite = overwrite
-        self.name_to_path = name_to_path
         self.name_to_chrom = {}
 
     def get_npositions(self):
@@ -144,6 +140,7 @@ class Scanner:
     def scan(self, fin):
         """
         Save chromosome info and check for errors.
+        Yield chromosome names as they are encountered.
         @param fin: a file open for reading
         """
         last_name = None
@@ -163,25 +160,20 @@ class Scanner:
                 # assert that the position is not too high
                 if position > name_to_length[name]:
                     raise Exception('position out of range: ' + str(position))
-            # assert that we do not overwrite an output file
-            if not self.overwrite:
-                fpath = self.name_to_path(name)
-                if os.path.exists(fpath):
-                    raise Exception('output file already exists: ' + fpath)
             # create info for a new chromosome if necessary
             if name not in self.name_to_chrom:
                 self.name_to_chrom[name] = ChromInfo(name)
                 last_name = name
+                yield name
             # update the chromosome info with the position
             self.name_to_chrom[name].add_position(position)
 
-    def write_observations(self, fin):
+    def gen_named_observations(self, fin):
         """
-        Yield after each line instead of using a callback.
-        This allows the caller to show a progress bar.
+        Yield (chrom_name, observation) pairs
         @param fin: a file open for reading
         """
-        default_value = '\t'.join(str(x) for x in (0, 0, 0, 0))
+        default_value = (0, 0, 0, 0)
         # create a filler object for each chromosome
         name_to_filler = {}
         for name, chrom in self.name_to_chrom.items():
@@ -199,23 +191,14 @@ class Scanner:
                 filler_high = chrom.high
             # add the filler object
             name_to_filler[name] = Filler(chrom.low, chrom.high)
-        # open the files for writing
-        name_to_fout = {}
-        for name in self.name_to_chrom:
-            fpath = self.name_to_path(name)
-            name_to_fout[name] = open(fpath, 'w')
         # process each row of the input file, yielding after each written line
         for row in gen_typed_rows(fin):
             name, position = row[0], row[1]
-            value = '\t'.join(str(x) for x in convert_row(row))
+            value = convert_row(row)
             filler = name_to_filler[name]
             finish = (position == filler.high)
-            for line in filler.fill(position, value, default_value, finish):
-                name_to_fout[name].write(line + '\n')
-                yield
-        # close the files
-        for fout in name_to_fout.values():
-            fout.close()
+            for obs in filler.fill(position, value, default_value, finish):
+                yield name, obs
 
 
 def get_form():
@@ -296,13 +279,10 @@ def convert_row(row):
     nt_to_count = {'A':A, 'C':C, 'G':G, 'T':T}
     R = nt_to_count[ref]
     non_ref_counts = [nt_to_count[c] for c in 'ACGT' if c != ref]
-    obs = [R] + list(reversed(sorted(non_ref_counts))
+    obs = [R] + list(reversed(sorted(non_ref_counts)))
     return tuple(obs)
 
 def main(args):
-    """
-    @param args: positional and flaglike arguments
-    """
     # read the arguments
     input_filename = os.path.abspath(os.path.expanduser(args.infile))
     output_directory = os.path.abspath(os.path.expanduser(args.outdir))
@@ -314,44 +294,35 @@ def main(args):
     if not os.path.isdir(output_directory):
         msg = 'output directory does not exist: ' + output_directory
         raise Exception(msg)
-    # scan the input file for chromosome names
-    ch_paths = []
-    skimmer = DGRP.ChromoSkimmer()
+    # create the scanner object which will be used for two passes
+    scanner = Scanner(args.first, args.last)
+    # Do the first pass,
+    # checking for errors and gathering info about the chromosomes.
+    name_to_path = {}
     with open(input_filename) as fin:
-        for chromo_name in skimmer.skim(gen_untyped_rows(fin)):
-            output_filename = args.out_prefix + chromo_name + args.out_suffix
-            ch_path = os.path.join(output_directory, output_filename)
-            ch_paths.append(ch_path)
-            if not force:
-                if os.path.exists(ch_path):
-                    raise Exception('output already exists: ' + ch_path)
-    chromo_names = skimmer.name_list
-    nlines = skimmer.linecount
-    # start the progress bar
-    nticks = args.length
-    nticks = 2*nlines
+        for name in scanner.scan(fin):
+            output_filename = args.out_prefix + name + args.out_suffix
+            fpath = os.path.join(output_directory, output_filename)
+            name_to_path[name] = fpath
+            if not args.force:
+                if os.path.exists(fpath):
+                    raise Exception('output file already exists: ' + fpath)
+    nticks = scanner.get_npositions()
     pbar = Progress.Bar(nticks)
-    # scan the input file for correct types and for monotonicity
+    # open the files for writing
+    name_to_fout = {}
+    for name, fpath in name_to_path.items():
+        name_to_fout[name] = open(fpath, 'wt')
+    # Do the second pass,
+    # writing the files and updating the progress bar.
     with open(input_filename) as fin:
-        for i in DGRP.check_chromo_monotonicity(gen_typed_rows(fin)):
-            pbar.increment()
-    # create the files open for writing
-    ch_files = []
-    for p in ch_paths:
-        ch_files.append(open(p, 'wt'))
-    # write the lines
-    name_to_file = dict(zip(chromo_names, ch_files))
-    with open(input_filename) as fin:
-        for row in gen_typed_rows(fin):
-            name = row[0]
-            row_out = convert_row(row)
-            f = name_to_file[name]
-            line_out = '\t'.join(str(x) for x in row_out)
-            f.write(line_out + '\n')
+        for name, obs in scanner.gen_named_observations(fin):
+            line = '\t'.join(str(x) for x in obs)
+            name_to_fout[name].write(line + '\n')
             pbar.increment()
     # close the files
-    for f in ch_files:
-        f.close()
+    for fout in name_to_fout.values():
+        fout.close()
 
 def first_position(value):
     try:
