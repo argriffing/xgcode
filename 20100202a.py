@@ -42,6 +42,148 @@ g_sample_lines = [
         'chrQ 95 T A/T 17 A 8 C 0 G 0 T 9 31 82 31']
 
 
+class Filler:
+    """
+    Generate values over a range of sequential positions.
+    At some of the positions a value is available,
+    but at other positions no value is available.
+    This implementation is memory efficient because it uses iterators.
+    """
+    def __init__(self, low, high):
+        """
+        @param low: the position for which the first value is yielded
+        @param high: the position for which the last value is yielded
+        """
+        self.low = low
+        self.high = high
+        self.prev = None
+
+    def fill(self, position, value, finish=False):
+        """
+        Yield an informative value and maybe some uninformative ones.
+        This function should be called repeatedly,
+        and with strictly increasing positions.
+        For positions for which no value is available,
+        the value None is yielded.
+        @param position: an available position
+        @param value: the value at the position
+        @param finish: True if this is the last available value
+        """
+        if value is None:
+            msg = 'the value None is reserved for missing information'
+            raise ValueError(msg)
+        if not self.low <= position <= self.high:
+            msg = '%s is outside [%d, %d]' % (position, self.low, self.high)
+            raise ValueError(msg)
+        if self.prev is not None:
+            if position <= self.prev:
+                raise ValueError('positions should monotonically increase')
+        # fill between the previous position and the current position
+        for i in xrange(self.get_ngap(position)):
+            yield None
+        # yield the value at the current position
+        yield value
+        self.prev = position
+        # possibly finish filling the range
+        if finish:
+            for i in xrange(self.get_nremaining()):
+                yield None
+            self.prev = self.high
+
+    def get_ngap(self, position):
+        if self.prev is None:
+            return position - self.low
+        else:
+            return (position - self.prev) - 1
+
+    def get_nremaining(self):
+        return self.get_ngap(self.high) + 1
+
+
+
+class ChromInfo:
+    """
+    Chromosome info.
+    """
+    def __init__(self, name):
+        self.name = name
+        self.low = None
+        self.high = None
+    def add_position(self, position):
+        if self.low is None:
+            self.low = position
+            self.high = position
+        else:
+            if position <= self.high:
+                raise ValueError('positions added out of order')
+        self.low = min(self.low, position)
+        self.high = max(self.high, position)
+    def get_npositions(self):
+        return (self.high - self.low) + 1
+
+
+class Scanner:
+    """
+    Go through a filtered pileup file and check and save chromosome info.
+    """
+    def __init__(self, first, last, overwrite, name_to_path):
+        """
+        @param first: an integer or 'min' or 'drosophila'
+        @param last: an integer or 'max' or 'drosophila'
+        @param overwrite: True to blindly overwrite files
+        @param name_to_path: returns a file path given a chromosome name
+        """
+        self.first = first
+        self.last = last
+        self.overwrite = overwrite
+        self.name_to_path = name_to_path
+        self.name_to_chrom = {}
+
+    def get_npositions(self):
+        """
+        @return: the total number of lines to write
+        """
+        return sum(c.get_npositions() for c in self.name_to_chrom.values())
+
+    def scan(self, fin):
+        """
+        Save chromosome info and check for errors.
+        @param fin: a file open for reading
+        """
+        last_name = None
+        for row in gen_typed_rows(fin):
+            name, position = row[0], row[1]
+            # assert that chromosomes are contiguous
+            if name != last_name:
+                if name in self.name_to_chrom:
+                    msg = 'chromosome ' + name + ' should be contiguous'
+                    raise Exception(msg)
+            # assert that drosophila-specific properties are correct
+            if self.last == 'drosophila':
+                name_to_length = dict(DGRP.g_chromosome_length_pairs)
+                # assert that the chromosome is a valid Drosophila name
+                if name not in name_to_length:
+                    raise Exception('invalid Drosophila chromosome: ' + name)
+                # assert that the position is not too high
+                if position > name_to_length[name]:
+                    raise Exception('position out of range: ' + str(position))
+            # assert that we do not overwrite an output file
+            if not self.overwrite:
+                fpath = name_to_path(name)
+                if os.path.exists(fpath):
+                    raise Exception('output file already exists: ' + fpath)
+            # create info for a new chromosome if necessary
+            if name not in self.name_to_chrom:
+                self.name_to_chrom[name] = ChromInfo(name)
+                last_name = name
+            # update the chromosome info with the position
+            self.name_to_chrom[name].add_position(position)
+
+    def write_observations(self, fin):
+        """
+        @param fin: a file open for reading
+        """
+
 
 def get_form():
     """
@@ -105,10 +247,6 @@ def line_to_row(line):
 def gen_typed_rows(fin):
     for line in Util.stripped_lines(fin):
         yield line_to_row(line)
-
-def gen_untyped_rows(fin):
-    for line in Util.stripped_lines(fin):
-        yield line.split()
 
 def convert_row(row):
     """
