@@ -173,7 +173,7 @@ class Scanner:
         Yield (chrom_name, observation) pairs
         @param fin: a file open for reading
         """
-        default_value = (0, 0, 0, 0)
+        default_value = None
         # create a filler object for each chromosome
         name_to_filler = {}
         for name, chrom in self.name_to_chrom.items():
@@ -315,9 +315,14 @@ def main(args):
         name_to_fout[name] = open(fpath, 'wt')
     # Do the second pass,
     # writing the files and updating the progress bar.
+    default_obs = (0, 0, 0, 0)
+    default_line = '\t'.join(str(x) for x in default_obs)
     with open(input_filename) as fin:
         for name, obs in scanner.gen_named_observations(fin):
-            line = '\t'.join(str(x) for x in obs)
+            if obs is None:
+                line = default_line
+            else:
+                line = '\t'.join(str(x) for x in obs)
             name_to_fout[name].write(line + '\n')
             pbar.increment()
     # close the files
