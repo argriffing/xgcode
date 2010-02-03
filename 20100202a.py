@@ -264,6 +264,8 @@ def line_to_row(line):
     values = line.split()
     if len(values) != 16:
         raise Exception('expected 16 values per line')
+    if values[2] not in list('ACGT'):
+        raise Exception('the reference allele should be a nucleotide')
     msg = 'literal A, C, G, T letters were not found where expected'
     if values[5] != 'A' or values[7] != 'C':
         raise Exception(msg)
@@ -283,12 +285,19 @@ def gen_typed_rows(fin):
 
 def convert_row(row):
     """
-    @param row: a sequence of values
-    @return: a subset of the values
+    Return a flat tuple consisting of the reference and non-reference counts.
+    The reference allele count is the first element of the tuple.
+    The remaining allele counts are sorted in decreasing count order.
+    @param row: a sequence of values in an expected format
+    @return: a sufficient statistic
     """
-    name, pos = row[0], row[1]
+    name, pos, ref = row[:3]
     A, C, G, T = row[6], row[8], row[10], row[12]
-    return (pos, A, C, G, T)
+    nt_to_count = {'A':A, 'C':C, 'G':G, 'T':T}
+    R = nt_to_count[ref]
+    non_ref_counts = [nt_to_count[c] for c in 'ACGT' if c != ref]
+    obs = [R] + list(reversed(sorted(non_ref_counts))
+    return tuple(obs)
 
 def main(args):
     """
