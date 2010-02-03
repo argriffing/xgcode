@@ -41,7 +41,6 @@ g_sample_lines = [
         'chrQ 92 C C/T 16 A 0 C 9 G 0 T 7 30 78 28',
         'chrQ 95 T A/T 17 A 8 C 0 G 0 T 9 31 82 31']
 
-g_header = '\t'.join(['position', 'A', 'C', 'G', 'T'])
 
 
 def get_form():
@@ -75,7 +74,6 @@ def get_response(fs):
     print >> out
     # write only the first chromosome
     fin = StringIO.StringIO(fs.data_in)
-    print >> out, g_header
     for row in gen_typed_rows(fin):
         name = row[0]
         if name == chromo_names[0]:
