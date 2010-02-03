@@ -1,10 +1,31 @@
 """
 Functions to explore the Drosophila genetic reference panel.
+
+Chromosome names and position ranges from flybase 5.13 are included.
+Positions in these chromosomes are 1-indexed.
 """
 
 import unittest
 
 import Util
+
+# from flybase 5.13
+g_chromosome_length_pairs = (
+        ('YHet', 347038),
+        ('2L', 23011544),
+        ('X', 22422827),
+        ('3L', 24543557),
+        ('4', 1351857),
+        ('2R', 21146708),
+        ('3R', 27905053),
+        ('Uextra', 29004656),
+        ('2RHet', 3288761),
+        ('2LHet', 368872),
+        ('3LHet', 2555491),
+        ('3RHet', 2517507),
+        ('U', 10049037),
+        ('XHet', 204112),
+        ('dmel_mitochondrion_genome', 19517))
 
 class ChromoSkimmer:
     """
