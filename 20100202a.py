@@ -58,20 +58,16 @@ class Filler:
         self.high = high
         self.prev = None
 
-    def fill(self, position, value, finish=False):
+    def fill(self, position, value, default_value, finish=False):
         """
         Yield an informative value and maybe some uninformative ones.
         This function should be called repeatedly,
         and with strictly increasing positions.
-        For positions for which no value is available,
-        the value None is yielded.
         @param position: an available position
         @param value: the value at the position
+        @param default_value: the value at missing positions
         @param finish: True if this is the last available value
         """
-        if value is None:
-            msg = 'the value None is reserved for missing information'
-            raise ValueError(msg)
         if not self.low <= position <= self.high:
             msg = '%s is outside [%d, %d]' % (position, self.low, self.high)
             raise ValueError(msg)
@@ -80,14 +76,14 @@ class Filler:
                 raise ValueError('positions should monotonically increase')
         # fill between the previous position and the current position
         for i in xrange(self.get_ngap(position)):
-            yield None
+            yield default_value
         # yield the value at the current position
         yield value
         self.prev = position
         # possibly finish filling the range
         if finish:
             for i in xrange(self.get_nremaining()):
-                yield None
+                yield default_value
             self.prev = self.high
 
     def get_ngap(self, position):
@@ -169,7 +165,7 @@ class Scanner:
                     raise Exception('position out of range: ' + str(position))
             # assert that we do not overwrite an output file
             if not self.overwrite:
-                fpath = name_to_path(name)
+                fpath = self.name_to_path(name)
                 if os.path.exists(fpath):
                     raise Exception('output file already exists: ' + fpath)
             # create info for a new chromosome if necessary
@@ -181,8 +177,45 @@ class Scanner:
 
     def write_observations(self, fin):
         """
+        Yield after each line instead of using a callback.
+        This allows the caller to show a progress bar.
         @param fin: a file open for reading
         """
+        default_value = '\t'.join(str(x) for x in (0, 0, 0, 0))
+        # create a filler object for each chromosome
+        name_to_filler = {}
+        for name, chrom in self.name_to_chrom.items():
+            # define the low position
+            filler_low = self.first
+            if self.first == 'drosophila':
+                filler_low = 1
+            elif self.first == 'min':
+                filler_low = chrom.low
+            # define the high position
+            filler_high = self.last
+            if self.last == 'drosophila':
+                filler_high = dict(DGRP.g_chromosome_length_pairs)[name]
+            elif self.last == 'max':
+                filler_high = chrom.high
+            # add the filler object
+            name_to_filler[name] = Filler(chrom.low, chrom.high)
+        # open the files for writing
+        name_to_fout = {}
+        for name in self.name_to_chrom:
+            fpath = self.name_to_path(name)
+            name_to_fout[name] = open(fpath, 'w')
+        # process each row of the input file, yielding after each written line
+        for row in gen_typed_rows(fin):
+            name, position = row[0], row[1]
+            value = '\t'.join(str(x) for x in convert_row(row))
+            filler = name_to_filler[name]
+            finish = (position == filler.high)
+            for line in filler.fill(position, value, default_value, finish):
+                name_to_fout[name].write(line + '\n')
+                yield
+        # close the files
+        for fout in name_to_fout.values():
+            fout.close()
 
 
 def get_form():
