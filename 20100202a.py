@@ -24,6 +24,7 @@ No header line is provided.
 import StringIO
 import argparse
 import os
+import profile
 
 from SnippetUtil import HandlingError
 import Form
@@ -117,6 +118,27 @@ class ChromInfo:
     def get_npositions(self):
         return (self.high - self.low) + 1
 
+def get_requested_low(chrom, first):
+    if first == 'drosophila':
+        return 1
+    elif first == 'min':
+        return chrom.low
+    else:
+        return first
+
+def get_requested_high(chrom, last):
+    if last == 'drosophila':
+        return dict(DGRP.g_chromosome_length_pairs)[chrom.name]
+    elif last == 'max':
+        return chrom.high
+    else:
+        return last
+
+def get_requested_npositions(chrom, first, last):
+    requested_high = get_requested_high(chrom, last)
+    requested_low = get_requested_low(chrom, first)
+    return (requested_high - requested_low) + 1
+
 
 class Scanner:
     """
@@ -135,7 +157,10 @@ class Scanner:
         """
         @return: the total number of lines to write
         """
-        return sum(c.get_npositions() for c in self.name_to_chrom.values())
+        chroms = self.name_to_chrom.values()
+        first = self.first
+        last = self.last
+        return sum(get_requested_npositions(c, first, last) for c in chroms)
 
     def scan(self, fin):
         """
@@ -177,20 +202,9 @@ class Scanner:
         # create a filler object for each chromosome
         name_to_filler = {}
         for name, chrom in self.name_to_chrom.items():
-            # define the low position
-            filler_low = self.first
-            if self.first == 'drosophila':
-                filler_low = 1
-            elif self.first == 'min':
-                filler_low = chrom.low
-            # define the high position
-            filler_high = self.last
-            if self.last == 'drosophila':
-                filler_high = dict(DGRP.g_chromosome_length_pairs)[name]
-            elif self.last == 'max':
-                filler_high = chrom.high
-            # add the filler object
-            name_to_filler[name] = Filler(chrom.low, chrom.high)
+            filler_low = get_requested_low(chrom, self.first)
+            filler_high = get_requested_high(chrom, self.last)
+            name_to_filler[name] = Filler(filler_low, filler_high)
         # process each row of the input file, yielding after each written line
         for row in gen_typed_rows(fin):
             name, position = row[0], row[1]
@@ -364,10 +378,12 @@ def last_position(value):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('infile')
-    parser.add_argument('--outdir', default=os.getcwd(),
-            help='write the chromosome files to this directory')
+    parser.add_argument('--profile', action='store_true',
+            help='profile the script to look for slow spots'),
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
+    parser.add_argument('--outdir', default=os.getcwd(),
+            help='write the chromosome files to this directory')
     parser.add_argument('--out_prefix', default='chromosome.',
             help='prefix added to the chromosome name in the output filename')
     parser.add_argument('--out_suffix', default='.txt',
@@ -379,4 +395,7 @@ if __name__ == '__main__':
             metavar='{<int>, max, drosophila}',
             help='the last position in a chromosome'),
     args = parser.parse_args()
-    main(args)
+    if args.profile:
+        profile.run('main(args)')
+    else:
+        main(args)
