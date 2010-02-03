@@ -33,13 +33,13 @@ import Util
 
 
 g_sample_lines = [
-        'YHet 3261 T C/C 2 A 0 C 1 G 0 T 1 15 15 50',
-        'YHet 4197 G C/C 2 A 0 C 1 G 1 T 0 2 2 60',
-        'YHet 4573 C T/T 3 A 0 C 0 G 0 T 3 36 36 51',
-        'YHet 5490 G A/A 7 A 4 C 0 G 3 T 0 2 2 0',
-        '2L 5091 T C/T 16 A 0 C 7 G 0 T 9 27 27 28',
-        '2L 5092 C C/T 16 A 0 C 9 G 0 T 7 30 78 28',
-        '2L 5095 T A/T 17 A 8 C 0 G 0 T 9 31 82 31']
+        'chrI 61 T C/C 2 A 0 C 1 G 0 T 1 15 15 50',
+        'chrI 67 G C/C 2 A 0 C 1 G 1 T 0 2 2 60',
+        'chrI 73 C T/T 3 A 0 C 0 G 0 T 3 36 36 51',
+        'chrI 90 G A/A 7 A 4 C 0 G 3 T 0 2 2 0',
+        'chrQ 91 T C/T 16 A 0 C 7 G 0 T 9 27 27 28',
+        'chrQ 92 C C/T 16 A 0 C 9 G 0 T 7 30 78 28',
+        'chrQ 95 T A/T 17 A 8 C 0 G 0 T 9 31 82 31']
 
 g_header = '\t'.join(['position', 'A', 'C', 'G', 'T'])
 
@@ -175,6 +175,37 @@ def main(args):
     for f in ch_files:
         f.close()
 
+def first_position(value):
+    try:
+        v = int(value)
+    except ValueError, e:
+        v = None
+    if v is None:
+        if value in ('min', 'drosophila'):
+            return value
+        else:
+            raise TypeError()
+    else:
+        if v < 0:
+            raise TypeError()
+        else:
+            return v
+
+def last_position(value):
+    try:
+        v = int(value)
+    except ValueError, e:
+        v = None
+    if v is None:
+        if value in ('max', 'drosophila'):
+            return value
+        else:
+            raise TypeError()
+    else:
+        if v < 0:
+            raise TypeError()
+        else:
+            return v
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -187,9 +218,11 @@ if __name__ == '__main__':
             help='prefix added to the chromosome name in the output filename')
     parser.add_argument('--out_suffix', default='.txt',
             help='suffix added to the chromosome name in the output filename')
-    parser.add_argument('--base', default=1, type=int, choices=(0,1),
-            help='the index base of the chromosome position'),
-    parser.add_argument('--length', type=int, required=True,
-            help='the length of the chromosome'),
+    parser.add_argument('--first', default='drosophila', type=first_position,
+            metavar='{<int>, min, drosophila}',
+            help='the first position in a chromosome'),
+    parser.add_argument('--last', default='drosophila', type=last_position,
+            metavar='{<int>, max, drosophila}',
+            help='the last position in a chromosome'),
     args = parser.parse_args()
     main(args)
