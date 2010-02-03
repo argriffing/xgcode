@@ -115,8 +115,6 @@ class ChromInfo:
                 raise ValueError('positions added out of order')
         self.low = min(self.low, position)
         self.high = max(self.high, position)
-    def get_npositions(self):
-        return (self.high - self.low) + 1
 
 def get_requested_low(chrom, first):
     if first == 'drosophila':
@@ -135,8 +133,8 @@ def get_requested_high(chrom, last):
         return last
 
 def get_requested_npositions(chrom, first, last):
-    requested_high = get_requested_high(chrom, last)
     requested_low = get_requested_low(chrom, first)
+    requested_high = get_requested_high(chrom, last)
     return (requested_high - requested_low) + 1
 
 
@@ -322,6 +320,7 @@ def main(args):
                 if os.path.exists(fpath):
                     raise Exception('output file already exists: ' + fpath)
     nticks = scanner.get_npositions()
+    print nticks
     pbar = Progress.Bar(nticks)
     # open the files for writing
     name_to_fout = {}
@@ -331,6 +330,7 @@ def main(args):
     # writing the files and updating the progress bar.
     default_obs = (0, 0, 0, 0)
     default_line = '\t'.join(str(x) for x in default_obs)
+    nwritten = 0
     with open(input_filename) as fin:
         for name, obs in scanner.gen_named_observations(fin):
             if obs is None:
@@ -338,7 +338,9 @@ def main(args):
             else:
                 line = '\t'.join(str(x) for x in obs)
             name_to_fout[name].write(line + '\n')
-            pbar.increment()
+            nwritten += 1
+            pbar.update(nwritten)
+    print nwritten
     # close the files
     for fout in name_to_fout.values():
         fout.close()
