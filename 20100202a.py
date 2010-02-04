@@ -321,7 +321,6 @@ def main(args):
                 if os.path.exists(fpath):
                     raise Exception('output file already exists: ' + fpath)
     nticks = scanner.get_npositions()
-    print nticks
     pbar = Progress.Bar(nticks)
     # open the files for writing
     name_to_fout = {}
@@ -331,7 +330,6 @@ def main(args):
     # writing the files and updating the progress bar.
     default_obs = (0, 0, 0, 0)
     default_line = '\t'.join(str(x) for x in default_obs)
-    nwritten = 0
     with open(input_filename) as fin:
         for name, obs in scanner.gen_named_observations(fin):
             if obs is None:
@@ -339,9 +337,7 @@ def main(args):
             else:
                 line = '\t'.join(str(x) for x in obs)
             name_to_fout[name].write(line + '\n')
-            nwritten += 1
-            pbar.update(nwritten)
-    print nwritten
+            pbar.increment()
     # close the files
     for fout in name_to_fout.values():
         fout.close()
