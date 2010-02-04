@@ -1,4 +1,4 @@
-"""Convert a filtered pileup file to a set of files.
+"""Convert a filtered pileup file to files with a minimal observation per line.
 
 Each output file has information from a single chromosome.
 Input columns are
@@ -213,6 +213,20 @@ class Scanner:
             for obs in filler.fill(position, value, default_value, finish):
                 yield name, obs
 
+    def gen_named_lines(self, fin):
+        """
+        Yield (chrom_name, observation_line) pairs
+        @param fin: a file open for reading
+        """
+        default_obs = (0, 0, 0, 0)
+        default_line = '\t'.join(str(x) for x in default_obs)
+        for name, obs in self.gen_named_observations(fin):
+            if obs is None:
+                line = default_line
+            else:
+                line = '\t'.join(str(x) for x in obs)
+            yield (name, line)
+
 
 def get_form():
     """
@@ -220,7 +234,14 @@ def get_form():
     """
     sample_data = '\n'.join(g_sample_lines)
     form_objects = [
-            Form.MultiLine('data_in', 'filtered pileup file', sample_data)]
+            Form.MultiLine('data_in', 'filtered pileup file', sample_data),
+            Form.RadioGroup('first_info', 'first output position', [
+                Form.RadioItem('first_0', '0'),
+                Form.RadioItem('first_1', '1', True),
+                Form.RadioItem('first_min', 'min')]),
+            Form.RadioGroup('last_info', 'last output position', [
+                Form.RadioItem('last_max', 'max', True),
+                Form.RadioItem('last_1000', '1000')])]
     return form_objects
 
 def get_response(fs):
@@ -228,27 +249,30 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    # quickly skim the lines to get some info
+    # create the scanner object which will be used for two passes
+    first = {'first_0':0, 'first_1':1, 'first_min':'min'}[fs.first_info]
+    last = {'last_max':'max', 'last_1000':1000}[fs.last_info]
+    scanner = Scanner(first, last)
+    # Do the first pass; check for errors and gather chromosome info.
+    names = set()
     fin = StringIO.StringIO(fs.data_in)
-    skimmer = DGRP.ChromoSkimmer()
-    for chromo_name in skimmer.skim(gen_untyped_rows(fin)):
-        pass
-    chromo_names = skimmer.name_list
-    nlines = skimmer.linecount
-    # check formatting and monotonicity
-    fin = StringIO.StringIO(fs.data_in)
-    for i in DGRP.check_chromo_monotonicity(gen_typed_rows(fin)):
-        pass
-    # begin writing
+    for name in scanner.scan(fin):
+        names.add(name)
+    names = list(sorted(names))
+    # See if the number of lines to be written is appropriate.
+    npos = scanner.get_npositions()
+    if npos > 2000:
+        msg_a = 'attempting to write too many lines: '
+        msg_b = '%d lines in %d files.' % (npos, len(names))
+        raise HandlingError(msg_a + msg_b)
+    # Do the second pass; write the response for only the first chromosome
     out = StringIO.StringIO()
-    print >> out, 'writing the first of', len(chromo_names), 'chromosomes:'
+    print >> out, 'writing the first of', len(names), 'chromosomes:'
     print >> out
-    # write only the first chromosome
     fin = StringIO.StringIO(fs.data_in)
-    for row in gen_typed_rows(fin):
-        name = row[0]
-        if name == chromo_names[0]:
-            print >> out, '\t'.join(str(x) for x in convert_row(row))
+    for name, line in scanner.gen_named_lines(fin):
+        if name == names[0]:
+            print >> out, line
     return [('Content-Type', 'text/plain')], out.getvalue().strip()
 
 def line_to_row(line):
@@ -328,14 +352,8 @@ def main(args):
         name_to_fout[name] = open(fpath, 'wt')
     # Do the second pass,
     # writing the files and updating the progress bar.
-    default_obs = (0, 0, 0, 0)
-    default_line = '\t'.join(str(x) for x in default_obs)
     with open(input_filename) as fin:
-        for name, obs in scanner.gen_named_observations(fin):
-            if obs is None:
-                line = default_line
-            else:
-                line = '\t'.join(str(x) for x in obs)
+        for name, line in scanner.gen_named_lines(fin):
             name_to_fout[name].write(line + '\n')
             pbar.increment()
     # close the files
