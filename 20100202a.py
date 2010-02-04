@@ -208,7 +208,8 @@ class Scanner:
             name, position = row[0], row[1]
             value = convert_row(row)
             filler = name_to_filler[name]
-            finish = (position == filler.high)
+            chrom = self.name_to_chrom[name]
+            finish = (position == chrom.high)
             for obs in filler.fill(position, value, default_value, finish):
                 yield name, obs
 
