@@ -106,7 +106,9 @@ class ChromInfo:
         self.name = name
         self.low = None
         self.high = None
+        self.nobserved = 0
     def add_position(self, position):
+        self.nobserved += 1
         if self.low is None:
             self.low = position
             self.high = position
@@ -119,7 +121,7 @@ class ChromInfo:
 def get_requested_low(chrom, first):
     if first == 'drosophila':
         return 1
-    elif first == 'min':
+    elif first in ('min', 'ignore'):
         return chrom.low
     else:
         return first
@@ -127,15 +129,18 @@ def get_requested_low(chrom, first):
 def get_requested_high(chrom, last):
     if last == 'drosophila':
         return dict(DGRP.g_chromosome_length_pairs)[chrom.name]
-    elif last == 'max':
+    elif last in ('max', 'ignore'):
         return chrom.high
     else:
         return last
 
 def get_requested_npositions(chrom, first, last):
-    requested_low = get_requested_low(chrom, first)
-    requested_high = get_requested_high(chrom, last)
-    return (requested_high - requested_low) + 1
+    if first == 'ignore':
+        return chrom.nobserved
+    else:
+        requested_low = get_requested_low(chrom, first)
+        requested_high = get_requested_high(chrom, last)
+        return (requested_high - requested_low) + 1
 
 
 class Scanner:
@@ -147,6 +152,7 @@ class Scanner:
         @param first: an integer or 'min' or 'drosophila'
         @param last: an integer or 'max' or 'drosophila'
         """
+        check_position_requests(first, last)
         self.first = first
         self.last = last
         self.name_to_chrom = {}
@@ -191,24 +197,36 @@ class Scanner:
             # update the chromosome info with the position
             self.name_to_chrom[name].add_position(position)
 
-    def gen_named_observations(self, fin):
+    def gen_named_observations_unfilled(self, fin):
+        """
+        Yield (chrom_name, observation) pairs
+        @param fin: a file open for reading
+        """
+        for row in gen_typed_rows(fin):
+            name = row[0]
+            chrom = self.name_to_chrom[name]
+            observation = convert_row(row)
+            yield name, observation
+
+    def gen_named_observations_filled(self, fin):
         """
         Yield (chrom_name, observation) pairs
         @param fin: a file open for reading
         """
         default_value = None
-        # create a filler object for each chromosome
+        # Create a filler object for each chromosome.
         name_to_filler = {}
         for name, chrom in self.name_to_chrom.items():
             filler_low = get_requested_low(chrom, self.first)
             filler_high = get_requested_high(chrom, self.last)
             name_to_filler[name] = Filler(filler_low, filler_high)
-        # process each row of the input file, yielding after each written line
+        # Process each row of the input file,
+        # yielding after each written line.
         for row in gen_typed_rows(fin):
             name, position = row[0], row[1]
+            chrom = self.name_to_chrom[name]
             value = convert_row(row)
             filler = name_to_filler[name]
-            chrom = self.name_to_chrom[name]
             finish = (position == chrom.high)
             for obs in filler.fill(position, value, default_value, finish):
                 yield name, obs
@@ -220,7 +238,13 @@ class Scanner:
         """
         default_obs = (0, 0, 0, 0)
         default_line = '\t'.join(str(x) for x in default_obs)
-        for name, obs in self.gen_named_observations(fin):
+        # define the observation iterator
+        if self.first == 'ignore':
+            obs_it = self.gen_named_observations_unfilled(fin)
+        else:
+            obs_it = self.gen_named_observations_filled(fin)
+        # yield chromosome names and observation lines
+        for name, obs in obs_it:
             if obs is None:
                 line = default_line
             else:
@@ -236,12 +260,14 @@ def get_form():
     form_objects = [
             Form.MultiLine('data_in', 'filtered pileup file', sample_data),
             Form.RadioGroup('first_info', 'first output position', [
-                Form.RadioItem('first_0', '0'),
-                Form.RadioItem('first_1', '1', True),
-                Form.RadioItem('first_min', 'min')]),
+                Form.RadioItem('f_0', '0'),
+                Form.RadioItem('f_1', '1', True),
+                Form.RadioItem('f_min', 'min'),
+                Form.RadioItem('f_ignore', 'ignore')]),
             Form.RadioGroup('last_info', 'last output position', [
-                Form.RadioItem('last_max', 'max', True),
-                Form.RadioItem('last_1000', '1000')])]
+                Form.RadioItem('l_max', 'max', True),
+                Form.RadioItem('l_1000', '1000'),
+                Form.RadioItem('l_ignore', 'ignore')])]
     return form_objects
 
 def get_response(fs):
@@ -249,9 +275,12 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
+    # unpack the first and last requested positions
+    d_first = {'f_0':0, 'f_1':1, 'f_min':'min', 'f_ignore':'ignore'}
+    d_last = {'l_max':'max', 'l_1000':1000, 'l_ignore':'ignore'}
+    first = d_first[fs.first_info]
+    last = d_last[fs.last_info]
     # create the scanner object which will be used for two passes
-    first = {'first_0':0, 'first_1':1, 'first_min':'min'}[fs.first_info]
-    last = {'last_max':'max', 'last_1000':1000}[fs.last_info]
     scanner = Scanner(first, last)
     # Do the first pass; check for errors and gather chromosome info.
     names = set()
@@ -366,7 +395,7 @@ def first_position(value):
     except ValueError, e:
         v = None
     if v is None:
-        if value in ('min', 'drosophila'):
+        if value in ('min', 'drosophila', 'ignore'):
             return value
         else:
             raise TypeError()
@@ -382,7 +411,7 @@ def last_position(value):
     except ValueError, e:
         v = None
     if v is None:
-        if value in ('max', 'drosophila'):
+        if value in ('max', 'drosophila', 'ignore'):
             return value
         else:
             raise TypeError()
@@ -391,6 +420,24 @@ def last_position(value):
             raise TypeError()
         else:
             return v
+
+def check_position_requests(first, last):
+    msg = "either both or neither of {first, last} should be 'ignore'"
+    if sum(1 for x in (first, last) if x == 'ignore') == 1:
+        raise ValueError(msg)
+    msg = "if last is 'drosophila' then the first position should be too"
+    if last == 'drosophila' and first != 'drosophila':
+        raise ValueError(msg)
+    msg = 'the high position should not be lower than the low position'
+    if first == 'drosophila' or type(first) == int:
+        if type(last) == int:
+            low = first
+            if first == 'drosophila':
+                low = 1
+            high = last
+            if high < low:
+                raise ValueError(msg)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -406,10 +453,10 @@ if __name__ == '__main__':
     parser.add_argument('--out_suffix', default='.txt',
             help='suffix added to the chromosome name in the output filename')
     parser.add_argument('--first', default='drosophila', type=first_position,
-            metavar='{<int>, min, drosophila}',
+            metavar='{<int>, min, drosophila, ignore}',
             help='the first position in a chromosome'),
     parser.add_argument('--last', default='drosophila', type=last_position,
-            metavar='{<int>, max, drosophila}',
+            metavar='{<int>, max, drosophila, ignore}',
             help='the last position in a chromosome'),
     args = parser.parse_args()
     if args.profile:
