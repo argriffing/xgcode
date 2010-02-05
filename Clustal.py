@@ -4,7 +4,7 @@ This module assumes that the clustalw file fits easily in memory.
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 
 
 class ClustalError(Exception):
@@ -428,7 +428,7 @@ class TestClustal(unittest.TestCase):
         Parse the sample multiple alignment.
         """
         # parse the raw lines of text
-        raw_data_lines = StringIO.StringIO(g_sample_data).readlines()
+        raw_data_lines = StringIO(g_sample_data).readlines()
         headers, sequences = get_headers_and_sequences(raw_data_lines)
         # check for basic inconsistencies
         self.assertEqual(len(headers), len(sequences))

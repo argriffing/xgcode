@@ -1,7 +1,7 @@
 """Given a newick tree, check it for syntax errors and briefly summarize it.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -27,7 +27,7 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '\n'.join(tree.gen_description_lines())
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

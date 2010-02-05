@@ -5,7 +5,7 @@ See "Population Genetics Without Intraspecific Data" by Thorne et al.
 for more information about the Direct Protein model.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick

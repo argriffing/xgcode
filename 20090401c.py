@@ -9,7 +9,7 @@ derived from a dissimilarity matrix does not necessarily
 split the tree in a way that defines a unique branch.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy
@@ -74,7 +74,7 @@ def get_response(fs):
     # arbitrarily define the size of the alphabet
     k = 4
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # define the order of the tip names

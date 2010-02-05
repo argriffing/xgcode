@@ -1,7 +1,7 @@
 """Plot some labeled points.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import cairo
@@ -116,7 +116,7 @@ def get_response(fs):
     # read the labeled points
     labels = []
     points = []
-    labeled_point_lines = list(Util.stripped_lines(StringIO.StringIO(fs.labeled_points)))
+    labeled_point_lines = list(Util.stripped_lines(StringIO(fs.labeled_points)))
     for line in labeled_point_lines:
         labeled_point = line.split()
         if len(labeled_point) != 3:

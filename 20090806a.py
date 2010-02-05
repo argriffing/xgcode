@@ -9,7 +9,7 @@ whether or not it was compatible with the tree.
 Return the results as an R table.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
@@ -191,7 +191,7 @@ def process(ntaxa, nseconds, seqlen, nsamples, branch_length_sampler, use_pbar):
     else:
         time_limit_string = 'no time limit was imposed'
     # create the results in convenient R table form
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '#', "R usage: mytable <- read.table('this.filename', header=T)"
     print >> out, '#', time.time() - start_time, 'elapsed seconds'
     print >> out, '#', time_limit_string

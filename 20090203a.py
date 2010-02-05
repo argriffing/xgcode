@@ -4,7 +4,7 @@ The derived matrices are Schur complements and sub-matrices.
 For the applications of interest the input matrix should be a Laplacian.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -91,7 +91,7 @@ def get_response(fs):
     names = ('M', 'M with deletion', 'the Schur complement of C in M', 'the Schur complement with deletion', 'C')
     matrices = (M, M_deleted, S, S_deleted, C)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for name, matrix in zip(names, matrices):
         print >> out, ('%s:' % name)
         print >> out, MatrixUtil.m_to_string(matrix)

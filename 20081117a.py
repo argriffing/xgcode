@@ -13,7 +13,7 @@ If edges are like conductances,
 then the input and output edges are like reciprocal ohms.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import numpy
@@ -245,7 +245,7 @@ def get_response(fs):
     """
     # read the edge triples (vertex name, vertex name, edge weight)
     edge_triples = []
-    for line in Util.stripped_lines(StringIO.StringIO(fs.graph)):
+    for line in Util.stripped_lines(StringIO(fs.graph)):
         string_triple = line.split()
         if len(string_triple) != 3:
             raise HandlingError('each graph edge should have two vertex names and a weight')
@@ -277,7 +277,7 @@ def get_response(fs):
     n = len(ordered_vertex_names)
     # read the set of vertices that the user wants to remove
     vertex_names_to_remove = set()
-    for name in Util.stripped_lines(StringIO.StringIO(fs.vertices)):
+    for name in Util.stripped_lines(StringIO(fs.vertices)):
         if name in vertex_names_to_remove:
             raise HandlingError('vertices should be named for removal at most once')
         vertex_names_to_remove.add(name)
@@ -297,7 +297,7 @@ def get_response(fs):
     elif fs.conductance:
         reduced_edge_triples = get_conductance_transformation(edge_triples, name_to_index, reduced_ordered_vertex_names)
     # write the reduced edge triples
-    out = StringIO.StringIO()
+    out = StringIO()
     for name_a, name_b, weight in reduced_edge_triples:
         print >> out, name_a, name_b, weight
     # write the response

@@ -1,7 +1,7 @@
 """Use the pruning algorithm to calculate the logarithm of the Jukes-Cantor probability of a nucleotide alignment.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -36,7 +36,7 @@ def get_response(fs):
     tree.assert_valid()
     # get the alignment
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.fasta))
+        alignment = Fasta.Alignment(StringIO(fs.fasta))
         alignment.force_nucleotide()
     except Fasta.AlignmentError, e:
         raise HandlingError(e)
@@ -47,7 +47,7 @@ def get_response(fs):
     rate_matrix_object = RateMatrix.RateMatrix(row_major_rate_matrix, ordered_states)
     log_likelihood = PhyLikelihood.get_log_likelihood(tree, alignment, rate_matrix_object)
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, log_likelihood
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

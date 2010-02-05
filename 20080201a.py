@@ -5,7 +5,7 @@ regardless of the input order.
 For the Jukes-Cantor rate matrix set each nucleotide weight to 1, and set kappa to 1.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -46,7 +46,7 @@ def get_response(fs):
         rate_matrix_object.normalize()
     rate_matrix = rate_matrix_object.get_dictionary_rate_matrix()
     # show the rate matrix in convenient text form
-    out = StringIO.StringIO()
+    out = StringIO()
     for nta in 'ACGT':
         print >> out, '\t'.join(str(rate_matrix[(nta, ntb)]) for ntb in 'ACGT')
     response_headers = [('Content-Type', 'text/plain')]

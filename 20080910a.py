@@ -4,7 +4,7 @@ Note that the distance functions used here are not commutative.
 The weighted split distance gives more importance to deep partitions implied by the reference tree.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import NewickIO
@@ -52,7 +52,7 @@ def get_response(fs):
     else:
         loss_denominator = 1
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     if loss_denominator:
         print >> out, loss_numerator / loss_denominator
     else:

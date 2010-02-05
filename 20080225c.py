@@ -1,7 +1,7 @@
 """Given a rate matrix, get the expected number of transitions per unit time.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 

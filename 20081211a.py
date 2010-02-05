@@ -5,7 +5,7 @@ This snippet is not so useful anymore,
 but it helped find a mistake in some of my equations.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import numpy
@@ -86,7 +86,7 @@ def get_response(fs):
     @param fs: a decorated FieldStorage object
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     n = len(tree.preorder())

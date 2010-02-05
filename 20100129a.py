@@ -13,7 +13,7 @@ The output filenames include the chromosome name.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import argparse
 import os
 
@@ -51,22 +51,22 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # quickly skim the lines to get some info
-    fin = StringIO.StringIO(fs.data_in)
+    fin = StringIO(fs.data_in)
     skimmer = DGRP.ChromoSkimmer()
     for chromo_name in skimmer.skim(gen_untyped_rows(fin)):
         pass
     chromo_names = skimmer.name_list
     nlines = skimmer.linecount
     # check formatting and monotonicity
-    fin = StringIO.StringIO(fs.data_in)
+    fin = StringIO(fs.data_in)
     for i in DGRP.check_chromo_monotonicity(gen_typed_rows(fin)):
         pass
     # begin writing
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'writing the first of', len(chromo_names), 'chromosomes:'
     print >> out
     # write only the first chromosome
-    fin = StringIO.StringIO(fs.data_in)
+    fin = StringIO(fs.data_in)
     print >> out, g_header
     for row in gen_typed_rows(fin):
         name = row[0]

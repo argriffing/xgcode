@@ -1,7 +1,7 @@
 """Visualize a codon rate matrix as a heat map.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 

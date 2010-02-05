@@ -1,7 +1,7 @@
 """Calculate an objective function of a given graph cut.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import numpy
@@ -82,9 +82,9 @@ def get_response(fs):
     # read the matrix
     M = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     # read the set of selected labels
-    selected_labels = set(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selected_labels = set(Util.stripped_lines(StringIO(fs.selection)))
     # get the set of selected indices
     selection = set(i for i, label in enumerate(ordered_labels) if label in selected_labels)
     # get the value of the objective function
@@ -93,7 +93,7 @@ def get_response(fs):
     elif fs.conductance:
         value = get_conductance(selection, M.tolist())
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     # show the value of the objective function
     print >> out, 'objective function value:'
     print >> out, value

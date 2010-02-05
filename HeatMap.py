@@ -1,7 +1,7 @@
 
 import unittest
 import sys
-import StringIO
+from StringIO import StringIO
 
 import Util
 import Discretizer
@@ -134,7 +134,7 @@ class HtmlHeatMap:
         self.heatmap = heatmap
 
     def get_legend(self):
-        out = StringIO.StringIO()
+        out = StringIO()
         print >> out, '<code>'
         print >> out, '<br/>\n'.join(self.heatmap.legend.gen_legend_lines())
         print >> out, '</code>'
@@ -144,7 +144,7 @@ class HtmlHeatMap:
         """
         @return: the string representing an entire html file
         """
-        sio = StringIO.StringIO()
+        sio = StringIO()
         print >> sio, '<html>'
         print >> sio, '<head>'
         print >> sio, '<style type="text/css">'

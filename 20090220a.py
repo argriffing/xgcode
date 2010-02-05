@@ -6,7 +6,7 @@ If the plane-like option is used,
 then the pairwise distances between the output points approximates the input distances.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from scipy import linalg
@@ -68,7 +68,7 @@ def get_response(fs):
         axes.append(axis)
     points = zip(*axes)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for point in points:
         print >> out, '\t'.join(str(v) for v in point)
     # write the response

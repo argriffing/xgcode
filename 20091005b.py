@@ -13,7 +13,7 @@ Anyway this was an effort to solve a problem that I have since solved.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -57,7 +57,7 @@ def process():
     m_uniform = np.ones(n) / float(n)
     m_weighted = np.array([102, 102, 102, 102, 1, 1], dtype=float) / 410
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # look at the eigendecomposition of -(1/2)HDH where D is the leaf distance matrix
     HSH = Euclid.edm_to_dccov(Euclid.g_D_b)
     W_HSH, VT_HSH = np.linalg.eigh(HSH)

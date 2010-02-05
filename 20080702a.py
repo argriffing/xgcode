@@ -3,7 +3,7 @@
 The number of leaves per tree will be truncated to 52 so that they can be represented by a-z,A-Z,0-9.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import NewickIO
@@ -26,7 +26,7 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get some samples
     for i in range(fs.ntrees):
         tree = TreeSampler.sample_tree(fs.leafbase, fs.leafmean, fs.branchmean)

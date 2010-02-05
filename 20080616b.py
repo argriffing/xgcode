@@ -1,7 +1,7 @@
 """Convert a path resistance matrix to a weighted adjacency matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -30,7 +30,7 @@ def get_response(fs):
     # create the weighted adjacency matrix
     A = Euclid.edm_to_adjacency(D)
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(A)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

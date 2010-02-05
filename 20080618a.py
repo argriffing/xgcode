@@ -4,7 +4,7 @@ Here the weighted adjacency matrix is the conductance matrix.
 Each element is the reciprocal of the value of a resistor directly connecting the nodes.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -36,7 +36,7 @@ def get_response(fs):
     L = Euclid.adjacency_to_laplacian(A)
     D = Euclid.laplacian_to_edm(L)
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(D)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

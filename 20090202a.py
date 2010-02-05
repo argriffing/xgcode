@@ -4,7 +4,7 @@ This shows two ways of perturbing the inverse of a distance matrix
 so that its rows and columns each end up summing to zero.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -54,7 +54,7 @@ def get_response(fs):
         for j in range(n):
             C[i][j] = D_inv[i][j] - B[i][j]
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'additive:'
     print >> out, MatrixUtil.m_to_string(A)
     print >> out, 'multiplicative:'

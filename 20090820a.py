@@ -23,7 +23,7 @@ het_post: the floating point posterior probability that the position is heterozy
 bad_post: the floating point posterior probability that the position is bad
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys
@@ -210,7 +210,7 @@ def process(input_lines, good_coverage, bad_coverage, randomization_rate, transi
     @return: the multi-line string of the resulting csv file
     """
     # do some initialization
-    out = StringIO.StringIO()
+    out = StringIO()
     pbar = None
     start_time = time.time()
     # define the three models

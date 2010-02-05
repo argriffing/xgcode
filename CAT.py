@@ -2,7 +2,7 @@
 This module is written to test some hypothesis about the CAT model.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy as np

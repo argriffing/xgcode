@@ -5,7 +5,7 @@ This is for testing various Markov model algorithms.
 
 import unittest
 import os
-import StringIO
+from StringIO import StringIO
 import logging
 import sys
 
@@ -53,7 +53,7 @@ def _get_count_matrix():
     else:
         logger.debug('failed to find the cached count matrix file')
         raw_text = _get_raw_text()
-        sio = StringIO.StringIO(raw_text)
+        sio = StringIO(raw_text)
         simple_text = _raw_text_to_simple_text(sio)
         logger.debug('processed the raw text into simple text')
         count_matrix = dict(((a, b), 1) for a in simple_text_states for b in simple_text_states)

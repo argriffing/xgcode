@@ -1,4 +1,4 @@
-import StringIO
+from StringIO import StringIO
 import unittest
 
 import Codon
@@ -173,7 +173,7 @@ def create_alignment(headers, sequences):
     for header, sequence in zip(headers, sequences):
         aln.append('>' + header)
         aln.append(sequence)
-    return Alignment(StringIO.StringIO('\n'.join(aln)))
+    return Alignment(StringIO('\n'.join(aln)))
 
 
 class Alignment:
@@ -348,11 +348,11 @@ class TestFasta(unittest.TestCase):
 
     def setUp(self):
         nucleotide_string = '>foo\nacgt-CATac--ACGT\n>bar\nacgtACGTacgtA-GT'
-        self.simple_alignment = Alignment(StringIO.StringIO(nucleotide_string))
+        self.simple_alignment = Alignment(StringIO(nucleotide_string))
         self.simple_alignment.force_nucleotide()
 
     def test_alignment(self):
-        fin = StringIO.StringIO(brown_example_alignment)
+        fin = StringIO(brown_example_alignment)
         alignment = Alignment(fin)
         self.assertEquals(len(alignment.headers), 5)
         self.assertEquals(len(alignment.sequences), 5)
@@ -372,13 +372,13 @@ class TestFasta(unittest.TestCase):
         self.assertEquals(expected_alignment_string, observed_alignment_string)
 
     def test_codon(self):
-        alignment = CodonAlignment(StringIO.StringIO(simulated_codon_alignment))
+        alignment = CodonAlignment(StringIO(simulated_codon_alignment))
         self.assertEquals(len(alignment.sequences), 5)
         self.assertEquals(len(alignment.columns), 50)
 
 
 def main():
-    fin = StringIO.StringIO(brown_example_alignment)
+    fin = StringIO(brown_example_alignment)
     print 'example alignment header and sequence length pairs:'
     for header, sequence in gen_header_sequence_pairs(fin):
         print header

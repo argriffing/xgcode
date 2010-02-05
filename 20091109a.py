@@ -1,7 +1,7 @@
 """Create a matrix representation of a path graph with equal weights.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy as np
 
@@ -45,7 +45,7 @@ def get_response(fs):
     if fs.laplacian:
         M = Euclid.adjacency_to_laplacian(M)
     # create the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(M)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

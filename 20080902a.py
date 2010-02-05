@@ -4,7 +4,7 @@ MAPP stands for Multivariate Analysis of Protein Polymorphism.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 import cairo
 
@@ -231,7 +231,7 @@ def get_response(fs):
     # start writing the response type
     response_headers = []
     # read the headers
-    headers = list(Util.stripped_lines(StringIO.StringIO(fs.headers)))
+    headers = list(Util.stripped_lines(StringIO(fs.headers)))
     # read the wild type amino acid list
     wild_list = list(fs.wild.strip())
     extra_letters = set(wild_list) - set(Codon.g_aa_letters)
@@ -244,7 +244,7 @@ def get_response(fs):
         raise HandlingError('some invalid mutant amino acids were specified: ' + str(tuple(extra_letters)))
     # read the tab separated MAPP output
     tsv_lists = []
-    for line in StringIO.StringIO(fs.mapp):
+    for line in StringIO(fs.mapp):
         if line.strip():
             tsv_list = [element.strip() for element in line.split('\t')]
             tsv_lists.append(tsv_list)

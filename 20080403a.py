@@ -4,7 +4,7 @@ The nexus data should have a tree and an alignment.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import RateMatrix
@@ -38,11 +38,11 @@ def get_response(fs):
     # read the nexus data
     nexus = Nexus.Nexus()
     try:
-        nexus.load(StringIO.StringIO(fs.nexus))
+        nexus.load(StringIO(fs.nexus))
     except Nexus.NexusError, e:
         raise HandlingError(e)
     # read the hyphy variables
-    ns = Hyphy.get_hyphy_namespace(StringIO.StringIO(fs.hyphy))
+    ns = Hyphy.get_hyphy_namespace(StringIO(fs.hyphy))
     # get the mixture weights
     mixture_weights = [ns.P, 1.0 - ns.P]
     # get the nucleotide distributions
@@ -154,7 +154,7 @@ def do_analysis(mixture_model, alignment, tree):
     # define the mixture legend
     mixture_legend = HeatMap.Legend(Util.flattened_nonrecursive(mixture_columns), 5, 'M', HeatMap.white_blue_gradient)
     # start writing the web page
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<head>'
     print >> out, '<style>'

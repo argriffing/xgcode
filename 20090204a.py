@@ -5,7 +5,7 @@ That is, the reported determinant should be near zero when the reported branch l
 and the reported determinant should be nonzero when the reported branch length is negative.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 import scipy.linalg as linalg
@@ -76,7 +76,7 @@ def get_response(fs):
     blen_b = (D[la][ra] + D[lb][rb] - D[la][lb] - D[ra][rb]) / 2.0
     blen = min(blen_a, blen_b)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     paragraphs = []
     if fs.show_response:
         paragraph = [

@@ -2,7 +2,7 @@
 """
 
 
-import StringIO
+from StringIO import StringIO
 import os
 import math
 
@@ -70,7 +70,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the lat-lon points from the input
-    lines = [x.strip() for x in StringIO.StringIO(fs.datalines).readlines()]
+    lines = [x.strip() for x in StringIO(fs.datalines).readlines()]
     rows = parse_lines(lines)
     latlon_points = []
     city_names = []
@@ -82,7 +82,7 @@ def get_response(fs):
     npoints = len(latlon_points)
     # start writing the response
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     radius = GPS.g_earth_radius_miles
     for dfunc, name in (
             (GPS.get_arc_distance, 'great arc'),

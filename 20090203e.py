@@ -4,7 +4,7 @@ Note that the elements of the Euclidean distance matrix (EDM) are
 usually defined as squared pairwise Euclidean distances.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy
@@ -50,7 +50,7 @@ def get_response(fs):
             else:
                 D[i][j] = d
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(D)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

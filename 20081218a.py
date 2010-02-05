@@ -3,7 +3,7 @@
 The default tree is from the mm9_multiple_alignment page at ucsc.
 """
 
-import StringIO
+from StringIO import StringIO
 import csv
 import tempfile
 import subprocess
@@ -119,8 +119,8 @@ def get_amino_acid_alignment(table):
 def get_alignment(data_string, tree_string):
     # convert the comma separated data into a table
     table = []
-    for line in Util.stripped_lines(StringIO.StringIO(data_string)):
-        row = list(csv.reader(StringIO.StringIO(line), delimiter=',', quotechar='"'))[0]
+    for line in Util.stripped_lines(StringIO(data_string)):
+        row = list(csv.reader(StringIO(line), delimiter=',', quotechar='"'))[0]
         table.append(row)
     # create the amino acid fasta alignment
     alignment = get_amino_acid_alignment(table)
@@ -176,7 +176,7 @@ def get_response(fs):
     @param fs: a decorated FieldStorage object
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the aligment
     alignment = get_alignment(fs.data, fs.tree)
     #print >> out, 'alignment:'

@@ -25,7 +25,7 @@ substate_1: MAP conditional substate for no prior_stickiness
 .
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys
@@ -79,7 +79,7 @@ def get_response(fs):
     nseconds = 2
     use_pbar = False
     # get the lines from the multi-line input
-    lines = StringIO.StringIO(fs.input_text).readlines()
+    lines = StringIO(fs.input_text).readlines()
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
     # try to get the response
@@ -243,7 +243,7 @@ def process(input_lines, good_coverage, randomization_rate, nstickinesses, nseco
     @return: the multi-line string of the resulting csv file
     """
     # do some initialization
-    out = StringIO.StringIO()
+    out = StringIO()
     pbar = None
     start_time = time.time()
     # define the superstates

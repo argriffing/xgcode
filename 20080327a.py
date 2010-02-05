@@ -2,7 +2,7 @@
 """
 
 import cgi
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil

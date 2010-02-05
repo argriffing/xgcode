@@ -15,7 +15,7 @@ so now I will try to find the correct way to use the mass vector.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -109,7 +109,7 @@ def process():
     @return: a multi-line string that summarizes the results
     """
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # define some distance matrices
     D_leaves = Euclid.g_D_b
     D_all = Euclid.g_D_c

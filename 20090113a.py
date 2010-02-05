@@ -1,7 +1,7 @@
 """Calculate the MAPP score for an amino acid of interest at a genomic position.
 """
 
-import StringIO
+from StringIO import StringIO
 import sys
 import os
 
@@ -95,7 +95,7 @@ def get_response(fs):
     # get the newick tree
     tree = NewickIO.parse(fs.tree, Newick.NewickTree)
     # get the alignment
-    out = StringIO.StringIO()
+    out = StringIO()
     try:
         finder = KGEA.Finder(g_index_dir, g_valid_chromosome_strings_pathname, g_fasta_dir)
         # note that some of these amino acids can be gaps

@@ -13,7 +13,7 @@ Use a numerical approximation with convergence diagnostics.
 #Then use an iterative approach to find the two Steiner points.
 
 
-import StringIO
+from StringIO import StringIO
 import math
 import random
 
@@ -116,7 +116,7 @@ def get_response(fs):
     if leaf_names != ['a', 'b', 'c', 'd']:
         raise HandlingError('expected the tree to have leaves named {a, b, c, d}')
     # start writing the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the distance matrix with ordered indices including all nodes in the tree
     D = np.array(tree.get_distance_matrix(leaf_names))
     # get the embedded points

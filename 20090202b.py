@@ -1,7 +1,7 @@
 """Given a newick tree, use the normalized Laplacian to define a distribution over the nodes.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy
@@ -63,7 +63,7 @@ def get_response(fs):
     M_strings = [[format_string % value for value in row] for row in M]
     sorted_eigenvalue_strings = [format_string % w for w in sorted_eigenvalues]
     # write the html
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<body>'
     print >> out, HtmlTable.get_labeled_table_string(sorted_eigenvalue_strings, ordered_names, M_strings)

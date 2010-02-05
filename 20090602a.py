@@ -14,7 +14,7 @@ the Robinson-Foulds distance
 between the estimated tree and the true tree is calculated.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
@@ -264,7 +264,7 @@ def process(ntaxa, length, nseconds, branch_length_sampler, use_nj, use_modified
     except KeyboardInterrupt, e:
         pass
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '#', elapsed_time, 'seconds of run time'
     print >> out, '#', ntaxa, 'taxa per tree'
     print >> out, '#', branch_length_sampler

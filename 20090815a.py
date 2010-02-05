@@ -7,7 +7,7 @@ For each row, the number of A, C, G, and T reads is given.
 Optionally, the hidden state may be shown as well.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
@@ -214,7 +214,7 @@ def process(ntaxa, nseconds, nsamples, branch_length_sampler, use_pbar):
     else:
         time_limit_string = 'no time limit was imposed'
     # create the results
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'debug information:'
     print >> out, time.time() - start_time, 'elapsed seconds'
     print >> out, time_limit_string

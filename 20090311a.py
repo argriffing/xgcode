@@ -5,7 +5,7 @@ The related matrices are:
 2) the inverse of the covariance matrix implied by the neighbor joining Q criterion
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import numpy
@@ -58,7 +58,7 @@ def get_response(fs):
     S = get_sigma_matrix(D)
     P = get_precision_matrix(S)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'the Laplacian matrix:'
     print >> out, MatrixUtil.m_to_string(L)
     print >> out

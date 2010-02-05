@@ -3,7 +3,7 @@
 This is a silly model that I am using to experiment with HyPhy.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 
 from xml.etree import ElementTree as ET
@@ -101,7 +101,7 @@ def get_sample_xml_string():
     XmlUtil.indent(root)
     # get the string representing the tree
     tree = ET.ElementTree(root)
-    out = StringIO.StringIO()
+    out = StringIO()
     tree.write(out)
     return out.getvalue()
 
@@ -116,7 +116,7 @@ def deserialize_mixture_model(xml_string):
     category_weights = []
     nt_dicts = []
     # get the variables that define the model
-    element_tree = ET.parse(StringIO.StringIO(xml_string))
+    element_tree = ET.parse(StringIO(xml_string))
     root = element_tree.getroot()
     kappa = float(root.get('kappa'))
     for category in root:

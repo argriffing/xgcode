@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import StringIO
+from StringIO import StringIO
 import unittest
 
 import cairo
@@ -47,7 +47,7 @@ class CairoHelper:
         self._validate_image_format()
         if self.fout or self.surface:
             raise CairoUtilError('tried to reuse a surface')
-        self.fout = StringIO.StringIO()
+        self.fout = StringIO()
         if self.image_format in ('svg', 'png'):
             self.surface = cairo.SVGSurface(self.fout, width, height)
         elif self.image_format == 'ps':
@@ -66,7 +66,7 @@ class CairoHelper:
         if not (self.fout or self.surface):
             raise CairoUtilError('no surface is available')
         if self.image_format == 'png':
-            out_png = StringIO.StringIO()
+            out_png = StringIO()
             self.surface.write_to_png(out_png)
             self.surface.finish()
             image_string = out_png.getvalue()

@@ -3,7 +3,7 @@
 The line x=0 defines the spectral sign split of the tree.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import scipy

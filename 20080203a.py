@@ -4,7 +4,7 @@ In the transition matrix, the 27 states are ordered from space to z.
 The default transition matrix was estimated from A Tale of Two Cities by Charles Dickens.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 

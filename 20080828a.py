@@ -10,7 +10,7 @@ and the distribution of the number of implied partition errors is reported.
 The exact bipartition criterion is a matrix function by Eric Stone.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -227,7 +227,7 @@ def get_response(fs):
     if sampler.accepted_sample_count < fs.iterations:
         raise HandlingError(sampler.get_sampling_error_message())
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'partition error count frequencies:'
     max_mismatch_count = max(error_count_histogram)
     for i in range(max_mismatch_count + 1):
@@ -289,7 +289,7 @@ class Simulation:
         """
         @return: a multi-line string summarizing the quality of the trees reconstructed during the simulation
         """
-        out = StringIO.StringIO()
+        out = StringIO()
         for i, count in enumerate(self.get_count_list()):
             print >> out, i, ':', count
         return out.getvalue().strip()

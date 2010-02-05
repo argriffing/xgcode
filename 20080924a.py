@@ -6,7 +6,7 @@ For the third method multiple changes are observed as a single change unless the
 in which case they are observed as no change (Jukes-Cantor model).
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 import random
 
@@ -38,7 +38,7 @@ def get_response(fs):
     # get a distance estimate for each level of informativeness
     first_estimate, second_estimate, third_estimate = sample_distance(*sequence_changes)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'distance estimates:'
     print >> out, 'using all change information:', first_estimate
     print >> out, 'without multiple change information:', second_estimate

@@ -3,7 +3,7 @@
 The mixture is scaled so that the branch lengths in the newick tree are the expected number of substitutions on the branch.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil

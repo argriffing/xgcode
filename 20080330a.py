@@ -5,7 +5,7 @@ The mixture is scaled so that the branch lengths in the newick tree are the expe
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -40,7 +40,7 @@ def get_response(fs):
     # read the nexus data
     nexus = Nexus.Nexus()
     try:
-        nexus.load(StringIO.StringIO(fs.nexus))
+        nexus.load(StringIO(fs.nexus))
     except Nexus.NexusError, e:
         raise HandlingError(e)
     # get the mixture weights
@@ -139,7 +139,7 @@ def do_analysis(mixture_model, alignment, tree):
     # define the mixture legend
     mixture_legend = HeatMap.Legend(Util.flattened_nonrecursive(mixture_columns), 5, 'M', HeatMap.white_blue_gradient)
     # start writing the web page
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<head>'
     print >> out, '<style>'

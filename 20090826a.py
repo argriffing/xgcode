@@ -19,7 +19,7 @@ They will probably be arbitrarily set to zero, but should be ignored.
 The input file should represent a single chromosome and a single strain.
 """
 
-import StringIO
+from StringIO import StringIO
 import optparse
 import sys
 
@@ -54,9 +54,9 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    line_source = StringIO.StringIO(fs.multiline_input)
+    line_source = StringIO(fs.multiline_input)
     row_source = gen_rows(line_source)
-    out = StringIO.StringIO()
+    out = StringIO()
     row_writer = RowWriter(out, line_limit=1000)
     try:
         process(row_source, row_writer)

@@ -1,7 +1,7 @@
 """Sample variances of differences of brownian motion on a graph.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import random
 import math
@@ -120,7 +120,7 @@ def process(edges, epsilon, nsamples, deadline, pbar):
                 difference = state_to_value[b] - state_to_value[a]
                 pairwise_differences[(a,b)].append(difference)
     # write the variance of each pairwise distance
-    out = StringIO.StringIO()
+    out = StringIO()
     nstates = len(ordered_states)
     for i in range(nstates-1):
         for j in range(i+1, nstates):
@@ -136,7 +136,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the graph lines
-    lines = list(Util.stripped_lines(StringIO.StringIO(fs.graphlines)))
+    lines = list(Util.stripped_lines(StringIO(fs.graphlines)))
     edges = []
     for line in lines:
         items = line.split()

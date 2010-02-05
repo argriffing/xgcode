@@ -2,7 +2,7 @@
 """
 
 
-import StringIO
+from StringIO import StringIO
 import os
 import math
 
@@ -53,7 +53,7 @@ def get_response(fs):
     npoints = len(locations)
     # start writing the response
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # print the layout data
     print >> out, 'POINTS'
     for i, (x, y) in enumerate(locations):

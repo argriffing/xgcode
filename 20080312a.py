@@ -6,7 +6,7 @@ for more information about the Direct Protein model.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -67,7 +67,7 @@ def get_response(fs):
     tree.assert_valid()
     # get the nucleotide alignment
     try:
-        alignment = Fasta.CodonAlignment(StringIO.StringIO(fs.alignment))
+        alignment = Fasta.CodonAlignment(StringIO(fs.alignment))
     except Fasta.AlignmentError, e:
         raise HandlingError(e)
     # get the normalized Direct Protein mixture model
@@ -148,7 +148,7 @@ def do_analysis(mixture_model, alignment, tree):
     # define the mixture legend
     mixture_legend = HeatMap.Legend(Util.flattened_nonrecursive(mixture_columns), 5, 'M', HeatMap.white_blue_gradient)
     # start writing the web page
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<head>'
     print >> out, '<style type="text/css">'

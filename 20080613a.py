@@ -4,7 +4,7 @@ The x axis is the main eigenvector and the y axis is the secondary eigenvector.
 Nodes are labeled according to their zero based row index.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import scipy

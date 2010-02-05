@@ -4,7 +4,7 @@ JC69 is the simple continuous time Markov model proposed by Jukes and Cantor in 
 The sequence order field may be left empty if the order of the sequences in the FASTA output is unimportant.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -41,7 +41,7 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # get the sequence order if it exists
-    ordered_names = list(Util.stripped_lines(StringIO.StringIO(fs.order)))
+    ordered_names = list(Util.stripped_lines(StringIO(fs.order)))
     if ordered_names:
         observed_name_set = set(ordered_names)
         expected_name_set = set(node.get_name() for node in tree.gen_tips())
@@ -57,7 +57,7 @@ def get_response(fs):
     sampled_sequences = JC69.sample_sequences(tree, ordered_names, fs.length)
     alignment = Fasta.create_alignment(ordered_names, sampled_sequences)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, alignment.to_fasta_string()
     # return the response
     response_headers = [('Content-Type', 'text/plain')]

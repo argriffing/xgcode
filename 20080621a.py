@@ -5,7 +5,7 @@ The selected and unselected sets should each have at least two vertices.
 This procedure is based on R code by Eric Stone.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -42,9 +42,9 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     # read the set of selected labels
-    selected_labels = set(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selected_labels = set(Util.stripped_lines(StringIO(fs.selection)))
     # get the set of selected indices and its complement
     n = len(D)
     selection = set(i for i, label in enumerate(ordered_labels) if label in selected_labels)
@@ -56,7 +56,7 @@ def get_response(fs):
     # get the new distance matrices
     D_selection, D_complement = NeighborhoodJoining.split_distance_matrix(D.tolist(), selection, complement)
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     # show the new distance matrices
     for rows, index_subset, description in ((D_selection, selection, 'first'), (D_complement, complement, 'second')):
         # show the ordered labels of the set

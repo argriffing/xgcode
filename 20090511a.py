@@ -11,7 +11,7 @@ If distance matrices are shown,
 their rows and columns will be ordered consistently but arbitrarily.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -80,7 +80,7 @@ def get_response(fs):
     if not numpy.allclose(D_direct, D_clever):
         closeness_string = 'the distance matrices are not close'
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     paragraphs = []
     if fs.show_direct_d:
         paragraph = [

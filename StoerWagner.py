@@ -2,7 +2,7 @@
 A polynomial min cut algorithm.
 """
 
-import StringIO
+from StringIO import StringIO
 import unittest
 
 

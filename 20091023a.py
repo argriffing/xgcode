@@ -14,7 +14,7 @@ The other two trees reside entirely in the 3D space of the tetrahedron.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy as np
@@ -50,7 +50,7 @@ def do_steiner_analysis(X):
     gradient_final = objective.get_gradient(data_final)
     s1_gradient = gradient_final[:3]
     s2_gradient = gradient_final[3:]
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'initial random steiner point guesses:'
     print >> out, s1_initial
     print >> out, s2_initial
@@ -93,7 +93,7 @@ def do_distance_analysis(X):
     feltree = NewickIO.parse(tree_string, FelTree.NewickTree)
     D_reconstructed = np.array(feltree.get_distance_matrix(labels))
     # start writing
-    out = StringIO.StringIO()
+    out = StringIO()
     # matrix of Euclidean distances and its reconstruction from a tree
     print >> out, 'matrix of Euclidean distances between tetrahedron vertices:'
     print >> out, D_sqrt
@@ -117,7 +117,7 @@ def get_response(fs):
     """
     X = fs.tetrahedron
     # start writing the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, do_steiner_analysis(X)
     print >> out, do_distance_analysis(X)
     # write the response

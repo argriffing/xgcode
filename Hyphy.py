@@ -2,7 +2,7 @@
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 
 import Util
 import Newick
@@ -101,7 +101,7 @@ def get_hyphy_namespace(lines):
 class TestHyphy(unittest.TestCase):
 
     def test_foo(self):
-        get_hyphy_namespace(StringIO.StringIO(sample_hyphy_output))
+        get_hyphy_namespace(StringIO(sample_hyphy_output))
 
 
 def main():

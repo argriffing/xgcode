@@ -5,7 +5,7 @@ from a rate matrix and a time or branch length.
 """
 
 # standard modules
-import StringIO
+from StringIO import StringIO
 import unittest
 import math
 

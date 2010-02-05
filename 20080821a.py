@@ -6,7 +6,7 @@ is defined in the paper
 by Ziheng Yang in J Mol Evol 1994.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import scipy.optimize
 
@@ -36,7 +36,7 @@ def get_response(fs):
     """
     # get the alignment object
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.fasta))
+        alignment = Fasta.Alignment(StringIO(fs.fasta))
     except Fasta.AlignmentError, e:
         raise HandlingError('alignment error: ' + str(e))
     # assert that the alignment is of exactly two sequences
@@ -61,7 +61,7 @@ def get_response(fs):
     model = F84.create_rate_matrix(kappa, nt_distribution)
     log_likelihood = PairLikelihood.get_log_likelihood(distance, alignment.sequences, model)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'ML distance:', distance
     print >> out, 'ML kappa:', kappa
     print >> out, 'ML A frequency:', A

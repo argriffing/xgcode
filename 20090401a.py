@@ -1,7 +1,7 @@
 """Calculate pairwise correlations between rows.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -35,7 +35,7 @@ def get_response(fs):
     # set values smaller than user-defined epsilon to zero so the output is easy to read
     cmat[abs(cmat) < fs.epsilon] = 0
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # print the correlation matrix
     print >> out, MatrixUtil.m_to_string(cmat)
     # write the response

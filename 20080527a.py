@@ -5,7 +5,7 @@ given known initial and final states and a known amount of time between the stat
 The rate matrix is expected to be time reversible.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -53,7 +53,7 @@ def get_response(fs):
     # get the expected time spent in each state
     expected_wait_times = rate_matrix_object.get_expected_times(fs.initial, fs.final, fs.time)
     # create the response text
-    out = StringIO.StringIO()
+    out = StringIO()
     for state_index, expected_wait_time in enumerate(expected_wait_times):
         print >> out, state_index, ':', expected_wait_time / fs.time
     # write the response

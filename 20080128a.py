@@ -1,7 +1,7 @@
 """Given a newick tree, remove a set of tips.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -32,7 +32,7 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # get the set of names
-    selection = list(Util.stripped_lines(StringIO.StringIO(fs.names)))
+    selection = list(Util.stripped_lines(StringIO(fs.names)))
     selected_name_set = set(selection)
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set

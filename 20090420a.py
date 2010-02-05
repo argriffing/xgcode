@@ -9,7 +9,7 @@ and then estimating the pairwise distances by the maximum likelihood Jukes-Canto
 A sample is rejected when a pairwise distance is zero or infinity.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
@@ -155,7 +155,7 @@ def process(ntaxa, length, nseconds, builders, branch_length_sampler):
         pass
     # make the response
     result_to_string = ['failed', 'succeeded']
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, elapsed_time, 'seconds spent on this group'
     print >> out, n_zero_errors, 'samples were rejected because of an estimated distance of zero'
     print >> out, n_infinite_errors, 'samples were rejected because of an estimated distance of infinity'

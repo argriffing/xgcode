@@ -6,7 +6,7 @@ NOTE: Here the term 'M matrix' is not necessarily used in its technical sense.
 I should probably change the notation.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 import scipy.linalg as linalg
@@ -181,7 +181,7 @@ def get_response(fs):
                 ]
         paragraphs.append('\n'.join(lines))
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '\n\n'.join(paragraphs)
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

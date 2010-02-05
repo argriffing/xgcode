@@ -1,7 +1,7 @@
 """Sample joint nucleotide substitutions on a fixed tree with known tips.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -75,7 +75,7 @@ def get_response(fs):
     tree.add_branch_lengths()
     # get the dictionary mapping the branch name to the nucleotide
     name_to_nucleotide = {}
-    lines = list(Util.stripped_lines(StringIO.StringIO(fs.column)))
+    lines = list(Util.stripped_lines(StringIO(fs.column)))
     if lines:
         name_to_nucleotide = SnippetUtil.get_generic_dictionary(lines, 'name', 'nucleotide', list('acgtACGT'))
     # augment the tips with the nucleotide letters

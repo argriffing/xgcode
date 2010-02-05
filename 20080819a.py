@@ -6,7 +6,7 @@ The F84 evolutionary model is defined in the paper
 by Ziheng Yang in J Mol Evol 1994.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import F84
@@ -53,14 +53,14 @@ def get_response(fs):
     # simulate a pair of sequences
     sequence_pair = PairLikelihood.simulate_sequence_pair(fs.distance, model, fs.length)
     # convert the pair of sequences to an alignment object
-    aln = StringIO.StringIO()
+    aln = StringIO()
     print >> aln, '>first'
     print >> aln, ''.join(sequence_pair[0])
     print >> aln, '>second'
     print >> aln, ''.join(sequence_pair[1])
-    alignment = Fasta.Alignment(StringIO.StringIO(aln.getvalue()))
+    alignment = Fasta.Alignment(StringIO(aln.getvalue()))
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, alignment.to_fasta_string()
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

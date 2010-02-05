@@ -3,7 +3,7 @@
 Output is a tarfile of a sequence of tree images.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -45,7 +45,7 @@ def get_response(fs):
     if len(D) < 3:
         raise HandlingError('the matrix should have at least three rows')
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     if len(ordered_labels) != len(D):
         raise HandlingError('the number of ordered labels should be the same as the number of rows in the matrix')
     if len(set(ordered_labels)) != len(ordered_labels):
@@ -66,7 +66,7 @@ def get_response(fs):
     tree_builder = NeighborhoodJoining.TreeBuilder(D.tolist(), ordered_labels, splitter)
     tree_builder.set_fallback_name('nj')
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # build the tree
     tree = tree_builder.build()
     # write the response

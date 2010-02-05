@@ -1,7 +1,7 @@
 """Check the three-point and four-point conditions for a distance matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -59,7 +59,7 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'satisifies the three-point condition:', check_three_point_condition(D)
     print >> out, 'satisifies the four-point condition:', check_four_point_condition(D)
     # write the response

@@ -5,7 +5,7 @@ The label is either 1 or -1 depending on the group to which the point belongs.
 This is not so useful.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from SnippetUtil import HandlingError

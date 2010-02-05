@@ -3,7 +3,7 @@
 The exact bipartition criterion is a matrix function by Eric Stone.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -61,7 +61,7 @@ def get_response(fs):
     if len(D) < 3:
         raise HandlingError('the matrix should have at least three rows')
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     if len(ordered_labels) != len(D):
         raise HandlingError('the number of ordered labels should be the same as the number of rows in the matrix')
     if len(set(ordered_labels)) != len(ordered_labels):
@@ -93,7 +93,7 @@ def get_response(fs):
     elif fs.halvingrecourse:
         tree_builder.set_fallback_name('halving')
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # set parameters of the tree validating tree builder
     tree_builder.set_original_tree(tree)
     tree_builder.set_output_stream(out)

@@ -5,7 +5,7 @@ for more information about the Direct RNA model.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -61,7 +61,7 @@ def get_response(fs):
     tree.assert_valid()
     # get the nucleotide alignment
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.alignment))
+        alignment = Fasta.Alignment(StringIO(fs.alignment))
         alignment.force_nucleotide()
     except Fasta.AlignmentError, e:
         raise HandlingError(e)
@@ -143,7 +143,7 @@ def do_analysis(mixture_model, alignment, tree):
     # define the mixture legend
     mixture_legend = HeatMap.Legend(Util.flattened_nonrecursive(mixture_columns), 5, 'M', HeatMap.white_blue_gradient)
     # start writing the web page
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<head>'
     print >> out, '<style>'

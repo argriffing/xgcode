@@ -1,7 +1,7 @@
 """Given a newick tree, remove a node.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 from LeafWeights import stone_example_tree

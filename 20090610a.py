@@ -3,7 +3,7 @@
 
 # Matrices in this script are implemented as two dimensional numpy arrays.
 
-import StringIO
+from StringIO import StringIO
 import random
 
 import numpy
@@ -41,7 +41,7 @@ def analyze_matrix(M, block_size):
     @return: a string of results
     """
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the new matrix using the first composition of functions
     M_11 = SchurAlgebra.mmerge(M, set(range(2*block_size)))
     M_12 = SchurAlgebra.mschur(M_11, set(1 + block_size + k for k in range(block_size)))
@@ -62,7 +62,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # sample a matrix
     b = fs.block_size
     M = sample_matrix(b)

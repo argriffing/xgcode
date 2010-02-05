@@ -2,7 +2,7 @@
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 import Fasta
 import Newick
 import Monospace
@@ -117,7 +117,7 @@ class Nexus:
         tokens = ' '.join(arr).split()
         if len(tokens) % 2 != 0:
             raise NexusError('expected the alignment to be a list of (taxon, sequence) pairs')
-        alignment_out = StringIO.StringIO()
+        alignment_out = StringIO()
         for header, sequence in Util.chopped(tokens, 2):
             sequence = sequence.upper()
             unexpected_letters = set(sequence) - set('ACGT')
@@ -126,10 +126,10 @@ class Nexus:
             print >> alignment_out, '>%s' % header
             print >> alignment_out, sequence
         alignment_string = alignment_out.getvalue()
-        self.alignment = Fasta.Alignment(StringIO.StringIO(alignment_string))
+        self.alignment = Fasta.Alignment(StringIO(alignment_string))
 
     def __str__(self):
-        out = StringIO.StringIO()
+        out = StringIO()
         alignment = self.alignment
         tree = self.tree
         # write the taxa block
@@ -163,7 +163,7 @@ class Nexus:
 
 def get_sample_nexus_object():
     nexus = Nexus()
-    nexus.load(StringIO.StringIO(nexus_sample_string))
+    nexus.load(StringIO(nexus_sample_string))
     return nexus
 
 

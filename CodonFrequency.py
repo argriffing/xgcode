@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import StringIO
+from StringIO import StringIO
 import re
 
 import Codon
@@ -64,7 +64,7 @@ class CodonFrequencyA(CodonFrequency):
         codon_pattern = r'([ACGU][ACGU][ACGU])(.*)\((.*)\)'
         line_pattern = '.*'.join([codon_pattern]*4)
         token_lists = []
-        for line in StringIO.StringIO(_raw_human_codon_count_string):
+        for line in StringIO(_raw_human_codon_count_string):
             line = line.strip()
             if line:
                 m = re.search(line_pattern, line)
@@ -181,7 +181,7 @@ class CodonFrequencyB(CodonFrequency):
 
     def _init_codon_to_non_stop_proportion(self):
         pattern = r'([ACGT][ACGT][ACGT]) ([A-Z][a-z][a-z]) (.*)'
-        for line in StringIO.StringIO(_raw_stone_codon_proportion_string):
+        for line in StringIO(_raw_stone_codon_proportion_string):
             line = line.strip()
             if not line:
                 continue

@@ -4,7 +4,7 @@ This uses an incorrect formula from "On Euclidean distance matrices"
 and a corrected version by Eric Stone.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy
@@ -98,7 +98,7 @@ def get_response(fs):
     else:
         D = get_incorrect_distance_matrix(L)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(D)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

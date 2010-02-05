@@ -1,7 +1,7 @@
 """Look for a counterexample to the principal orthant edge connectivity conjecture.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -217,7 +217,7 @@ def process(nseconds):
     except CounterexampleError, e:
         counterexample_message = str(e)
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, elapsed_time, 'seconds elapsed'
     print >> out, nsampled_trees, 'trees were sampled'
     print >> out, 'counterexample search status:', counterexample_message

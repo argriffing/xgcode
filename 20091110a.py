@@ -8,7 +8,7 @@ The stress-minimized solution should have less stress.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy as np
@@ -62,7 +62,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # start writing the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'not implemented'
     # write the response
     return [('Content-Type', 'text/plain')], out.getvalue().strip()

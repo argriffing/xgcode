@@ -3,7 +3,7 @@
 For example, this can be used for a city MDS plot.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import cairo
@@ -171,7 +171,7 @@ def get_response(fs):
     w, h = fs.width, fs.height
     image_info = ImageInfo(w, h, axis_info, border_info, fs.imageformat)
     # Parse the label and point input.
-    lines = [x.strip() for x in StringIO.StringIO(fs.points).readlines()]
+    lines = [x.strip() for x in StringIO(fs.points).readlines()]
     lines = [x for x in lines if x]
     triples = [x.split() for x in lines]
     parsed_triples = []

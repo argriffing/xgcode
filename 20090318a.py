@@ -11,7 +11,7 @@ because the distances may be erroneously squared if Gower's principal coordinate
 is applied naively.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 import scipy
@@ -91,7 +91,7 @@ def get_response(fs):
     """
     # get the newick trees.
     trees = []
-    for tree_string in Util.stripped_lines(StringIO.StringIO(fs.trees)):
+    for tree_string in Util.stripped_lines(StringIO(fs.trees)):
         # parse each tree and make sure that it conforms to various requirements
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]
@@ -103,7 +103,7 @@ def get_response(fs):
             raise HandlingError('each terminal node label must be unique')
         trees.append(tree)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # look at each tree
     nerrors = 0
     ncounterexamples = 0

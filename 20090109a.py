@@ -3,7 +3,7 @@
 This snippet can also be run from the command line to build the data directories required for its operation.
 """
 
-import StringIO
+from StringIO import StringIO
 import sys
 import os
 
@@ -37,7 +37,7 @@ def get_response(fs):
     @param fs: a FieldStorage object decorated with field values
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     try:
         finder = KGEA.Finder(g_index_dir, g_valid_chromosome_strings_pathname, g_fasta_dir)
         if fs.show_alignment:

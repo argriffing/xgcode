@@ -1,7 +1,7 @@
 """Given a rate matrix and a time, compute the transition matrix using Pade approximation of order 7.
 """
 
-import StringIO
+from StringIO import StringIO
 
 # the scipy version of linalg is necessary for expm
 from scipy import linalg
@@ -38,7 +38,7 @@ def get_response(fs):
     R = fs.matrix * fs.time
     T = linalg.expm(R)
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(T)
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

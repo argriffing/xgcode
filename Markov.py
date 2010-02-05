@@ -4,7 +4,7 @@ Do some stuff with discrete time Markov chains.
 
 'http://www.gutenberg.org/files/98/98.txt'
 
-import StringIO
+from StringIO import StringIO
 import unittest
 import math
 

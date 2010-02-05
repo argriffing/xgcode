@@ -3,7 +3,7 @@
 The rows and columns of the output distance matrix are ordered according to the sequence order in the FASTA field.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import scipy.optimize
 import numpy
@@ -83,7 +83,7 @@ def get_response(fs):
     """
     # read the alignment
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.fasta))
+        alignment = Fasta.Alignment(StringIO(fs.fasta))
     except Fasta.AlignmentError, e:
         raise HandlingError('fasta alignment error: ' + str(e))
     if alignment.get_sequence_count() < 2:
@@ -91,7 +91,7 @@ def get_response(fs):
     # read the rate matrix
     R = fs.matrix
     # read the ordered states
-    ordered_states = list(Util.stripped_lines(StringIO.StringIO(fs.states)))
+    ordered_states = list(Util.stripped_lines(StringIO(fs.states)))
     if len(ordered_states) != len(R):
         raise HandlingError('the number of ordered states must be the same as the number of rows in the rate matrix')
     if len(set(ordered_states)) != len(ordered_states):
@@ -114,7 +114,7 @@ def get_response(fs):
                 row_major_distance_matrix[i][j] = mle_distance
                 row_major_distance_matrix[j][i] = mle_distance
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'maximum likelihood distance matrix:'
     print >> out, MatrixUtil.m_to_string(row_major_distance_matrix)
     response_headers = [('Content-Type', 'text/plain')]

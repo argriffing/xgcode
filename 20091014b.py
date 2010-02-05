@@ -3,7 +3,7 @@
 
 #TODO allow the user to define the string and the target sign pattern
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -113,7 +113,7 @@ def process(nseconds):
     except CounterexampleError, e:
         counterexample_message = str(e)
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, elapsed_time, 'seconds elapsed'
     print >> out, 'epsilon for nonzero coordinates:', g_epsilon
     print >> out, 'search status:', counterexample_message

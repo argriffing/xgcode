@@ -13,7 +13,7 @@ Resolutions preferred by YouTube are 640x360 and 480x360.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import os
 import math

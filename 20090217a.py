@@ -1,7 +1,7 @@
 """Translate a list of codons to amino acids.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Codon
@@ -24,7 +24,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the list of codons
-    codons = Util.stripped_lines(StringIO.StringIO(fs.codons))
+    codons = Util.stripped_lines(StringIO(fs.codons))
     # convert codons to upper case
     codons = [codon.upper() for codon in codons]
     # make sure that each codon is valid
@@ -32,7 +32,7 @@ def get_response(fs):
     if invalid_codons:
         raise HandlingError('invalid codons: ' + ', '.join(invalid_codons))
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for codon in codons:
         aa_letter = Codon.g_codon_to_aa_letter[codon]
         print >> out, aa_letter

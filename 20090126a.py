@@ -7,7 +7,7 @@ Use the Erdos-Renyi probability distribution over graphs with a given number of 
 Edge weights are exponentially distributed.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 
 import numpy
@@ -37,7 +37,7 @@ def get_response(fs):
     @param fs: a FieldStorage object decorated with field values
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # try to make some graphs
     unconnected_count = 0
     invalid_split_count = 0

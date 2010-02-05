@@ -1,7 +1,7 @@
 """Given a tree, show the ordered sequence of splits found by neighbor joining.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -88,7 +88,7 @@ def get_response(fs):
     ordered_tip_names = list(sorted(tip.get_name() for tip in tree.gen_tips()))
     D = numpy.array(tree.get_distance_matrix(ordered_tip_names))
     # begin the output
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the order for the correct method of neighbor joining
     splits = do_it_right(D)
     print >> out, 'doing it right'

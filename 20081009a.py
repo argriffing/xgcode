@@ -1,7 +1,7 @@
 """Find a 4-taxon tree that is comparable to a tree whose taxa are partitioned into four groups.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 from numpy import linalg
@@ -37,11 +37,11 @@ def get_response(fs):
     """
     # read the values from the form
     subtree_a = NewickIO.parse(fs.subtree_a, Newick.NewickTree)
-    taxa_a1 = list(Util.stripped_lines(StringIO.StringIO(fs.taxa_a1)))
-    taxa_a2 = list(Util.stripped_lines(StringIO.StringIO(fs.taxa_a2)))
+    taxa_a1 = list(Util.stripped_lines(StringIO(fs.taxa_a1)))
+    taxa_a2 = list(Util.stripped_lines(StringIO(fs.taxa_a2)))
     subtree_b = NewickIO.parse(fs.subtree_b, Newick.NewickTree)
-    taxa_b1 = list(Util.stripped_lines(StringIO.StringIO(fs.taxa_b1)))
-    taxa_b2 = list(Util.stripped_lines(StringIO.StringIO(fs.taxa_b2)))
+    taxa_b1 = list(Util.stripped_lines(StringIO(fs.taxa_b1)))
+    taxa_b2 = list(Util.stripped_lines(StringIO(fs.taxa_b2)))
     connecting_branch_length = fs.blen
     # assert that no group of taxa contains duplicates
     for taxa in (taxa_a1, taxa_a2, taxa_b1, taxa_b2):
@@ -67,7 +67,7 @@ def get_response(fs):
         if set(taxa_1) | set(taxa_2) < tip_names:
             raise HandlingError('a tip in subtree %s is not represented in either of the groups' % tree_name)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the results for the first method
     do_first_method(subtree_a, subtree_b, taxa_a1, taxa_a2, taxa_b1, taxa_b2, connecting_branch_length, out)
     # define the entire tree by connecting the subtrees

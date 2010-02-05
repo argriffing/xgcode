@@ -4,7 +4,7 @@ The mixture is scaled so that the branch lengths in the newick tree are the expe
 The rows and columns of the rate matrices are ordered alphabetically by nucleotide.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 

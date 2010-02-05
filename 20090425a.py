@@ -1,7 +1,7 @@
 """Do varimax rotation.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 

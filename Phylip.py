@@ -2,7 +2,7 @@
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 
 import Util
 import Monospace
@@ -14,7 +14,7 @@ def get_alignment_string_non_interleaved(alignment):
     @param alignment: a fasta alignment object
     @return: a non interleaved phylip alignment string
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # print the number of sequences and the length of each sequence in the alignment
     print >> out, len(alignment.headers), len(alignment.sequences[0])
     # print each sequence
@@ -31,7 +31,7 @@ def get_alignment_string_interleaved(alignment):
     """
     chopped_sequences = [Util.chopped(seq, 60) for seq in alignment.sequences]
     bands = zip(*chopped_sequences)
-    out = StringIO.StringIO()
+    out = StringIO()
     lengths = [9] + [len(header) for header in alignment.headers]
     print >> out, len(alignment.headers), len(alignment.sequences[0])
     for header, segment in zip(alignment.headers, bands[0]):
@@ -48,7 +48,7 @@ def make_sample_alignment():
     """
     Make a sample alignment object.
     """
-    return Fasta.Alignment(StringIO.StringIO(Fasta.example_fasta_aligned))
+    return Fasta.Alignment(StringIO(Fasta.example_fasta_aligned))
 
 
 class TestPhylip(unittest.TestCase):

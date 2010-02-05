@@ -2,7 +2,7 @@
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 
 import Fasta
 import Newick
@@ -64,7 +64,7 @@ class Stockholm:
         self.column_annotations.append((annotation_name, annotation_value))
 
     def __str__(self):
-        out = StringIO.StringIO()
+        out = StringIO()
         alignment = self.alignment
         tree = self.tree
         # write the format identifier

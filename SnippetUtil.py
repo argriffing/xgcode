@@ -2,7 +2,7 @@
 Web interface stuff.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import Util
 
@@ -59,7 +59,7 @@ def get_dictionary(dictionary_string, state_name, value_name, required_states):
     @return: a dictionary mapping each state to a value
     """
     # convert the multi-line string to a list of non-empty lines
-    lines = Util.get_stripped_lines(StringIO.StringIO(dictionary_string))
+    lines = Util.get_stripped_lines(StringIO(dictionary_string))
     # make sure that at least one line is non-empty
     if not lines:
         raise HandlingError('no %s to %s mapping was specified' % (key_name, value_name))
@@ -91,7 +91,7 @@ def get_distribution(distribution_string, state_name, valid_states):
     if not distribution_string:
         raise HandlingError('no %s distribution was specified' % state_name)
     state_to_weight = {}
-    fin = StringIO.StringIO(distribution_string)
+    fin = StringIO(distribution_string)
     for line in iterutils.stripped_lines(fin):
         state, weight = get_weight_pair(line, state_name, valid_states)
         if state in state_to_weight:
@@ -130,7 +130,7 @@ def get_sample_html():
     @return: the contents of a placeholder html file
     """
     target = 'http://www.youtube.com/watch?v=oHg5SJYRHA0'
-    sio = StringIO.StringIO()
+    sio = StringIO()
     print >> sio, '<html>'
     print >> sio, '<head>'
     print >> sio, '<META HTTP-EQUIV=REFRESH CONTENT="1; URL=%s"/>' % target
@@ -146,7 +146,7 @@ def docstring_to_title(docstring):
     @return: the first line of the docstring as a title, or None
     """
     # get lines of text without whitespace between lines
-    lines = list(iterutils.stripped_lines(StringIO.StringIO(docstring)))
+    lines = list(iterutils.stripped_lines(StringIO(docstring)))
     if lines:
         return lines[0]
     else:
@@ -158,7 +158,7 @@ def docstring_to_html(docstring):
     @param docstring: something like __doc__
     """
     # get lines of text without whitespace between lines
-    lines = list(iterutils.stripped_lines(StringIO.StringIO(docstring)))
+    lines = list(iterutils.stripped_lines(StringIO(docstring)))
     # no docstring
     if not lines:
         return ''

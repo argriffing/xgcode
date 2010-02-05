@@ -1,5 +1,5 @@
 import cgi
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -469,7 +469,7 @@ class Matrix:
         """
         lines = []
         # get the number of rows to use for the textarea
-        sio = StringIO.StringIO(MatrixUtil.m_to_string(self.default_matrix))
+        sio = StringIO(MatrixUtil.m_to_string(self.default_matrix))
         nrows = len(list(sio.readlines())) + 1
         nrows = min(nrows, 12)
         # get escaped values
@@ -504,7 +504,7 @@ class Matrix:
             raise FormError('the value for the field "%s" is empty' % self.label)
         elif len(values) == 1:
             try:
-                value = numpy.array(MatrixUtil.read_matrix(StringIO.StringIO(values[0])))
+                value = numpy.array(MatrixUtil.read_matrix(StringIO(values[0])))
                 if self.matrix_assertion:
                     self.matrix_assertion(value)
             except MatrixUtil.MatrixError, e:
@@ -538,7 +538,7 @@ class MultiLine:
         """
         lines = []
         # get the number of rows to use for the textarea
-        sio = StringIO.StringIO(self.default_string)
+        sio = StringIO(self.default_string)
         nrows = len(list(sio.readlines())) + 1
         nrows = min(nrows, 12)
         # get escaped values

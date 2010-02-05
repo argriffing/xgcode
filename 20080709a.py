@@ -1,7 +1,7 @@
 """Find the maximum likelihood evolutionary distance between a pair of sequences given a rate matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import scipy.optimize
 import numpy
@@ -78,7 +78,7 @@ def get_response(fs):
     """
     # read the alignment
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.fasta))
+        alignment = Fasta.Alignment(StringIO(fs.fasta))
     except Fasta.AlignmentError, e:
         raise HandlingError('fasta alignment error: ' + str(e))
     if alignment.get_sequence_count() != 2:
@@ -86,7 +86,7 @@ def get_response(fs):
     # read the rate matrix
     R = fs.matrix
     # read the ordered states
-    ordered_states = list(Util.stripped_lines(StringIO.StringIO(fs.states)))
+    ordered_states = list(Util.stripped_lines(StringIO(fs.states)))
     if len(ordered_states) != len(R):
         raise HandlingError('the number of ordered states must be the same as the number of rows in the rate matrix')
     if len(set(ordered_states)) != len(ordered_states):
@@ -100,7 +100,7 @@ def get_response(fs):
     bracket = (0.51, 2.01)
     mle_distance = scipy.optimize.golden(objective, brack=bracket)
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'maximum likelihood distance:', mle_distance
     #distances = (mle_distance, 0.2, 2.0, 20.0)
     #for distance in distances:

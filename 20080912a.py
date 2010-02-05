@@ -6,7 +6,7 @@ Second, the maximum likelihood distance between each sequence pair is calculated
 Third, the sampled matrix may be rejected if it has elements that are zero or infinity.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 
 import profile
@@ -75,7 +75,7 @@ def get_response(fs):
         if run_seconds > allocated_seconds:
             break
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'these are the results for a', run_seconds, 'second run:'
     print >> out, sampler.proposed, 'samples were proposed'
     print >> out, sampler.accepted, 'samples were accepted'
@@ -106,7 +106,7 @@ def main():
         if run_seconds > allocated_seconds:
             break
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print 'these are the results for a', run_seconds, 'second run:'
     print sampler.proposed, 'samples were proposed'
     print sampler.accepted, 'samples were accepted'

@@ -1,7 +1,7 @@
 """Given a distance matrix, get a set of splits using one of several methods.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -57,7 +57,7 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     # validate the input
     if len(D) != len(ordered_labels):
         raise HandlingError('the number of taxon labels should match the number of rows in the distance matrix')
@@ -77,7 +77,7 @@ def get_response(fs):
     # get the splits
     index_splits = BuildTreeTopology.get_splits(D, split_function, update_function)
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     for index_split in index_splits:
         taxon_split = [[ordered_labels[i] for i in group] for group in index_split]
         print >> out, split_to_string(taxon_split)

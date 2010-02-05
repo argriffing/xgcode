@@ -11,7 +11,7 @@ I will use allele frequencies as the data that generate this space.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import math
 import random
 
@@ -56,7 +56,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # start writing the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, do_analysis()
     # write the response
     return [('Content-Type', 'text/plain')], out.getvalue().strip()

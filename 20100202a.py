@@ -21,7 +21,7 @@ No header line is provided.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import argparse
 import os
 import profile
@@ -294,7 +294,7 @@ def get_response(fs):
     scanner = Scanner(first, last, False)
     # Do the first pass; check for errors and gather chromosome info.
     names = set()
-    fin = StringIO.StringIO(fs.data_in)
+    fin = StringIO(fs.data_in)
     for name in scanner.scan(fin):
         names.add(name)
     names = list(sorted(names))
@@ -305,10 +305,10 @@ def get_response(fs):
         msg_b = '%d lines in %d files.' % (npos, len(names))
         raise HandlingError(msg_a + msg_b)
     # Do the second pass; write the response for only the first chromosome
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'writing the first of', len(names), 'chromosomes:'
     print >> out
-    fin = StringIO.StringIO(fs.data_in)
+    fin = StringIO(fs.data_in)
     for name, line in scanner.gen_named_lines(fin):
         if name == names[0]:
             print >> out, line

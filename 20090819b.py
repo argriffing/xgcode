@@ -12,7 +12,7 @@ T: the number of T reads aligned to the this position
 gap: the number of gaps aligned to the this position
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys

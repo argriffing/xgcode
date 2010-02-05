@@ -7,7 +7,7 @@
 # ((a:1, b:2)A:1, (c:3, d:4)B:1, (e:0.25, f:0.5)C:1);
 g_tree_string = '((a:1, b:2)A:1, (c:3, d:4)B:1, (e:0.25, f:0.5)C:1);'
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -68,7 +68,7 @@ def get_response(fs):
     # get the dictionary mapping the branch name to the nucleotide
     name_to_nucleotide = {}
     # parse the column string
-    for line in Util.stripped_lines(StringIO.StringIO(fs.column)):
+    for line in Util.stripped_lines(StringIO(fs.column)):
         name_string, nucleotide_string = SnippetUtil.get_state_value_pair(line)
         if nucleotide_string not in list('acgtACGT'):
             raise HandlingError('"%s" is not a valid nucleotide' % nucleotide_string)

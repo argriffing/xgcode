@@ -1,7 +1,7 @@
 """Use neighbor joining to make a newick tree from a distance matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -44,13 +44,13 @@ def get_response(fs):
     if len(D) < 3:
         raise HandlingError('the matrix should have at least three rows')
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     if len(ordered_labels) != len(D):
         raise HandlingError('the number of ordered labels should be the same as the number of rows in the matrix')
     # get the newick tree
     tree = NeighborJoining.make_tree(D.tolist(), ordered_labels)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, NewickIO.get_newick_string(tree)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

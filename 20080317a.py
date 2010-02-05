@@ -7,7 +7,7 @@ The mutation component is the stationary distribution of the nucleotide mutation
 
 # The selection component is centered amino acid energy vector upon which selection operates.
 
-import StringIO
+from StringIO import StringIO
 import math
 import random
 
@@ -66,7 +66,7 @@ def get_response(fs):
     result = DirectProtein.get_nt_distribution_and_aa_energies(best_mutation_distribution, aa_distribution)
     result_stationary_nt_dist, result_aa_energies = result
     # make a results string
-    out = StringIO.StringIO()
+    out = StringIO()
     # write the stationary nucleotide distribution of the mutation process
     print >> out, 'mutation nucleotide stationary distribution:'
     for nt, probability in zip(nt_letters, best_mutation_distribution):
@@ -119,7 +119,7 @@ class Objective:
         return response
 
     def get_history(self):
-        out = StringIO.StringIO()
+        out = StringIO()
         for guess, response in zip(self.guesses, self.responses):
             print >> out, str(guess), '->', str(response)
         return out.getvalue()
@@ -152,7 +152,7 @@ class CodonObjective(Objective):
         return response
 
     def get_history(self):
-        out = StringIO.StringIO()
+        out = StringIO()
         for guess, response, energies in zip(self.guesses, self.responses, self.energies):
             print >> out, str(guess), '->', str(response), ':', str(energies)
         return out.getvalue()

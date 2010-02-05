@@ -6,7 +6,7 @@ This property is shown in
 The example distance matrix is from the four taxon tree with unit branch lengths and with internal nodes.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -37,7 +37,7 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # look at the eigenvalues of the associated doubly centered covariance matrix
     HSH = Euclid.edm_to_dccov(D)
     w, V_T = numpy.linalg.eigh(HSH)

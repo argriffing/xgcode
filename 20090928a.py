@@ -8,7 +8,7 @@ the two new distance matrices,
 including nodes that represent the other side of the tree.
 """
 
-import StringIO
+from StringIO import StringIO
 import itertools
 
 import numpy as np
@@ -91,8 +91,8 @@ def get_response(fs):
     D = np.array(fs.matrix)
     n = len(D)
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
-    selected_labels = list(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
+    selected_labels = list(Util.stripped_lines(StringIO(fs.selection)))
     # validate the input
     if n != len(ordered_labels):
         raise HandlingError('the number of taxon labels should match the number of rows in the distance matrix')
@@ -109,7 +109,7 @@ def get_response(fs):
     D_A_names = [set_to_string(x) for x in SchurAlgebra.vmerge(all_names, index_set_B)]
     D_B_names = [set_to_string(x) for x in SchurAlgebra.vmerge(all_names, index_set_A)]
     # show the results
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'alpha:', alpha
     print >> out, 'beta:', beta
     print >> out, 'gamma:', gamma

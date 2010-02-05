@@ -4,7 +4,7 @@ The nexus data should have a tree and an alignment.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 import os
 import subprocess
 
@@ -57,7 +57,7 @@ def get_response(fs):
     # read the nexus data
     nexus = Nexus.Nexus()
     try:
-        nexus.load(StringIO.StringIO(fs.nexus))
+        nexus.load(StringIO(fs.nexus))
     except Nexus.NexusError, e:
         raise HandlingError(e)
     # move to the data directory
@@ -79,8 +79,8 @@ def get_response(fs):
     # move back to the original directory
     os.chdir(original_directory)
     # read the hyphy output
-    ns = Hyphy.get_hyphy_namespace(StringIO.StringIO(hyphy_output))
-    out = StringIO.StringIO()
+    ns = Hyphy.get_hyphy_namespace(StringIO(hyphy_output))
+    out = StringIO()
     if fs.outdebug:
         print >> out, get_hyphy_debug_info(hyphy_output)
         print >> out, ''
@@ -103,7 +103,7 @@ def get_response(fs):
         print >> out, ''
         category_blocks = []
         for suffix in category_suffixes:
-            block = StringIO.StringIO()
+            block = StringIO()
             print >> block, 'mixing proportion :', getattr(ns, 'catFreq'+suffix)
             print >> block, 'tree :', getattr(ns, 'tree'+suffix).get_newick_string()
             for nt in list('ACGT'):
@@ -159,7 +159,7 @@ def get_hyphy_model_string(nexus_path, ncategories):
     @param ncategories: the number of categories in the mixture
     @return: a hyphy batch file
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'VERBOSITY_LEVEL = 1;'
     print >> out, 'ACCEPT_BRANCH_LENGTHS = 1;'
     print >> out, 'DataSet spectrinData = ReadDataFile ("%s");' % nexus_path
@@ -237,8 +237,8 @@ def get_hyphy_debug_info(hyphy_output):
     @param hyphy_output: the string representing the hyphy output
     @return: a string explaining how the output was interpreted
     """
-    ns = Hyphy.get_hyphy_namespace(StringIO.StringIO(hyphy_output))
-    out = StringIO.StringIO()
+    ns = Hyphy.get_hyphy_namespace(StringIO(hyphy_output))
+    out = StringIO()
     print >> out, 'raw hyphy output:'
     print >> out, '---------------------------------------'
     print >> out, hyphy_output

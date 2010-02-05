@@ -6,7 +6,7 @@ This is probably useful only as an example.
 # Do it like this.
 # python 20090617a.py > junk.tex; latex junk.tex; dvips junk; ps2pdf junk.ps; evince junk.pdf
 
-import StringIO
+from StringIO import StringIO
 import optparse
 import tempfile
 import subprocess
@@ -28,7 +28,7 @@ class Layout:
         @param show_pruned_trees: True if the pruned trees should be shown
         @return: a multiline string that defines a tikzpicture
         """
-        out = StringIO.StringIO()
+        out = StringIO()
         if scaling_factor == 1.0:
             print >> out, '\\begin{tikzpicture}[auto]'
         else:
@@ -44,7 +44,7 @@ class Layout:
         @param show_pruned_trees: True if the pruned trees should be shown
         @return: a multiline string that is the contents of a valid LaTeX file
         """
-        out = StringIO.StringIO()
+        out = StringIO()
         print >> out, '\\documentclass{article}'
         print >> out, '\\usepackage{tikz}'
         print >> out, '\\begin{document}'
@@ -138,7 +138,7 @@ class SixLeafLayout(Layout):
         return get_tree_text(nodes, edges)
 
     def get_tikz_contents(self, show_full_tree, show_pruned_trees):
-        out = StringIO.StringIO()
+        out = StringIO()
         if show_full_tree:
             print >> out, self.get_full_tree_text()
             if show_pruned_trees:
@@ -239,7 +239,7 @@ class SevenLeafLayout(Layout):
         return get_tree_text(nodes, edges)
 
     def get_tikz_contents(self, show_full_tree, show_pruned_trees):
-        out = StringIO.StringIO()
+        out = StringIO()
         if show_full_tree:
             print >> out, self.get_full_tree_text()
             if show_pruned_trees:

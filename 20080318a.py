@@ -2,7 +2,7 @@
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Util
@@ -34,7 +34,7 @@ def get_response(fs):
     # substitution per unit of branch length.
     mixture_model.normalize()
     # begin writing the html file
-    out = StringIO.StringIO()
+    out = StringIO()
     # write the html header
     print >> out, '<html>'
     print >> out, '<head><style type="text/css">td{font-size:x-small;}</style></head>'

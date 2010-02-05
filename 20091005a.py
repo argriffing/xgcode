@@ -4,7 +4,7 @@ This Laplacian-like matrix is the cross-product matrix S from the Abdi paper.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -49,7 +49,7 @@ def process():
     m_uniform = np.array([.125]*8)
     m_weighted = np.array([.1, .1, .1, .1, .1, .1, .2, .2])
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for m in (m_uniform, m_weighted):
         I = np.eye(n, dtype=float)
         e = np.ones(n, dtype=float)

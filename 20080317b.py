@@ -5,7 +5,7 @@ The first output vector is the stationary nucleotide distribution.
 The second output vector is the centered amino acid energy vector.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from SnippetUtil import HandlingError
@@ -45,7 +45,7 @@ def get_response(fs):
     aa_distribution = [aa_to_weight[aa] for aa in aa_letters]
     nt_distribution, aa_energies = DirectProtein.get_nt_distribution_and_aa_energies(mutation_distribution, aa_distribution)
     # write something
-    out = StringIO.StringIO()
+    out = StringIO()
     # write the stationary nucleotide distribution
     print >> out, 'nucleotide stationary distribution:'
     for nt, value in zip(nt_letters, nt_distribution):

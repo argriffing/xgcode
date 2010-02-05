@@ -8,7 +8,7 @@ given some hidden Markov model parameters and a sequence of observations.
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 
 import Util
 
@@ -185,12 +185,12 @@ class SequentialStringIO(SequentialFileObjectIO):
     def open_read(self):
         if self.state != CLOSED:
             raise SequenceIOError()
-        self.obj = StringIO.StringIO(self.file_contents)
+        self.obj = StringIO(self.file_contents)
         self.state = READING
     def open_write(self):
         if self.state != CLOSED:
             raise SequenceIOError()
-        self.obj = StringIO.StringIO()
+        self.obj = StringIO()
         self.state = WRITING
 
 

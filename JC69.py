@@ -3,7 +3,7 @@
 This is the continuous time Markov model defined by Jukes and Cantor in 1969.
 """
 
-import StringIO
+from StringIO import StringIO
 import unittest
 import math
 import random

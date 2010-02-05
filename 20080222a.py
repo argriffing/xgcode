@@ -1,7 +1,7 @@
 """Visualize a matrix as a heat map.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 

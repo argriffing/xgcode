@@ -1,7 +1,7 @@
 """Given a newick tree, break the tree into segments.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick

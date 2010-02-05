@@ -7,7 +7,7 @@
 # line: a single line of unparsed data from a file
 # row: a list of elements parsed from a comma separated line
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys
@@ -64,7 +64,7 @@ def get_response(fs):
     bad_coverage = fs.bad_coverage
     randomization_rate = fs.randomization_rate
     # read the lines of comma separated values
-    lines = StringIO.StringIO(fs.csv_data).readlines()
+    lines = StringIO(fs.csv_data).readlines()
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
     # try to get the response
@@ -169,7 +169,7 @@ def process(input_lines, good_coverage, bad_coverage, randomization_rate, nsecon
     npositions = len(data_rows) / 5
     nstrains = (ncolumns - 5) / 2
     # begin the output
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, ','.join(output_header_row)
     # initialize some stuff
     start_time = time.time()

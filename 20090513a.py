@@ -5,7 +5,7 @@ What does this imply about the lag 1 and lag 2 partial autocorrelations?
 I am doing this analysis out of curiosity based on a poster by Reed Cartwright.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 
 from SnippetUtil import HandlingError
@@ -93,7 +93,7 @@ def get_response(fs):
     test_seq = [13, 8, 15, 4, 4, 12, 11, 7, 14, 12]
     assert len(test_seq) == 10
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # show test results
     print >> out, 'test results:'
     print >> out, 'expected autocorrelation of lag 1: -0.188'

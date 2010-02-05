@@ -6,7 +6,7 @@ The sign of each column does not matter; multiplying one or more columns by -1 d
 The reconstructed tree will be rooted at the center of the branch implied by the contrast matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -39,12 +39,12 @@ def get_response(fs):
     # read the matrix
     C = fs.contrast_matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     # validate the input
     if len(C) != len(ordered_labels):
         raise HandlingError('the number of rows in the contrast matrix should match the number of labels')
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     reconstructed_tree = Contrasts.contrast_matrix_to_tree(C, ordered_labels)
     newick_string = NewickIO.get_newick_string(reconstructed_tree)
     print >> out, newick_string

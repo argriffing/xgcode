@@ -6,7 +6,7 @@ For more information about this model see:
 
 from xml.etree import ElementTree as ET
 import unittest
-import StringIO
+from StringIO import StringIO
 import math
 
 import Util
@@ -165,9 +165,9 @@ class TestDirectRna(unittest.TestCase):
         # get the original sample xml string
         input_xml_string = get_sample_xml_string()
         # create a tree from the string
-        element_tree = ET.parse(StringIO.StringIO(input_xml_string))
+        element_tree = ET.parse(StringIO(input_xml_string))
         # create an xml string from the tree
-        out = StringIO.StringIO()
+        out = StringIO()
         element_tree.write(out)
         output_xml_string = out.getvalue()
         # verify that the output string is the same as the input string
@@ -183,7 +183,7 @@ class TestDirectRna(unittest.TestCase):
         # create an xml string from the mixture model
         element_tree = mixture_model.to_element_tree()
         XmlUtil.indent(element_tree.getroot())
-        out = StringIO.StringIO()
+        out = StringIO()
         element_tree.write(out)
         output_xml_string = out.getvalue()
         # verify that the xml string we get out is the same as the one we put in
@@ -195,7 +195,7 @@ def deserialize_mixture_model(xml_string):
     @param xml_string: the xml string representing the substitution model
     @return: a L{DirectRnaMixture} object
     """
-    element_tree = ET.parse(StringIO.StringIO(xml_string))
+    element_tree = ET.parse(StringIO(xml_string))
     root = element_tree.getroot()
     # get the mutation parameters
     mutation = root.find('mutation')
@@ -244,7 +244,7 @@ def get_sample_xml_string():
     XmlUtil.indent(root)
     # get the string representing the tree
     tree = ET.ElementTree(root)
-    out = StringIO.StringIO()
+    out = StringIO()
     tree.write(out)
     return out.getvalue()
 

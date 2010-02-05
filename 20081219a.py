@@ -2,7 +2,7 @@
 """
 
 import cgi
-import StringIO
+from StringIO import StringIO
 
 import numpy
 import scipy
@@ -99,7 +99,7 @@ def get_tree_and_column(fs):
     tree = NewickIO.parse(fs.tree, Newick.NewickTree)
     unordered_tip_names = set(node.name for node in tree.gen_tips())
     # get the lines that give an amino acid for each of several taxa
-    column_lines = list(Util.stripped_lines(StringIO.StringIO(fs.column)))
+    column_lines = list(Util.stripped_lines(StringIO(fs.column)))
     if len(column_lines) < 7:
         raise HandlingError('the alignment column should have at least seven taxa')
     # get the mapping from taxon to amino acid
@@ -135,7 +135,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # start writing the html response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<body>'
     # get the tree and the column sent by the user
@@ -176,7 +176,7 @@ def get_response(fs):
     # show the pruned tree
     if fs.show_tree:
         tree_string = NewickIO.get_narrow_newick_string(pruned_tree, 80)
-        lines = StringIO.StringIO(tree_string).readlines()
+        lines = StringIO(tree_string).readlines()
         lines = [line.rstrip() for line in lines]
         print >> out, 'pruned phylogenetic tree in newick format:'
         print >> out, '<pre>'

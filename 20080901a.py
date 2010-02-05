@@ -3,7 +3,7 @@
 MAPP stands for Multivariate Analysis of Protein Polymorphism.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -82,10 +82,10 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the headers
-    headers = list(Util.stripped_lines(StringIO.StringIO(fs.headers)))
+    headers = list(Util.stripped_lines(StringIO(fs.headers)))
     # read the tab separated MAPP output
     tsv_lists = []
-    for line in StringIO.StringIO(fs.mapp):
+    for line in StringIO(fs.mapp):
         if line.strip():
             tsv_list = [element.strip() for element in line.split('\t')]
             tsv_lists.append(tsv_list)
@@ -111,7 +111,7 @@ def get_response(fs):
             pvalue_list.append(pvalue)
         pvalue_lists.append(pvalue_list)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for header, pvalue_list in zip(headers, pvalue_lists):
         # if a p-value is bad then do not show anything for this column
         if None in pvalue_list:

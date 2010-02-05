@@ -1,7 +1,7 @@
 """Compare a subvector of the Fiedler vector of a tree to the Fiedler vector of a related graph.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import scipy
@@ -62,7 +62,7 @@ def get_response(fs):
     full_va, full_vb = get_eigenvectors(full_R)
     partial_va, partial_vb = get_eigenvectors(partial_R)
     # create the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'Fiedler vector associated with the graph for which the internal nodes are hidden:'
     print >> out, str(tuple(partial_va))
     print >> out

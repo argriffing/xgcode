@@ -8,7 +8,7 @@ hyperplanes of the Steiner circumscribed hyperellipse that bounds the simplex of
 only the leaves of the tree embedded in Euclidean space.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 import random
 import time
@@ -161,7 +161,7 @@ def process(nseconds):
     except KeyboardInterrupt, e:
         pass
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, elapsed_time, 'seconds elapsed'
     print >> out, nsampled_trees, 'trees were sampled'
     print >> out, 'epsilon for ambiguous cuts:', g_loading_epsilon

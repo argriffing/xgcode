@@ -3,7 +3,7 @@
 This procedure is based on R code by Eric Stone.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from scipy import linalg
@@ -126,11 +126,11 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     # read the set of selected labels
-    selected_labels = set(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selected_labels = set(Util.stripped_lines(StringIO(fs.selection)))
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the set of selected indices and its complement
     n = len(D)
     selection = set(i for i, label in enumerate(ordered_labels) if label in selected_labels)

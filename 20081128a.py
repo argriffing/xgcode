@@ -1,7 +1,7 @@
 """Create a matrix representation of a Sierpinski-like graph.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from scipy import linalg
@@ -51,7 +51,7 @@ def get_response(fs):
     # get the requested number of iterations
     iterations = fs.iterations
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # create the adjacency matrix
     n = 3**iterations
     M = numpy.zeros((n, n))

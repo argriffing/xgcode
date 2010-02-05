@@ -2,7 +2,7 @@
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 import math
 import random
 

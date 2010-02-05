@@ -1,7 +1,7 @@
 """Compute some splits of a tree.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -49,7 +49,7 @@ def get_full_tree_message(tree, m_to_string):
     @param m_to_string: a function that converts a matrix to a string
     @return: a message about the split of the tips of the tree induced by the fiedler vector
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the alphabetically ordered names
     ordered_names = list(sorted(node.get_name() for node in tree.preorder()))
     # get the corresponding ordered ids
@@ -90,7 +90,7 @@ def get_child_messages(L, eigensplit, ordered_tip_names, m_to_string, scaling_fa
     @param scaling_factor: show the Laplacian scaled by this factor
     @return: a multi-line string
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     n = len(L)
     ordered_label_sets = [set([i]) for i in range(n)]
     all_labels = set(range(n))
@@ -116,7 +116,7 @@ def get_subtree_messages(D, eigensplit, ordered_tip_names):
     @param ordered_tip_names: names of the tips of the tree conformant to v and D
     @return: a multi-line string
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     n = len(D)
     ordered_label_sets = [set([i]) for i in range(n)]
     all_labels = set(range(n))
@@ -137,7 +137,7 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # assert that each node is named

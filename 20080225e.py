@@ -1,7 +1,7 @@
 """Given a rate matrix, check the detailed balance equations for reversibility.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy
@@ -45,7 +45,7 @@ def get_response(fs):
                 row.extend([pi_i, pi_j, r_ij, r_ji])
                 table_rows.append(row)
     # write some stuff
-    out = StringIO.StringIO()
+    out = StringIO()
     if table_rows:
         # get the detailed balance html rows
         detailed_balance_rows = []

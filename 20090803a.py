@@ -1,7 +1,7 @@
 """Remove the root branch length and internal labels from a tree, and unroot it.
 """
 
-import StringIO
+from StringIO import StringIO
 import os
 
 from SnippetUtil import HandlingError
@@ -70,7 +70,7 @@ def get_response(fs):
     # read the tree
     tree = NewickIO.parse(fs.tree, Newick.NewickTree) 
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # remove the branch length associated with the root
     if tree.get_root().blen is not None:
         print >> out, 'the root originally had a branch length of', tree.get_root().blen

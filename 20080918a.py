@@ -6,7 +6,7 @@ Second, the maximum likelihood distance between each sequence pair is calculated
 Third, the sampled matrix may be rejected if it has elements that are zero or infinity.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 
 from SnippetUtil import HandlingError
@@ -113,7 +113,7 @@ def get_response(fs):
         if reconstructing_seconds >= allocated_seconds:
             break
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     if distance_matrices:
         print >> out, 'seconds to sample', len(distance_matrices), 'distance matrices:', sampling_seconds
         if reconstructed_tree_count:

@@ -11,7 +11,7 @@ When a perturbed distance matrix is used,
 all pairwise distances should be affected.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -58,7 +58,7 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     if not ordered_labels:
         raise HandlingError('no ordered taxa were provided')
     if len(ordered_labels) != len(set(ordered_labels)):
@@ -66,7 +66,7 @@ def get_response(fs):
     # get the label selection and its complement
     min_selected_labels = 2
     min_unselected_labels = 1
-    selected_labels = set(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selected_labels = set(Util.stripped_lines(StringIO(fs.selection)))
     if len(selected_labels) < min_selected_labels:
         raise HandlingError('at least %d taxa should be selected to be grouped' % min_selected_labels)
     # get the set of labels in the complement
@@ -85,7 +85,7 @@ def get_response(fs):
     index_selection = set(i for i, label in enumerate(ordered_labels) if label in selected_labels)
     index_complement = set(range(n)) - index_selection
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the ordered list of sets of indices to merge
     merged_indices = SchurAlgebra.vmerge([set([x]) for x in range(n)], index_selection)
     # calculate the new distance matrix

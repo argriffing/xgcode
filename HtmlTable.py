@@ -4,7 +4,7 @@ This is a simple module for making an html table.
 
 import unittest
 import cgi
-import StringIO
+from StringIO import StringIO
 
 import Util
 
@@ -28,7 +28,7 @@ def get_table_string(row_major_matrix):
     This is an extremely basic function.
     @param row_major_matrix: a row major matrix of things to go in the table
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<table border>'
     for row in row_major_matrix:
         print >> out, '<tr>'

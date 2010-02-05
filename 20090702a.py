@@ -1,7 +1,7 @@
 """Check the speed of singular value decomposition.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import math
 import time
@@ -38,7 +38,7 @@ def do_analysis(n, p):
     @param p: another dimension of the matrix
     @return: the multi-line report string
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # create the matrix
     start_time = time.time()
     M = get_matrix(n, p)
@@ -61,7 +61,7 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the response
     n = 50
     for p in (10000, 20000, 40000):

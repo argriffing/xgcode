@@ -1,7 +1,7 @@
 """Given a rate matrix, get the stationary distribution.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 

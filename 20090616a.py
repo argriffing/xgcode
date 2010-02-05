@@ -1,7 +1,7 @@
 """Construct an example tree with pedagogically useful properties.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import random
 import optparse
@@ -81,7 +81,7 @@ class TreeSearch:
         """
         @return: a multi-line string of text
         """
-        out = StringIO.StringIO()
+        out = StringIO()
         if self.force_difference or self.informative_full_split:
             print >> out, 'full graph split stats:'
             print >> out, self.aug_split_collision_count, 'full graph splits collided with the desired primary split'
@@ -236,7 +236,7 @@ def do_tree_search(tree_search, nseconds, sampling_function):
     @param nseconds: the allowed time for the search or None to search until interrupted
     @param sampling_function: a function that samples a branch length
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     try:
         success = tree_search.do_search(nseconds, sampling_function)
     except KeyboardInterrupt, e:

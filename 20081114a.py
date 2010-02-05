@@ -1,7 +1,7 @@
 """For each of a set of trees, compare spectral sign splits with and without internal nodes.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import numpy
@@ -51,7 +51,7 @@ def get_response(fs):
     """
     # get the newick trees.
     trees = []
-    for tree_string in Util.stripped_lines(StringIO.StringIO(fs.trees)):
+    for tree_string in Util.stripped_lines(StringIO(fs.trees)):
         # parse each tree and make sure that it conforms to various requirements
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]
@@ -63,12 +63,12 @@ def get_response(fs):
             raise HandlingError('each terminal node label must be unique')
         trees.append(tree)
     # create the response
-    out = StringIO.StringIO()
+    out = StringIO()
     same_count = 0
     diff_count = 0
     for tree in trees:
         # make the local paragraph that will be shown if there is an event
-        local_out = StringIO.StringIO()
+        local_out = StringIO()
         has_event = False
         # print the tree
         print >> local_out, NewickIO.get_newick_string(tree)
@@ -148,7 +148,7 @@ def main():
             name_complement = frozenset(node.get_name() for node, elem in zip(tip_nodes, y) if elem <= 0)
             name_partition = frozenset((name_selection, name_complement))
             if name_partition not in valid_partitions:
-                message = StringIO.StringIO()
+                message = StringIO()
                 print >> message, 'invalid partition found:'
                 print >> message, 'tree:', NewickIO.get_newick_string(tree)
                 print >> message, 'invalid partition:', name_partition

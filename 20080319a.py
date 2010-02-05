@@ -1,7 +1,7 @@
 """Compare methods of estimating the stationary codon distribution. [FLAWED]
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import scipy.optimize
@@ -79,7 +79,7 @@ def get_response(fs):
                 nt_to_weight[nt] += p
         implied_stationary_nt_distribution = normalized(nt_to_weight[nt] for nt in nt_letters)
     # start the output text string
-    out = StringIO.StringIO()
+    out = StringIO()
     # write the codon stationary distribution
     print >> out, 'estimated codon stationary distribution:'
     for codon, p in zip(codons, codon_distribution):

@@ -6,7 +6,7 @@ The column labels are the eigenvalues,
 and the other numbers are the eigenvectors.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy as np
 
@@ -48,7 +48,7 @@ def get_response(fs):
     sorted_eigenvalues, sorted_eigenvectors = zip(*sorted_eigensystem)
     M = zip(*sorted_eigenvectors)
     # write the html
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<body>'
     print >> out, HtmlTable.get_labeled_table_string(sorted_eigenvalues, ordered_names, M)

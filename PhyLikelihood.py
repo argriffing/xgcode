@@ -1,6 +1,6 @@
 
 import unittest
-import StringIO
+from StringIO import StringIO
 import math
 import random
 
@@ -70,12 +70,12 @@ def simulate_alignment(tree, substitution_model, ncolumns, seed=None):
     if seed is not None:
         random.setstate(old_rng_state)
     # Create an alignment object from the simulated sequences.
-    sio = StringIO.StringIO()
+    sio = StringIO()
     for header, sequence in simulated_sequences.items():
         print >> sio, '>' + header
         print >> sio, ''.join(sequence)
     fasta_string = sio.getvalue()
-    return Fasta.Alignment(StringIO.StringIO(fasta_string))
+    return Fasta.Alignment(StringIO(fasta_string))
 
 def simulate_ancestral_alignment(tree, alignment, substitution_model):
     """
@@ -103,13 +103,13 @@ def simulate_ancestral_alignment(tree, alignment, substitution_model):
         for name, state in name_state_pairs:
             simulated_ancestors[name].append(state)
     # Create an alignment object from the simulated sequences.
-    sio = StringIO.StringIO()
+    sio = StringIO()
     print >> sio, alignment.to_fasta_string()
     for header, sequence in simulated_ancestors.items():
         print >> sio, '>' + header
         print >> sio, ''.join(sequence)
     fasta_string = sio.getvalue()
-    return Fasta.Alignment(StringIO.StringIO(fasta_string))
+    return Fasta.Alignment(StringIO(fasta_string))
 
 
 class TestPhyLikelihood(unittest.TestCase):
@@ -120,7 +120,7 @@ class TestPhyLikelihood(unittest.TestCase):
         tree = Newick.parse(tree_string, Newick.NewickTree)
         tree.assert_valid()
         # Get header and sequence pairs.
-        alignment = Fasta.Alignment(StringIO.StringIO(Fasta.brown_example_alignment))
+        alignment = Fasta.Alignment(StringIO(Fasta.brown_example_alignment))
         # Get the Jukes-Cantor rate matrix object.
         dictionary_rate_matrix = RateMatrix.get_jukes_cantor_rate_matrix()
         ordered_states = list('ACGT')
@@ -136,7 +136,7 @@ class TestPhyLikelihood(unittest.TestCase):
         tree = Newick.parse(tree_string, Newick.NewickTree)
         tree.assert_valid()
         # Get header and sequence pairs.
-        alignment = Fasta.Alignment(StringIO.StringIO(Fasta.brown_example_alignment))
+        alignment = Fasta.Alignment(StringIO(Fasta.brown_example_alignment))
         # Get the Jukes-Cantor rate matrix object.
         dictionary_rate_matrix = RateMatrix.get_jukes_cantor_rate_matrix()
         ordered_states = list('ACGT')

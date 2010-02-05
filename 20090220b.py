@@ -1,7 +1,7 @@
 """Get the Procrustes transformation of a list of input points to match a list of reference points.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from scipy import linalg
@@ -71,7 +71,7 @@ def get_response(fs):
     # get a scaling factor
     c_hat = sum(gamma) / numpy.trace(numpy.dot(Y, Y.T))
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for point in Y:
         new_point = c_hat * numpy.dot(point, A_hat) + reference_center
         print >> out, '\t'.join(str(v) for v in new_point)

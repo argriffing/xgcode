@@ -1,7 +1,7 @@
 """Given a newick tree, find its center according to some criterion.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 import random
 
@@ -100,7 +100,7 @@ def get_response(fs):
     states = list(sorted(node.name for node in tree.gen_tips()))
     n = len(states)
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the distance matrix
     distance_matrix = tree.get_distance_matrix(states)
     # get the equivalent euclidean points

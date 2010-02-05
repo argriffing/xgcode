@@ -4,7 +4,7 @@ Because this really is a projection it can obviously be done in one step,
 but I haven't worked this out yet.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 import argparse
@@ -32,7 +32,7 @@ def get_form():
 
 def process(ntaxa):
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # sample an xtree topology
     xtree = TreeSampler.sample_agglomerated_tree(ntaxa)
     # sample an xtree with exponentially distributed branch lengths

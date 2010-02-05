@@ -4,7 +4,7 @@ Each column of the output matrix should be a contrast.
 Elements in the output matrix with absolute values smaller than epsilon will be zeroed.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Util
@@ -43,7 +43,7 @@ def get_response(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     # validate the input
     observed_label_set = set(node.get_name() for node in tree.gen_tips())
     if set(ordered_labels) != observed_label_set:
@@ -53,7 +53,7 @@ def get_response(fs):
     # set elements with small absolute value to zero
     C[abs(C) < fs.epsilon] = 0
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     if fs.plain_format:
         print >> out, MatrixUtil.m_to_string(C)
     elif fs.matlab_format:

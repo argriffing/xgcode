@@ -4,7 +4,7 @@ This is like neighbor joining,
 but it can split more than two branches from the star tree at each iteration.
 """
 
-import StringIO
+from StringIO import StringIO
 import unittest
 
 import Newick
@@ -257,7 +257,7 @@ class TreeBuilder:
                 while min(len(selection), len(complement)) < 2:
                     # kill the loop if the halving count is ridiculous
                     if halving_count > 1000:
-                        error_out = StringIO.StringIO()
+                        error_out = StringIO()
                         print >> error_out, 'the number of leaf stem halving iterations is ridiculous (%d);' % halving_count
                         print >> error_out, 'the singleton leaf stem length is %s;' % leaf_stem_length
                         print >> error_out, 'the distance matrix is:'
@@ -272,7 +272,7 @@ class TreeBuilder:
                         smaller = complement
                         larger = selection
                     else:
-                        error_out = StringIO.StringIO()
+                        error_out = StringIO()
                         print >> error_out, 'in the following distance matrix,'
                         print >> error_out, 'a split was so degenerate that it did not even leave a leaf stem to work with:'
                         print >> error_out, MatrixUtil.m_to_string(D)
@@ -283,7 +283,7 @@ class TreeBuilder:
                     leaf_stem_length = v[leaf_singleton_index]
                     # if the leaf stem length is zero then repeatedly halving it will not help.
                     if not leaf_stem_length:
-                        error_out = StringIO.StringIO()
+                        error_out = StringIO()
                         print >> error_out, 'the singleton leaf stem length is zero;'
                         print >> error_out, 'the number of leaf stem halving iterations performed was %d;' % halving_count
                         print >> error_out, 'the distance matrix is:'

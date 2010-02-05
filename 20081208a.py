@@ -1,7 +1,7 @@
 """Visualize an internal state of a distance based tree reconstruction algorithm.
 """
 
-import StringIO
+from StringIO import StringIO
 import tempfile
 
 import numpy
@@ -83,7 +83,7 @@ def get_response(fs):
     if len(D) < 3:
         raise HandlingError('the distance matrix should have at least three rows')
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     if not ordered_labels:
         raise HandlingError('no ordered labels were provided')
     if len(ordered_labels) != len(D):

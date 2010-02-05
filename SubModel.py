@@ -2,7 +2,7 @@
 """
 
 # standard modules
-import StringIO
+from StringIO import StringIO
 import unittest
 
 # nonstandard modules

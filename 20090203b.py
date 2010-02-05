@@ -1,7 +1,7 @@
 """Given a newick tree, calculate the full combinatorial Laplacian matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy
@@ -58,7 +58,7 @@ def get_response(fs):
     row_sums = [sum(row) for row in A]
     L = list_to_diagonal_matrix(row_sums) - A.copy()
     # write the text
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'Laplacian:'
     print >> out, MatrixUtil.m_to_string(L, precision=fs.precision)
     print >> out

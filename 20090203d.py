@@ -5,7 +5,7 @@ Contrasts are available for both normalized and combinatorial Laplacians,
 while Euclidean coordinates are with respect to the combinatorial Laplacian matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy
@@ -155,7 +155,7 @@ def get_response(fs):
                 '\n'.join('\t'.join(str(value) for value in point) for point in contrasts)]
         paragraphs.append(paragraph)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '\n\n'.join('\n'.join(paragraph) for paragraph in paragraphs)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

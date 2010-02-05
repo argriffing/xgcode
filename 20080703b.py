@@ -8,7 +8,7 @@ with mean zero and standard deviation equal to the perturbation strength.
 The exact bipartition criterion is a matrix function by Eric Stone.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import math
 
@@ -47,7 +47,7 @@ def get_response(fs):
     """
     # get the newick trees.
     trees = []
-    for tree_string in Util.stripped_lines(StringIO.StringIO(fs.trees)):
+    for tree_string in Util.stripped_lines(StringIO(fs.trees)):
         # parse each tree and make sure that it conforms to various requirements
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]
@@ -106,7 +106,7 @@ def get_response(fs):
             else:
                 invalid_split_count += 1
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, informative_split_count, 'informative splits'
     print >> out, degenerate_split_count, 'degenerate splits'
     print >> out, invalid_split_count, 'invalid splits'

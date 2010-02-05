@@ -4,7 +4,7 @@ The nexus data should have a tree and an alignment.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 import os
 import popen2
 
@@ -34,7 +34,7 @@ def get_response(fs):
     # read the nexus data
     nexus = Nexus.Nexus()
     try:
-        nexus.load(StringIO.StringIO(fs.nexus))
+        nexus.load(StringIO(fs.nexus))
     except Nexus.NexusError, e:
         raise HandlingError(e)
     # define some paths
@@ -74,7 +74,7 @@ def get_response(fs):
     fin = open(Paml.baseml_out)
     d = Paml.parse_hky_output(fin)
     fin.close()
-    out = StringIO.StringIO()
+    out = StringIO()
     if fs.outdebug:
         print >> out, 'baseml stdout:'
         print >> out, '-----------------------------------------'

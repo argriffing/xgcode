@@ -1,7 +1,7 @@
 """Given a weighted adjacency matrix, find the optimal bipartition using some objective function.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -64,7 +64,7 @@ def get_response(fs):
     # read the weighted adjacency matrix
     A = fs.matrix
     # read the labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     # assert that the number of labels is compatible with the shape of the matrix
     n = len(A)
     if len(ordered_labels) != n:
@@ -84,7 +84,7 @@ def get_response(fs):
     complement = set(range(n)) - best_cluster
     small_cluster = min((len(best_cluster), best_cluster), (len(complement), complement))[1]
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'smallest cluster defined by the bipartition:'
     for index in sorted(small_cluster):
         print >> out, ordered_labels[index]

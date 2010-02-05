@@ -11,7 +11,7 @@ Allow labels to be shown or not shown.
 Allow coloration to be overridden.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import cairo
@@ -86,7 +86,7 @@ def get_form():
     @return: the body of a form
     """
     # define the default labeled points
-    lines = [x.strip() for x in StringIO.StringIO(g_default_data).readlines()]
+    lines = [x.strip() for x in StringIO(g_default_data).readlines()]
     lines = [x for x in lines if x]
     # define the form objects
     form_objects = [
@@ -200,7 +200,7 @@ def read_points_and_edges(multiline):
     @param multiline: input like the default data
     @return: a list of (x, y) points and a set of point-index-pair edges
     """
-    lines = [x.strip() for x in StringIO.StringIO(multiline).readlines()]
+    lines = [x.strip() for x in StringIO(multiline).readlines()]
     lines = [x for x in lines if x]
     try:
         POINTS_index = lines.index('POINTS')

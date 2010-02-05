@@ -4,7 +4,7 @@ MMC is Modulated Modularity Clustering as in the paper
 "Modulated Modularity Clustering as an Exploratory Tool for Functional Genomic Inference".
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy
@@ -288,11 +288,11 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the observation lines
-    observation_lines = list(Util.stripped_lines(StringIO.StringIO(fs.observations)))
+    observation_lines = list(Util.stripped_lines(StringIO(fs.observations)))
     row_labels, column_labels, data_matrix = parse_observation_lines(observation_lines)
     ngenes = len(row_labels)
     # read the module lines
-    module_lines = list(Util.stripped_lines(StringIO.StringIO(fs.modules)))
+    module_lines = list(Util.stripped_lines(StringIO(fs.modules)))
     gene_labels, module_indices, gene_indices = parse_module_lines(module_lines)
     # each multi-line input should have a header line and N gene lines
     if len(observation_lines) != len(module_lines):
@@ -317,7 +317,7 @@ def get_response(fs):
         fn_get_modularity = get_modularity_other_c
     modularity = fn_get_modularity(affinity_matrix, ordered_module_indices)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, modularity
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

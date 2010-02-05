@@ -8,7 +8,7 @@ This is not possible in mod_python for example,
 because each request is in its own thread instead of its own process.
 """
 
-import StringIO
+from StringIO import StringIO
 import sys
 import os
 import re
@@ -126,7 +126,7 @@ def handler(req):
                 print >> req, 'Error:', e
             else:
                 req.content_type = "text/html"
-                page_buffer = StringIO.StringIO()
+                page_buffer = StringIO()
                 write_directory_html(script_directory, doc_directory, page_buffer)
                 req.write(page_buffer.getvalue())
         else:
@@ -192,7 +192,7 @@ def do_cgi():
     # get the fields sent by the browser
     fs = cgi.FieldStorage()
     # start writing a response
-    out = StringIO.StringIO()
+    out = StringIO()
     # initialize the header dictionary
     header_dict = {}
     # get some environment variables from the cgi

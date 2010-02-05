@@ -1,7 +1,7 @@
 """Get the maximum likelihood rate for each column of a nucleotide alignment.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import scipy.optimize
 
@@ -149,7 +149,7 @@ def get_response(fs):
     distribution = SnippetUtil.get_distribution(fs.weights, 'nucleotide', list('ACGT'))
     # get the nucleotide alignment
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.alignment))
+        alignment = Fasta.Alignment(StringIO(fs.alignment))
         alignment.force_nucleotide()
     except Fasta.AlignmentError, e:
         raise HandlingError(e)
@@ -169,7 +169,7 @@ def main():
     # create the alignment object
     print 'creating the alignment...'
     alignment_string = Fasta.brown_example_alignment.strip()
-    alignment = Fasta.Alignment(StringIO.StringIO(alignment_string))
+    alignment = Fasta.Alignment(StringIO(alignment_string))
     # create a tree object
     print 'creating the tree...'
     tree_string = Newick.brown_example_tree

@@ -4,7 +4,7 @@ The distance matrix should represent geodesic pairwise distances
 between tips of a bifurcating tree with positive branch lengths.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -108,13 +108,13 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     if not ordered_labels:
         raise HandlingError('no ordered labels were provided')
     if len(ordered_labels) != len(set(ordered_labels)):
         raise HandlingError('the ordered labels should be unique')
     # read the set of selected labels
-    selected_labels = set(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selected_labels = set(Util.stripped_lines(StringIO(fs.selection)))
     if not selected_labels:
         raise HandlingError('no selected labels were provided')
     weird_labels = selected_labels - set(ordered_labels)
@@ -134,7 +134,7 @@ def get_response(fs):
         if len(current_set) < min_vertex_count:
             raise err
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the length of the branch length defined by the split
     branch_length = get_split_branch_length(D, selection, complement)
     print >> out, 'the length of the branch defined by the bipartition:'

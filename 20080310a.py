@@ -1,7 +1,7 @@
 """Summarize the properties of a Direct Protein mixture model.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Codon
@@ -33,7 +33,7 @@ def get_response(fs):
     nt_distribution = mixture_model.get_nt_stationary_distribution()
     ordered_codons = list(sorted(Codon.g_non_stop_codons))
     # show the summary
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'expected codon substitution rate:'
     print >> out, expected_rate
     print >> out, ''

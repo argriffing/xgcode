@@ -5,7 +5,7 @@ from each tree sample a distance matrix;
 for each distance matrix, reconstruct the tree using different methods.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
@@ -318,7 +318,7 @@ def process(ntaxa, nseconds, nlengths, nsamples, nj_like, branch_length_sampler,
     else:
         time_limit_string = '(no time limit)'
     # create the results in convenient R table form
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '#', 'R usage: mytable <- read.table(\'this.filename\')'
     print >> out, '#', time.time() - start_time, 'elapsed seconds'
     print >> out, '#', 'the simulation was limited to', time_limit_string

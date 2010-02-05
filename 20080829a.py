@@ -1,7 +1,7 @@
 """Given a newick tree, calculate weights for a subset of the tips.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -57,7 +57,7 @@ def get_response(fs):
     if tree.has_negative_branch_lengths():
         raise HandlingError('calculating weights for a tree with negative branch lengths is not implemented')
     # get the selected names
-    selection = list(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selection = list(Util.stripped_lines(StringIO(fs.selection)))
     selected_name_set = set(selection)
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set
@@ -76,7 +76,7 @@ def get_response(fs):
     elif fs.thompson:
         name_weight_pairs = LeafWeights.get_thompson_weights(tree)
     # report the weights
-    out = StringIO.StringIO()
+    out = StringIO()
     for name, weight in name_weight_pairs:
         print >> out, '%s: %f' % (name, weight)
     response_headers = [('Content-Type', 'text/plain')]

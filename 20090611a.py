@@ -10,7 +10,7 @@ have at least one positively valuated tip
 and one negatively valuated tip.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import random
 import optparse
@@ -109,7 +109,7 @@ def process(ntaxa, nseconds, branch_length_sampler):
     except KeyboardInterrupt, e:
         pass
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     if invalid_split_count:
         print >> out, 'A counterexample was found!'
         print >> out, 'D:'

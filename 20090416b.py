@@ -7,7 +7,7 @@ One of the eigenvalues is guaranteed to remain zero,
 and its corresponding eigenvector is guaranteed to be the unit vector.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import random
 
@@ -86,7 +86,7 @@ def process(npoints, nseconds):
         elif min(result.L_eigenvalues) < min(best_result.L_eigenvalues):
             best_result = result
         nchecked += 1
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'checked', nchecked, 'matrices each formed from', npoints, 'points'
     print >> out
     print >> out, 'eigenvalues of the induced matrix with lowest eigenvalue:'

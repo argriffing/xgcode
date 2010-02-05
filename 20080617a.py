@@ -1,7 +1,7 @@
 """Given a newick tree, draw an image highlighting selected taxa.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Util
@@ -111,7 +111,7 @@ def get_response(fs):
         raise HandlingError('drawing a tree with negative branch lengths is not implemented')
     tree.add_branch_lengths()
     # get the selected taxa
-    selected_taxa = list(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selected_taxa = list(Util.stripped_lines(StringIO(fs.selection)))
     # verify that each name is present in the tree
     for name in selected_taxa:
         try:

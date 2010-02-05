@@ -1,7 +1,7 @@
 """Convert a path resistance matrix to an edge resistor matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -31,7 +31,7 @@ def get_response(fs):
     resistor = -1/L
     resistor -= numpy.diag(numpy.diag(resistor))
     # write the edge resistor matrix
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(resistor)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

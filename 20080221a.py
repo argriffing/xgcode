@@ -4,7 +4,7 @@ Implement the "Direct Protein Model" described by equations (15) and (21)
 in the 2007 MBE paper "Population Genetics Without Intraspecific Data" by Thorne et al.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from SnippetUtil import HandlingError
@@ -53,7 +53,7 @@ def get_response(fs):
     aa_energy_list = [aa_to_energy[aa] for aa in aa_ordered]
     rate_matrix_object = DirectProtein.DirectProteinRateMatrix(fs.kappa, nt_distribution_list, aa_energy_list)
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     if fs.srm:
         # write the scaled rate matrix
         rate_matrix_object.normalize()

@@ -10,7 +10,7 @@ The three normalizations are: unnormalized, normalized by the sum of the first t
 and normalized by the sum of all eigenvalues.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
@@ -223,7 +223,7 @@ def process(ntaxa, length, nseconds, branch_length_sampler):
     except KeyboardInterrupt, e:
         pass
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '#', elapsed_time, 'seconds of run time'
     print >> out, '#', ntaxa, 'taxa per tree'
     print >> out, '#', branch_length_sampler

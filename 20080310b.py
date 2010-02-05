@@ -4,7 +4,7 @@ See "Population Genetics Without Intraspecific Data" by Thorne et al.
 for more information about the Direct RNA model.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Codon
@@ -33,7 +33,7 @@ def get_response(fs):
     expected_rate = mixture_model.get_expected_rate()
     nt_distribution = mixture_model.get_nt_stationary_distribution()
     # write the summary
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'expected substitution rate:'
     print >> out, expected_rate
     print >> out, ''

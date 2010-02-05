@@ -3,7 +3,7 @@
 This Laplacian-like matrix is the cross-product matrix S from the Abdi paper.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -85,7 +85,7 @@ def process(ntaxa):
     # get the pseudoinverse of S
     S_pinv = np.linalg.pinv(S)
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'newick tree:', weighted_tree_string
     print >> out
     print >> out, 'm:'

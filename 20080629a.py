@@ -1,7 +1,7 @@
 """Given a newick tree, determine if a bipartition is a member of the split set of the tree.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Util
@@ -41,7 +41,7 @@ def get_response(fs):
     if len(set(tip_names)) != len(tip_names):
         raise HandlingError('each leaf name must be unique')
     # get the selected taxa
-    selected_taxa = set(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selected_taxa = set(Util.stripped_lines(StringIO(fs.selection)))
     # assert that the selected names are actually leaf names
     if set(selected_taxa) - set(tip_names):
         raise HandlingError('one or more selected taxa are not leaf names in the tree')
@@ -57,7 +57,7 @@ def get_response(fs):
     if n_complement == 1:
         raise HandlingError('degenerate split: a single unselected taxon can always be separated from the others')
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     tip_selection = [tip for tip in tree.gen_tips() if tip.get_name() in selected_taxa]
     if tree.get_split_branch(tip_selection):
         print >> out, 'this split is valid and nontrivial'

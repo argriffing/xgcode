@@ -5,7 +5,7 @@ The F84 evolutionary model is defined in the paper
 by Ziheng Yang in J Mol Evol 1994.
 """
 
-import StringIO
+from StringIO import StringIO
 import unittest
 import math
 

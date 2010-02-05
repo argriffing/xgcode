@@ -5,7 +5,7 @@ that the correlation matrix corresponding to Y is equal to the
 elementwise squared correlation matrix corresponding to X.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import math
 
@@ -67,7 +67,7 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # check the input
     n = fs.n
     p = fs.p

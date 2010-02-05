@@ -1,7 +1,7 @@
 """Calculate the Moore-Penrose inverse of a matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -36,7 +36,7 @@ def get_response(fs):
     # set small values to zero in the output
     M_pinv[abs(M_pinv) < fs.epsilon] = 0
     # create the response string
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(M_pinv)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

@@ -9,7 +9,7 @@ The reconstructed trees are then compared to the original tree,
 and the weight of the partition errors is reported.
 """
 
-import StringIO
+from StringIO import StringIO
 import optparse
 import time
 import sys
@@ -109,7 +109,7 @@ def get_response(fs):
             raise HandlingError('this combination of parameters is predicted to take too long')
     sim.run(distance_matrices, ordered_names)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'partition error count frequencies:'
     print >> out, sim.get_histogram_string()
     print >> out, ''
@@ -192,7 +192,7 @@ class Simulation:
         """
         @return: a multi-line string summarizing the quality of the trees reconstructed during the simulation
         """
-        out = StringIO.StringIO()
+        out = StringIO()
         for i, count in enumerate(self.get_count_list()):
             print >> out, i, ':', count
         return out.getvalue().strip()

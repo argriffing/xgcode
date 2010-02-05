@@ -1,7 +1,7 @@
 """Given a weighted adjacency matrix, use its eigendecomposition to find a bipartition.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from scipy import linalg
 import numpy
@@ -41,7 +41,7 @@ def get_response(fs):
     if n < 3:
         raise HandlingError('expected at least a 3x3 matrix')
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
     # do the eigendecomposition
     w, v = linalg.eigh(A)
     eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
@@ -49,7 +49,7 @@ def get_response(fs):
     fiedler_eigenvector_index = eigenvalue_info[1][1]
     fiedler_eigenvector = v.T[fiedler_eigenvector_index]
     # respond according to the criterion
-    out = StringIO.StringIO()
+    out = StringIO()
     selected_indices = None
     if fs.sign:
         selected_indices = set(i for i, element in enumerate(fiedler_eigenvector) if element < 0)

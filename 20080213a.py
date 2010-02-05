@@ -3,7 +3,7 @@
 Calculate codon frequencies according to equation (14) of Halpern-Bruno 1998.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -54,7 +54,7 @@ def get_response(fs):
         codon_to_weight[codon] = (codon_aa_weight * codon_nt_weight) / sibling_nt_weight_sum
     total_weight = sum(codon_to_weight.values())
     # write the codon distribution
-    out = StringIO.StringIO()
+    out = StringIO()
     response_headers = [('Content-Type', 'text/plain')]
     for codon, weight in sorted(codon_to_weight.items()):
         print >> out, codon, ':', weight / total_weight

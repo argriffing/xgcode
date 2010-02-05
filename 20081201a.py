@@ -1,7 +1,7 @@
 """For each of a set of trees, reconstruct the topology from a single eigendecomposition.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 import scipy
@@ -170,7 +170,7 @@ def get_response(fs):
     """
     # get the newick trees.
     trees = []
-    for tree_string in Util.stripped_lines(StringIO.StringIO(fs.trees)):
+    for tree_string in Util.stripped_lines(StringIO(fs.trees)):
         # parse each tree and make sure that it conforms to various requirements
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]
@@ -192,7 +192,7 @@ def get_response(fs):
     for tree in trees:
         results.append(AnalysisResult(tree, epsilon))
     # create the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for result in results:
         for line in result.get_response_lines(selected_options):
             print >> out, line

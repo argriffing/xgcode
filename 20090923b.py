@@ -4,7 +4,7 @@ Are the signs of eigenvector loadings of -(1/2)HDH sufficient
 to get the topology of a bifurcating tree?
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -145,7 +145,7 @@ def process(nseconds, ntaxa):
     except CounterexampleError, e:
         counterexample_message = str(e)
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, elapsed_time, 'seconds elapsed'
     print >> out, '%d-leaf trees were sampled' % ntaxa
     print >> out, 'epsilon for nonzero coordinates:', g_epsilon

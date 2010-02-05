@@ -1,7 +1,7 @@
 """Consider the graph laplacian matrix for a phylogenetic tree.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from scipy import linalg
@@ -80,7 +80,7 @@ def get_response(fs):
     # get the lexicographically ordered tip names
     states = list(sorted(node.name for node in tree.gen_tips()))
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     # create the dictionary distance matrix
     dictionary_distance_matrix = {}
     for ta in tree.gen_tips():

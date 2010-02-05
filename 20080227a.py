@@ -1,7 +1,7 @@
 """Given N free energies, get an NxN rate matrix.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from SnippetUtil import HandlingError
@@ -27,7 +27,7 @@ def get_response(fs):
     """
     # read the energies from the form data
     energies = []
-    for line in Util.stripped_lines(StringIO.StringIO(fs.energies)):
+    for line in Util.stripped_lines(StringIO(fs.energies)):
         try:
             energy = float(line)
         except ValueError, e:

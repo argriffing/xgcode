@@ -1,7 +1,7 @@
 """Calculate ancestral state distributions given leaf states.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -55,7 +55,7 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # read the ordered states
-    ordered_states = list(Util.stripped_lines(StringIO.StringIO(fs.states)))
+    ordered_states = list(Util.stripped_lines(StringIO(fs.states)))
     # read the matrix from the form data
     R = fs.rate_matrix
     if len(R) < 2:
@@ -63,7 +63,7 @@ def get_response(fs):
     if len(ordered_states) != len(R):
         raise HandlingError('the number of ordered states should be the same as the number of rows in the matrix')
     # get the dictionary mapping taxa to states
-    taxon_to_state = SnippetUtil.get_generic_dictionary(StringIO.StringIO(fs.assignments), 'taxon name', 'state name', ordered_states)
+    taxon_to_state = SnippetUtil.get_generic_dictionary(StringIO(fs.assignments), 'taxon name', 'state name', ordered_states)
     # set the states for each of the tree tips
     for node in tree.gen_tips():
         node.state = taxon_to_state[node.name]
@@ -77,7 +77,7 @@ def get_response(fs):
         weights = [node.state_to_subtree_prob[state] for state in ordered_states]
         node.state_distribution = Util.weights_to_distribution(weights)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # show the ancestral state distributions
     for node in tree.gen_internal_nodes():
         if node.name:

@@ -1,7 +1,7 @@
 """ Given a newick tree, draw an image using colored branches.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -55,7 +55,7 @@ def get_response(fs):
     # get the dictionary mapping the branch name to the rgb color
     name_to_rgb = {}
     # parse the coloration string
-    for line in Util.stripped_lines(StringIO.StringIO(fs.coloration)):
+    for line in Util.stripped_lines(StringIO(fs.coloration)):
         # get the branch and its color
         name_string, rgb_string = SnippetUtil.get_state_value_pair(line)
         rgb_string = rgb_string.upper()

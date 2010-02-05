@@ -8,7 +8,7 @@ Are these two embeddings the same?
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -59,7 +59,7 @@ def process():
     @return: a multi-line string that summarizes the results
     """
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # define a degenerate mass vector
     m_degenerate = np.array([0.25, 0.25, 0.25, 0.25, 0, 0])
     # define some distance matrices

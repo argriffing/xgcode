@@ -1,7 +1,7 @@
 """Given strings find vectors whose correlations are proportions of matching sites.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 from numpy import linalg
@@ -61,7 +61,7 @@ def get_response(fs):
     """
     # get the sequences
     sequences = []
-    for raw_string in Util.stripped_lines(StringIO.StringIO(fs.sequences)):
+    for raw_string in Util.stripped_lines(StringIO(fs.sequences)):
         sequences.append(raw_string.strip())
     # get the alphabet
     alphabet = list(sorted(set(''.join(sequences))))
@@ -79,7 +79,7 @@ def get_response(fs):
             number_list.extend(letter_to_vector[letter])
         number_lists.append(number_list)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # print the correlation matrix
     print >> out, MatrixUtil.m_to_string(number_lists)
     # write the response

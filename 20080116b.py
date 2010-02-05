@@ -1,7 +1,7 @@
 """Given a newick tree, draw an image using one of several file formats.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 
 from SnippetUtil import HandlingError

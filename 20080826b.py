@@ -6,7 +6,7 @@ For the JC69 model, the maximum likelihood estimator for the distance can be wri
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -35,7 +35,7 @@ def get_response(fs):
     """
     # get the alignment object
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.fasta))
+        alignment = Fasta.Alignment(StringIO(fs.fasta))
     except Fasta.AlignmentError, e:
         raise HandlingError('alignment error: ' + str(e))
     # assert that the alignment is of exactly two sequences
@@ -54,7 +54,7 @@ def get_response(fs):
     sequence_pair = alignment.sequences
     mle = JC69.get_ML_distance(*sequence_pair)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'ML distance estimate:', mle
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

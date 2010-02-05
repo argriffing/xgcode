@@ -5,7 +5,7 @@ Axes may be added.
 Points may be labeled according by index.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 import os
 
@@ -208,7 +208,7 @@ def read_points_and_edges(multiline):
     @param multiline: input like the default data
     @return: a list of (x, y) points and a set of point-index-pair edges
     """
-    lines = [x.strip() for x in StringIO.StringIO(multiline).readlines()]
+    lines = [x.strip() for x in StringIO(multiline).readlines()]
     lines = [x for x in lines if x]
     try:
         POINTS_index = lines.index('POINTS')

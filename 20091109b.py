@@ -1,7 +1,7 @@
 """Plot the first few eigenfunctions of the Laplacian of a path.
 """
 
-import StringIO
+from StringIO import StringIO
 from itertools import product
 
 import numpy as np

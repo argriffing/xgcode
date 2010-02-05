@@ -22,7 +22,7 @@ het_post: the floating point posterior probability that the position is heterozy
 bad_post: the floating point posterior probability that the position is bad
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys
@@ -140,7 +140,7 @@ def get_response(fs):
     nseconds = 2
     use_pbar = False
     # get the lines from the multi-line input
-    lines = StringIO.StringIO(fs.input_text).readlines()
+    lines = StringIO(fs.input_text).readlines()
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
     # define an arbitrary transition matrix
@@ -341,7 +341,7 @@ def process(input_lines, good_coverage, bad_coverage, randomization_rate, T, nse
     @return: the multi-line string of the resulting csv file
     """
     # do some initialization
-    out = StringIO.StringIO()
+    out = StringIO()
     pbar = None
     start_time = time.time()
     # define the three models

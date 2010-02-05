@@ -8,7 +8,7 @@ a matrix that is an inverse distance matrix perturbation of the laplacian.
 Maybe there is some connection between these matrices, or maybe not.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -43,7 +43,7 @@ def get_response(fs):
         for j in range(n):
             sigma[i][j] = (V[i] + V[j] - D[i][j]) / 2
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(sigma)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

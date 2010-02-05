@@ -7,7 +7,7 @@ where X_i is a normally distributed random variable
 with mean zero and standard deviation equal to the perturbation strength.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import math
 
@@ -50,14 +50,14 @@ def get_response(fs):
     if n < 2:
         raise HandlingError('the newick tree should have at least two leaves')
     # read the ordered labels
-    states = list(Util.stripped_lines(StringIO.StringIO(fs.inlabels)))
+    states = list(Util.stripped_lines(StringIO(fs.inlabels)))
     if len(states) > 1:
         if set(states) != set(alphabetically_ordered_states):
             raise HandlingError('if ordered labels are provided, each should correspond to a leaf of the newick tree')
     else:
         states = alphabetically_ordered_states
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     # create the distance matrix
     D = tree.get_distance_matrix(states)
     # create the perturbed distance matrix if necessary
@@ -75,19 +75,19 @@ def get_response(fs):
     paragraphs = []
     # show the distance matrix if requested
     if fs.perturbed:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'a perturbed distance matrix:'
         print >> paragraph, MatrixUtil.m_to_string(P)
         paragraphs.append(paragraph.getvalue().strip())
     # show the distance matrix if requested
     if fs.distance:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'the original distance matrix:'
         print >> paragraph, MatrixUtil.m_to_string(D)
         paragraphs.append(paragraph.getvalue().strip())
     # show the ordered labels if requested
     if fs.outlabels:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'ordered labels:'
         print >> paragraph, '\n'.join(states)
         paragraphs.append(paragraph.getvalue().strip())

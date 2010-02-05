@@ -3,7 +3,7 @@ This module is supposed to conform to more mathematical definitions of X-tree va
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 
 import MatrixUtil
 

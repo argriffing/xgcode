@@ -3,7 +3,7 @@
 This is not so useful.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 # this module uses scipy specific function calls

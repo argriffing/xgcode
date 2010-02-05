@@ -1,5 +1,5 @@
 import unittest
-import StringIO
+from StringIO import StringIO
 
 import numpy as np
 
@@ -354,29 +354,29 @@ class TestMatrixUtil(unittest.TestCase):
 
     def test_read_matrix_good(self):
         s = '1 2 3 \n 4 5 6'
-        row_major_observed = read_matrix(StringIO.StringIO(s))
+        row_major_observed = read_matrix(StringIO(s))
         row_major_expected = [[1, 2, 3], [4, 5, 6]]
         self.assertEquals(row_major_observed, row_major_expected)
 
     def test_read_matrix_bad(self):
-        sio = StringIO.StringIO('1 2 3 \n 4 5')
+        sio = StringIO('1 2 3 \n 4 5')
         self.assertRaises(MatrixError, read_matrix, sio)
 
     def test_read_square_matrix_bad(self):
         s = '1 2 3 \n 4 5 6'
-        M = np.array(read_matrix(StringIO.StringIO(s)))
+        M = np.array(read_matrix(StringIO(s)))
         self.assertRaises(MatrixError, assert_square, M)
 
     def test_read_square_matrix_good(self):
         s = '1 2 3 \n 4 5 6 \n 7 8 9'
-        row_major_observed = read_matrix(StringIO.StringIO(s))
+        row_major_observed = read_matrix(StringIO(s))
         row_major_expected = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         self.assertEquals(row_major_observed, row_major_expected)
 
     def test_read_rate_matrix(self):
         arr = [[-3, 1, 1, 1], [1, -3, 1, 1], [1, 1, -3, 1], [1, 1, 1, -3]]
         s = '\n'.join('\t'.join(str(x) for x in row) for row in arr)
-        sio = StringIO.StringIO(s)
+        sio = StringIO(s)
         M = np.array(read_matrix(sio))
         assert_rate_matrix(M)
 

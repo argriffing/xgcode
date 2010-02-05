@@ -1,7 +1,7 @@
 """This is the main application for wsgi dispatching.
 """
 
-import StringIO
+from StringIO import StringIO
 import sys
 import os
 import re
@@ -39,7 +39,7 @@ def application(environ, start_response):
     @param start_response: a function taking (status, response_headers) parameters.
     @return: the html page or results data
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     status = '200 OK'
     response_headers = [('Content-Type', 'text/plain')]
     try:
@@ -92,7 +92,7 @@ def get_directory_html(script_directory, doc_directory):
     @param script_directory: the absolute path to the script directory on the local machine
     @param doc_directory: the path to the documentation
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html><body>'
     print >> out, '<code>'
     for filename in sorted(os.listdir(script_directory)):

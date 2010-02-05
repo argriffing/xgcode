@@ -1,7 +1,7 @@
 """Normalize a rate matrix to have one expected transition per unit time.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 

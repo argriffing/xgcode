@@ -1,7 +1,7 @@
 """Evaluate a split of taxa for a given tree using the exact criterion for deep splits.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy
 
@@ -33,7 +33,7 @@ def get_response(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get the selected names
-    selection = list(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selection = list(Util.stripped_lines(StringIO(fs.selection)))
     selected_name_set = set(selection)
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set
@@ -60,7 +60,7 @@ def get_response(fs):
     R = Clustering.get_R_balaji(D)
     value = numpy.dot(numpy.dot(Y, R), Y.T)
     # report the results
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, value
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()
