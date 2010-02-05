@@ -31,6 +31,7 @@ import Form
 import Progress
 import DGRP
 import Util
+import ambignt
 
 
 g_sample_lines = [
@@ -313,8 +314,8 @@ def line_to_row(line):
     values = line.split()
     if len(values) != 16:
         raise Exception('expected 16 values per line')
-    if values[2] not in list('ACGT'):
-        msg = 'the reference allele should be a nucleotide: ' + values[2]
+    if values[2] not in ambignt.g_resolve_nt:
+        msg = 'the reference allele should be a nucleotide code: ' + values[2]
         raise Exception(msg)
     msg = 'literal A, C, G, T letters were not found where expected'
     if values[5] != 'A' or values[7] != 'C':
@@ -343,7 +344,14 @@ def convert_row(row):
     """
     name, pos, ref = row[:3]
     A, C, G, T = row[6], row[8], row[10], row[12]
-    nt_to_count = {'A':A, 'C':C, 'G':G, 'T':T}
+    acgt_counts = (A, C, G, T)
+    nt_to_count = dict(zip('ACGT', acgt_counts))
+    # hack the reference allele if it is ambiguous
+    if ref not in list('ACGT'):
+        nts = ambignt.g_resolve_nt[ref]
+        count_nt_pairs = [(nt_to_count[nt], nt) for nt in nts]
+        ref_count, ref = max(count_nt_pairs)
+    # get the count of the reference allele followed by decreasing counts
     R = nt_to_count[ref]
     non_ref_counts = [nt_to_count[c] for c in 'ACGT' if c != ref]
     obs = [R] + list(reversed(sorted(non_ref_counts)))
