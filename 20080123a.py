@@ -5,12 +5,12 @@ from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Util
 import Newick
 import SpatialTree
 import DrawTreeImage
 import FastDaylightLayout
 import Form
+import iterutils
 
 def get_form():
     """
@@ -28,7 +28,8 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('coloration', 'branch colors', '\n'.join(default_color_lines)),
+            Form.MultiLine('coloration', 'branch colors',
+                '\n'.join(default_color_lines)),
             Form.RadioGroup('imageformat', 'image format options', [
                 Form.RadioItem('png', 'png', True),
                 Form.RadioItem('svg', 'svg'),
@@ -50,21 +51,24 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
     if tree.has_negative_branch_lengths():
-        raise HandlingError('drawing a tree with negative branch lengths is not implemented')
+        msg = 'drawing a tree with negative branch lengths is not implemented'
+        raise HandlingError(msg)
     tree.add_branch_lengths()
     # get the dictionary mapping the branch name to the rgb color
     name_to_rgb = {}
     # parse the coloration string
-    for line in Util.stripped_lines(StringIO(fs.coloration)):
+    for line in iterutils.stripped_lines(StringIO(fs.coloration)):
         # get the branch and its color
         name_string, rgb_string = SnippetUtil.get_state_value_pair(line)
         rgb_string = rgb_string.upper()
         # validate the rgb string
         if len(rgb_string) != 6:
-            raise HandlingError('expected each rgb string to be six characters long')
+            msg = 'expected each rgb string to be six characters long'
+            raise HandlingError(msg)
         bad_letters = set(rgb_string) - set('0123456789ABCDEFabcdef')
         if bad_letters:
-            raise HandlingError('found invalid rgb characters: %s' % str(tuple(bad_letters)))
+            msg = 'found invalid rgb characters: %s' % str(tuple(bad_letters))
+            raise HandlingError(msg)
         # associate the branch with its color
         name_to_rgb[name_string] = rgb_string
     # color the branches

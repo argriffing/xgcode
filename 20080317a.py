@@ -1,8 +1,12 @@
-"""Infer the mutational stationary distribution from the nucleotide and amino acid stationary distributions. [FLAWED]
+"""Infer the mutational distribution from the nt and aa distributions. [FLAWED]
 
-Given a nucleotide stationary distribution and an amino acid stationary distribution,
+The idea was to the mutational stationary distribution
+from the nucleotide and amino acid stationary distributions.
+Given a nucleotide stationary distribution
+and an amino acid stationary distribution,
 infer the mutation and selection components.
-The mutation component is the stationary distribution of the nucleotide mutation process.
+The mutation component is the stationary distribution
+of the nucleotide mutation process.
 """
 
 # The selection component is centered amino acid energy vector upon which selection operates.
@@ -16,10 +20,10 @@ import scipy.optimize
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Util
 import Codon
 import DirectProtein
 import Form
+import iterutils
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
 from Codon import g_sorted_non_stop_codons as codons
@@ -29,12 +33,14 @@ def get_form():
     @return: the body of a form
     """
     # define the default distributions
-    default_nt_string = '\n'.join(nt + ' : 1' for nt in sorted(Codon.g_nt_letters))
-    default_aa_string = '\n'.join(aa + ' : 1' for aa in sorted(Codon.g_aa_letters))
+    default_nt_string = '\n'.join(nt + ' : 1' for nt in nt_letters)
+    default_aa_string = '\n'.join(aa + ' : 1' for aa in aa_letters)
     # define the form objects
     form_objects = [
-            Form.MultiLine('nucleotides', 'nucleotide stationary distribution', default_nt_string),
-            Form.MultiLine('aminoacids', 'amino acid stationary distribution', default_aa_string)]
+            Form.MultiLine('nucleotides', 'nucleotide stationary distribution',
+                default_nt_string),
+            Form.MultiLine('aminoacids', 'amino acid stationary distribution',
+                default_aa_string)]
     return form_objects
 
 def get_response(fs):
@@ -43,27 +49,36 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # get the nucleotide distribution
-    nt_to_probability = SnippetUtil.get_distribution(fs.nucleotides, 'nucleotide', nt_letters)
+    nt_to_probability = SnippetUtil.get_distribution(fs.nucleotides,
+            'nucleotide', nt_letters)
     # get the amino acid distribution
-    aa_to_probability = SnippetUtil.get_distribution(fs.aminoacids, 'amino acid', aa_letters)
+    aa_to_probability = SnippetUtil.get_distribution(fs.aminoacids,
+            'amino acid', aa_letters)
     # convert the dictionaries to lists
-    observed_nt_stationary_distribution = [nt_to_probability[nt] for nt in nt_letters]
+    observed_nt_stationary_distribution = [nt_to_probability[nt]
+            for nt in nt_letters]
     aa_distribution = [aa_to_probability[aa] for aa in aa_letters]
     # define the objective function
-    objective_function = MyCodonObjective(aa_distribution, observed_nt_stationary_distribution)
-    initial_stationary_guess = halpern_bruno_nt_estimate(nt_to_probability, aa_to_probability)
+    objective_function = MyCodonObjective(aa_distribution,
+            observed_nt_stationary_distribution)
+    initial_stationary_guess = halpern_bruno_nt_estimate(nt_to_probability,
+            aa_to_probability)
     A, C, G, T = initial_stationary_guess
     initial_guess = (math.log(C/A), math.log(G/A), math.log(T/A))
     iterations = 20
     try:
-        best = scipy.optimize.nonlin.broyden2(objective_function, initial_guess, iterations)
+        best = scipy.optimize.nonlin.broyden2(objective_function,
+                initial_guess, iterations)
     except Exception, e:
         debugging_information = objective_function.get_history()
         raise HandlingError(str(e) + '\n' + debugging_information)
     x, y, z = best
-    best_mutation_distribution = normalized((1, math.exp(x), math.exp(y), math.exp(z)))
-    # given the mutation distribution and the amino acid distribution, get the stationary distribution
-    result = DirectProtein.get_nt_distribution_and_aa_energies(best_mutation_distribution, aa_distribution)
+    best_mutation_weights = (1, math.exp(x), math.exp(y), math.exp(z))
+    best_mutation_distribution = normalized(best_mutation_weights)
+    # Given the mutation distribution and the amino acid distribution,
+    # get the stationary distribution.
+    result = DirectProtein.get_nt_distribution_and_aa_energies(
+            best_mutation_distribution, aa_distribution)
     result_stationary_nt_dist, result_aa_energies = result
     # make a results string
     out = StringIO()
@@ -153,7 +168,8 @@ class CodonObjective(Objective):
 
     def get_history(self):
         out = StringIO()
-        for guess, response, energies in zip(self.guesses, self.responses, self.energies):
+        for guess, response, energies in zip(self.guesses,
+                self.responses, self.energies):
             print >> out, str(guess), '->', str(response), ':', str(energies)
         return out.getvalue()
 
@@ -168,8 +184,8 @@ class MyCodonObjective(CodonObjective):
 
     def __init__(self, aa_stationary_distribution, nt_stationary_distribution):
         """
-        @param aa_stationary_distribution: the amino acid stationary distribution
-        @param nt_stationary_distribution: the nucleotide stationary distribution
+        @param aa_stationary_distribution: an amino acid distribution
+        @param nt_stationary_distribution: a nucleotide distribution
         """
         CodonObjective.__init__(self)
         self.aa_dist = aa_stationary_distribution
@@ -177,24 +193,30 @@ class MyCodonObjective(CodonObjective):
 
     def evaluate(self, X):
         """
-        @param X: the three variables that define the mutation process nucleotide distribution.
-        @return: a tuple of values that is the zero vector when the guess was right.
+        @param X: the three vars defining the mutation process nt distribution.
+        @return: a tuple which is the zero vector when the guess was right.
         """
         if len(X) != 3:
             raise ValueError('incorrect number of parameters')
         x, y, z = X
-        mutation_nt_dist = normalized((1, math.exp(x), math.exp(y), math.exp(z)))
+        mutation_nt_weights = (1, math.exp(x), math.exp(y), math.exp(z))
+        mutation_nt_dist = normalized(mutation_nt_weights)
         if not almost_equals(sum(mutation_nt_dist), 1.0):
-            raise ValueError('detected possibly invalid input to the objective function: ' + str(X))
-        stationary_nt_dist, aa_energies = DirectProtein.get_nt_distribution_and_aa_energies(mutation_nt_dist, self.aa_dist)
-        evaluation = tuple(math.log(a/b) for a, b in zip(self.nt_dist[:3], stationary_nt_dist[:3]))
+            msg_a ='detected possibly invalid objective function in put: '
+            msg_b = str(X)
+            raise ValueError(msg_a + msg_b)
+        pair = DirectProtein.get_nt_distribution_and_aa_energies(
+                mutation_nt_dist, self.aa_dist)
+        stationary_nt_dist, aa_energies = pair
+        evaluation = tuple(math.log(a/b)
+                for a, b in zip(self.nt_dist[:3], stationary_nt_dist[:3]))
         return evaluation, aa_energies
 
 
 def halpern_bruno_nt_estimate(nt_to_weight, aa_to_weight):
     """
-    @param nt_to_weight: a dictionary specifying the nucleotide stationary distribution
-    @param aa_to_weight: a dictionary specifying the amino acid stationary distribution
+    @param nt_to_weight: a dictionary specifying the nt stationary distribution
+    @param aa_to_weight: a dictionary specifying the aa stationary distribution
     @return: a vector of estimated nucleotide proportions
     """
     unnormalized_codon_distribution = []
@@ -202,8 +224,9 @@ def halpern_bruno_nt_estimate(nt_to_weight, aa_to_weight):
         aa = Codon.g_codon_to_aa_letter[codon]
         sibling_codons = Codon.g_aa_letter_to_codons[aa]
         codon_aa_weight = aa_to_weight[aa]
-        codon_nt_weight = Util.product(nt_to_weight[nt] for nt in codon)
-        sibling_nt_weight_sum = sum(Util.product(nt_to_weight[nt] for nt in sibling) for sibling in sibling_codons)
+        codon_nt_weight = iterutils.product(nt_to_weight[nt] for nt in codon)
+        sibling_nt_weight_sum = sum(iterutils.product(nt_to_weight[nt]
+            for nt in sibling) for sibling in sibling_codons)
         weight = (codon_aa_weight * codon_nt_weight) / sibling_nt_weight_sum
         unnormalized_codon_distribution.append(weight)
     codon_distribution = normalized(unnormalized_codon_distribution)
@@ -211,5 +234,6 @@ def halpern_bruno_nt_estimate(nt_to_weight, aa_to_weight):
     for codon, p in zip(codons, codon_distribution):
         for nt in codon:
             nt_to_weight[nt] += p
-    implied_stationary_nt_distribution = normalized(nt_to_weight[nt] for nt in nt_letters)
+    implied_stationary_nt_distribution = normalized(nt_to_weight[nt]
+            for nt in nt_letters)
     return implied_stationary_nt_distribution 

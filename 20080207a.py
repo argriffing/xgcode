@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -40,7 +40,7 @@ def get_form():
             'e : T',
             'f : T']
     # define the default rate matrix lines
-    R = numpy.array([
+    R = np.array([
         [-1, 1/3.0, 1/3.0, 1/3.0],
         [1/3.0, -1, 1/3.0, 1/3.0],
         [1/3.0, 1/3.0, -1, 1/3.0],
@@ -48,8 +48,10 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('column', 'tip data', '\n'.join(default_tip_data_lines)),
-            Form.Matrix('matrix', 'rate matrix', R, MatrixUtil.assert_rate_matrix),
+            Form.MultiLine('column', 'tip data',
+                '\n'.join(default_tip_data_lines)),
+            Form.Matrix('matrix', 'rate matrix',
+                R, MatrixUtil.assert_rate_matrix),
             Form.RadioGroup('imageformat', 'image format options', [
                 Form.RadioItem('png', 'png', True),
                 Form.RadioItem('svg', 'svg'),
@@ -71,22 +73,25 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
     if tree.has_negative_branch_lengths():
-        raise HandlingError('drawing a tree with negative branch lengths is not implemented')
+        msg = 'drawing a tree with negative branch lengths is not implemented'
+        raise HandlingError(msg)
     tree.add_branch_lengths()
     # get the dictionary mapping the branch name to the nucleotide
-    name_to_nucleotide = {}
-    lines = list(Util.stripped_lines(StringIO(fs.column)))
+    name_to_nt = {}
+    lines = Util.get_stripped_lines(StringIO(fs.column))
     if lines:
-        name_to_nucleotide = SnippetUtil.get_generic_dictionary(lines, 'name', 'nucleotide', list('acgtACGT'))
+        name_to_nt = SnippetUtil.get_generic_dictionary(lines, 'name',
+                'nucleotide', list('acgtACGT'))
     # augment the tips with the nucleotide letters
-    for name, nucleotide in name_to_nucleotide.items():
+    for name, nt in name_to_nt.items():
         try:
             node = tree.get_unique_node(name)
         except Newick.NewickSearchError, e:
             raise HandlingError(e)
         if node.children:
-            raise HandlingError('constraints on internal nodes are not implemented')
-        node.state = nucleotide.upper()
+            msg = 'constraints on internal nodes are not implemented'
+            raise HandlingError(msg)
+        node.state = nt.upper()
     # read the rate matrix
     R = fs.matrix
     # convert the rate matrix to a rate matrix object
@@ -102,7 +107,8 @@ def get_response(fs):
     EqualArcLayout.do_layout(tree)
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), fs.imageformat)
+        image_string = DrawTreeImage.get_tree_image(tree, (640, 480),
+                fs.imageformat)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
     # specify the content type
@@ -123,22 +129,23 @@ def simulate_branch_path(tree, node, rate_matrix_object):
         raise HandlingError(e)
     # purines are red; pyrimidines are blue
     # A and T are brighter, G and C are darker
-    nucleotide_to_color = {'A':'ff4444', 'G':'ffaaaa', 'T':'4444ff', 'C':'aaaaff'}
-    node.branch_color = nucleotide_to_color[node.state]
+    nt_to_color = {'A':'ff4444', 'G':'ffaaaa', 'T':'4444ff', 'C':'aaaaff'}
+    node.branch_color = nt_to_color[node.state]
     rate_matrix = rate_matrix_object.dictionary_rate_matrix
     initial_state = node.parent.state
     terminal_state = node.state
     states = 'ACGT'
     events = None
     while events is None:
-        events = PathSampler.get_nielsen_sample(initial_state, terminal_state, states, node.blen, rate_matrix)
+        events = PathSampler.get_nielsen_sample(initial_state, terminal_state,
+                states, node.blen, rate_matrix)
     parent = node.parent
     last_t = 0
     for t, state in events:
         new = SpatialTree.SpatialTreeNode()
         new.name = node.name
         new.state = state
-        new.branch_color = nucleotide_to_color[parent.state]
+        new.branch_color = nt_to_color[parent.state]
         tree.insert_node(new, parent, node, (t - last_t) / float(node.blen))
         last_t = t
         parent = new

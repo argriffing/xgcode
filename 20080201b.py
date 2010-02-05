@@ -27,7 +27,8 @@ def get_form():
         default_weight_lines.append(line)
     # define the form objects
     form_objects = [
-            Form.MultiLine('weights', 'codon weights', '\n'.join(default_weight_lines)),
+            Form.MultiLine('weights', 'codon weights',
+                '\n'.join(default_weight_lines)),
             Form.Float('kappa', 'kappa', 2),
             Form.Float('omega', 'omega', .01)]
     return form_objects

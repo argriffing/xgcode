@@ -3,11 +3,10 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Util
 import MatrixUtil
 import RateMatrix
 import HeatMap
@@ -21,11 +20,14 @@ def get_form():
     # define the default rate matrix
     dictionary_rate_matrix = RateMatrix.get_sample_codon_rate_matrix()
     labels = Codon.g_sorted_non_stop_codons
-    R = numpy.array(MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels))
+    R = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels)
+    R = np.array(R)
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'codon rate matrix', R, MatrixUtil.assert_rate_matrix),
-            Form.Integer('maxcategories', 'maximum number of categories', 5, low=2)]
+            Form.Matrix('matrix', 'codon rate matrix',
+                R, MatrixUtil.assert_rate_matrix),
+            Form.Integer('maxcategories', 'maximum number of categories',
+                5, low=2)]
     return form_objects
 
 def get_response(fs):
@@ -39,9 +41,11 @@ def get_response(fs):
     # assert that the number of rows and columns is valid for a codon matrix
     states = Codon.g_sorted_non_stop_codons
     if nrows != len(states):
-        raise HandlingError('expected %d rows but got %d' % (len(states), nrows))
+        msg = 'expected %d rows but got %d' % (len(states), nrows)
+        raise HandlingError(msg)
     if ncols != len(states):
-        raise HandlingError('expected %d columns but got %d' % (len(states), ncols))
+        msg = 'expected %d columns but got %d' % (len(states), ncols)
+        raise HandlingError(msg)
     # define the row and column labels
     labels = []
     for codon in states:
@@ -50,7 +54,8 @@ def get_response(fs):
     row_labels = labels
     column_labels = labels
     # initialize the base class with this row major matrix
-    heatmap = HeatMap.LabeledHeatMap(R.tolist(), fs.maxcategories, row_labels, column_labels)
+    heatmap = HeatMap.LabeledHeatMap(R.tolist(), fs.maxcategories,
+            row_labels, column_labels)
     renderer = HeatMap.PreHeatMap(heatmap)
     html_string = renderer.get_example_html()
     # return the response

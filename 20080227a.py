@@ -5,10 +5,10 @@ from StringIO import StringIO
 import math
 
 from SnippetUtil import HandlingError
-import Util
 import MatrixUtil
 import RateMatrix
 import Form
+import iterutils
 
 def get_form():
     """
@@ -18,7 +18,10 @@ def get_form():
     default_energies = [2, 4, 6, 8]
     default_energy_string = '\n'.join(str(E) for E in default_energies)
     # define the form objects
-    return [Form.MultiLine('energies', 'ordered energies', default_energy_string)]
+    form_objects = [
+            Form.MultiLine('energies', 'ordered energies',
+                default_energy_string)]
+    return form_objects
 
 def get_response(fs):
     """
@@ -27,7 +30,7 @@ def get_response(fs):
     """
     # read the energies from the form data
     energies = []
-    for line in Util.stripped_lines(StringIO(fs.energies)):
+    for line in iterutils.stripped_lines(StringIO(fs.energies)):
         try:
             energy = float(line)
         except ValueError, e:

@@ -1,5 +1,7 @@
-"""Given a nucleotide distribution and an amino acid distribution, get a codon distribution.
+"""Given a nt distribution and an aa distribution, get a codon distribution.
 
+Given a nucletoide distribution and an amino acid distribution,
+get a codon distribution.
 Calculate codon frequencies according to equation (14) of Halpern-Bruno 1998.
 """
 
@@ -7,21 +9,23 @@ from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Util
 import Codon
 import Form
+import iterutils
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default nucleotide and amino acid strings
-    default_nucleotide_string = '\n'.join(nt + ' : 1' for nt in sorted(Codon.g_nt_letters))
-    default_amino_acid_string = '\n'.join(aa + ' : 1' for aa in sorted(Codon.g_aa_letters))
+    default_nt_string = '\n'.join(nt + ' : 1' for nt in sorted(Codon.g_nts))
+    default_aa_string = '\n'.join(aa + ' : 1' for aa in sorted(Codon.g_aas))
     # define the form objects
     form_objects = [
-            Form.MultiLine('nucleotides', 'nucleotide distribution weights', default_nucleotide_string),
-            Form.MultiLine('amino_acids', 'amino acid distribution weights', default_amino_acid_string)]
+            Form.MultiLine('nucleotides', 'nucleotide distribution weights',
+                default_nt_string),
+            Form.MultiLine('amino_acids', 'amino acid distribution weights',
+                default_aa_string)]
     return form_objects
 
 def get_response(fs):
@@ -30,14 +34,20 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # get the nucleotide distribution
-    nt_distribution = SnippetUtil.get_distribution(fs.nucleotides, 'nucleotide', Codon.g_nt_letters)
+    nt_distribution = SnippetUtil.get_distribution(fs.nucleotides,
+            'nucleotide', Codon.g_nt_letters)
     # get the amino acid distribution
-    aa_distribution = SnippetUtil.get_distribution(fs.amino_acids, 'amino acid', Codon.g_aa_letters)
-    # Assert that the nucleotide distribution is compatible with the amino acid distribution.
+    aa_distribution = SnippetUtil.get_distribution(fs.amino_acids,
+            'amino acid', Codon.g_aa_letters)
+    # Assert that the nucleotide distribution
+    # is compatible with the amino acid distribution.
     # According to the Halpern-Bruno assumptions, there should be no codon bias.
-    # This means that if a nucleotide has a frequency of zero, then the amino acid coded by
-    # each codon containing that nucleotide must also have a frequency of zero.
-    err = HandlingError('the given amino acid and nucleotide distributions are incompatible with the assumption of no codon bias')
+    # This means that if a nucleotide has a frequency of zero,
+    # then the amino acid coded by each codon containing that nucleotide
+    # must also have a frequency of zero.
+    msg_a = 'the given amino acid and nucleotide distributions '
+    msg_b = 'are incompatible with the assumption of no codon bias'
+    err = HandlingError(msg_a + msg_b)
     for aa, codons in Codon.g_aa_letter_to_codons.items():
         for codon in codons:
             for nt in codon:
@@ -49,9 +59,13 @@ def get_response(fs):
         aa = Codon.g_codon_to_aa_letter[codon]
         sibling_codons = Codon.g_aa_letter_to_codons[aa]
         codon_aa_weight = aa_distribution[aa]
-        codon_nt_weight = Util.product(nt_distribution[nt] for nt in codon)
-        sibling_nt_weight_sum = sum(Util.product(nt_distribution[nt] for nt in sibling) for sibling in sibling_codons)
-        codon_to_weight[codon] = (codon_aa_weight * codon_nt_weight) / sibling_nt_weight_sum
+        codon_nt_weight = iterutils.product(nt_distribution[nt] for nt in codon)
+        sibling_nt_weight_sum = 0
+        for sibling in sibling_codons:
+            product = iterutils.product(nt_distribution[nt] for nt in sibling
+            sibling_nt_weight_sum += product
+        codon_to_weight[codon] = codon_aa_weight * codon_nt_weight
+        codon_to_weight[codon] /= sibling_nt_weight_sum
     total_weight = sum(codon_to_weight.values())
     # write the codon distribution
     out = StringIO()

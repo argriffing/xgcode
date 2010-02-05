@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -17,8 +17,12 @@ def get_form():
     # define the default rate matrix
     dictionary_rate_matrix = RateMatrix.get_sample_codon_rate_matrix()
     labels = list(sorted(set(a for a, b in dictionary_rate_matrix)))
-    R = numpy.array(MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels))
-    return [Form.Matrix('matrix', 'rate matrix', R, MatrixUtil.assert_rate_matrix)]
+    R = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels)
+    R = np.array(R)
+    form_objects = [
+            Form.Matrix('matrix', 'rate matrix',
+                R, MatrixUtil.assert_rate_matrix)]
+    return form_objects
 
 def get_response(fs):
     """

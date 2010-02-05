@@ -1,5 +1,7 @@
-"""Analyze a nucleotide mutation distribution and an amino acid stationary distribution.
+"""Analyze a nt mutation distribution and an aa stationary distribution.
 
+Analyze a nucleotide mutation distribution
+and an amino acid stationary distribution.
 Calculate two output vectors from these input distributions.
 The first output vector is the stationary nucleotide distribution.
 The second output vector is the centered amino acid energy vector.
@@ -10,7 +12,6 @@ import math
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Util
 import Codon
 import DirectProtein
 import Form
@@ -27,8 +28,10 @@ def get_form():
     default_aa_string = '\n'.join(aa + ' : 1' for aa in aa_letters)
     # define the form objects
     form_objects = [
-            Form.MultiLine('nucleotides', 'nucleotide mutation distribution', default_nt_string),
-            Form.MultiLine('aminoacids', 'amino acid stationary distribution', default_aa_string)]
+            Form.MultiLine('nucleotides', 'nucleotide mutation distribution',
+                default_nt_string),
+            Form.MultiLine('aminoacids', 'amino acid stationary distribution',
+                default_aa_string)]
     return form_objects
 
 def get_response(fs):
@@ -37,13 +40,17 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # get the nucleotide distribution
-    nt_to_weight = SnippetUtil.get_distribution(fs.nucleotides, 'nucleotide', nt_letters)
+    nt_to_weight = SnippetUtil.get_distribution(fs.nucleotides,
+            'nucleotide', nt_letters)
     # get the amino acid distribution
-    aa_to_weight = SnippetUtil.get_distribution(fs.aminoacids, 'amino acid', aa_letters)
+    aa_to_weight = SnippetUtil.get_distribution(fs.aminoacids,
+            'amino acid', aa_letters)
     # get results
     mutation_distribution = [nt_to_weight[nt] for nt in nt_letters]
     aa_distribution = [aa_to_weight[aa] for aa in aa_letters]
-    nt_distribution, aa_energies = DirectProtein.get_nt_distribution_and_aa_energies(mutation_distribution, aa_distribution)
+    pair = DirectProtein.get_nt_distribution_and_aa_energies(
+            mutation_distribution, aa_distribution)
+    nt_distribution, aa_energies = pair
     # write something
     out = StringIO()
     # write the stationary nucleotide distribution

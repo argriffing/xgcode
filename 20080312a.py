@@ -1,5 +1,7 @@
-"""Find the probability of a codon alignment given a tree and a Direct Protein mixture model.
+"""Evaluate a codon alignment given a tree and a Direct Protein mixture model.
 
+Find the probability of a codon alignment
+given a tree and a Direct Protein mixture model.
 The branch length is the expected number of codon substitutions on a branch.
 See "Population Genetics Without Intraspecific Data" by Thorne et al.
 for more information about the Direct Protein model.
@@ -17,6 +19,7 @@ import HeatMap
 import Fasta
 import DirectProtein
 import Form
+import iterutils
 
 # This codon alignment is unrealistic.
 g_sample_alignment_string = """
@@ -53,8 +56,10 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('alignment', 'codon alignment', g_sample_alignment_string.strip()),
-            Form.MultiLine('model', 'Direct Protein mixture model', DirectProtein.get_sample_xml_string().strip())]
+            Form.MultiLine('alignment', 'codon alignment',
+                g_sample_alignment_string.strip()),
+            Form.MultiLine('model', 'Direct Protein mixture model',
+                DirectProtein.get_sample_xml_string().strip())]
     return form_objects
 
 def get_response(fs):
@@ -79,23 +84,26 @@ def get_response(fs):
     response_headers = [('Content-Type', 'text/html')]
     return response_headers, html_string
 
-def do_analysis_helper(labels, element_lists, width):
+def do_analysis_helper(labels, element_lists, w):
     """
     Chop up the rows of data.
     Yield lines of text to be displayed in an html pre tag.
     @param labels: row labels to be left justified
-    @param element_lists: the elements of each data row where each element is a codon or a span
-    @param width: the number of elements allowed per page row
+    @param element_lists: each row where each element is a codon or a span
+    @param w: the width; the number of elements allowed per page row
     """
     if len(set(len(element_list) for element_list in element_lists)) != 1:
-        raise ValueError('each element list should have the same nonzero number of elements')
+        msg = 'each element list should have the same nonzero length'
+        raise ValueError(msg)
     label_width = max(len(label) for label in labels) + 1
-    chopped_element_lists = [list(Util.chopped(element_list, width)) for element_list in element_lists]
+    chopped_element_lists = [list(iterutils.chopped(element_list, w))
+            for element_list in element_lists]
     page_rows = zip(*chopped_element_lists)
     for i, page_row in enumerate(page_rows):
         header = ''
         header += ' ' * label_width
-        header += Monospace.get_codon_ruler_line(i*width + 1, i*width + len(page_row[0]))
+        k = len(page_row[0])
+        header += Monospace.get_codon_ruler_line(i*w + 1, i*w + k)
         yield header
         for label, element_list in zip(labels, page_row):
             justified_label = Monospace.left_justify(label, label_width, ' ')
@@ -128,13 +136,17 @@ def do_analysis(mixture_model, alignment, tree):
             header_to_node[header].state = state
         # get the likelihood for each category
         likelihoods = []
-        for p, matrix in zip(mixture_model.mixture_parameters, mixture_model.rate_matrices):
+        for p, matrix in zip(mixture_model.mixture_parameters,
+                mixture_model.rate_matrices):
             likelihoods.append(p * matrix.get_likelihood(tree))
         likelihood_columns.append(likelihoods)
-    # the likelihood_columns variable has everything we need to write the response
-    # define the likelihood legend
-    likelihood_column_sums = [sum(likelihoods) for likelihoods in likelihood_columns]
-    likelihood_legend = HeatMap.Legend(likelihood_column_sums, 5, 'L', HeatMap.white_red_gradient)
+    # The likelihood_columns variable
+    # has everything we need to write the response.
+    # Define the likelihood legend.
+    likelihood_column_sums = [sum(likelihoods)
+            for likelihoods in likelihood_columns]
+    likelihood_legend = HeatMap.Legend(likelihood_column_sums,
+            5, 'L', HeatMap.white_red_gradient)
     # get the mixture for each column implied by the likelihoods at the column
     mixture_columns = []
     for likelihoods in likelihood_columns:
@@ -146,7 +158,9 @@ def do_analysis(mixture_model, alignment, tree):
     for proportions in zip(*mixture_columns):
         total_mixture.append(sum(proportions) / len(alignment.columns))
     # define the mixture legend
-    mixture_legend = HeatMap.Legend(Util.flattened_nonrecursive(mixture_columns), 5, 'M', HeatMap.white_blue_gradient)
+    flattened_columns = Util.flattened_nonrecursive(mixture_columns)
+    mixture_legend = HeatMap.Legend(flattened_columns,
+            5, 'M', HeatMap.white_blue_gradient)
     # start writing the web page
     out = StringIO()
     print >> out, '<html>'
@@ -160,7 +174,8 @@ def do_analysis(mixture_model, alignment, tree):
     print >> out, '</head>'
     print >> out, '<body>'
     # write the log likelihood
-    log_likelihood = sum(math.log(sum(likelihoods)) for likelihoods in likelihood_columns)
+    log_likelihood = sum(math.log(sum(likelihoods))
+            for likelihoods in likelihood_columns)
     print >> out, 'log likelihood:'
     print >> out, '<br/>'
     print >> out, '%f' % log_likelihood
@@ -178,7 +193,8 @@ def do_analysis(mixture_model, alignment, tree):
     # begin the pre environment
     print >> out, '<pre>'
     # write the alignment
-    labels = alignment.headers + ['category 1', 'category 2', 'category 3', 'likelihood']
+    labels = alignment.headers
+    labels += ['category 1', 'category 2', 'category 3', 'likelihood']
     element_lists = []
     for codons in alignment.sequences:
         element_list = []
@@ -192,11 +208,13 @@ def do_analysis(mixture_model, alignment, tree):
     for proportions in zip(*mixture_columns):
         mixture_elements = []
         for proportion in proportions:
-            mixture_elements.append('<span class="%s">   </span>' % mixture_legend.value_to_css_class(proportion))
+            css_class = mixture_legend.value_to_css_class(proportion)
+            mixture_elements.append('<span class="%s">   </span>' % css_class)
         element_lists.append(mixture_elements)
     likelihood_elements = []
     for likelihood in likelihood_column_sums:
-        likelihood_elements.append('<span class="%s">   </span>' % likelihood_legend.value_to_css_class(likelihood))
+        css_class = likelihood_legend.value_to_css_class(likelihood)
+        likelihood_elements.append('<span class="%s">   </span>' % css_class)
     element_lists.append(likelihood_elements)
     for line in do_analysis_helper(labels, element_lists, 20):
         print >> out, line

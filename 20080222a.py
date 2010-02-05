@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -19,11 +19,13 @@ def get_form():
     # define the default matrix lines
     dictionary_rate_matrix = EnglishModel.get_transition_matrix()
     labels = list(sorted(set(a for a, b in dictionary_rate_matrix)))
-    T = numpy.array(MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels))
+    T = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels))
+    T = np.array(T)
     # define the form objects
     form_objects = [
             Form.Matrix('matrix', 'matrix', T),
-            Form.Integer('maxcategories', 'maximum number of categories', 5, low=2)]
+            Form.Integer('maxcategories', 'maximum number of categories',
+                5, low=2)]
     return form_objects
 
 def get_response(fs):

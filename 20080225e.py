@@ -4,7 +4,7 @@
 from StringIO import StringIO
 import math
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -18,8 +18,12 @@ def get_form():
     # define the default rate matrix
     dictionary_rate_matrix = RateMatrix.get_sample_codon_rate_matrix()
     labels = list(sorted(set(a for a, b in dictionary_rate_matrix)))
-    R = numpy.array(MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels))
-    return [Form.Matrix('matrix', 'rate matrix', R, MatrixUtil.assert_rate_matrix)]
+    R = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels)
+    R = np.array(R)
+    form_objects = [
+            Form.Matrix('matrix', 'rate matrix',
+                R, MatrixUtil.assert_rate_matrix)]
+    return form_objects
 
 def get_response(fs):
     """
@@ -30,13 +34,14 @@ def get_response(fs):
     R = fs.matrix
     # get the stationary distribution of the rate matrix
     try:
-        stationary_distribution = RateMatrix.get_stationary_distribution(R.tolist())
+        v = RateMatrix.get_stationary_distribution(R.tolist())
     except RateMatrix.RateMatrixError, e:
-        raise HandlingError('error calculating the stationary distribution: ' + str(e))
+        msg = 'error calculating the stationary distribution: ' + str(e)
+        raise HandlingError(msg)
     # for each pair of entries, check the detailed balance equation
     table_rows = []
-    for i, pi_i in enumerate(stationary_distribution):
-        for j, pi_j in enumerate(stationary_distribution):
+    for i, pi_i in enumerate(v):
+        for j, pi_j in enumerate(v):
             r_ij = R[i][j]
             r_ji = R[j][i]
             if pi_i*r_ij != pi_j*r_ji:

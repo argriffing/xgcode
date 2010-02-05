@@ -1,12 +1,14 @@
 """Sample a nucleotide alignment given a tree and a mixture model.
 
-The mixture is scaled so that the branch lengths in the newick tree are the expected number of substitutions on the branch.
-The rows and columns of the rate matrices are ordered alphabetically by nucleotide.
+The mixture is scaled so that the branch lengths in the newick tree
+are the expected number of substitutions on the branch.
+The rows and columns of the rate matrices
+are ordered alphabetically by nucleotide.
 """
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -17,9 +19,12 @@ import MatrixUtil
 import SubModel
 import Form
 
-g_nt_matrix_a = numpy.array([[-3, 1, 1, 1], [1, -3, 1, 1], [1, 1, -3, 1], [1, 1, 1, -3]])
-g_nt_matrix_b = numpy.array([[-3, 1, 1, 1], [1, -3, 1, 1], [1, 1, -3, 1], [1, 1, 1, -3]])
-g_nt_matrix_c = numpy.array([[-3, 1, 1, 1], [10, -12, 1, 1], [10, 1, -12, 1], [10, 1, 1, -12]])
+g_nt_matrix_a = np.array([
+    [-3, 1, 1, 1], [1, -3, 1, 1], [1, 1, -3, 1], [1, 1, 1, -3]])
+g_nt_matrix_b = np.array([
+    [-3, 1, 1, 1], [1, -3, 1, 1], [1, 1, -3, 1], [1, 1, 1, -3]])
+g_nt_matrix_c = np.array([
+    [-3, 1, 1, 1], [10, -12, 1, 1], [10, 1, -12, 1], [10, 1, 1, -12]])
 g_weight_a = 1
 g_weight_b = 2
 g_weight_c = 3
@@ -35,13 +40,20 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.Integer('ncols', 'sample this many columns from the mixture model', 100, low=1, high=1000),
-            Form.Matrix('matrix_a', 'first nucleotide rate matrix', g_nt_matrix_a),
-            Form.Float('weight_a', 'first mixture weight', g_weight_a, low_inclusive=0),
-            Form.Matrix('matrix_b', 'second nucleotide rate matrix', g_nt_matrix_b),
-            Form.Float('weight_b', 'second mixture weight', g_weight_b, low_inclusive=0),
-            Form.Matrix('matrix_c', 'third nucleotide rate matrix', g_nt_matrix_c),
-            Form.Float('weight_c', 'third mixture weight', g_weight_c, low_inclusive=0)]
+            Form.Integer('ncols', 'sample this many columns',
+                100, low=1, high=1000),
+            Form.Matrix('matrix_a', 'first nucleotide rate matrix',
+                g_nt_matrix_a),
+            Form.Float('weight_a', 'first mixture weight',
+                g_weight_a, low_inclusive=0),
+            Form.Matrix('matrix_b', 'second nucleotide rate matrix',
+                g_nt_matrix_b),
+            Form.Float('weight_b', 'second mixture weight',
+                g_weight_b, low_inclusive=0),
+            Form.Matrix('matrix_c', 'third nucleotide rate matrix',
+                g_nt_matrix_c),
+            Form.Float('weight_c', 'third mixture weight',
+                g_weight_c, low_inclusive=0)]
     return form_objects
 
 def get_response(fs):
@@ -58,7 +70,8 @@ def get_response(fs):
     matrices = [fs.matrix_a, fs.matrix_b, fs.matrix_c]
     for R in matrices:
         if R.shape != (4,4):
-            raise HandlingError('expected each nucleotide rate matrix to be 4x4')
+            msg = 'expected each nucleotide rate matrix to be 4x4'
+            raise HandlingError(msg)
     # create the mixture proportions
     weight_sum = sum(weights)
     mixture_proportions = [weight / weight_sum for weight in weights]
@@ -69,12 +82,14 @@ def get_response(fs):
         rate_matrix_object = RateMatrix.RateMatrix(R.tolist(), ordered_states)
         rate_matrix_objects.append(rate_matrix_object)
     # create the mixture model
-    mixture_model = SubModel.MixtureModel(mixture_proportions, rate_matrix_objects)
+    mixture_model = SubModel.MixtureModel(mixture_proportions,
+            rate_matrix_objects)
     # normalize the mixture model
     mixture_model.normalize()
     # simulate the alignment
     try:
-        alignment = PhyLikelihood.simulate_alignment(tree, mixture_model, fs.ncols)
+        alignment = PhyLikelihood.simulate_alignment(tree,
+                mixture_model, fs.ncols)
     except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
     # get the alignment string

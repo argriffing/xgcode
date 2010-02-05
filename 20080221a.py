@@ -1,7 +1,9 @@
 """Create a Direct Protein codon rate matrix.
 
 Implement the "Direct Protein Model" described by equations (15) and (21)
-in the 2007 MBE paper "Population Genetics Without Intraspecific Data" by Thorne et al.
+in the 2007 MBE paper "Population Genetics Without Intraspecific Data"
+by Thorne et al.
+The kappa parameter is the mutation process transition transversion rate ratio.
 """
 
 from StringIO import StringIO
@@ -9,7 +11,6 @@ import math
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Util
 import Codon
 import MatrixUtil
 import DirectProtein
@@ -27,9 +28,12 @@ def get_form():
     default_amino_acid_string = '\n'.join(aa + ' : 0' for aa in aa_ordered)
     # define the form objects
     form_objects = [
-            Form.MultiLine('nucleotides', 'mutation process nucleotide weights', default_nucleotide_string),
-            Form.Float('kappa', 'mutation process transition transversion rate ratio kappa', 1, low_exclusive=0),
-            Form.MultiLine('aminoacids', 'amino acid associated unscaled energies', default_amino_acid_string),
+            Form.MultiLine('nucleotides', 'mutation process nt weights',
+                default_nucleotide_string),
+            Form.Float('kappa', 'transition transversion rate ratio kappa',
+                1, low_exclusive=0),
+            Form.MultiLine('aminoacids', 'aa associated unscaled energies',
+                default_amino_acid_string),
             Form.RadioGroup('outputtype', 'output options', [
                 Form.RadioItem('srm', 'scaled codon rate matrix', True),
                 Form.RadioItem('urm', 'unscaled codon rate matrix'),
@@ -45,13 +49,16 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # get the mutation process nucleotide distribution
-    nt_distribution = SnippetUtil.get_distribution(fs.nucleotides, 'nucleotide', nt_ordered)
+    nt_distribution = SnippetUtil.get_distribution(fs.nucleotides,
+            'nucleotide', nt_ordered)
     # get the selection process amino acid energies
-    aa_to_energy = SnippetUtil.get_dictionary(fs.aminoacids, 'amino acid', 'energy', aa_ordered)
+    aa_to_energy = SnippetUtil.get_dictionary(fs.aminoacids,
+            'amino acid', 'energy', aa_ordered)
     # create the direct protein rate matrix object
     nt_distribution_list = [nt_distribution[nt] for nt in nt_ordered]
     aa_energy_list = [aa_to_energy[aa] for aa in aa_ordered]
-    rate_matrix_object = DirectProtein.DirectProteinRateMatrix(fs.kappa, nt_distribution_list, aa_energy_list)
+    rate_matrix_object = DirectProtein.DirectProteinRateMatrix(fs.kappa,
+            nt_distribution_list, aa_energy_list)
     # write the response
     out = StringIO()
     if fs.srm:
