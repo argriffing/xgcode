@@ -40,8 +40,8 @@ def parse_hky_output(lines):
     @return: a dictionary with keys 'kappa', 'A', 'C', 'G', 'T', and 'lnL'
     """
     d = {}
-    stripped_lines = list(iterutils.stripped_lines(lines))
-    for line in stripped_lines:
+    lines = Util.get_stripped_lines(lines)
+    for line in lines:
         # read kappa
         if line.startswith('kappa under HKY85'):
             arr = [x.strip() for x in line.split(':')]
@@ -51,7 +51,7 @@ def parse_hky_output(lines):
             arr = line.split()
             d['lnL'] = float(arr[-2])
     # read the frequency parameters
-    for first, second in iterutils.pairwise(stripped_lines):
+    for first, second in iterutils.pairwise(lines):
         if first.startswith('base frequency parameters'):
             bases = list('TCAG')
             frequencies = [float(x) for x in second.split()]

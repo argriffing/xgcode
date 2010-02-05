@@ -30,9 +30,8 @@ from SnippetUtil import HandlingError
 import Form
 import Progress
 import DGRP
-import Util
 import ambignt
-
+import iterutils
 
 g_sample_lines = [
         'chrI 61 T C/C 2 A 0 C 1 G 0 T 1 15 15 50',
@@ -340,7 +339,7 @@ def line_to_row(line):
     return typed_values
 
 def gen_typed_rows(fin):
-    for line in Util.stripped_lines(fin):
+    for line in iterutils.stripped_lines(fin):
         yield line_to_row(line)
 
 def convert_row(row):

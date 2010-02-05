@@ -4,7 +4,7 @@
 import unittest
 from StringIO import StringIO
 
-import Util
+import iterutils
 import Newick
 
 
@@ -93,7 +93,7 @@ def get_hyphy_namespace(lines):
     """
     # process each line of the hyphy output
     ns = HyphyNamespace()
-    for line in Util.stripped_lines(lines):
+    for line in iterutils.stripped_lines(lines):
         ns.process_line(line)
     return ns
 

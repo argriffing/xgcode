@@ -21,7 +21,7 @@ from SnippetUtil import HandlingError
 import Form
 import Progress
 import DGRP
-import Util
+import iterutils
 
 
 g_sample_lines = [
@@ -97,11 +97,11 @@ def line_to_row(line):
     return typed_values
 
 def gen_typed_rows(fin):
-    for line in Util.stripped_lines(fin):
+    for line in iterutils.stripped_lines(fin):
         yield line_to_row(line)
 
 def gen_untyped_rows(fin):
-    for line in Util.stripped_lines(fin):
+    for line in iterutils.stripped_lines(fin):
         yield line.split()
 
 def convert_row(row):
