@@ -148,14 +148,16 @@ class Scanner:
     """
     Go through a filtered pileup file and check and save chromosome info.
     """
-    def __init__(self, first, last):
+    def __init__(self, first, last, truncate):
         """
         @param first: an integer or 'min' or 'drosophila'
         @param last: an integer or 'max' or 'drosophila'
+        @param truncate: truncation positions exceeding the chromosome length
         """
         check_position_requests(first, last)
         self.first = first
         self.last = last
+        self.truncate = truncate
         self.name_to_chrom = {}
 
     def get_npositions(self):
@@ -188,8 +190,10 @@ class Scanner:
                 if name not in name_to_length:
                     raise Exception('invalid Drosophila chromosome: ' + name)
                 # assert that the position is not too high
-                if position > name_to_length[name]:
-                    raise Exception('position out of range: ' + str(position))
+                if not self.truncate:
+                    if position > name_to_length[name]:
+                        msg = 'position out of range: ' + str(position)
+                        raise Exception(msg)
             # create info for a new chromosome if necessary
             if name not in self.name_to_chrom:
                 self.name_to_chrom[name] = ChromInfo(name)
@@ -282,7 +286,7 @@ def get_response(fs):
     first = d_first[fs.first_info]
     last = d_last[fs.last_info]
     # create the scanner object which will be used for two passes
-    scanner = Scanner(first, last)
+    scanner = Scanner(first, last, False)
     # Do the first pass; check for errors and gather chromosome info.
     names = set()
     fin = StringIO.StringIO(fs.data_in)
@@ -370,7 +374,7 @@ def main(args):
         msg = 'output directory does not exist: ' + output_directory
         raise Exception(msg)
     # create the scanner object which will be used for two passes
-    scanner = Scanner(args.first, args.last)
+    scanner = Scanner(args.first, args.last, args.truncate)
     # Do the first pass,
     # checking for errors and gathering info about the chromosomes.
     name_to_path = {}
@@ -455,6 +459,8 @@ if __name__ == '__main__':
             help='profile the script to look for slow spots'),
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
+    parser.add_argument('--truncate', action='store_true',
+            help='truncate positions which exceed the nominal sequence length')
     parser.add_argument('--outdir', default=os.getcwd(),
             help='write the chromosome files to this directory')
     parser.add_argument('--out_prefix', default='chromosome.',
