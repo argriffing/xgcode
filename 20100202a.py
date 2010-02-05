@@ -70,7 +70,7 @@ class Filler:
         @param default_value: the value at missing positions
         @param finish: True if this is the last available value
         """
-        if not self.low <= position <= self.high:
+        if not (self.low <= position <= self.high):
             msg = '%s is outside [%d, %d]' % (position, self.low, self.high)
             raise ValueError(msg)
         if self.prev is not None:
@@ -129,7 +129,11 @@ def get_requested_low(chrom, first):
 
 def get_requested_high(chrom, last):
     if last == 'drosophila':
-        return dict(DGRP.g_chromosome_length_pairs)[chrom.name]
+        drosophila_high = dict(DGRP.g_chromosome_length_pairs)[chrom.name]
+        return drosophila_high
+    elif last == 'truncated_drosophila':
+        drosophila_high = dict(DGRP.g_chromosome_length_pairs)[chrom.name]
+        return min(drosophila_high, chrom.high)
     elif last in ('max', 'ignore'):
         return chrom.high
     else:
@@ -148,16 +152,14 @@ class Scanner:
     """
     Go through a filtered pileup file and check and save chromosome info.
     """
-    def __init__(self, first, last, truncate):
+    def __init__(self, first, last):
         """
         @param first: an integer or 'min' or 'drosophila'
-        @param last: an integer or 'max' or 'drosophila'
-        @param truncate: truncation positions exceeding the chromosome length
+        @param last: an integer or 'max' or ['truncated_']'drosophila'
         """
         check_position_requests(first, last)
         self.first = first
         self.last = last
-        self.truncate = truncate
         self.name_to_chrom = {}
 
     def get_npositions(self):
@@ -184,13 +186,13 @@ class Scanner:
                     msg = 'chromosome ' + name + ' should be contiguous'
                     raise Exception(msg)
             # assert that drosophila-specific properties are correct
-            if self.last == 'drosophila':
+            if self.last in ('drosophila', 'truncated_drosophila'):
                 name_to_length = dict(DGRP.g_chromosome_length_pairs)
                 # assert that the chromosome is a valid Drosophila name
                 if name not in name_to_length:
                     raise Exception('invalid Drosophila chromosome: ' + name)
                 # assert that the position is not too high
-                if not self.truncate:
+                if self.last == 'drosophila':
                     if position > name_to_length[name]:
                         msg = 'position out of range: ' + str(position)
                         raise Exception(msg)
@@ -374,7 +376,7 @@ def main(args):
         msg = 'output directory does not exist: ' + output_directory
         raise Exception(msg)
     # create the scanner object which will be used for two passes
-    scanner = Scanner(args.first, args.last, args.truncate)
+    scanner = Scanner(args.first, args.last)
     # Do the first pass,
     # checking for errors and gathering info about the chromosomes.
     name_to_path = {}
@@ -424,7 +426,7 @@ def last_position(value):
     except ValueError, e:
         v = None
     if v is None:
-        if value in ('max', 'drosophila', 'ignore'):
+        if value in ('max', 'drosophila', 'truncated_drosophila', 'ignore'):
             return value
         else:
             raise TypeError()
@@ -438,9 +440,11 @@ def check_position_requests(first, last):
     msg = "either both or neither of {first, last} should be 'ignore'"
     if sum(1 for x in (first, last) if x == 'ignore') == 1:
         raise ValueError(msg)
-    msg = "if last is 'drosophila' then the first position should be too"
-    if last == 'drosophila' and first != 'drosophila':
-        raise ValueError(msg)
+    msg_a = "if the last position is 'drosophila' or 'truncated_drosophila' "
+    msg_b = "then the first position should be 'drosophila'"
+    if last in ('drosophila', 'truncated_drosophila'):
+        if first != 'drosophila':
+            raise ValueError(msg)
     msg = 'the high position should not be lower than the low position'
     if first == 'drosophila' or type(first) == int:
         if type(last) == int:
@@ -459,8 +463,6 @@ if __name__ == '__main__':
             help='profile the script to look for slow spots'),
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
-    parser.add_argument('--truncate', action='store_true',
-            help='truncate positions which exceed the nominal sequence length')
     parser.add_argument('--outdir', default=os.getcwd(),
             help='write the chromosome files to this directory')
     parser.add_argument('--out_prefix', default='chromosome.',
@@ -471,7 +473,7 @@ if __name__ == '__main__':
             metavar='{<int>, min, drosophila, ignore}',
             help='the first position in a chromosome'),
     parser.add_argument('--last', default='drosophila', type=last_position,
-            metavar='{<int>, max, drosophila, ignore}',
+            metavar='{<int>, max, drosophila, truncated_drosophila, ignore}',
             help='the last position in a chromosome'),
     args = parser.parse_args()
     if args.profile:
