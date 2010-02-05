@@ -70,9 +70,10 @@ class Filler:
         @param default_value: the value at missing positions
         @param finish: True if this is the last available value
         """
+        # if the position is outside the range, just drop it
         if not (self.low <= position <= self.high):
-            msg = '%s is outside [%d, %d]' % (position, self.low, self.high)
-            raise ValueError(msg)
+            return
+        # check monotonicity
         if self.prev is not None:
             if position <= self.prev:
                 raise ValueError('positions should monotonically increase')
@@ -128,12 +129,8 @@ def get_requested_low(chrom, first):
         return first
 
 def get_requested_high(chrom, last):
-    if last == 'drosophila':
-        drosophila_high = dict(DGRP.g_chromosome_length_pairs)[chrom.name]
-        return drosophila_high
-    elif last == 'truncated_drosophila':
-        drosophila_high = dict(DGRP.g_chromosome_length_pairs)[chrom.name]
-        return min(drosophila_high, chrom.high)
+    if last in ('drosophila', 'truncated_drosophila'):
+        return dict(DGRP.g_chromosome_length_pairs)[chrom.name]
     elif last in ('max', 'ignore'):
         return chrom.high
     else:
