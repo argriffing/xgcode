@@ -6,6 +6,14 @@ from math import log
 import scipy.stats
 from scipy.special import gammaln
 
+import iterutils
+
+def get_stripped_lines(lines):
+    """
+    @return: a list of nonempty stripped lines
+    """
+    return list(iterutils.stripped_lines(lines))
+
 def binomial_log_pmf(observed_n, max_n, p_success):
     #TODO special cases
     accum = 0

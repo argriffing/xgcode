@@ -10,6 +10,7 @@ import Util
 import Nexus
 import Phylip
 import Config
+import iterutils
 
 baseml_ctl = os.path.join(Config.data_path, 'baseml.ctl')
 baseml_phylip = os.path.join(Config.data_path, 'baseml.phylip')
@@ -39,8 +40,7 @@ def parse_hky_output(lines):
     @return: a dictionary with keys 'kappa', 'A', 'C', 'G', 'T', and 'lnL'
     """
     d = {}
-    stripped_lines = list(Util.stripped_lines(lines))
-    pairs = zip(stripped_lines[:-1], stripped_lines[1:])
+    stripped_lines = list(iterutils.stripped_lines(lines))
     for line in stripped_lines:
         # read kappa
         if line.startswith('kappa under HKY85'):
@@ -51,7 +51,7 @@ def parse_hky_output(lines):
             arr = line.split()
             d['lnL'] = float(arr[-2])
     # read the frequency parameters
-    for first, second in pairs:
+    for first, second in iterutils.pairwise(stripped_lines):
         if first.startswith('base frequency parameters'):
             bases = list('TCAG')
             frequencies = [float(x) for x in second.split()]
