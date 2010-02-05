@@ -314,7 +314,8 @@ def line_to_row(line):
     if len(values) != 16:
         raise Exception('expected 16 values per line')
     if values[2] not in list('ACGT'):
-        raise Exception('the reference allele should be a nucleotide')
+        msg = 'the reference allele should be a nucleotide: ' + values[2]
+        raise Exception(msg)
     msg = 'literal A, C, G, T letters were not found where expected'
     if values[5] != 'A' or values[7] != 'C':
         raise Exception(msg)
