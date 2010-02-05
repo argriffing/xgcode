@@ -51,28 +51,36 @@ class Filler:
     but at other positions no value is available.
     This implementation is memory efficient because it uses iterators.
     """
-    def __init__(self, low, high):
+    def __init__(self, low, high, default_value, truncate=False):
         """
         @param low: the position for which the first value is yielded
         @param high: the position for which the last value is yielded
+        @param default_value: the value used for filler
+        @param truncate: disregard positions which are too low or too high
         """
         self.low = low
         self.high = high
+        self.default_value = default_value
+        self.truncate = truncate
         self.prev = None
 
-    def fill(self, position, value, default_value, finish=False):
+    def fill(self, position, value):
         """
         Yield an informative value and maybe some uninformative ones.
         This function should be called repeatedly,
         and with strictly increasing positions.
         @param position: an available position
         @param value: the value at the position
-        @param default_value: the value at missing positions
-        @param finish: True if this is the last available value
         """
-        # if the position is outside the range, just drop it
+        # If the position is outside the range, 
+        # deal with it according to the truncation option.
         if not (self.low <= position <= self.high):
-            return
+            if self.truncate:
+                return
+            else:
+                msg_a = 'position %d ' % position
+                msg_b = 'is outside [%d, %d]' % (self.low, self.high)
+                raise ValueError(msg_a + msg_b)
         # check monotonicity
         if self.prev is not None:
             if position <= self.prev:
@@ -83,20 +91,18 @@ class Filler:
         # yield the value at the current position
         yield value
         self.prev = position
-        # possibly finish filling the range
-        if finish:
-            for i in xrange(self.get_nremaining()):
-                yield default_value
-            self.prev = self.high
+
+    def finish(self):
+        nremaining = self.get_ngap(self.high) + 1
+        for i in xrange(self.get_nremaining()):
+            yield default_value
+        self.prev = self.high
 
     def get_ngap(self, position):
         if self.prev is None:
             return position - self.low
         else:
             return (position - self.prev) - 1
-
-    def get_nremaining(self):
-        return self.get_ngap(self.high) + 1
 
 
 
