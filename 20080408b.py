@@ -34,7 +34,8 @@ def get_form():
     mixture_model = get_sample_mixture_model()
     ncols = 200
     seed = 314159
-    alignment = PhyLikelihood.simulate_alignment(tree, mixture_model, ncols, seed)
+    alignment = PhyLikelihood.simulate_alignment(
+            tree, mixture_model, ncols, seed)
     nexus = Nexus.Nexus()
     nexus.tree = tree
     nexus.alignment = alignment
@@ -42,11 +43,13 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('nexus', 'nexus data', nexus_string),
-            Form.Integer('ncategories', 'use this many categories', 3, low=1, high=5),
+            Form.Integer('ncategories', 'use this many categories',
+                3, low=1, high=5),
             Form.CheckGroup('options', 'output options', [
                 Form.CheckItem('outdebug', 'show debug info'),
                 Form.CheckItem('outmodel', 'show the model'),
-                Form.CheckItem('outcheck', 'show the recomputed likelihood and rates', True)])]
+                Form.CheckItem('outcheck', 'show the likelihood and rates',
+                    True)])]
     return form_objects
 
 def get_response(fs):
@@ -74,7 +77,8 @@ def get_response(fs):
     print >> fout, nexus
     fout.close()
     # run hyphy
-    p = subprocess.Popen([Config.hyphy_exe_path, hyphy_bf], close_fds=True, stdout=subprocess.PIPE)
+    p = subprocess.Popen([Config.hyphy_exe_path, hyphy_bf],
+            close_fds=True, stdout=subprocess.PIPE)
     hyphy_output = p.stdout.read()
     # move back to the original directory
     os.chdir(original_directory)
@@ -121,8 +125,9 @@ def get_response(fs):
             for nt in list('ACGT'):
                 nt_dict[nt] = getattr(ns, 'eqFreq'+nt+suffix)
             total = float(sum(nt_dict.values()))
-            nt_dict = dict((key, value/total) for key, value in nt_dict.items())
-            matrix = RateMatrix.get_unscaled_hky85_rate_matrix(nt_dict, ns.kappa)
+            nt_dict = dict((k, v/total) for k, v in nt_dict.items())
+            matrix = RateMatrix.get_unscaled_hky85_rate_matrix(
+                    nt_dict, ns.kappa)
             matrices.append(matrix)
         raw_matrix_rates = [matrix.get_expected_rate() for matrix in matrices]
         category_weights = []
@@ -137,7 +142,8 @@ def get_response(fs):
         r1 = 0.75
         scaling_factor = r1
         mixture_model.rescale(scaling_factor)
-        recomputed_log_likelihood = PhyLikelihood.get_log_likelihood(nexus.tree, nexus.alignment, mixture_model)
+        recomputed_log_likelihood = PhyLikelihood.get_log_likelihood(
+                nexus.tree, nexus.alignment, mixture_model)
         print >> out, 'recomputed likelihood and rates:'
         print >> out, '---------------------------------------'
         print >> out, 'log likelihood :', recomputed_log_likelihood
@@ -273,9 +279,11 @@ def get_sample_mixture_model():
     # create a mixture model from the variables that define the model
     rate_matrix_objects = []
     for nt_dict in nt_dicts:
-        rate_matrix_object = RateMatrix.get_unscaled_hky85_rate_matrix(nt_dict, kappa)
+        rate_matrix_object = RateMatrix.get_unscaled_hky85_rate_matrix(
+                nt_dict, kappa)
         rate_matrix_objects.append(rate_matrix_object)
-    mixture_model = SubModel.MixtureModel(category_distribution, rate_matrix_objects)
+    mixture_model = SubModel.MixtureModel(
+            category_distribution, rate_matrix_objects)
     mixture_model.normalize()
     return mixture_model
 

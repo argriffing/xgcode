@@ -3,8 +3,7 @@
 
 from StringIO import StringIO
 
-from scipy import linalg
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Util
@@ -16,7 +15,7 @@ def get_form():
     @return: the body of a form
     """
     # define the default matrix, the ordered labels, and the selected labels
-    M = numpy.array([
+    M = np.array([
         [0, 4, 5, 7],
         [4, 0, 7, 7],
         [5, 7, 0, 10],
@@ -25,9 +24,12 @@ def get_form():
     selection = list('ac')
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'weight matrix', M, MatrixUtil.assert_symmetric),
-            Form.MultiLine('labels', 'ordered_labels', '\n'.join(labels)),
-            Form.MultiLine('selection', 'selected labels', '\n'.join(selection)),
+            Form.Matrix('matrix', 'weight matrix',
+                M, MatrixUtil.assert_symmetric),
+            Form.MultiLine('labels', 'ordered_labels',
+                '\n'.join(labels)),
+            Form.MultiLine('selection', 'selected labels',
+                '\n'.join(selection)),
             Form.RadioGroup('objective', 'bipartition objective function', [
                 Form.RadioItem('min', 'min cut', True),
                 Form.RadioItem('conductance', 'min conductance cut')])]
@@ -82,11 +84,12 @@ def get_response(fs):
     # read the matrix
     M = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     # read the set of selected labels
-    selected_labels = set(Util.stripped_lines(StringIO(fs.selection)))
+    selected_labels = set(Util.get_stripped_lines(StringIO(fs.selection)))
     # get the set of selected indices
-    selection = set(i for i, label in enumerate(ordered_labels) if label in selected_labels)
+    selection = set(i for i, label in enumerate(ordered_labels)
+            if label in selected_labels)
     # get the value of the objective function
     if fs.min:
         value = get_cut(selection, M.tolist())

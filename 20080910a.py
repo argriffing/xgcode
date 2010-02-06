@@ -10,6 +10,8 @@ from SnippetUtil import HandlingError
 import NewickIO
 import FelTree
 import TreeComparison
+from Form import CheckItem
+from Form import RadioItem
 import Form
 
 def get_form():
@@ -23,10 +25,10 @@ def get_form():
             Form.MultiLine('query', 'query tree', default_tree_string),
             Form.MultiLine('reference', 'reference tree', default_tree_string),
             Form.RadioGroup('loss', 'loss function', [
-                Form.RadioItem('uniform', 'split distance'),
-                Form.RadioItem('weighted', 'weighted split distance', True)]),
+                RadioItem('uniform', 'split distance'),
+                RadioItem('weighted', 'weighted split distance', True)]),
             Form.CheckGroup('options', 'normalization options', [
-                Form.CheckItem('normalize', 'calculate the normalized loss function', True)])]
+                CheckItem('normalize', 'compute the normalized loss', True)])]
     return form_objects
 
 def get_response(fs):
@@ -40,15 +42,19 @@ def get_response(fs):
     reference_tree = NewickIO.parse(fs.reference, FelTree.NewickTree)
     # calculate the loss using the requested loss function
     if fs.uniform:
-        loss_numerator = TreeComparison.get_split_distance(query_tree, reference_tree)
+        loss_numerator = TreeComparison.get_split_distance(
+                query_tree, reference_tree)
     elif fs.weighted:
-        loss_numerator = TreeComparison.get_weighted_split_distance(query_tree, reference_tree)
+        loss_numerator = TreeComparison.get_weighted_split_distance(
+                query_tree, reference_tree)
     # do the normalization if requested
     if fs.normalize:
         if fs.uniform:
-            loss_denominator = float(TreeComparison.get_nontrivial_split_count(reference_tree))
+            loss_denominator = float(
+                    TreeComparison.get_nontrivial_split_count(reference_tree))
         elif fs.weighted:
-            loss_denominator = float(TreeComparison.get_weighted_split_count(reference_tree))
+            loss_denominator = float(
+                    TreeComparison.get_weighted_split_count(reference_tree))
     else:
         loss_denominator = 1
     # define the response

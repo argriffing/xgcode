@@ -1,5 +1,7 @@
-"""Evaluate a bipartition function on perturbed distance matrices of a set of trees.
+"""Evaluate partitions of perturbed distance matrices of a set of trees.
 
+Evaluate a bipartition function on perturbed distance matrices
+of a set of trees.
 The perturbed distance matrices will be symmetric and non-negative.
 To generate the perturbed distance matrix,
 distance_i will be multiplied by exp(X_i)
@@ -13,10 +15,11 @@ import random
 import math
 
 from SnippetUtil import HandlingError
-import Util
 import FelTree
 import NewickIO
 import Clustering
+import iterutils
+from Form import RadioItem
 import Form
 
 def get_form():
@@ -30,14 +33,16 @@ def get_form():
             '((b:1.749, d:0.523):0.107, e:1.703, (a:0.746, c:0.070):4.025);']
     # define the form objects
     form_objects = [
-            Form.MultiLine('trees', 'newick trees (one tree per line)', '\n'.join(default_tree_lines)),
-            Form.Float('strength', 'perturbation strength', 0.1, low_inclusive=0),
+            Form.MultiLine('trees', 'newick trees (one tree per line)',
+                '\n'.join(default_tree_lines)),
+            Form.Float('strength', 'perturbation strength',
+                0.1, low_inclusive=0),
             Form.RadioGroup('options', 'bipartition function', [
-                Form.RadioItem('exact', 'exact criterion', True),
-                Form.RadioItem('sign', 'spectral sign approximation'),
-                Form.RadioItem('threshold', 'spectral threshold approximation'),
-                Form.RadioItem('nj', 'neighbor joining criterion'),
-                Form.RadioItem('random', 'random bipartition')])]
+                RadioItem('exact', 'exact criterion', True),
+                RadioItem('sign', 'spectral sign approximation'),
+                RadioItem('threshold', 'spectral threshold approximation'),
+                RadioItem('nj', 'neighbor joining criterion'),
+                RadioItem('random', 'random bipartition')])]
     return form_objects
 
 def get_response(fs):
@@ -47,12 +52,15 @@ def get_response(fs):
     """
     # get the newick trees.
     trees = []
-    for tree_string in Util.stripped_lines(StringIO(fs.trees)):
-        # parse each tree and make sure that it conforms to various requirements
+    for tree_string in iterutils.stripped_lines(StringIO(fs.trees)):
+        # Parse each tree and make sure
+        # that it conforms to various requirements.
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]
         if len(tip_names) < 4:
-            raise HandlingError('expected at least four tips but found ' + str(len(tip_names)))
+            msg_a = 'expected at least four tips but found '
+            msg_b = str(len(tip_names))
+            raise HandlingError(msg_a + msg_b)
         if any(name is None for name in tip_names):
             raise HandlingError('each terminal node must be labeled')
         if len(set(tip_names)) != len(tip_names):

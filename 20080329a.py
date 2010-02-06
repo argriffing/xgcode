@@ -1,6 +1,7 @@
 """Sample a nucleotide alignment given a tree and a HKY mixture.
 
-The mixture is scaled so that the branch lengths in the newick tree are the expected number of substitutions on the branch.
+The mixture is scaled so that the branch lengths in the newick tree
+are the expected number of substitutions on the branch.
 """
 
 from StringIO import StringIO
@@ -26,13 +27,20 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.Integer('ncols', 'sample this many nucleotide columns from the mixture model', 100, low=1, high=1000),
-            Form.MultiLine('frequency_a', 'frequencies for the first component', get_frequency_string(0)),
-            Form.Float('kappa_a', 'kappa for the first component', get_kappa(0), low_inclusive=0),
-            Form.Float('weight_a', 'the weight of the first component', get_weight(0), low_inclusive=0),
-            Form.MultiLine('frequency_b', 'frequencies for the second component', get_frequency_string(1)),
-            Form.Float('kappa_b', 'kappa for the second component', get_kappa(1), low_inclusive=0),
-            Form.Float('weight_b', 'the weight of the second component', get_weight(1), low_inclusive=0),
+            Form.Integer('ncols', 'sample this many nucleotide columns',
+                100, low=1, high=1000),
+            Form.MultiLine('frequency_a', 'first component frequencies',
+                get_frequency_string(0)),
+            Form.Float('kappa_a', 'first component kappa',
+                get_kappa(0), low_inclusive=0),
+            Form.Float('weight_a', 'first component weight',
+                get_weight(0), low_inclusive=0),
+            Form.MultiLine('frequency_b', 'second component frequencies',
+                get_frequency_string(1)),
+            Form.Float('kappa_b', 'second component kappa',
+                get_kappa(1), low_inclusive=0),
+            Form.Float('weight_b', 'second component weight',
+                get_weight(1), low_inclusive=0),
             Form.RadioGroup('format', 'output format options', [
                 Form.RadioItem('fastaformat', 'fasta'),
                 Form.RadioItem('nexusformat', 'nexus', True)]),
@@ -60,23 +68,26 @@ def get_response(fs):
     frequency_strings = (fs.frequency_a, fs.frequency_b)
     nucleotide_distributions = []
     for nt_string in frequency_strings:
-        distribution = SnippetUtil.get_distribution(nt_string, 'nucleotide', list('ACGT'))
-        nucleotide_distributions.append(distribution)
+        d = SnippetUtil.get_distribution(nt_string, 'nucleotide', list('ACGT'))
+        nucleotide_distributions.append(d)
     # create the nucleotide HKY rate matrix objects
     rate_matrix_objects = []
     for nt_distribution, kappa in zip(nucleotide_distributions, kappa_values):
-        rate_matrix_object = RateMatrix.get_unscaled_hky85_rate_matrix(nt_distribution, kappa)
+        rate_matrix_object = RateMatrix.get_unscaled_hky85_rate_matrix(
+                nt_distribution, kappa)
         rate_matrix_objects.append(rate_matrix_object)
     # create the mixture proportions
     weight_sum = sum(mixture_weights)
     mixture_proportions = [weight / weight_sum for weight in mixture_weights]
     # create the mixture model
-    mixture_model = SubModel.MixtureModel(mixture_proportions, rate_matrix_objects)
+    mixture_model = SubModel.MixtureModel(
+            mixture_proportions, rate_matrix_objects)
     # normalize the mixture model
     mixture_model.normalize()
     # simulate the alignment
     try:
-        alignment = PhyLikelihood.simulate_alignment(tree, mixture_model, fs.ncols)
+        alignment = PhyLikelihood.simulate_alignment(
+                tree, mixture_model, fs.ncols)
     except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
     # get the output string

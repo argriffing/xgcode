@@ -1,4 +1,7 @@
-"""Given a newick tree, determine if a bipartition is a member of the split set of the tree.
+"""Given a newick tree, determine if a bipartition is in the split set.
+
+Given a newick tree, determine if a bipartition
+is a member of the split set of the tree.
 """
 
 from StringIO import StringIO
@@ -21,8 +24,10 @@ def get_form():
     selection = list('ABFG')
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('selection', 'selected taxa', '\n'.join(selection))]
+            Form.MultiLine('tree', 'newick tree',
+                formatted_tree_string),
+            Form.MultiLine('selection', 'selected taxa',
+                '\n'.join(selection))]
     return form_objects
 
 def get_response(fs):
@@ -41,10 +46,11 @@ def get_response(fs):
     if len(set(tip_names)) != len(tip_names):
         raise HandlingError('each leaf name must be unique')
     # get the selected taxa
-    selected_taxa = set(Util.stripped_lines(StringIO(fs.selection)))
+    selected_taxa = set(Util.get_stripped_lines(StringIO(fs.selection)))
     # assert that the selected names are actually leaf names
     if set(selected_taxa) - set(tip_names):
-        raise HandlingError('one or more selected taxa are not leaf names in the tree')
+        msg = 'one or more selected taxa are not leaf names in the tree'
+        raise HandlingError(msg)
     # assert that the selection is not degenerate
     n_selection = len(selected_taxa)
     n_complement = len(tip_names) - n_selection
@@ -53,12 +59,17 @@ def get_response(fs):
     if n_complement == 0:
         raise HandlingError('degenerate split: all taxa were selected')
     if n_selection == 1:
-        raise HandlingError('degenerate split: a single selected taxon can always be separated from the others')
+        msg_a = 'degenerate split: a single selected taxon '
+        msg_b = 'can always be separated from the others'
+        raise HandlingError(msg_a + msg_b)
     if n_complement == 1:
-        raise HandlingError('degenerate split: a single unselected taxon can always be separated from the others')
+        msg_a = 'degenerate split: a single selected taxon '
+        msg_b = 'can always be separated from the others'
+        raise HandlingError(msg_a + msg_b)
     # define the response
     out = StringIO()
-    tip_selection = [tip for tip in tree.gen_tips() if tip.get_name() in selected_taxa]
+    tip_selection = [tip for tip in tree.gen_tips()
+            if tip.get_name() in selected_taxa]
     if tree.get_split_branch(tip_selection):
         print >> out, 'this split is valid and nontrivial'
     else:

@@ -45,9 +45,11 @@ def split_branches(tree):
     for node in old_nodes:
         if node is tree.root:
             if node.blen is not None:
-                raise HandlingError('the root node should not have a branch length')
+                msg = 'the root node should not have a branch length'
+                raise HandlingError(msg)
         elif node.blen is None:
-            raise HandlingError('each non-root node should have a branch length')
+            msg = 'each non-root node should have a branch length'
+            raise HandlingError(msg)
         else:
             # create a new node and set its attributes
             new = SpatialTree.SpatialTreeNode()
@@ -108,10 +110,11 @@ def get_response(fs):
     tree = NewickIO.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
     if tree.has_negative_branch_lengths():
-        raise HandlingError('drawing a tree with negative branch lengths is not implemented')
+        msg = 'drawing a tree with negative branch lengths is not implemented'
+        raise HandlingError(msg)
     tree.add_branch_lengths()
     # get the selected taxa
-    selected_taxa = list(Util.stripped_lines(StringIO(fs.selection)))
+    selected_taxa = Util.get_stripped_lines(StringIO(fs.selection))
     # verify that each name is present in the tree
     for name in selected_taxa:
         try:
@@ -133,7 +136,8 @@ def get_response(fs):
         pass
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), fs.imageformat)
+        image_string = DrawTreeImage.get_tree_image(
+                tree, (640, 480), fs.imageformat)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
     # specify the content type

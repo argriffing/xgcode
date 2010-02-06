@@ -1,7 +1,7 @@
 """Convert a path resistance matrix to a laplacian matrix.
 """
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -13,11 +13,14 @@ def get_form():
     """
     @return: the body of a form
     """
-    D = numpy.array([
+    D = np.array([
             [0, 2, 2],
             [2, 0, 2],
             [2, 2, 0]])
-    return [Form.Matrix('matrix', 'path resistance matrix', D, MatrixUtil.assert_predistance)]
+    form_objects = [
+            Form.Matrix('matrix', 'path resistance matrix',
+                D, MatrixUtil.assert_predistance)]
+    return form_objects
 
 def get_response(fs):
     """

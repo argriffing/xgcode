@@ -1,10 +1,14 @@
-"""Evaluate distance matrix tree building methods, giving more weight to deep splits.
+"""Evaluate distance matrix tree inference, giving more weight to deep splits.
 
+Evaluate distance matrix tree building methods,
+giving more weight to deep splits.
 This evaluation procedure is somewhat complicated.
-Several nucleotide alignments are simulated using the JC69 model and the original tree.
+Several nucleotide alignments are simulated using the JC69 model
+and the original tree.
 Distance matrices are estimated from these alignments using maximum likelihood,
 and distance matrices containing an element that is infinite are rejected.
-The tree reconstruction method then builds a tree from each estimated distance matrix.
+The tree reconstruction method then builds a tree
+from each estimated distance matrix.
 The reconstructed trees are then compared to the original tree,
 and the weight of the partition errors is reported.
 """
@@ -12,8 +16,6 @@ and the weight of the partition errors is reported.
 from StringIO import StringIO
 import optparse
 import time
-import sys
-import signal
 import math
 
 from SnippetUtil import HandlingError
@@ -54,7 +56,8 @@ def get_form():
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'original tree with branch lengths', formatted_tree_string),
+            Form.MultiLine('tree', 'original tree with branch lengths',
+                formatted_tree_string),
             Form.Integer('iterations', 'reconstruct this many trees', 10),
             Form.Integer('length', 'use sequences that are this long', 100),
             Form.RadioGroup('criterion', 'bipartition function', [
@@ -82,10 +85,13 @@ def get_response(fs):
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # define the maximum number of steps we want
     max_steps = 1000000
-    # make sure that the splitter object is appropriate for the number of taxa and the number of tree reconstructions
+    # Make sure that the splitter object is appropriate
+    # for the number of taxa and the number of tree reconstructions.
     ntaxa = len(list(tree.gen_tips()))
     if splitter.get_complexity(ntaxa) * fs.iterations > max_steps:
-        raise HandlingError('use a faster bipartition function, fewer taxa, or fewer tree reconstructions')
+        msg_a = 'use a faster bipartition function, '
+        msg_b = 'fewer taxa, or fewer tree reconstructions'
+        raise HandlingError(msg_a + msg_b)
     # define the simulation parameters
     sim = Simulation(splitter, 'nj', 'cgi tree building simulation')
     sim.set_original_tree(tree)
@@ -93,7 +99,8 @@ def get_response(fs):
     # define an arbitrary but consistent ordering of the taxa
     ordered_names = [node.name for node in tree.gen_tips()]
     # attempt to simulate a bunch of distance matrices
-    sampler = DistanceMatrixSampler.DistanceMatrixSampler(tree, ordered_names, fs.length)
+    sampler = DistanceMatrixSampler.DistanceMatrixSampler(
+            tree, ordered_names, fs.length)
     distance_matrices = []
     for result in sampler.gen_samples_or_none():
         # if a proposal was accepted then add it to the list
@@ -104,9 +111,12 @@ def get_response(fs):
         remaining_acceptances = fs.iterations - len(distance_matrices)
         if not remaining_acceptances:
             break
-        # if the remaining number of computrons is predicted to be too much then stop
+        # If the remaining number of computrons is predicted
+        # to be too much then stop.
         if sampler.get_remaining_computrons(remaining_acceptances) > max_steps:
-            raise HandlingError('this combination of parameters is predicted to take too long')
+            msg_a = 'this combination of parameters '
+            msg_b = 'is predicted to take too long'
+            raise HandlingError(msg)
     sim.run(distance_matrices, ordered_names)
     # define the response
     out = StringIO()
@@ -128,19 +138,22 @@ class Simulation:
 
     def __init__(self, splitter, fallback_name, description):
         """
+        The description is of the distance matrix splitting method.
         @param splitter: a distance matrix splitter
         @param fallback_name: the name
-        @param description: a description of the method used to split the distance matrix
+        @param description: a description of the splitting method
         """
         # these simulation parameters are set at initialization time
         self.splitter = splitter
         self.fallback_name = fallback_name
         self.description = description
-        # these simulation parameters are set after the object has been initialized
+        # These simulation parameters are set
+        # after the object has been initialized.
         self.verbose = False
         self.step_limit = None
         self.original_tree = None
-        # for each reconstructed tree, record two distances to the original tree
+        # For each reconstructed tree,
+        # record two distances to the original tree.
         self.error_counts = []
         self.loss_values = []
         self.max_error_counts = []
@@ -151,7 +164,9 @@ class Simulation:
 
     def get_uniform_loss(self):
         """
-        @return: the average over all reconstructed trees of the fraction of partition errors
+        Return the averaged proportion of partition errors.
+        It is averaged over all reconstructed trees.
+        @return: averaged proportion of partition errors
         """
         numerator = sum(self.error_counts)
         denominator = sum(self.max_error_counts)
@@ -164,22 +179,26 @@ class Simulation:
 
     def get_deep_loss(self):
         """
-        @return: the average over all reconstructed trees of the fraction of partition error weights
+        Return the averaged proportion of partition errors.
+        It is averaged over all reconstructed trees.
+        @return: averaged proportion of partition errors
         """
         numerator = sum(self.loss_values)
         denominator = sum(self.max_loss_values)
         if denominator:
             if numerator > denominator:
-                raise HandlingError('uniform loss normalization error')
+                raise HandlingError('deep loss normalization error')
             return numerator / float(denominator)
         else:
             return float('inf')
 
     def get_count_list(self):
         """
-        The first element of the returned list is the number of times that no errors occurred.
+        The first element of the returned list
+        is the number of times that no errors occurred.
         The second element is the number of times that one error occurred.
-        The length of the list is equal to the number of errors in the reconstruction with the most errors.
+        The length of the list is equal to the number of errors
+        in the reconstruction with the most errors.
         @return: a list of error counts
         """
         max_error_count = max(self.error_counts)
@@ -190,7 +209,10 @@ class Simulation:
 
     def get_histogram_string(self):
         """
-        @return: a multi-line string summarizing the quality of the trees reconstructed during the simulation
+        Get a histogram.
+        Return a multi-line string summarizing the quality of the trees
+        reconstructed during the simulation.
+        @return: multi-line histogram string
         """
         out = StringIO()
         for i, count in enumerate(self.get_count_list()):
@@ -211,7 +233,7 @@ class Simulation:
 
     def set_step_limit(self, step_limit):
         """
-        @param step_limit: this is a cap on the number of steps allowed in the computation
+        @param step_limit: limit the number of steps allowed in the computation
         """
         self.step_limit = step_limit
 
@@ -219,8 +241,11 @@ class Simulation:
         """
         @return: the number of seconds it took to run the simulation
         """
-        assert self.start_time is not None, 'the simulation has not been started'
-        assert self.stop_time is not None, 'the simulation was not successfully completed'
+        if self.start_time is None:
+            raise HandlingError('the simulation has not been started')
+        if self.stop_time is None:
+            msg = 'the simulation was not successfully completed'
+            raise HandlingError(msg)
         return self.stop_time - self.start_time
 
     def get_normalized_error_counts(self):
@@ -228,7 +253,8 @@ class Simulation:
         @return: a list of normalized error counts from the completed run
         """
         normalized_error_counts = []
-        for error_count, max_error_count in zip(self.error_counts, self.max_error_counts):
+        for error_count, max_error_count in zip(
+                self.error_counts, self.max_error_counts):
             numerator = float(error_count)
             denominator = float(max_error_count)
             assert numerator <= denominator
@@ -240,7 +266,8 @@ class Simulation:
         @return: a list of normalized loss values from the completed run
         """
         normalized_loss_values = []
-        for loss_value, max_loss_value in zip(self.loss_values, self.max_loss_values):
+        for loss_value, max_loss_value in zip(
+                self.loss_values, self.max_loss_values):
             numerator = float(loss_value)
             denominator = float(max_loss_value)
             assert numerator <= denominator
@@ -249,21 +276,30 @@ class Simulation:
 
     def run(self, distance_matrices, ordered_names):
         """
-        A side effect of this function is to store the losses for each reconstruction.
+        This function stores the losses for each reconstruction.
         @param distance_matrices: a sequence of distance matrices
-        @param ordered_names: the ordering of taxa in the distance matrix rows and columns
+        @param ordered_names: order of taxa in the distance matrix
         """
-        assert self.start_time is None, 'each simulation object should be run only once'
-        assert distance_matrices, 'no distance matrices were provided'
-        assert set(node.name for node in self.original_tree.gen_tips()) == set(ordered_names), 'leaf name mismatch'
+        if self.start_time is not None:
+            msg = 'each simulation object should be run only once'
+            raise HandlingError(msg)
+        if not distance_matrices:
+            raise HandlingErrror('no distance matrices were provided')
+        tip_name_set = set(node.name for node in self.original_tree.gen_tips()) 
+        if tip_name_set != set(ordered_names):
+            raise HandlingError('leaf name mismatch')
         self.start_time = time.time()
-        # define the reference tree and its maximum cost under different loss functions
+        # Define the reference tree and its maximum cost
+        # under different loss functions.
         reference_tree = self.original_tree
-        max_error_count = TreeComparison.get_nontrivial_split_count(reference_tree)
-        max_loss_value = TreeComparison.get_weighted_split_count(reference_tree)
+        max_error_count = TreeComparison.get_nontrivial_split_count(
+                reference_tree)
+        max_loss_value = TreeComparison.get_weighted_split_count(
+                reference_tree)
         for distance_matrix in distance_matrices:
             # create the tree builder
-            tree_builder = NeighborhoodJoining.TreeBuilder(distance_matrix, ordered_names, self.splitter)
+            tree_builder = NeighborhoodJoining.TreeBuilder(
+                    distance_matrix, ordered_names, self.splitter)
             # set parameters of the validating tree builder
             tree_builder.set_fallback_name(self.fallback_name)
             # build the tree
@@ -271,12 +307,17 @@ class Simulation:
                 query_tree = tree_builder.build()
             except NeighborhoodJoining.NeighborhoodJoiningError, e:
                 raise HandlingError(e)
-            # note the number and weight of partition errors during the reconstruction
-            error_count = TreeComparison.get_split_distance(query_tree, reference_tree)
-            loss_value = TreeComparison.get_weighted_split_distance(query_tree, reference_tree)
+            # Note the number and weight of partition errors
+            # during the reconstruction.
+            error_count = TreeComparison.get_split_distance(
+                    query_tree, reference_tree)
+            loss_value = TreeComparison.get_weighted_split_distance(
+                    query_tree, reference_tree)
             # make sure that the summary is internally consistent
-            assert error_count <= max_error_count, (error_count, max_error_count)
-            assert loss_value <= max_loss_value, (loss_value, max_loss_value)
+            assert error_count <= max_error_count, (
+                    error_count, max_error_count)
+            assert loss_value <= max_loss_value, (
+                    loss_value, max_loss_value)
             # save the reconstruction characteristics to use later
             self.error_counts.append(error_count)
             self.loss_values.append(loss_value)
@@ -331,11 +372,14 @@ def do_hard_coded_analysis_a(tree, tree_remark):
     ordered_names = list(node.name for node in tree.gen_tips())
     # use 1000 replicates
     reconstruction_count = 1000
-    # make R files for reconstruction results from sequences 100 and 500 nucleotides long
+    # Make R files for reconstruction results
+    # from sequences 100 and 500 nucleotides long.
     for sequence_length in (100, 500):
         # sample distance matrices
-        print 'sampling', reconstruction_count, 'distance matrices from alignments of length', sequence_length
-        sampler = DistanceMatrixSampler.DistanceMatrixSampler(tree, ordered_names, sequence_length)
+        print 'sampling', reconstruction_count, 'distance matrices'
+        print 'from alignments of length', sequence_length
+        sampler = DistanceMatrixSampler.DistanceMatrixSampler(
+                tree, ordered_names, sequence_length)
         distance_matrices = []
         for result in sampler.gen_samples_or_none():
             # if the proposal was rejected then try again
@@ -349,23 +393,27 @@ def do_hard_coded_analysis_a(tree, tree_remark):
                 break
         # run both neighbor joining and spectral sign clustering
         sims = [
-                Simulation(Clustering.NeighborJoiningDMS(), 'nj', 'neighbor joining'),
-                Simulation(Clustering.StoneSpectralSignDMS(), 'nj', 'spectral sign')
-                ]
+                Simulation(Clustering.NeighborJoiningDMS(),
+                    'nj', 'neighbor joining'),
+                Simulation(Clustering.StoneSpectralSignDMS(),
+                    'nj', 'spectral sign')]
         for sim in sims:
-            print 'reconstructing', len(distance_matrices), 'trees using', sim.description
+            print 'reconstructing', len(distance_matrices), 'trees'
+            print 'using', sim.description
             sim.set_original_tree(tree)
             sim.run(distance_matrices, ordered_names)
         # consider the neighbor joining and the spectral sign results
         nj_sim, ss_sim = sims
         # write the uniform loss function comparison R script
-        script_contents = R_helper(nj_sim.get_normalized_error_counts(), ss_sim.get_normalized_error_counts())
+        script_contents = R_helper(nj_sim.get_normalized_error_counts(),
+                ss_sim.get_normalized_error_counts())
         filename = 'uniform_%d.R' % sequence_length
         fout = open(filename, 'w')
         print >> fout, script_contents
         fout.close()
         # write the weighted loss function comparison R script
-        script_contents = R_helper(nj_sim.get_normalized_loss_values(), ss_sim.get_normalized_loss_values())
+        script_contents = R_helper(nj_sim.get_normalized_loss_values(),
+                ss_sim.get_normalized_loss_values())
         filename = 'weighted_%d.R' % sequence_length
         fout = open(filename, 'w')
         print >> fout, script_contents
@@ -382,18 +430,21 @@ def do_hard_coded_analysis_b(tree, tree_remark):
     ordered_names = list(node.name for node in tree.gen_tips())
     # use some replicates
     reconstruction_count = 100
-    # make R files for reconstruction results from sequences of some number of nucleotides in length
+    # Make R files for reconstruction results from sequences
+    # of some number of nucleotides in length.
     sequence_length = 2000
     # define the tree reconstruction methods to be used
     sims = [
-            Simulation(Clustering.NeighborJoiningDMS(), 'nj', 'neighbor joining'),
-            Simulation(Clustering.StoneSpectralSignDMS(), 'nj', 'spectral sign')
-            ]
+            Simulation(Clustering.NeighborJoiningDMS(),
+                'nj', 'neighbor joining'),
+            Simulation(Clustering.StoneSpectralSignDMS(),
+                'nj', 'spectral sign')]
     # set tree reconstruction parameters
     for sim in sims:
         sim.set_original_tree(tree)
     # initialize the distance matrix sampler
-    sampler = DistanceMatrixSampler.InfiniteAllelesSampler(tree, ordered_names, sequence_length)
+    sampler = DistanceMatrixSampler.InfiniteAllelesSampler(
+            tree, ordered_names, sequence_length)
     sampler.set_inf_replacement(20.0)
     sampler.set_zero_replacement(0.0)
     # start the progress bar
@@ -406,10 +457,12 @@ def do_hard_coded_analysis_b(tree, tree_remark):
         if result:
             sequence_list, D = result
             distance_matrices.append(D)
-        # update the progressbar regardless of whether or not the proposal was accepted
+        # Update the progressbar regardless of whether or not
+        # the proposal was accepted.
         remaining_acceptances = reconstruction_count - len(distance_matrices)
         numerator = sampler.get_completed_proposals()
-        denominator = numerator + sampler.get_remaining_proposals(remaining_acceptances)
+        denominator = numerator + sampler.get_remaining_proposals(
+                remaining_acceptances)
         dms_fraction = float(numerator) / float(denominator)
         dms_total = 1.0 / (1 + len(sims))
         pbar.update(dms_fraction * dms_total)
@@ -421,7 +474,8 @@ def do_hard_coded_analysis_b(tree, tree_remark):
     reconstruction_seconds = []
     for i, sim in enumerate(sims):
         reconstruction_start_time = time.time()
-        print 'reconstructing', len(distance_matrices), 'trees using', sim.description
+        print 'reconstructing', len(distance_matrices), 'trees'
+        print 'using', sim.description
         sim.run(distance_matrices, ordered_names)
         pbar.update(float(i+2) / float(1 + len(sims)))
         reconstruction_seconds.append(time.time() - reconstruction_start_time)
@@ -444,10 +498,12 @@ def do_hard_coded_analysis_b(tree, tree_remark):
     print >> fout, '# tree source:', tree_remark
     print >> fout, '# number of taxa:', len(ordered_names)
     print >> fout, '# sampled distance matrices:', len(distance_matrices)
+    print >> fout, '# seconds elapsed for sampling:', distance_matrix_seconds
     print >> fout, '# sites per sequence:', sequence_length
-    print >> fout, '# seconds elapsed for distance matrix sampling:', distance_matrix_seconds
     for sim, seconds in zip(sims, reconstruction_seconds):
-        print >> fout, '# seconds elapsed for tree reconstruction using %s:' % sim.description, seconds
+        msg_a = '# seconds elapsed for tree reconstruction using '
+        msg_b = sim.description + ': ' + str(seconds)
+        print >> fout, msg_a  + msg_b
     print >> fout, table_string
     fout.close()
     print 'wrote', filename
@@ -461,13 +517,16 @@ def do_command_line_analysis(options):
     tree, tree_remark = get_tree_and_remark(options)
     # initialize the simulation objects
     sims = [
-        Simulation(Clustering.NeighborJoiningDMS(), 'nj', 'neighbor joining'),
-        Simulation(Clustering.StoneSpectralSignDMS(), 'nj', 'spectral sign cut with neighbor joining fallback'),
-        Simulation(Clustering.RandomDMS(), 'nj', 'random partitioning')
-        ]
+        Simulation(Clustering.NeighborJoiningDMS(),
+            'nj', 'neighbor joining'),
+        Simulation(Clustering.StoneSpectralSignDMS(),
+            'nj', 'spectral sign cut with neighbor joining fallback'),
+        Simulation(Clustering.RandomDMS(),
+            'nj', 'random partitioning')]
     # possibly add the slow simulation
     if options.use_exact:
-        sims.append(Simulation(Clustering.StoneExactDMS(), 'nj', 'exact criterion with neighbor joining fallback'))
+        sims.append(Simulation(Clustering.StoneExactDMS(),
+            'nj', 'exact criterion with neighbor joining fallback'))
     # define the simulation parameters
     reconstruction_count = options.nsamples
     sequence_length_string = options.sequence_length
@@ -482,7 +541,8 @@ def do_command_line_analysis(options):
         try:
             inf_replacement = float(options.replace_inf)
         except ValueError:
-            raise OptionError('invalid replace_inf value: ' + str(options.replace_inf))
+            msg = 'invalid replace_inf value: '
+            raise OptionError(msg + str(options.replace_inf))
     zero_replacement = 0
     if options.reject_zero:
         zero_replacement = None
@@ -490,7 +550,8 @@ def do_command_line_analysis(options):
         try:
             zero_replacement = float(options.replace_zero)
         except ValueError:
-            raise OptionError('invalid replace_zero value: ' + str(options.replace_zero))
+            msg = 'invalid replace_zero value: '
+            raise OptionError(msg + str(options.replace_zero))
     # start the html file
     print '<html><body>'
     # show the simulation parameters
@@ -500,7 +561,8 @@ def do_command_line_analysis(options):
     # set the simulation parameters for each simulation
     for sim in sims:
         sim.set_original_tree(tree)
-        # if there is only one reconstruction per method then show the progress of the tree builder
+        # If there is only one reconstruction per method
+        # then show the progress of the tree builder.
         if reconstruction_count == 1:
             sim.set_verbose()
     # define an arbitrary but consistent ordering of the taxa
@@ -510,7 +572,8 @@ def do_command_line_analysis(options):
         if options.verbose:
             print 'sampling', reconstruction_count, 'distance matrices...'
         # initialize the distance matrix sampler
-        sampler = DistanceMatrixSampler.DistanceMatrixSampler(tree, ordered_names, sequence_length)
+        sampler = DistanceMatrixSampler.DistanceMatrixSampler(
+                tree, ordered_names, sequence_length)
         sampler.set_inf_replacement(inf_replacement)
         sampler.set_zero_replacement(zero_replacement)
         # start the progress bar
@@ -522,10 +585,13 @@ def do_command_line_analysis(options):
             if result:
                 sequence_list, D = result
                 distance_matrices.append(D)
-            # update the progressbar regardless of whether or not the proposal was accepted
-            remaining_acceptances = reconstruction_count - len(distance_matrices)
+            # Update the progressbar regardless of whether or not
+            # the proposal was accepted.
+            remaining_acceptances = reconstruction_count - len(
+                    distance_matrices)
             numerator = sampler.get_completed_proposals()
-            denominator = numerator + sampler.get_remaining_proposals(remaining_acceptances)
+            denominator = numerator + sampler.get_remaining_proposals(
+                    remaining_acceptances)
             dms_fraction = float(numerator) / float(denominator)
             dms_total = 1.0 / (1 + len(sims))
             pbar.update(dms_fraction * dms_total)
@@ -543,7 +609,8 @@ def do_command_line_analysis(options):
         # get the simulation data
         table = [('method', 'seconds', 'uniform loss', 'weighted loss')]
         for sim in sims:
-            table.append((sim.description, sim.get_running_time(), sim.get_uniform_loss(), sim.get_deep_loss()))
+            table.append((sim.description, sim.get_running_time(),
+                sim.get_uniform_loss(), sim.get_deep_loss()))
         # convert the row major matrix into an html table
         print HtmlTable.get_table_string(table)
         # end the html file
@@ -557,10 +624,13 @@ def main(options):
     """
     # assert that various options are compatible
     if options.reject_inf and options.replace_inf:
-        raise OptionError('reject_inf and replace_inf are incompatible options')
+        msg = 'reject_inf and replace_inf are incompatible options'
+        raise OptionError(msg)
     if options.reject_zero and options.replace_zero:
-        raise OptionError('reject_zero and replace_zero are incompatible options')
-    # see if we are supposed to do some hard coded analysis, possibly using a user tree
+        msg = 'reject_zero and replace_zero are incompatible options'
+        raise OptionError(msg)
+    # See if we are supposed to do some hard coded analysis,
+    # possibly using a user tree.
     if options.hard_coded_analysis:
         tree, tree_remark = get_tree_and_remark(options)
         if options.hard_coded_analysis == 1:
@@ -568,25 +638,42 @@ def main(options):
         elif options.hard_coded_analysis == 2:
             do_hard_coded_analysis_b(tree, tree_remark)
         else:
-            raise OptionError('invalid hard_coded_analysis: ' + options.hard_coded_analysis)
+            msg = 'invalid hard_coded_analysis: '
+            raise OptionError(msg + options.hard_coded_analysis)
     else:
         do_command_line_analysis(options)
 
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
-    parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='show extra information')
-    parser.add_option('--nsamples', dest='nsamples', type='int', default=1000, help='number of samples')
-    parser.add_option('--sequence-length', dest='sequence_length', default=100, help='columns in the intermediate sampled alignment (or inf)')
-    parser.add_option('--tree', dest='tree_filename', default='', help='tree filename')
-    parser.add_option('--inline-tree', dest='inline_tree', default='', help='newick tree specified on the command line')
-    parser.add_option('--use-exact', action='store_true', dest='use_exact', default=False, help='use the exact criterion (slow)')
-    parser.add_option('--reject-inf', action='store_true', dest='reject_inf', default=False, help='reject matrices with distances of infinity')
-    parser.add_option('--reject-zero', action='store_true', dest='reject_zero', default=False, help='reject matrices with distances of zero')
-    parser.add_option('--replace-inf', dest='replace_inf', default='', help='use a given distance instead of infinity')
-    parser.add_option('--replace-zero', dest='replace_zero', default='', help='use a given distance instead of zero')
-    parser.add_option('--hard-coded-analysis-a', action="store_const", const=1, dest="hard_coded_analysis", default=None, help="make R files for analysis A")
-    parser.add_option('--hard-coded-analysis-b', action="store_const", const=2, dest="hard_coded_analysis", default=None, help="make R files for analysis B")
+    parser.add_option('-v', '--verbose',
+            action='store_true', dest='verbose',
+            default=False, help='show extra information')
+    parser.add_option('--nsamples', dest='nsamples', type='int', 
+            default=1000, help='number of samples')
+    parser.add_option('--sequence-length', dest='sequence_length',
+            default=100,
+            help='columns in the intermediate sampled alignment (or inf)')
+    parser.add_option('--tree', dest='tree_filename',
+            default='', help='tree filename')
+    parser.add_option('--inline-tree', dest='inline_tree',
+            default='', help='newick tree specified on the command line')
+    parser.add_option('--use-exact', action='store_true', dest='use_exact',
+            default=False, help='use the exact criterion (slow)')
+    parser.add_option('--reject-inf', action='store_true', dest='reject_inf',
+            default=False, help='reject matrices with distances of infinity')
+    parser.add_option('--reject-zero', action='store_true', dest='reject_zero',
+            default=False, help='reject matrices with distances of zero')
+    parser.add_option('--replace-inf', dest='replace_inf',
+            default='', help='use a given distance instead of infinity')
+    parser.add_option('--replace-zero', dest='replace_zero',
+            default='', help='use a given distance instead of zero')
+    parser.add_option('--hard-coded-analysis-a',
+            action="store_const", const=1, dest="hard_coded_analysis",
+            default=None, help="make R files for analysis A")
+    parser.add_option('--hard-coded-analysis-b',
+            action="store_const", const=2, dest="hard_coded_analysis",
+            default=None, help="make R files for analysis B")
     options, args = parser.parse_args()
     try:
         main(options)

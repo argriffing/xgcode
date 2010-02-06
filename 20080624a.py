@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -22,7 +22,7 @@ def get_form():
     tree = Newick.parse(tree_string, Newick.NewickTree)
     formatted_tree_string = Newick.get_narrow_newick_string(tree, 60)
     # define the default rate matrix and its ordered states
-    R = numpy.array([
+    R = np.array([
         [-.3, .1, .1, .1],
         [.1, -.3, .1, .1],
         [.1, .1, -.3, .1],
@@ -40,10 +40,14 @@ def get_form():
             'y : C']
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string),
-            Form.Matrix('rate_matrix', 'rate matrix', R, MatrixUtil.assert_rate_matrix),
-            Form.MultiLine('states', 'ordered states', '\n'.join(ordered_states)),
-            Form.MultiLine('assignments', 'leaf states', '\n'.join(leaf_assignment_lines))]
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string),
+            Form.Matrix('rate_matrix', 'rate matrix',
+                R, MatrixUtil.assert_rate_matrix),
+            Form.MultiLine('states', 'ordered states',
+                '\n'.join(ordered_states)),
+            Form.MultiLine('assignments', 'leaf states',
+                '\n'.join(leaf_assignment_lines))]
     return form_objects
 
 def get_response(fs):
@@ -55,15 +59,19 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # read the ordered states
-    ordered_states = list(Util.stripped_lines(StringIO(fs.states)))
+    ordered_states = Util.get_stripped_lines(StringIO(fs.states))
     # read the matrix from the form data
     R = fs.rate_matrix
     if len(R) < 2:
         raise HandlingError('the rate matrix should have at least two rows')
     if len(ordered_states) != len(R):
-        raise HandlingError('the number of ordered states should be the same as the number of rows in the matrix')
+        msg_a = 'the number of ordered states should be the same '
+        msg_b = 'as the number of rows in the matrix'
+        raise HandlingError(msg_a + msg_b)
     # get the dictionary mapping taxa to states
-    taxon_to_state = SnippetUtil.get_generic_dictionary(StringIO(fs.assignments), 'taxon name', 'state name', ordered_states)
+    taxon_to_state = SnippetUtil.get_generic_dictionary(
+            StringIO(fs.assignments), 'taxon name', 'state name',
+            ordered_states)
     # set the states for each of the tree tips
     for node in tree.gen_tips():
         node.state = taxon_to_state[node.name]
@@ -74,14 +82,16 @@ def get_response(fs):
     for node in internal_nodes:
         tree.reroot(node)
         rate_matrix_object.add_probabilities(tree)
-        weights = [node.state_to_subtree_prob[state] for state in ordered_states]
+        weights = [node.state_to_subtree_prob[state]
+                for state in ordered_states]
         node.state_distribution = Util.weights_to_distribution(weights)
     # define the response
     out = StringIO()
     # show the ancestral state distributions
     for node in tree.gen_internal_nodes():
         if node.name:
-            print >> out, node.name, ':', '\t'.join(str(p) for p in node.state_distribution)
+            name = '\t'.join(str(p) for p in node.state_distribution)
+            print >> out, node.name, ':', name
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

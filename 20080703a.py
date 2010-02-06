@@ -16,6 +16,7 @@ import Util
 import MatrixUtil
 import NewickIO
 import FelTree
+from Form import CheckItem
 import Form
 
 def get_form():
@@ -29,13 +30,16 @@ def get_form():
     labels = list(sorted(tip.name for tip in tree.gen_tips()))
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('inlabels', 'ordered labels', '\n'.join(labels)),
-            Form.Float('strength', 'perturbation strength', 0.1, low_inclusive=0),
+            Form.MultiLine('tree', 'newick tree',
+                formatted_tree_string),
+            Form.MultiLine('inlabels', 'ordered labels',
+                '\n'.join(labels)),
+            Form.Float('strength', 'perturbation strength',
+                0.1, low_inclusive=0),
             Form.CheckGroup('options', 'output options', [
-                Form.CheckItem('perturbed', 'a perturbed distance matrix', True),
-                Form.CheckItem('distance', 'the original distance matrix'),
-                Form.CheckItem('outlabels', 'ordered labels')])]
+                CheckItem('perturbed', 'a perturbed distance matrix', True),
+                CheckItem('distance', 'the original distance matrix'),
+                CheckItem('outlabels', 'ordered labels')])]
     return form_objects
 
 def get_response(fs):
@@ -45,15 +49,18 @@ def get_response(fs):
     """
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
-    alphabetically_ordered_states = list(sorted(node.name for node in tree.gen_tips()))
+    alphabetically_ordered_states = list(sorted(node.name
+        for node in tree.gen_tips()))
     n = len(alphabetically_ordered_states)
     if n < 2:
         raise HandlingError('the newick tree should have at least two leaves')
     # read the ordered labels
-    states = list(Util.stripped_lines(StringIO(fs.inlabels)))
+    states = Util.get_stripped_lines(StringIO(fs.inlabels))
     if len(states) > 1:
         if set(states) != set(alphabetically_ordered_states):
-            raise HandlingError('if ordered labels are provided, each should correspond to a leaf of the newick tree')
+            msg_a = 'if ordered labels are provided, '
+            msg_b = 'each should correspond to a leaf of the newick tree'
+            raise HandlingError(msg_a + msg_b)
     else:
         states = alphabetically_ordered_states
     # start to prepare the reponse

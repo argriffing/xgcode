@@ -1,12 +1,13 @@
 """Given a weighted adjacency matrix, calculate the path resistance matrix.
 
 Here the weighted adjacency matrix is the conductance matrix.
-Each element is the reciprocal of the value of a resistor directly connecting the nodes.
+Each element is the reciprocal of the value of a resistor
+directly connecting the nodes.
 """
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -17,7 +18,7 @@ def get_form():
     """
     @return: the body of a form
     """
-    A = numpy.array([
+    A = np.array([
         [0, 2, 2, 0, 0, 0, 0],
         [2, 0, 2, 0, 0, 0, 0],
         [2, 2, 0, 3, 0, 0, 0],
@@ -25,7 +26,10 @@ def get_form():
         [0, 0, 0, 2, 0, 2, 1],
         [0, 0, 0, 2, 2, 0, 1],
         [0, 0, 0, 0, 1, 1, 0]])
-    return [Form.Matrix('matrix', 'weighted adjacency matrix', A, MatrixUtil.assert_weighted_adjacency)]
+    form_objects = [
+            Form.Matrix('matrix', 'weighted adjacency matrix',
+                A, MatrixUtil.assert_weighted_adjacency)]
+    return form_objects
 
 def get_response(fs):
     """

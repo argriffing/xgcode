@@ -72,8 +72,10 @@ def get_form():
     data_lines = [str(info) for info in column_info_list]
     # define the form objects
     form_objects = [
-            Form.MultiLine('mapp', 'MAPP output', g_mapp_output.strip()),
-            Form.MultiLine('headers', 'alignment column headers', '\n'.join(data_lines))]
+            Form.MultiLine('mapp', 'MAPP output',
+                g_mapp_output.strip()),
+            Form.MultiLine('headers', 'alignment column headers',
+                '\n'.join(data_lines))]
     return form_objects
 
 def get_response(fs):
@@ -92,13 +94,17 @@ def get_response(fs):
     # validate the headers, possibly providing default values
     if headers:
         if len(headers) != len(tsv_lists) - 1:
-            raise HandlingError('the number of headers should be one fewer than the number of MAPP lines')
+            msg_a = 'the number of headers should be one fewer than '
+            msg_b = 'the number of MAPP lines'
+            raise HandlingError(msg_a + msg_b)
     else:
         headers = [str(i+1) for i in range(len(tsv_lists) - 1)]
     # check input consistency
     length_set = set(len(tsv_list) for tsv_list in tsv_lists)
     if length_set != set([54]):
-        raise HandlingError('each line in the MAPP output should have 54 tab separated values: %s' % str(length_set))
+        msg_a = 'each line in the MAPP output should have 54 '
+        msg_b = 'tab separated values: %s' % str(length_set)
+        raise HandlingError(msg_a + msg_b)
     # read the p-values
     pvalue_lists = []
     for tsv_list in tsv_lists[1:]:

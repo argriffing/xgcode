@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Util
@@ -18,7 +18,7 @@ def get_form():
     """
     # define the default distance matrix
     # this is from figure 2 of a paper called why neighbor joining works
-    D = numpy.array([
+    D = np.array([
         [0.0, 3.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
         [3.0, 0.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0],
         [2.0, 3.0, 0.0, 0.1, 0.4, 3.0, 3.0, 3.0],
@@ -30,8 +30,10 @@ def get_form():
     labels = list('xyabcmnp')
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance),
-            Form.MultiLine('labels', 'ordered labels', '\n'.join(labels))]
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance),
+            Form.MultiLine('labels', 'ordered labels',
+                '\n'.join(labels))]
     return form_objects
 
 def get_response(fs):
@@ -44,9 +46,11 @@ def get_response(fs):
     if len(D) < 3:
         raise HandlingError('the matrix should have at least three rows')
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     if len(ordered_labels) != len(D):
-        raise HandlingError('the number of ordered labels should be the same as the number of rows in the matrix')
+        msg_a = 'the number of ordered labels should be the same '
+        msg_b = 'as the number of rows in the matrix'
+        raise HandlingError(msg_a + msg_b)
     # get the newick tree
     tree = NeighborJoining.make_tree(D.tolist(), ordered_labels)
     # define the response

@@ -1,8 +1,10 @@
-"""Estimate F84 parameters from a pair of nucleotide sequences by numerically maximizing likelihood.
+"""Estimate F84 parameters from two nt sequences by numerical ML.
 
-The F84 evolutionary model
-is defined in the paper
-"Maximum Likelihood Phylogenetic Estimation from DNA Sequences with Variable Rates over Sites: Approximate Methods"
+Estimate F84 parameters from a pair of nucleotide sequences
+by numerically maximizing likelihood.
+The F84 evolutionary model is defined in the paper
+"Maximum Likelihood Phylogenetic Estimation from DNA Sequences
+with Variable Rates over Sites: Approximate Methods"
 by Ziheng Yang in J Mol Evol 1994.
 """
 
@@ -27,7 +29,10 @@ def get_form():
     """
     @return: the body of a form
     """
-    return [Form.MultiLine('fasta', 'nucleotide sequence pair', g_sample_fasta_string.strip())]
+    form_objects = [
+            Form.MultiLine('fasta', 'nucleotide sequence pair',
+                g_sample_fasta_string.strip())]
+    return form_objects
 
 def get_response(fs):
     """
@@ -50,7 +55,8 @@ def get_response(fs):
         raise HandlingError('nucleotide alignment error: ' + str(e))
     new_column_count = alignment.get_column_count()
     if old_column_count != new_column_count:
-        raise HandlingError('expected a gapless unambiguous nucleotide alignment')
+        msg = 'expected a gapless unambiguous nucleotide alignment'
+        raise HandlingError(msg)
     # get the maximum likelihood estimates according to a numeric optimizer.
     f = F84.Objective(alignment.sequences)
     values = list(f.get_initial_parameters())
@@ -59,7 +65,8 @@ def get_response(fs):
     nt_distribution = F84.parameters_to_distribution((wC, wG, wT))
     A, C, G, T = nt_distribution
     model = F84.create_rate_matrix(kappa, nt_distribution)
-    log_likelihood = PairLikelihood.get_log_likelihood(distance, alignment.sequences, model)
+    log_likelihood = PairLikelihood.get_log_likelihood(
+            distance, alignment.sequences, model)
     # begin the response
     out = StringIO()
     print >> out, 'ML distance:', distance

@@ -5,9 +5,7 @@ from StringIO import StringIO
 import math
 import random
 
-from scipy import linalg
-from scipy import optimize
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -31,9 +29,9 @@ def get_laplacian_pseudo_inverse(distance_matrix):
     @return: the pseudo inverse laplacian matrix as a numpy array
     """
     n = len(distance_matrix)
-    M = numpy.array(distance_matrix)
-    P = numpy.eye(n) - numpy.ones((n,n))/n
-    L_pinv = - 0.5 * numpy.dot(P, numpy.dot(M, P))
+    M = np.array(distance_matrix)
+    P = np.eye(n) - np.ones((n,n))/n
+    L_pinv = - 0.5 * np.dot(P, np.dot(M, P))
     return L_pinv
 
 def get_eigendecomposition(M):
@@ -41,7 +39,7 @@ def get_eigendecomposition(M):
     @param M: a numpy array
     @return: the eigenvalues and the eigenvectors
     """
-    w, v = linalg.eigh(M)
+    w, v = np.linalg.eigh(M)
     eigenvalues = w
     eigenvectors = v.T
     return eigenvalues, eigenvectors
@@ -60,8 +58,11 @@ def gen_euclidean_points_from_eigendecomposition(w, v):
 def gen_euclidean_points(distance_matrix):
     """
     Convert an N by N distance matrix into a list of N N-dimensional vectors.
-    Yields euclidean points that should give the same distance matrix if the original distance were among taxa
-    @param distance_matrix: a row major distance matrix corresponding to distances between taxa on a tree
+    Yields euclidean points that should give the same distance matrix
+    if the original distance were among taxa.
+    The input distance matrix is a row major matrix of distances
+    between taxa on a tree.
+    @param distance_matrix: distances between tree taxa
     """
     # get the pseudo inverse laplacian matrix
     L_pinv = get_laplacian_pseudo_inverse(distance_matrix)
@@ -85,7 +86,8 @@ def get_euclidean_distance_matrix(points):
     for point_a in points:
         row = []
         for point_b in points:
-            distance = math.sqrt(sum((b - a)**2 for a, b in zip(point_a, point_b)))
+            distance = math.sqrt(sum((b - a)**2
+                for a, b in zip(point_a, point_b)))
             row.append(distance)
         D.append(row)
     return D
@@ -132,7 +134,8 @@ def hard_coded_analysis_a():
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
     states = []
     id_list = []
-    for state, id_ in sorted((node.name, id(node)) for node in tree.gen_tips()):
+    for state, id_ in sorted((node.name, id(node))
+            for node in tree.gen_tips()):
         id_list.append(id_)
         states.append(state)
     for node in tree.gen_internal_nodes():
@@ -222,7 +225,8 @@ def hard_coded_analysis_b():
     print 'eigenvalues of the pseudo inverse of the laplacian:'
     print eigenvalues
     # each taxon gets a transformed point
-    z_points = list(gen_euclidean_points_from_eigendecomposition(eigenvalues, eigenvectors))
+    z_points = list(gen_euclidean_points_from_eigendecomposition(
+        eigenvalues, eigenvectors))
     # initialize the objective function
     objective = MyObjective(z_points)
     # initialize a couple of steiner points

@@ -1,9 +1,10 @@
 """Create an HKY-like nucleotide rate matrix with a WAG-like f parameter.
 
-The rows and columns in the output will be ordered alphabetically by nucleotide (A, C, G, T)
-regardless of the input order.
+The rows and columns in the output will be ordered alphabetically
+by nucleotide (A, C, G, T) regardless of the input order.
 For an HKY85 rate matrix set f to 1.
-For a Jukes-Cantor rate matrix set each nucleotide weight to 1, and set f and &kappa; to 1.
+For a Jukes-Cantor rate matrix set each nucleotide weight to 1,
+and set f and &kappa; to 1.
 """
 
 from StringIO import StringIO
@@ -27,7 +28,8 @@ def get_form():
             'T : 1']
     # define the form objects
     form_objects = [
-            Form.MultiLine('weights', 'nucleotide weights', '\n'.join(default_nt_lines)),
+            Form.MultiLine('weights', 'nucleotide weights',
+                '\n'.join(default_nt_lines)),
             Form.Float('kappa', 'kappa', 2, low_inclusive=0),
             Form.Float('f', 'f', 0.5, low_inclusive=0, high_inclusive=1),
             Form.RadioGroup('format', 'rate matrix scaling options', [
@@ -37,9 +39,10 @@ def get_form():
 
 def create_rate_matrix(distribution, kappa, f):
     """
-    @param distribution: a dictionary mapping a nucleotide to its stationary frequency
+    The parameter f does not affect the stationary distribution.
+    @param distribution: a dictionary mapping a nucleotide to its frequency
     @param kappa: the transition / transversion substitution rate ratio
-    @param f: a WAG-like parameter between zero and one that does not affect the stationary distribution
+    @param f: a WAG-like parameter between zero and one
     @return: a nucleotide rate matrix object
     """
     assert len(distribution) == 4
@@ -57,14 +60,17 @@ def create_rate_matrix(distribution, kappa, f):
                 if na+nb in ('AG', 'GA', 'CT', 'TC'):
                     rate *= kappa
                 rate_matrix[(na, nb)] = rate
-    # Create the diagonal elements such that each row in the rate matrix sums to zero.
+    # Create the diagonal elements 
+    # such that each row in the rate matrix sums to zero.
     for na in distribution:
         rate = sum(rate_matrix[(na, nb)] for nb in distribution if nb != na)
         rate_matrix[(na, na)] = -rate
     # Convert the dictionary rate matrix to a row major rate matrix
     ordered_states = list('ACGT')
-    row_major_rate_matrix = MatrixUtil.dict_to_row_major(rate_matrix, ordered_states, ordered_states)
-    rate_matrix_object = RateMatrix.RateMatrix(row_major_rate_matrix, ordered_states)
+    row_major_rate_matrix = MatrixUtil.dict_to_row_major(
+            rate_matrix, ordered_states, ordered_states)
+    rate_matrix_object = RateMatrix.RateMatrix(
+            row_major_rate_matrix, ordered_states)
     return rate_matrix_object
 
 def get_response(fs):
@@ -73,7 +79,8 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # get the nucleotide distribution
-    distribution = SnippetUtil.get_distribution(fs.weights, 'nucleotide', list('ACGT'))
+    distribution = SnippetUtil.get_distribution(
+            fs.weights, 'nucleotide', list('ACGT'))
     # get the rate matrix defined by the nucleotide distribution and kappa
     rate_matrix_object = create_rate_matrix(distribution, fs.kappa, fs.f)
     if fs.scaled:
