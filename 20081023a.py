@@ -1,11 +1,13 @@
-"""Visualize the steps of a distance based tree reconstruction algorithm. [UNFINISHED]
+"""Visualize the steps of a tree inference algorithm. [UNFINISHED]
 
+Visualize the steps of a distance based
+tree reconstruction algorithm.
 Output is a tarfile of a sequence of tree images.
 """
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Util
@@ -14,6 +16,7 @@ import NewickIO
 import Clustering
 import NeighborJoining
 import NeighborhoodJoining
+from Form import RadioItem
 import Form
 
 def get_form():
@@ -21,18 +24,20 @@ def get_form():
     @return: the body of a form
     """
     # define the default distance matrix
-    D = numpy.array(NeighborJoining.g_mito_matrix)
+    D = np.array(NeighborJoining.g_mito_matrix)
     # define the default label order
     labels = ['gorilla', 'orangutan', 'human', 'chimp', 'gibbon']
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance),
-            Form.MultiLine('labels', 'ordered labels', '\n'.join(labels)),
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance),
+            Form.MultiLine('labels', 'ordered labels',
+                '\n'.join(labels)),
             Form.RadioGroup('criterion', 'tree reconstruction criterion', [
-                Form.RadioItem('nj_specific', 'neighbor joining (specific implementation)'),
-                Form.RadioItem('nj_general', 'neighbor joining (general implementation)'),
-                Form.RadioItem('sign', 'spectral sign approximation', True),
-                Form.RadioItem('random', 'random bipartition')])]
+                RadioItem('nj_specific', 'neighbor joining (specific)'),
+                RadioItem('nj_general', 'neighbor joining (general)'),
+                RadioItem('sign', 'spectral sign approximation', True),
+                RadioItem('random', 'random bipartition')])]
     return form_objects
 
 def get_response(fs):
@@ -45,9 +50,11 @@ def get_response(fs):
     if len(D) < 3:
         raise HandlingError('the matrix should have at least three rows')
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     if len(ordered_labels) != len(D):
-        raise HandlingError('the number of ordered labels should be the same as the number of rows in the matrix')
+        msg_a = 'the number of ordered labels should be the same '
+        msg_b = 'as the number of rows in the matrix'
+        raise HandlingError(msg_a + msg_b)
     if len(set(ordered_labels)) != len(ordered_labels):
         raise HandlingError('the ordered labels must be unique')
     # read the criterion string, creating the splitter object
@@ -59,11 +66,15 @@ def get_response(fs):
         splitter = Clustering.NeighborJoiningDMS()
     elif fs.nj_specific:
         splitter = None
-    # make sure that the splitter object is appropriate for the size of the distance matrix
+    # Make sure that the splitter object is appropriate
+    # for the size of the distance matrix.
     if splitter.get_complexity(len(D)) > 1000000:
-        raise HandlingError('use a smaller distance matrix or a faster bipartition function')
+        msg_a = 'use a smaller distance matrix '
+        msg_b = 'or a faster bipartition function'
+        raise HandlingError(msg_a + msg_b)
     # create the tree builder
-    tree_builder = NeighborhoodJoining.TreeBuilder(D.tolist(), ordered_labels, splitter)
+    tree_builder = NeighborhoodJoining.TreeBuilder(
+            D.tolist(), ordered_labels, splitter)
     tree_builder.set_fallback_name('nj')
     # define the response
     out = StringIO()

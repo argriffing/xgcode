@@ -1,13 +1,13 @@
-"""Visualize a tree using the eigendecomposition of its doubly centered distance matrix.
+"""Visualize a tree with its centered distance matrix eigendecomposition.
 
+Visualize a tree using the eigendecomposition of its
+doubly centered distance matrix.
 The line x=0 defines the spectral sign split of the tree.
 """
 
 from StringIO import StringIO
 
-from scipy import linalg
-import scipy
-import numpy
+import numpy as np
 import cairo
 
 from SnippetUtil import HandlingError
@@ -47,17 +47,20 @@ def get_form():
 
 def get_eigenvectors(row_major_matrix):
     """
-    This gets a couple of left eigenvectors because of the standard format of rate matrices.
+    This gets a couple of left eigenvectors
+    because of the standard format of rate matrices.
     @param row_major_matrix: this is supposed to be a rate matrix
     @return: a pair of eigenvectors
     """
-    R = numpy.array(row_major_matrix)
-    w, vl, vr = linalg.eig(R, left=True, right=True)
+    R = np.array(row_major_matrix)
+    w, vl, vr = np.linalg.eig(R, left=True, right=True)
     eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
     stationary_eigenvector_index = eigenvalue_info[0][1]
     first_axis_eigenvector_index = eigenvalue_info[1][1]
     second_axis_eigenvector_index = eigenvalue_info[2][1]
-    return vl.T[first_axis_eigenvector_index], vl.T[second_axis_eigenvector_index]
+    va = vl.T[first_axis_eigenvector_index]
+    vb = vl.T[second_axis_eigenvector_index]
+    return va, vb
 
 def get_rescaled_vector(v):
     """
@@ -69,11 +72,12 @@ def get_rescaled_vector(v):
         return [.5 for x in v]
     return [(x-min(v)) / width for x in v]
 
-def get_image(row_major_matrix, incidence_matrix, ordered_names, width_and_height, image_format, draw_axes, draw_connections):
+def get_image(row_major_matrix, incidence_matrix, ordered_names,
+        width_and_height, image_format, draw_axes, draw_connections):
     """
     @param row_major_matrix: this is supposed to be a rate matrix
     @param incidence_matrix: for drawing connections
-    @param ordered_names: the labels corresponding to rows of the row major matrix
+    @param ordered_names: the labels corresponding to rows of the matrix
     @param width_and_height: the dimensions of the output image
     @param image_format: like 'svg', 'png', 'ps', 'pdf', et cetera
     @param draw_axes: True if axes should be drawn
@@ -125,16 +129,17 @@ def get_image(row_major_matrix, incidence_matrix, ordered_names, width_and_heigh
         context.set_source_rgb(.8, .8, .8)
         for i in range(n):
             for j in range(n):
-                if i < j and incidence_matrix[i][j] > 0:
-                    x, y = rescaled_a[i], rescaled_b[i]
-                    nx = (x * (1 - 2*border_fraction) + border_fraction) * width
-                    ny = (y * (1 - 2*border_fraction) + border_fraction) * height
-                    context.move_to(nx, ny)
-                    x, y = rescaled_a[j], rescaled_b[j]
-                    nx = (x * (1 - 2*border_fraction) + border_fraction) * width
-                    ny = (y * (1 - 2*border_fraction) + border_fraction) * height
-                    context.line_to(nx, ny)
-                    context.stroke()
+                if not (i < j and incidence_matrix[i][j] > 0):
+                    break
+                x, y = rescaled_a[i], rescaled_b[i]
+                nx = (x * (1 - 2*border_fraction) + border_fraction) * width
+                ny = (y * (1 - 2*border_fraction) + border_fraction) * height
+                context.move_to(nx, ny)
+                x, y = rescaled_a[j], rescaled_b[j]
+                nx = (x * (1 - 2*border_fraction) + border_fraction) * width
+                ny = (y * (1 - 2*border_fraction) + border_fraction) * height
+                context.line_to(nx, ny)
+                context.stroke()
         # stop drawing
         context.restore()
     # draw a scatter plot of the states using the eigenvectors as axes
@@ -195,7 +200,8 @@ def get_response(fs):
     # draw the image
     try:
         image_size = (640, 480)
-        image_string = get_image(R_matrix, incidence_matrix, ordered_names, image_size, image_format, fs.axes, fs.connections)
+        image_string = get_image(R_matrix, incidence_matrix, ordered_names,
+                image_size, image_format, fs.axes, fs.connections)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
     # specify the content type

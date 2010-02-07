@@ -6,10 +6,7 @@ This is not so useful.
 from StringIO import StringIO
 import math
 
-# this module uses scipy specific function calls
-from scipy import linalg
-
-import numpy
+import numpy as np
 import cairo
 
 from SnippetUtil import HandlingError
@@ -24,7 +21,7 @@ def get_form():
     @return: a list of form objects
     """
     # sample some points to use as the defaults
-    M = numpy.array(list(SpiralSampler.gen_points(200, .01)))
+    M = np.array(list(SpiralSampler.gen_points(200, .01)))
     # define the form objects
     form_objects = [
             Form.Matrix('points', 'points', M),
@@ -40,17 +37,20 @@ def get_form():
 
 def get_eigenvectors(row_major_matrix):
     """
-    This gets a couple of left eigenvectors because of the standard format of rate matrices.
+    This gets a couple of left eigenvectors
+    because of the standard format of rate matrices.
     @param row_major_matrix: this is supposed to be a rate matrix
     @return: a pair of eigenvectors
     """
-    R = numpy.array(row_major_matrix)
-    w, vl, vr = linalg.eig(R, left=True, right=True)
+    R = np.array(row_major_matrix)
+    w, vl, vr = np.linalg.eig(R, left=True, right=True)
     eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
     stationary_eigenvector_index = eigenvalue_info[0][1]
     first_axis_eigenvector_index = eigenvalue_info[1][1]
     second_axis_eigenvector_index = eigenvalue_info[2][1]
-    return vl.T[first_axis_eigenvector_index], vl.T[second_axis_eigenvector_index]
+    va = vl.T[first_axis_eigenvector_index]
+    vb = vl.T[second_axis_eigenvector_index]
+    return va, vb
 
 def get_rescaled_vector(v):
     """
@@ -64,14 +64,16 @@ def get_rescaled_vector(v):
 
 def get_image_helper(xmin, ymin, xmax, ymax, vx, vy, image_size, image_format):
     """
-    Get an image string given excruciating details about the image and its scaling properties
+    Get an image string.
+    Input comprises excruciating details about the image
+    and its scaling properties.
     @param xmin: the smallest x value allowed in the viewport
     @param ymin: the smallest y value allowed in the viewport
     @param xmax: the greatest x value allowed in the viewport
     @param ymax: the greatest y value allowed in the viewport
     @param vx: the list of x coordinates of the points
     @param vy: the list of y coordinates of the points
-    @param image_size: a (width, height) pair defining the pixel dimensions of the image
+    @param image_size: the width and height of the image in pixels
     @param image_format: like 'svg', 'png', 'ps', 'pdf', et cetera
     @return: an image string
     """
@@ -135,7 +137,8 @@ def get_image(row_major_matrix, width_and_height, image_format, draw_axes):
     va, vb = get_eigenvectors(row_major_matrix)
     xmin, xmax = min(va), max(va)
     ymin, ymax = min(vb), max(vb)
-    return get_image_helper(xmin, ymin, xmax, ymax, va, vb, width_and_height, image_format)
+    return get_image_helper(xmin, ymin, xmax, ymax,
+            va, vb, width_and_height, image_format)
 
 def points_to_distance_matrix(points):
     """
@@ -143,11 +146,11 @@ def points_to_distance_matrix(points):
     @return: a distance matrix
     """
     n = len(points)
-    D = numpy.zeros((n,n))
+    D = np.zeros((n,n))
     for i, point_a in enumerate(points):
         for j, point_b in enumerate(points):
             v = point_b - point_a
-            D[i][j] = numpy.dot(v, v)
+            D[i][j] = np.dot(v, v)
     return D
 
 def make_laplacian(D, stddev):
@@ -187,7 +190,7 @@ def get_response(fs):
     # get the similarity matrix
     #stddev = 0.2 # this gives a good separation
     #stddev = 0.8 # this gives a less good separation
-    #stddev = 1.0 # this gives something that looks very similar to the original matrix
+    #stddev = 1.0 # this gives something that looks like the original matrix
     stddev = 0.3
     laplacian_matrix = make_laplacian(D, stddev)
     # create the file name
@@ -196,7 +199,8 @@ def get_response(fs):
     try:
         image_size = (640, 480)
         draw_axes = True
-        image_string = get_image(laplacian_matrix, image_size, image_format, draw_axes)
+        image_string = get_image(laplacian_matrix, image_size,
+                image_format, draw_axes)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
     # start writing the response type
@@ -223,9 +227,11 @@ def main():
     # clustering options
     kernel_stddev_initial = 1.0
     kernel_stddev_final = 0.1
-    kernel_stddev_step = (kernel_stddev_final - kernel_stddev_initial) / (nframes - 1)
+    kernel_stddev_gap = kernel_stddev_final - kernel_stddev_initial
+    kernel_stddev_step = kernel_stddev_gap / (nframes - 1)
     # sample some points
-    points = numpy.array(list(SpiralSampler.gen_points(npoints_per_group, sample_stddev)))
+    points = np.array(list(SpiralSampler.gen_points(
+        npoints_per_group, sample_stddev)))
     # make the distance matrix
     D = points_to_distance_matrix(points)
     # get two eigenvectors for each frame
@@ -270,7 +276,8 @@ def main():
         image_format = 'png'
         image_size = (800, 600)
         draw_axes = True
-        image_string = get_image_helper(xmin, ymin, xmax, ymax, vx, vy, image_size, image_format)
+        image_string = get_image_helper(xmin, ymin, xmax, ymax,
+                vx, vy, image_size, image_format)
         # get the filename
         filename = 'frame-%04d.png' % i
         # write the image

@@ -1,8 +1,11 @@
-"""Sample estimated branch lengths using three different amounts of information.
+"""Sample estimated branch lengths using three different information sources.
 
-The first method observes all of the changes along the branch (infinite sites model).
-For the second method multiple changes are observed as a single change (infinite alleles model).
-For the third method multiple changes are observed as a single change unless they are reverted,
+The first method observes all of the changes
+along the branch (infinite sites model).
+For the second method multiple changes
+are observed as a single change (infinite alleles model).
+For the third method multiple changes
+are observed as a single change unless they are reverted,
 in which case they are observed as no change (Jukes-Cantor model).
 """
 
@@ -10,7 +13,7 @@ from StringIO import StringIO
 import math
 import random
 
-import numpy.random
+import numpy as np
 
 from SnippetUtil import HandlingError
 import RUtil
@@ -21,8 +24,10 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Float('branch_length', 'branch length', 1.0, low_exclusive=0.0),
-            Form.Integer('sequence_length', 'sequence length', 1000, low=1)]
+            Form.Float('branch_length', 'branch length',
+                1.0, low_exclusive=0.0),
+            Form.Integer('sequence_length', 'sequence length',
+                1000, low=1)]
     return form_objects
 
 def get_response(fs):
@@ -36,13 +41,13 @@ def get_response(fs):
     # sample sequence changes at three levels of informativeness
     sequence_changes = sample_sequence_changes(branch_length, sequence_length)
     # get a distance estimate for each level of informativeness
-    first_estimate, second_estimate, third_estimate = sample_distance(*sequence_changes)
+    estimate_a, estimate_b, estimate_c = sample_distance(*sequence_changes)
     # begin the response
     out = StringIO()
     print >> out, 'distance estimates:'
-    print >> out, 'using all change information:', first_estimate
-    print >> out, 'without multiple change information:', second_estimate
-    print >> out, 'without reverted change information:', third_estimate
+    print >> out, 'using all change information:', estimate_a
+    print >> out, 'without multiple change information:', estimate_b
+    print >> out, 'without reverted change information:', estimate_c
     # return the response
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()
@@ -69,9 +74,15 @@ def sample_distance(mean_changes, p_observed, p_nonreverted):
 
 def sample_sequence_changes(branch_length, nsites):
     """
-    @param branch_length: the expected number of changes along the branch at each site
+    Return three values.
+    First, the mean number of changes.
+    Second, the change frequence,
+    Third, the non-reverted change frequency
+    The branch length is the expected number of changes
+    along the branch at each site
+    @param branch_length: the expected number of changes along the branch
     @param nsites: the number of sites in the sequence
-    @return: a triple of (mean changes, change frequency, non-reverted change frequency)
+    @return: the triple of results
     """
     samples = [sample_site_changes(branch_length) for i in range(nsites)]
     change_counts, observed_changes, nonreverted_changes = zip(*samples)
@@ -82,13 +93,17 @@ def sample_sequence_changes(branch_length, nsites):
 
 def sample_site_changes(branch_length):
     """
+    Return three values.
+    First, the change count.
+    Second, 1 if any changes.
+    Third, 1 if non-reverted changes.
     @param branch_length: the expected number of changes along the branch
-    @return: a triple of (change count, 1 if any changes, 1 if non-reverted changes)
+    @return: the triple of results
     """
     # initialize the random choice table
     choice_from = ((1, 2, 3), (0, 2, 3), (0, 1, 3), (0, 1, 2))
     # the number of changes is poisson distributed
-    change_count = numpy.random.poisson(branch_length)
+    change_count = np.random.poisson(branch_length)
     # note whether or not a (possibly reverted) change was observed
     observed_change = min(change_count, 1)
     # simulate the changes
@@ -107,7 +122,8 @@ def hard_coded_analysis():
     column_headers = ('most.info', 'less.info', 'least.info')
     for i in range(nsequences):
         # sample sequence changes at three levels of informativeness
-        sequence_changes = sample_sequence_changes(branch_length, sequence_length)
+        sequence_changes = sample_sequence_changes(
+                branch_length, sequence_length)
         # get a distance estimate for each level of informativeness
         estimate_triple = sample_distance(*sequence_changes)
         estimate_triple_list.append(estimate_triple)
