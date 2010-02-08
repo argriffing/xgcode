@@ -54,7 +54,7 @@ def get_response(fs):
     # read the transition matrix from the form data
     T = fs.matrix
     if T.shape[0] != len(states):
-        msg = 'expected the transition matrix to have %d lines' % len(states))
+        msg = 'expected the transition matrix to have %d lines' % len(states)
         raise HandlingError(msg)
     matrix = MatrixUtil.row_major_to_dict(T.tolist(), states, states)
     # simulate the path

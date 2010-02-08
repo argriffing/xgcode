@@ -117,7 +117,7 @@ def get_amino_acid_alignment(table):
                 msg = 'one of the codons is a stop codon: %s' % codon
                 raise HandlingError(msg)
             else:
-                msg = 'one of the codons is invalid: %s' % codon)
+                msg = 'one of the codons is invalid: %s' % codon
                 raise HandlingError(msg)
             aa_list.append(aa)
         aa_sequences.append(''.join(aa_list))

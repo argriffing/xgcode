@@ -12,16 +12,17 @@ Requirements
 
 Operation system requirements:
 
-This project was developed using Ubuntu,
-so it will probably work on Debian-based Linux distributions.
-It probably will not work on Windows.
+* This project was developed using Ubuntu,
+  so it will probably work on Debian-based Linux distributions.
+* It might work with non-Debian-based Unix variants.
+* It probably will not work on Windows.
 
 Major dependencies:
 
-* A recent version of [python 2](http://www.python.org/) (2.6+).
-* The [argparse](http://code.google.com/p/argparse/) module.
+* A recent version of [Python-2.x](http://www.python.org/) (2.6+).
 * The [cherrypy](http://www.cherrypy.org/) module (3.0+).
 * The [epydoc](http://epydoc.sourceforge.net/) documentation program.
+* The [argparse](http://code.google.com/p/argparse/) module.
 * The [cairo](http://www.cairographics.org/pycairo/) graphics library.
 * The [numpy](http://numpy.scipy.org/) matrix and numerical library.
 * The [scipy](http://www.scipy.org/) scientific library.
@@ -30,6 +31,9 @@ Minor dependencies
 (each required by one or more individual scripts):
 
 * The [matplotlib](http://matplotlib.sourceforge.net/) matlab-like library.
+* The [pygraphviz](http://networkx.lanl.gov/pygraphviz/)
+  graph visualization library
+* many more...
 
 
 Web interface usage

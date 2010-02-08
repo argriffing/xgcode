@@ -31,7 +31,7 @@ def get_form():
             ('dc', -todec(77, 02), todec(38, 53)),
             ('pitt', -todec(79, 57), todec(40, 27)),
             ('philly', -todec(75, 10), todec(39, 57))]
-    tsv = ['\t'.join([(label, str(x), str(y)])
+    tsv = ['\t'.join([label, str(x), str(y)])
         for label, x, y in default_labeled_points]
     default_labeled_points_string = '\n'.join(tsv)
     # define the form objects

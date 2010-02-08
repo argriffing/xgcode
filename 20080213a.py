@@ -64,7 +64,7 @@ def get_response(fs):
         codon_nt_weight = iterutils.product(nt_distribution[nt] for nt in codon)
         sibling_nt_weight_sum = 0
         for sibling in sibling_codons:
-            product = iterutils.product(nt_distribution[nt] for nt in sibling
+            product = iterutils.product(nt_distribution[nt] for nt in sibling)
             sibling_nt_weight_sum += product
         codon_to_weight[codon] = codon_aa_weight * codon_nt_weight
         codon_to_weight[codon] /= sibling_nt_weight_sum

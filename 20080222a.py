@@ -19,7 +19,7 @@ def get_form():
     # define the default matrix lines
     dictionary_rate_matrix = EnglishModel.get_transition_matrix()
     labels = list(sorted(set(a for a, b in dictionary_rate_matrix)))
-    T = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels))
+    T = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels)
     T = np.array(T)
     # define the form objects
     form_objects = [
