@@ -1,11 +1,12 @@
-"""Compare a subvector of the Fiedler vector of a tree to the Fiedler vector of a related graph.
+"""Compare part of a tree Fiedler vector to that of a related graph.
+
+Compare a subvector of the Fiedler vector of a tree
+to the Fiedler vector of a related graph.
 """
 
 from StringIO import StringIO
 
-from scipy import linalg
-import scipy
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -26,17 +27,19 @@ def get_form():
 
 def get_eigenvectors(row_major_matrix):
     """
-    This gets a couple of left eigenvectors because of the standard format of rate matrices.
+    Return two eigenvectors.
+    This gets a couple of left eigenvectors
+    because of the standard format of rate matrices.
     @param row_major_matrix: this is supposed to be a rate matrix
     @return: a pair of eigenvectors
     """
-    R = numpy.array(row_major_matrix)
-    w, vl, vr = linalg.eig(R, left=True, right=True)
+    R = np.array(row_major_matrix)
+    w, vl, vr = np.linalg.eig(R, left=True, right=True)
     eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
     stationary_eigenvector_index = eigenvalue_info[0][1]
-    first_axis_eigenvector_index = eigenvalue_info[1][1]
-    second_axis_eigenvector_index = eigenvalue_info[2][1]
-    return vl.T[first_axis_eigenvector_index], vl.T[second_axis_eigenvector_index]
+    first_eigenvector_index = eigenvalue_info[1][1]
+    second_eigenvector_index = eigenvalue_info[2][1]
+    return vl.T[first_eigenvector_index], vl.T[second_eigenvector_index]
 
 def get_response(fs):
     """
@@ -48,9 +51,11 @@ def get_response(fs):
     # read the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get ordered identifiers
-    ordered_tip_name_id_pairs = list(sorted(set((node.get_name(), id(node)) for node in tree.gen_tips())))
+    ordered_tip_name_id_pairs = list(sorted(set((node.get_name(), id(node))
+        for node in tree.gen_tips())))
     ordered_tip_names, ordered_tip_ids = zip(*ordered_tip_name_id_pairs)
-    ordered_internal_ids = [id(node) for node in tree.preorder() if not node.is_tip()]
+    ordered_internal_ids = [id(node)
+            for node in tree.preorder() if not node.is_tip()]
     ordered_ids = list(ordered_tip_ids) + ordered_internal_ids
     # get the distance matrices
     full_D = tree.get_partial_distance_matrix(ordered_ids)
@@ -58,15 +63,18 @@ def get_response(fs):
     # get the balaji matrices
     full_R = Clustering.get_R_balaji(full_D)
     partial_R = Clustering.get_R_balaji(partial_D)
-    # get the fiedler eigenvector and another eigenvector for the full and the partial balaji matrices
+    # Get the fiedler eigenvector and another eigenvector
+    # for the full and the partial balaji matrices.
     full_va, full_vb = get_eigenvectors(full_R)
     partial_va, partial_vb = get_eigenvectors(partial_R)
     # create the response
     out = StringIO()
-    print >> out, 'Fiedler vector associated with the graph for which the internal nodes are hidden:'
+    print >> out, 'Fiedler vector associated with the graph'
+    print >> out, 'for which the internal nodes are hidden:'
     print >> out, str(tuple(partial_va))
     print >> out
-    print >> out, 'The tip subvector of the Fiedler vector associated with the graph of the full tree:'
+    print >> out, 'The tip subvector of the Fiedler vector'
+    print >> out, 'associated with the graph of the full tree:'
     print >> out, str(tuple(full_va[:len(ordered_tip_ids)]))
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

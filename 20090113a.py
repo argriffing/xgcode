@@ -1,4 +1,4 @@
-"""Calculate the MAPP score for an amino acid of interest at a genomic position.
+"""Calculate the MAPP score for a specific amino acid at a genomic position.
 """
 
 from StringIO import StringIO
@@ -15,7 +15,7 @@ import NewickIO
 import Newick
 import FelTree
 
-# define some web locations that should probably be moved to a config file somewhere
+# Define some web locations which should probably be moved to a config file.
 g_base_dir = '/var/www/python_scripts/data/exon-alignments'
 g_fasta_dir = g_base_dir + '/fasta-pieces'
 g_index_dir = g_base_dir + '/piece-index-files'

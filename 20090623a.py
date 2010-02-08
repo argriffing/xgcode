@@ -1,9 +1,9 @@
-"""Given a tree, show the ordered sequence of splits found by neighbor joining.
+"""Given a tree, show the sequence of splits found by neighbor joining.
 """
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -18,12 +18,15 @@ def get_form():
     """
     @return: the body of a form
     """
-    # define the default tree string with branch lengths and named internal nodes
+    # Define the default tree string with branch lengths
+    # and named internal nodes.
     tree_string = '(a:2, (b:2, c:9)g:4, ((d:1, e:3)i:7, f:2)j:1)h;'
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the form objects
-    form_objects = [Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string)]
+    form_objects = [
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string)]
     return form_objects
 
 def label_set_to_string(label_set, label_to_name):
@@ -86,7 +89,7 @@ def get_response(fs):
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get the distance matrix
     ordered_tip_names = list(sorted(tip.get_name() for tip in tree.gen_tips()))
-    D = numpy.array(tree.get_distance_matrix(ordered_tip_names))
+    D = np.array(tree.get_distance_matrix(ordered_tip_names))
     # begin the output
     out = StringIO()
     # get the order for the correct method of neighbor joining

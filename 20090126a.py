@@ -3,20 +3,22 @@
 For each vertex in each random graph,
 see if Schur complementing out the vertex results in a graph
 whose Fiedler cut is incompatible with the original graph.
-Use the Erdos-Renyi probability distribution over graphs with a given number of vertices.
+Use the Erdos-Renyi probability distribution
+over graphs with a given number of vertices.
 Edge weights are exponentially distributed.
 """
 
 from StringIO import StringIO
 import random
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
-import Form
 import Euclid
 import MatrixUtil
 import BuildTreeTopology
+from Form import RadioItem
+import Form
 
 def get_form():
     """
@@ -24,12 +26,15 @@ def get_form():
     """
     # define the list of form objects
     form_objects = [
-            Form.Integer('ngraphs', 'check this many graphs', 10, low=1, high=100),
-            Form.Integer('nvertices', 'use this many vertices per graph', 10, low=3, high=20),
-            Form.Float('pedge', 'the probability of an edge between any two vertices', '0.9', low_exclusive=0, high_inclusive=1),
-            Form.RadioGroup('cut', 'cut criterion', [
-                Form.RadioItem('fiedler_cut', 'fiedler cut of the reduced graph', True),
-                Form.RadioItem('random_cut', 'random cut of the reduced graph')])]
+            Form.Integer('ngraphs', 'check this many graphs',
+                10, low=1, high=100),
+            Form.Integer('nvertices', 'use this many vertices per graph',
+                10, low=3, high=20),
+            Form.Float('pedge', 'the probability of a vertex pair edge',
+                '0.9', low_exclusive=0, high_inclusive=1),
+            Form.RadioGroup('cut', 'reduced graph cut criterion', [
+                RadioItem('fiedler_cut', 'fiedler cut', True),
+                RadioItem('random_cut', 'random cut')])]
     return form_objects
 
 def get_response(fs):
@@ -108,7 +113,7 @@ def get_single_element_schur_complement(L, index):
     # define the number of vertices in the reduced graph
     n_small = n_big - 1
     # create the reduced graph
-    L_reduced = numpy.zeros((n_small, n_small))
+    L_reduced = np.zeros((n_small, n_small))
     # define the vertices of the big graph that are also in the small graph
     big_vertices = set(range(n_big)) - set([index])
     for i_small, i_big in enumerate(sorted(big_vertices)):
@@ -151,7 +156,7 @@ def gen_subgraphs(G, Y):
     iminus = [i for i in range(n) if Y[i] <= 0]
     for vsub in (iplus, iminus):
         nsub = len(vsub)
-        gsub = numpy.zeros((nsub, nsub))
+        gsub = np.zeros((nsub, nsub))
         for small_i, big_i in enumerate(vsub):
             for small_j, big_j in enumerate(vsub):
                 gsub[small_i][small_j] = G[big_i][big_j]
@@ -185,7 +190,7 @@ def add_exponential_weights(G):
     for i in range(n):
         for j in range(i):
             if G[i][j]:
-                weight = numpy.random.exponential()
+                weight = np.random.exponential()
                 G[i][j] = weight
                 G[j][i] = weight
 
@@ -196,7 +201,7 @@ def erdos_renyi(n, p):
     @param p: the probability that two vertices are adjacent
     @return: a symmetric binary adjacency matrix
     """
-    G = numpy.zeros((n, n))
+    G = np.zeros((n, n))
     for i in range(n):
         for j in range(i):
             if random.random() < p:

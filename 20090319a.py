@@ -1,15 +1,14 @@
 """Calculate modulated network modularity given MMC input and output.
 
 MMC is Modulated Modularity Clustering as in the paper
-"Modulated Modularity Clustering as an Exploratory Tool for Functional Genomic Inference".
+"Modulated Modularity Clustering as an Exploratory Tool
+for Functional Genomic Inference".
 """
 
 from StringIO import StringIO
 import math
 
-import numpy
-import scipy
-from scipy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -40,9 +39,12 @@ def get_form():
     default_module_lines = [',\t'.join(row) for row in default_module_matrix]
     # define the form objects
     form_objects = [
-            Form.MultiLine('observations', 'labeled matrix of observations', '\n'.join(default_observation_lines)),
-            Form.MultiLine('modules', 'MMC output ', '\n'.join(default_module_lines)),
-            Form.Float('sigma', 'sigma', '0.21', low_exclusive=0),
+            Form.MultiLine('observations', 'labeled matrix of observations',
+                '\n'.join(default_observation_lines)),
+            Form.MultiLine('modules', 'MMC output ',
+                '\n'.join(default_module_lines)),
+            Form.Float('sigma', 'sigma',
+                '0.21', low_exclusive=0),
             Form.RadioGroup('modularity', 'modularity calculation', [
                 Form.RadioItem('eric', 'the calculation that eric uses', True),
                 Form.RadioItem('other_a', 'my first interpretation'),
@@ -90,7 +92,7 @@ def parse_observation_lines(lines):
                 raise HandlingError('expected each observation element to be a number: ' + element_string)
             data_row.append(element)
         data_matrix.append(data_row)
-    return row_labels, column_labels, numpy.array(data_matrix)
+    return row_labels, column_labels, np.array(data_matrix)
 
 def parse_module_lines(lines):
     """
@@ -179,7 +181,7 @@ def get_modularity_other_b2(A, cluster_indices):
     # define the number of nodes in the graph and the number of clusters
     n = len(cluster_indices)
     nclusters = max(cluster_indices) + 1
-    girvan_e = numpy.zeros((nclusters, nclusters))
+    girvan_e = np.zeros((nclusters, nclusters))
     volume = 0
     for i in range(n):
         for j in range(n):
@@ -209,7 +211,7 @@ def get_modularity_other_b(A, cluster_indices):
     # define the number of nodes in the graph and the number of clusters
     n = len(cluster_indices)
     nclusters = max(cluster_indices) + 1
-    girvan_e = numpy.zeros((nclusters, nclusters))
+    girvan_e = np.zeros((nclusters, nclusters))
     volume = 0
     for i in range(n):
         for j in range(n):
@@ -271,7 +273,7 @@ def get_affinity_matrix(corr_matrix, sigma):
     """
     n = len(corr_matrix)
     sigma_squared = sigma * sigma
-    affinity_matrix = numpy.zeros((n, n))
+    affinity_matrix = np.zeros((n, n))
     for i in range(n):
         for j in range(n):
             if i != j:
@@ -288,11 +290,11 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the observation lines
-    observation_lines = list(Util.stripped_lines(StringIO(fs.observations)))
+    observation_lines = Util.get_stripped_lines(StringIO(fs.observations))
     row_labels, column_labels, data_matrix = parse_observation_lines(observation_lines)
     ngenes = len(row_labels)
     # read the module lines
-    module_lines = list(Util.stripped_lines(StringIO(fs.modules)))
+    module_lines = Util.get_stripped_lines(StringIO(fs.modules))
     gene_labels, module_indices, gene_indices = parse_module_lines(module_lines)
     # each multi-line input should have a header line and N gene lines
     if len(observation_lines) != len(module_lines):
@@ -302,7 +304,7 @@ def get_response(fs):
         if row_labels[gene_index] != gene_label:
             raise HandlingError('the observation gene order does not appear to match the MMC output order')
     # convert the data matrix to the affinity matrix using sigma
-    affinity_matrix = get_affinity_matrix(numpy.corrcoef(data_matrix), fs.sigma)
+    affinity_matrix = get_affinity_matrix(np.corrcoef(data_matrix), fs.sigma)
     # get the list of module assignments with respect to the observation gene order
     ordered_module_indices = [0] * ngenes
     for module_index, gene_index in zip(module_indices, gene_indices):
@@ -338,7 +340,7 @@ def main():
     for row in string_rows:
         assert len(row) == n
     data_rows = [[float(x) for x in string_row] for string_row in string_rows]
-    A = numpy.array(data_rows)
+    A = np.array(data_rows)
     # create the ordered module indices
     first_cluster_one_based_indices = [1, 3, 4, 14, 2, 8, 20, 18, 22, 13, 12, 6, 7, 17, 5, 11]
     second_cluster_one_based_indices = [25, 32, 26, 29, 24, 28, 9, 34, 33, 19, 16, 31, 15, 10, 23, 30, 21, 27]

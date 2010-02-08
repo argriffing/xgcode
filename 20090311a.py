@@ -1,14 +1,14 @@
 """Given a distance matrix, get the difference between two related matrices.
 
-The related matrices are:
-1) the corresponding laplacian matrix
-2) the inverse of the covariance matrix implied by the neighbor joining Q criterion
+The related matrices are
+first the corresponding laplacian matrix and
+second the inverse of the covariance matrix
+implied by the neighbor joining Q criterion
 """
 
 from StringIO import StringIO
 
-from scipy import linalg
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -19,12 +19,15 @@ def get_form():
     """
     @return: the body of a form
     """
-    D = numpy.array([
+    D = np.array([
             [0, 4.0, 5.0, 7.0],
             [4.0, 0, 7.0, 7.0],
             [5.0, 7.0, 0, 10.0],
             [7.0, 7.0, 10.0, 0]])
-    return [Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance)]
+    form_objects = [
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance)]
+    return form_objects
 
 def get_sigma_matrix(D):
     """
@@ -35,7 +38,7 @@ def get_sigma_matrix(D):
     # get the list of implied variances
     V = [sum(row) / (n - 2) for row in D]
     # create the sigma matrix
-    sigma = numpy.zeros((n,n))
+    sigma = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
             sigma[i][j] = (V[i] + V[j] - D[i][j]) / 2
@@ -46,7 +49,7 @@ def get_precision_matrix(S):
     @param S: the sigma matrix implied by the neighbor joining Q matrix
     @return: the precision matrix implied by the neighbor joining Q matrix
     """
-    return linalg.inv(S)
+    return np.linalg.inv(S)
 
 def get_response(fs):
     """
@@ -75,7 +78,7 @@ def get_response(fs):
     print >> out, MatrixUtil.m_to_string(MatrixUtil.double_centered(P)-L)
     print >> out
     print >> out, 'the pseudo-inverse of the double centered sigma matrix minus the laplacian matrix:'
-    print >> out, MatrixUtil.m_to_string(linalg.pinv(MatrixUtil.double_centered(S))-L)
+    print >> out, MatrixUtil.m_to_string(np.linalg.pinv(MatrixUtil.double_centered(S))-L)
     print >> out
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

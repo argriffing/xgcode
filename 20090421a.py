@@ -1,12 +1,16 @@
-"""Examine the relationship between an eigenvalue and the quality of its corresponding spectral split.
+"""Compare an eigenvalue to the quality of its corresponding spectral split.
 
+Examine the relationship between an eigenvalue
+and the quality of its corresponding spectral split.
 Phylogenetic trees are sampled by random agglomeration of some number of taxa.
 Distance matrices are sampled from these trees.
 Trees are estimated from these sampled distance matrices.
 R-readable output suitable for making boxplots is generated,
-with lines corresponding to each combination of three normalizations and two split outcomes.
+with lines corresponding to each combination
+of three normalizations and two split outcomes.
 The two outcomes are valid and invalid splits.
-The three normalizations are: unnormalized, normalized by the sum of the first two eigenvalues,
+The three normalizations are: unnormalized,
+normalized by the sum of the first two eigenvalues,
 and normalized by the sum of all eigenvalues.
 """
 
@@ -16,8 +20,7 @@ import math
 import random
 import optparse
 
-import numpy
-from numpy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -36,19 +39,27 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('length', 'sequence length for distance matrix sampling', 1000, low=10, high=20000),
-            Form.Integer('ntaxa', 'number of taxa for distance matrix sampling', 20, low=4, high=20),
+            Form.Integer('length',
+                'sequence length for distance matrix sampling',
+                1000, low=10, high=20000),
+            Form.Integer('ntaxa',
+                'number of taxa for distance matrix sampling',
+                20, low=4, high=20),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))])]
+                Form.RadioItem('pachter_length',
+                    str(BranchLengthSampler.Pachter()), True),
+                Form.RadioItem('exponential_length',
+                    str(BranchLengthSampler.Exponential())),
+                Form.RadioItem('uniform_length_a',
+                    str(BranchLengthSampler.UniformA())),
+                Form.RadioItem('uniform_length_b',
+                    str(BranchLengthSampler.UniformB()))])]
     return form_objects
 
 def sample_distance_matrix(xtree_root, sequence_length):
     sequences = JC69.sample_xtree_sequences(xtree_root, sequence_length)
     nsequences = len(sequences)
-    pairwise_mismatch_count = numpy.zeros((nsequences, nsequences))
+    pairwise_mismatch_count = np.zeros((nsequences, nsequences))
     for i, sa in enumerate(sequences):
         for j, sb in enumerate(sequences):
             if i < j:
@@ -58,7 +69,7 @@ def sample_distance_matrix(xtree_root, sequence_length):
                 if nmismatches * 4 >= sequence_length * 3:
                     raise InfiniteDistanceError()
                 pairwise_mismatch_count[i][j] = nmismatches
-    D = numpy.zeros_like(pairwise_mismatch_count)
+    D = np.zeros_like(pairwise_mismatch_count)
     for i in range(nsequences):
         for j in range(nsequences):
             if i < j:
@@ -130,7 +141,7 @@ class Builder:
             # get the matrix whose eigendecomposition is of interest
             HSH = Euclid.edm_to_dccov(D)
             # get the eigendecomposition
-            eigenvalues, V_T = linalg.eigh(HSH)
+            eigenvalues, V_T = np.linalg.eigh(HSH)
             eigenvectors = V_T.T.tolist()
             # save the eigenvalues for reporting
             self.eigenvalues = eigenvalues

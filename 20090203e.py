@@ -7,17 +7,18 @@ usually defined as squared pairwise Euclidean distances.
 from StringIO import StringIO
 import math
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
+from Form import RadioItem
 import Form
 
 def get_form():
     """
     @return: the body of a form
     """
-    M = numpy.array([
+    M = np.array([
             [0.701808823709, -0.66990306947, 0.226340180955, 0.166666666667, -0.0863966143067],
             [0.701808823709, 0.66990306947, -0.226340180955, 0.166666666667, -0.0863966143067],
             [-0.701808823709, 0.226340180955, 0.66990306947, 0.166666666667, 0.0863966143067],
@@ -28,8 +29,8 @@ def get_form():
     form_objects = [
             Form.Matrix('points', 'one point on each row', M),
             Form.RadioGroup('options', 'distance options', [
-                Form.RadioItem('squared', 'get the squared euclidean distances', True),
-                Form.RadioItem('not_squared', 'get the euclidean distances')])]
+                RadioItem('squared', 'get squared euclidean distances', True),
+                RadioItem('not_squared', 'get euclidean distances')])]
     return form_objects
 
 def get_response(fs):
@@ -41,10 +42,10 @@ def get_response(fs):
     M = fs.points
     # get the squared distance between each pair of points
     n = len(M)
-    D = numpy.zeros((n,n))
+    D = np.zeros((n,n))
     for i, pa in enumerate(M):
         for j, pb in enumerate(M):
-            d = numpy.linalg.norm(pb - pa)
+            d = np.linalg.norm(pb - pa)
             if fs.squared:
                 D[i][j] = d*d
             else:

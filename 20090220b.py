@@ -1,14 +1,15 @@
-"""Get the Procrustes transformation of a list of input points to match a list of reference points.
+"""Do a Procrustes transformation.
+
+Get the Procrustes transformation of a list of input points
+to match a list of reference points.
 """
 
 from StringIO import StringIO
 import math
 
-from scipy import linalg
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
-import Util
 import MatrixUtil
 import Form
 
@@ -25,14 +26,14 @@ def get_form():
     @return: the body of a form
     """
     # define some input points to transform
-    input_points = numpy.array([
+    input_points = np.array([
             (-4.5522481406, 10.4157358089),
             (-15.9814450114, -3.58894852685),
             (5.63165500818, 1.74036363828),
             (3.82188866923, -10.3582135754),
             (11.0801494746, 1.79106265508)])
     # define some reference points
-    reference_points = numpy.array([
+    reference_points = np.array([
             (-todec(78, 39), todec(35, 46)),
             (-todec(84, 23), todec(33, 45)),
             (-todec(77, 02), todec(38, 53)),
@@ -40,8 +41,10 @@ def get_form():
             (-todec(75, 10), todec(39, 57))])
     # define the form objects
     form_objects = [
-            Form.Matrix('input_points', 'input points to transform', input_points),
-            Form.Matrix('reference_points', 'reference points', reference_points)]
+            Form.Matrix('input_points', 'input points to transform',
+                input_points),
+            Form.Matrix('reference_points', 'reference points',
+                reference_points)]
     return form_objects
 
 def get_response(fs):
@@ -60,20 +63,20 @@ def get_response(fs):
     # get the center of the reference points
     reference_center = sum(X_uncentered) / float(n)
     # center the input points and the reference points
-    H = numpy.eye(n) - numpy.ones((n, n)) / n
-    Y = numpy.dot(H, Y_uncentered)
-    X = numpy.dot(H, X_uncentered)
+    H = np.eye(n) - np.ones((n, n)) / n
+    Y = np.dot(H, Y_uncentered)
+    X = np.dot(H, X_uncentered)
     # get the singular value decomposition of a matrix
-    Z = numpy.dot(Y.T, X)
-    V, gamma, Uh = linalg.svd(Z)
+    Z = np.dot(Y.T, X)
+    V, gamma, Uh = np.linalg.svd(Z)
     # get an orthogonal matrix that is part of the transformation
-    A_hat = numpy.dot(V, Uh)
+    A_hat = np.dot(V, Uh)
     # get a scaling factor
-    c_hat = sum(gamma) / numpy.trace(numpy.dot(Y, Y.T))
+    c_hat = sum(gamma) / np.trace(np.dot(Y, Y.T))
     # begin the response
     out = StringIO()
     for point in Y:
-        new_point = c_hat * numpy.dot(point, A_hat) + reference_center
+        new_point = c_hat * np.dot(point, A_hat) + reference_center
         print >> out, '\t'.join(str(v) for v in new_point)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

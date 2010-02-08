@@ -1,11 +1,13 @@
-"""Given a newick tree, use the normalized Laplacian to define a distribution over the nodes.
+"""Given a tree, use the normalized Laplacian to define a node distribution.
+
+Given a newick tree, use the normalized Laplacian
+to define a distribution over the nodes.
 """
 
 from StringIO import StringIO
 import math
 
-import numpy
-from scipy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
@@ -24,7 +26,8 @@ def get_form():
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # return the form objects
     return [
-            Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string),
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string),
             Form.Integer('precision', 'precision', 4, low=2, high=17)]
 
 def get_response(fs):
@@ -39,20 +42,20 @@ def get_response(fs):
     name_to_id = dict((node.get_name(), id(node)) for node in tree.preorder())
     ordered_ids = [name_to_id[name] for name in ordered_names]
     # get the affinity matrix
-    A = numpy.array(tree.get_affinity_matrix(ordered_ids))
+    A = np.array(tree.get_affinity_matrix(ordered_ids))
     # get the normalized laplacian
     for row, name in zip(A, ordered_names):
         assert sum(row), name
     row_sums = [sum(row) for row in A]
     n = len(A)
-    L_script = numpy.zeros((n,n))
+    L_script = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
             if i == j:
                 L_script[i][j] = 1
             L_script[i][j] -= A[i][j] / math.sqrt(row_sums[i]*row_sums[j])
     # get the eigendecomposition
-    eigenvalues, eigenvector_transposes = linalg.eigh(L_script)
+    eigenvalues, eigenvector_transposes = np.linalg.eigh(L_script)
     eigenvectors = eigenvector_transposes.T
     eigensystem = [(abs(w), w, v.tolist()) for w, v in zip(eigenvalues, eigenvectors)]
     sorted_eigensystem = list(reversed(sorted(eigensystem)))

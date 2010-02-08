@@ -9,7 +9,7 @@ from StringIO import StringIO
 import random
 import math
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -59,7 +59,7 @@ def get_dominant_ev_pair(M):
     @param M: a correlation matrix
     @return: an eigenvalue eigenvector pair
     """
-    w, vt = numpy.linalg.eigh(M)
+    w, vt = np.linalg.eigh(M)
     return max(zip(w, vt.T))
 
 def get_response(fs):
@@ -74,39 +74,39 @@ def get_response(fs):
     if p < n * n:
         raise HandlingError('p should be at least as big as n^2')
     # make a data matrix with random values
-    X_raw = numpy.zeros((p, n))
+    X_raw = np.zeros((p, n))
     for i in range(p):
         for j in range(n):
             X_raw[i,j] = random.expovariate(1.0)
     X = X_raw.copy()
     # force each row to have mean of zero
     for i in range(p):
-        row_mean = numpy.mean(X[i])
+        row_mean = np.mean(X[i])
         X[i] -= row_mean
     # force each row to have variance of one
     for i in range(p):
-        row_std = numpy.std(X[i])
+        row_std = np.std(X[i])
         X[i] /= row_std
     # account for the number of columns
     X /= math.sqrt(n)
     # create the covariance matrix associated with X (correlation if standardized)
-    X_corr = numpy.dot(X, X.T)
+    X_corr = np.dot(X, X.T)
     # assert that XX' is a the right matrix
-    assert numpy.allclose(X_corr, numpy.corrcoef(X_raw))
+    assert np.allclose(X_corr, np.corrcoef(X_raw))
     # create the Y matrix from the standardized X matrix
-    Y = numpy.zeros((p, n*n))
+    Y = np.zeros((p, n*n))
     for i in range(p):
         for j in range(n):
             for k in range(n):
                 Y[i,j*n + k] = X[i,j] * X[i,k]
     # create the correlation matrix associated with Y
-    Y_corr = numpy.dot(Y, Y.T)
+    Y_corr = np.dot(Y, Y.T)
     # Assert that the correlation matrix associated with Y is
     # equal to the entrywise square of the correlation matrix associated with X.
-    assert numpy.allclose(Y_corr, X_corr ** 2.0)
+    assert np.allclose(Y_corr, X_corr ** 2.0)
     # create the Z matrix from the standardized X matrix
     ncombos = (n*(n+1))/2
-    Z = numpy.zeros((p, ncombos))
+    Z = np.zeros((p, ncombos))
     for i in range(p):
         index = 0
         for j in range(n):
@@ -116,17 +116,17 @@ def get_response(fs):
                 Z[i,index] = math.sqrt(2) * X[i,j] * X[i,k]
                 index += 1
     # create the correlation matrix associated with Z
-    Z_corr = numpy.dot(Z, Z.T)
+    Z_corr = np.dot(Z, Z.T)
     # Assert that the correlation matrix associated with Z is
     # equal to the entrywise square of the correlation matrix associated with X.
-    assert numpy.allclose(Z_corr, X_corr ** 2.0)
+    assert np.allclose(Z_corr, X_corr ** 2.0)
     # create the W matrix from the standardized X matrix
-    U, S_array, VT = numpy.linalg.svd(X, full_matrices=0)
-    S = numpy.diag(S_array)
-    assert numpy.allclose(X, numpy.dot(U, numpy.dot(S, VT)))
-    X_reduced = numpy.array([row[:-1] for row in numpy.dot(U, S)])
+    U, S_array, VT = np.linalg.svd(X, full_matrices=0)
+    S = np.diag(S_array)
+    assert np.allclose(X, np.dot(U, np.dot(S, VT)))
+    X_reduced = np.array([row[:-1] for row in np.dot(U, S)])
     ncombos_reduced = (n*(n-1))/2
-    W = numpy.zeros((p, ncombos_reduced))
+    W = np.zeros((p, ncombos_reduced))
     for i in range(p):
         index = 0
         for j in range(n-1):
@@ -136,10 +136,10 @@ def get_response(fs):
                 W[i,index] = math.sqrt(2) * X_reduced[i,j] * X_reduced[i,k]
                 index += 1
     # create the correlation matrix associated with Z
-    W_corr = numpy.dot(W, W.T)
+    W_corr = np.dot(W, W.T)
     # Assert that the correlation matrix associated with Z is
     # equal to the entrywise square of the correlation matrix associated with X.
-    assert numpy.allclose(W_corr, X_corr ** 2.0)
+    assert np.allclose(W_corr, X_corr ** 2.0)
     # show some results
     print >> out, 'X:'
     print >> out, X
@@ -154,7 +154,7 @@ def get_response(fs):
     print >> out, Y
     print >> out
     print >> out, 'the correlation matrix for Y:'
-    print >> out, numpy.dot(Y, Y.T)
+    print >> out, np.dot(Y, Y.T)
     print >> out
     print >> out, 'Z:'
     print >> out, Z
@@ -163,10 +163,10 @@ def get_response(fs):
     print >> out, W
     print >> out
     print >> out, 'eigenvalues of the correlation matrix for X:'
-    print >> out, numpy.linalg.eigvalsh(X_corr)
+    print >> out, np.linalg.eigvalsh(X_corr)
     print >> out
     print >> out, 'eigenvalues of the correlation matrix for Y:'
-    print >> out, numpy.linalg.eigvalsh(Y_corr)
+    print >> out, np.linalg.eigvalsh(Y_corr)
     print >> out
     print >> out, 'dominant ev pair from X_corr:'
     print >> out, get_dominant_ev_pair(X_corr)

@@ -18,7 +18,6 @@ import zipfile
 import numpy as np
 
 from SnippetUtil import HandlingError
-import Form
 import NewickIO
 import FelTree
 import Newick
@@ -26,6 +25,11 @@ import BuildTreeTopology
 import SchurAlgebra
 import Euclid
 import MatrixUtil
+from Form import CheckGroup
+from Form import CheckItem
+from Form import RadioGroup
+from Form import RadioItem
+import Form
 
 g_const_data = 'const-data'
 
@@ -36,11 +40,15 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.RadioGroup('distance_options', 'recursive matrix construction', [
-                Form.RadioItem('like_pruning', 'go through the Laplacian, like Felsenstein pruning', True),
-                Form.RadioItem('like_nj', 'directly use distances, like neighbor joining')]),
-            Form.CheckGroup('format_options', 'options', [
-                Form.CheckItem('supplementary', 'download the supplementary data', True)])]
+            RadioGroup('distance_options', 'recursive matrix construction', [
+                RadioItem('like_pruning',
+                    'go through the Laplacian, like Felsenstein pruning',
+                    True),
+                RadioItem('like_nj',
+                    'directly use distances, like neighbor joining')]),
+            CheckGroup('format_options', 'options', [
+                CheckItem('supplementary',
+                    'download the supplementary data', True)])]
     return form_objects
 
 def remove_redundant_nodes(tree):

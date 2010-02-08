@@ -1,6 +1,6 @@
 """Get an amino acid Fasta alignment from some comma separated data.
 
-The default tree is from the mm9_multiple_alignment page at ucsc.
+The default tree is from the mm9_multiple_alignment page at UCSC.
 """
 
 from StringIO import StringIO
@@ -10,13 +10,13 @@ import subprocess
 import os
 
 from SnippetUtil import HandlingError
-import Form
 import Config
 import FelTree
 import NewickIO
 import Codon
 import Fasta
-import Util
+import iterutils
+import Form
 
 # this is some sample data
 g_default_csv_lines = [
@@ -57,8 +57,10 @@ def get_form():
     """
     default_tree_string = '(a:2, b:2, (c:2, d:2):2);'
     form_objects = [
-            Form.MultiLine('data', 'raw data from a csv file', '\n'.join(g_default_csv_lines)),
-            Form.MultiLine('tree', 'a tree with branch lengths relating the taxa', '\n'.join(g_default_tree_lines))]
+            Form.MultiLine('data', 'raw data from a csv file',
+                '\n'.join(g_default_csv_lines)),
+            Form.MultiLine('tree', 'a tree with branch lengths',
+                '\n'.join(g_default_tree_lines))]
     """
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
@@ -68,15 +70,16 @@ def get_form():
 
 def get_amino_acid_alignment(table):
     """
-    @param table: a table of data that is in some random format sent by Ferran Casals
+    @param table: a table of data in some random format sent by Ferran Casals
     @return: a Fasta amino acid alignment object
     """
     if len(table) < 2:
         raise HandlingError('the data table should have at least two rows')
     first_row = table[0]
     if len(first_row) < 6:
-        msg = 'the first row of the table has %d columns but at least six were expected' % len(first_row)
-        raise HandlingError(msg)
+        msg_a = 'the first row of the table has %d columns ' % len(first_row)
+        msg_b = 'but at least six were expected'
+        raise HandlingError(msg_a + msg_b)
     if first_row[0].upper() != 'variant'.upper():
         raise HandlingError('expected the first column to be the variant')
     if first_row[1].upper() != 'chr'.upper():
@@ -84,13 +87,16 @@ def get_amino_acid_alignment(table):
     if first_row[2].upper() != 'position'.upper():
         raise HandlingError('expected the third column to be the position')
     if first_row[3].upper() != 'Amino Acid Change'.upper():
-        raise HandlingError('expected the fourth column to be the amino acid change')
+        msg = 'expected the fourth column to be the amino acid change'
+        raise HandlingError(msg)
     if first_row[4].upper() != 'alleles'.upper():
-        raise HandlingError('expected the fifth column to be the nucleotide change')
+        msg = 'expected the fifth column to be the nucleotide change'
+        raise HandlingError(msg)
     remaining_rows = table[1:]
     for row in remaining_rows:
         if len(row) != len(first_row):
-            raise HandlingError('each row should have the same number of columns')
+            msg = 'each row should have the same number of columns'
+            raise HandlingError(msg)
     # get the ordered taxa
     taxa = first_row[5:]
     if len(set(taxa)) != len(taxa):
@@ -108,9 +114,11 @@ def get_amino_acid_alignment(table):
             elif codon in Codon.g_non_stop_codons:
                 aa = Codon.g_codon_to_aa_letter[codon]
             elif codon in Codon.g_stop_codons:
-                raise HandlingError('one of the codons is a stop codon: %s' % codon)
+                msg = 'one of the codons is a stop codon: %s' % codon
+                raise HandlingError(msg)
             else:
-                raise HandlingError('one of the codons is invalid: %s' % codon)
+                msg = 'one of the codons is invalid: %s' % codon)
+                raise HandlingError(msg)
             aa_list.append(aa)
         aa_sequences.append(''.join(aa_list))
     # return the alignment
@@ -119,30 +127,35 @@ def get_amino_acid_alignment(table):
 def get_alignment(data_string, tree_string):
     # convert the comma separated data into a table
     table = []
-    for line in Util.stripped_lines(StringIO(data_string)):
-        row = list(csv.reader(StringIO(line), delimiter=',', quotechar='"'))[0]
+    for line in iterutils.stripped_lines(StringIO(data_string)):
+        row = list(csv.reader(
+            StringIO(line), delimiter=',', quotechar='"'))[0]
         table.append(row)
     # create the amino acid fasta alignment
     alignment = get_amino_acid_alignment(table)
     # create the tree
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
-    # make sure that the newick tree has all of the taxa required by the alignment
+    # Make sure that the newick tree has all of the taxa
+    # required by the alignment.
     tree_taxa_set = set(node.get_name() for node in tree.gen_tips())
     alignment_taxa_set = set(alignment.headers)
     weird_alignment_taxa = alignment_taxa_set - tree_taxa_set
     if weird_alignment_taxa:
-        raise HandlingError('the following taxa were not found in the tree: %s' % str(weird_taxa))
+        msg_a = 'the following taxa were not found '
+        msg_b = 'in the tree: %s' % str(weird_taxa)
+        raise HandlingError(msg_a + msg_b)
     # return the alignment
     return alignment
 
 def get_mapp_output(data_string, tree_string):
     """
-    @param data_string: a multi-line string defining a table of comma separated value data
+    @param data_string: a multi-line csv string
     @param tree_string: a multi-line newick string
     """
     # get the amino acid alignment
     alignment = get_alignment(data_string, tree_string)
-    # get some temporary filenames for the alignment, the tree, and the MAPP output
+    # Get some temporary filenames for the alignment,
+    # the tree, and the MAPP output.
     temp_fasta_filename = tempfile.mktemp(suffix='.fa')
     temp_newick_filename = tempfile.mktemp(suffix='.tree')
     # write the temporary fasta file
@@ -155,7 +168,7 @@ def get_mapp_output(data_string, tree_string):
     temp_newick_file.close()
     # call the mapp program
     mapp_jar_pathname = Config.mapp_exe_path + '/' + 'MAPP.jar'
-    arguments = [
+    cmd = [
             'gij',
             '-jar',
             mapp_jar_pathname,
@@ -163,7 +176,7 @@ def get_mapp_output(data_string, tree_string):
             temp_fasta_filename,
             '-t',
             temp_newick_filename]
-    p = subprocess.Popen(arguments, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
     process_output = p.stdout.read()
     process_error = p.stderr.read()

@@ -4,8 +4,7 @@
 from StringIO import StringIO
 import math
 
-import numpy
-from scipy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
@@ -25,8 +24,8 @@ def get_form():
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # return the form objects
     return [
-            Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string),
-            #Form.MultiLine('labels', 'ordered labels (tips and internal nodes)', '\n'.join(ordered_labels)),
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string),
             Form.Integer('precision', 'precision', 4, low=2, high=17)]
 
 def list_to_diagonal_matrix(arr):
@@ -35,7 +34,7 @@ def list_to_diagonal_matrix(arr):
     @return: a two dimensional square matrix of numbers where non-diagonal elements are zero
     """
     n = len(arr)
-    D = numpy.zeros((n,n))
+    D = np.zeros((n,n))
     for i, value in enumerate(arr):
         D[i][i] = value
     return D
@@ -53,7 +52,7 @@ def get_response(fs):
     ordered_names = ordered_tip_names + ordered_internal_names
     ordered_ids = ordered_tip_ids + ordered_internal_ids
     # get the affinity matrix
-    A = numpy.array(tree.get_affinity_matrix(ordered_ids))
+    A = np.array(tree.get_affinity_matrix(ordered_ids))
     # get the laplacian
     row_sums = [sum(row) for row in A]
     L = list_to_diagonal_matrix(row_sums) - A.copy()

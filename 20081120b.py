@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -18,10 +18,10 @@ def get_form():
     """
     tree_string = '(((a:0.05, b:0.05):0.15, c:0.2):0.8, x:1.0, (((m:0.05, n:0.05):0.15, p:0.2):0.8, y:1.0):1.0);'
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
-    M = numpy.array(tree.get_full_distance_matrix())
+    M = np.array(tree.get_full_distance_matrix())
     form_objects = [
             Form.Matrix('matrix', 'matrix', M),
-            Form.Float('epsilon', 'show elements with absolute value less than this as zero', '1e-10')]
+            Form.Float('epsilon', 'show smaller elements as zero', '1e-10')]
     return form_objects
 
 def get_response(fs):
@@ -32,7 +32,7 @@ def get_response(fs):
     # read the matrix
     M = fs.matrix
     # get the pseudo inverse
-    M_pinv = numpy.linalg.pinv(M)
+    M_pinv = np.linalg.pinv(M)
     # set small values to zero in the output
     M_pinv[abs(M_pinv) < fs.epsilon] = 0
     # create the response string

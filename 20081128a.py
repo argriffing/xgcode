@@ -4,13 +4,11 @@
 from StringIO import StringIO
 import math
 
-from scipy import linalg
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
-import Util
 import MatrixUtil
 
 def get_form():
@@ -18,9 +16,10 @@ def get_form():
     @return: a list of form objects
     """
     form_objects = [
-            Form.Integer('iterations', 'number of iterations', 2, low=0, high=5),
+            Form.Integer('iterations', 'number of iterations',
+                2, low=0, high=5),
             Form.RadioGroup('format', 'output options', [
-                Form.RadioItem('adjacency', 'adjacency matrix', False),
+                Form.RadioItem('adjacency', 'adjacency matrix'),
                 Form.RadioItem('laplacian', 'laplacian matrix', True)])]
     return form_objects
 
@@ -48,14 +47,12 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    # get the requested number of iterations
-    iterations = fs.iterations
     # begin the response
     out = StringIO()
     # create the adjacency matrix
-    n = 3**iterations
-    M = numpy.zeros((n, n))
-    add_sierpinski(M, 0, iterations)
+    n = 3**fs.iterations
+    M = np.zeros((n, n))
+    add_sierpinski(M, 0, fs.iterations)
     M = M + M.T
     if fs.adjacency:
         print >> out, MatrixUtil.m_to_string(M)

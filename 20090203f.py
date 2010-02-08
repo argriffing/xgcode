@@ -1,5 +1,7 @@
-"""Given a Laplacian matrix, use ratios of principal minors to find the distance matrix.
+"""Given a Laplacian matrix, use principal minors to find the distance matrix.
 
+Given a Laplacian matrix,
+use ratios of principal minors to find the distance matrix.
 This uses an incorrect formula from "On Euclidean distance matrices"
 and a corrected version by Eric Stone.
 """
@@ -7,7 +9,7 @@ and a corrected version by Eric Stone.
 from StringIO import StringIO
 import math
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -17,7 +19,7 @@ def get_form():
     """
     @return: the body of a form
     """
-    L = numpy.array([
+    L = np.array([
             [1.0, 0.0, 0.0, 0.0, -1.0, 0.0],
             [0.0, 1.0, 0.0, 0.0, -1.0, 0.0],
             [0.0, 0.0, 1.0, 0.0, 0.0, -1.0],
@@ -26,10 +28,11 @@ def get_form():
             [0.0, 0.0, -1.0, -1.0, -1.0, 3.0]])
     # define the form objects
     form_objects = [
-            Form.Matrix('laplacian', 'combinatorial Laplacian matrix', L, MatrixUtil.assert_symmetric),
+            Form.Matrix('laplacian', 'combinatorial Laplacian matrix',
+                L, MatrixUtil.assert_symmetric),
             Form.RadioGroup('method', 'method choices', [
-                Form.RadioItem('incorrect', 'use the incorrect method from the paper'),
-                Form.RadioItem('correct', 'use the correct method', True)])]
+                Form.RadioItem('incorrect', 'use the method from the paper'),
+                Form.RadioItem('correct', 'use the corrected method', True)])]
     return form_objects
 
 def get_deleted_matrix(M, row_indices, column_indices):
@@ -47,7 +50,7 @@ def get_deleted_matrix(M, row_indices, column_indices):
                 row.append(M[i][j])
         if i not in row_indices:
             D.append(row)
-    return numpy.array(D)
+    return np.array(D)
 
 def get_minor(M, row_indices, column_indices):
     """
@@ -57,7 +60,7 @@ def get_minor(M, row_indices, column_indices):
     @param column_indices: the indices of the columns to delete
     """
     M_deleted = get_deleted_matrix(M, row_indices, column_indices)
-    return numpy.linalg.det(M_deleted)
+    return np.linalg.det(M_deleted)
 
 def get_incorrect_distance_matrix(L):
     """
@@ -65,7 +68,7 @@ def get_incorrect_distance_matrix(L):
     @param L: a Laplacian matrix
     """
     n = len(L)
-    D = numpy.zeros((n,n))
+    D = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
             if i != j:
@@ -78,7 +81,7 @@ def get_correct_distance_matrix(L):
     @param L: a Laplacian matrix
     """
     n = len(L)
-    D = numpy.zeros((n,n))
+    D = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
             if i != j:

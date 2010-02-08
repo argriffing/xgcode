@@ -1,24 +1,28 @@
-"""Given a Laplacian matrix, find points that define a Euclidean distance matrix.
+"""Given a Laplacian matrix, find corresponding Euclidean points.
 
+Given a Laplacian matrix, find points that define a Euclidean distance matrix.
 Each row in the output defines a point in Euclidean space.
 Contrasts are available for both normalized and combinatorial Laplacians,
-while Euclidean coordinates are with respect to the combinatorial Laplacian matrix.
+while Euclidean coordinates are with respect to
+    the combinatorial Laplacian matrix.
 """
 
 from StringIO import StringIO
 import math
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
+from Form import RadioItem
+from Form import CheckItem
 import Form
 
 def get_form():
     """
     @return: the body of a form
     """
-    L = numpy.array([
+    L = np.array([
             [1.0, 0.0, 0.0, 0.0, -1.0, 0.0],
             [0.0, 1.0, 0.0, 0.0, -1.0, 0.0],
             [0.0, 0.0, 1.0, 0.0, 0.0, -1.0],
@@ -27,13 +31,16 @@ def get_form():
             [0.0, 0.0, -1.0, -1.0, -1.0, 3.0]])
     # define the form objects
     form_objects = [
-            Form.Matrix('laplacian', 'combinatorial Laplacian matrix', L, MatrixUtil.assert_symmetric),
+            Form.Matrix('laplacian', 'combinatorial Laplacian matrix',
+                L, MatrixUtil.assert_symmetric),
             Form.RadioGroup('normalization', 'use this matrix', [
-                Form.RadioItem('combinatorial', 'combinatorial Laplacian', True),
-                Form.RadioItem('normalized', 'normalized Laplacian')]),
+                RadioItem('combinatorial', 'combinatorial Laplacian', True),
+                RadioItem('normalized', 'normalized Laplacian')]),
             Form.CheckGroup('options', 'output options', [
-                Form.CheckItem('show_magnitudes', 'show the distance of each point from the origin'),
-                Form.CheckItem('show_contrasts', 'show the contrast loading matrix')])]
+                CheckItem('show_magnitudes',
+                    'show the distance of each point from the origin'),
+                CheckItem('show_contrasts',
+                    'show the contrast loading matrix')])]
     return form_objects
 
 def get_eigendecomposition(M):
@@ -41,7 +48,7 @@ def get_eigendecomposition(M):
     @param M: a numpy array
     @return: the eigenvalues and the eigenvectors
     """
-    w, v = numpy.linalg.eigh(M)
+    w, v = np.linalg.eigh(M)
     eigenvalues = w
     eigenvectors = v.T
     return eigenvalues, eigenvectors
@@ -126,7 +133,7 @@ def get_response(fs):
         # get the row sums of the affinity matrix
         row_sums = [L[i][i] for i in range(n)]
         # get the normalized laplacian
-        L_script = numpy.zeros((n,n))
+        L_script = np.zeros((n,n))
         for i in range(n):
             for j in range(n):
                 L_script[i][j] = L[i][j] / math.sqrt(row_sums[i]*row_sums[j])

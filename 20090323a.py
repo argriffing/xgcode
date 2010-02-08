@@ -1,11 +1,13 @@
-"""Given a newick tree, investigate the corresponding spherical euclidean distance matrix.
+"""Given a newick tree, investigate the spherical euclidean distance matrix.
+
+Given a newick tree,
+investigate the corresponding spherical euclidean distance matrix.
 """
 
 from StringIO import StringIO
 import math
 
-import numpy
-from scipy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
@@ -22,16 +24,19 @@ def get_form():
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # return the form objects
-    return [Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string)]
+    form_objects = [
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string)]
+    return form_objects
 
 def get_matrix_square_root(M, epsilon=1e-14):
     """
     Note that the square root is assumed to have rank one less than that of M.
     Eigenvalues less than epsilon are set to zero.
     @param M: a nxn numpy array
-    @return: a nxn numpy array X such that numpy.dot(X, X.T) == M
+    @return: a nxn numpy array X such that np.dot(X, X.T) == M
     """
-    eigenvalues, eigenvector_transposes = linalg.eigh(M)
+    eigenvalues, eigenvector_transposes = np.linalg.eigh(M)
     eigenvalues = [(v if abs(v) > epsilon else 0) for v in eigenvalues]
     eigenvectors = eigenvector_transposes.T
     eigensystem = [(abs(w), w, v.tolist()) for w, v in zip(eigenvalues, eigenvectors)]
@@ -44,7 +49,7 @@ def get_matrix_square_root(M, epsilon=1e-14):
             raise HandlingError('negative eigenvalue: %f' % value)
         row = [math.sqrt(value) * v for v in vector]
         coordinate_array.append(row)
-    X = numpy.array(zip(*coordinate_array))
+    X = np.array(zip(*coordinate_array))
     return X
 
 def euclidean_distance(a, b):
@@ -66,7 +71,7 @@ def column_vector_to_list(v):
     return [row[0] for row in v]
 
 def list_to_column_vector(arr):
-    return numpy.array([[element] for element in arr])
+    return np.array([[element] for element in arr])
 
 def get_response(fs):
     """
@@ -81,17 +86,17 @@ def get_response(fs):
     ordered_tip_names = list(sorted(node.get_name() for node in tree.gen_tips()))
     n = len(ordered_tip_names)
     # define a conformant column vector of ones and a conformant identity matrix
-    e = numpy.array([[1.0] for i in range(n)])
-    I = numpy.identity(n)
+    e = np.array([[1.0] for i in range(n)])
+    I = np.identity(n)
     # get the matrix of pairwise distances among the tips
-    D = numpy.array(tree.get_distance_matrix(ordered_tip_names))
+    D = np.array(tree.get_distance_matrix(ordered_tip_names))
     print >> out, 'original distance matrix:'
     print >> out, MatrixUtil.m_to_string(D)
     print >> out
     print >> out, 'determinant of the original distance matrix:'
-    print >> out, linalg.det(D)
+    print >> out, np.linalg.det(D)
     print >> out
-    D_inv = linalg.inv(D)
+    D_inv = np.linalg.inv(D)
     # define an s column vector whose elements are positive weights that sum to one
     D_inv_sum = sum(sum(row) for row in D_inv)
     print >> out, 'sum of elements of the inverse distance matrix:'
@@ -100,7 +105,7 @@ def get_response(fs):
     print >> out, 'square root of one half the inverse of the sum of elements of the inverse distance matrix:'
     print >> out, math.sqrt(.5 * (1/D_inv_sum))
     print >> out
-    s = numpy.dot(D_inv, e) / D_inv_sum
+    s = np.dot(D_inv, e) / D_inv_sum
     print >> out, 'the weight vector:'
     print >> out, s
     print >> out
@@ -113,9 +118,9 @@ def get_response(fs):
     print >> out, list_to_column_vector([x/sum(sqrt_elements) for x in sqrt_elements])
     print >> out
     # define the F matrix
-    F_left = I - numpy.dot(e, s.T)
-    F_right = I - numpy.dot(s, e.T)
-    F = -0.5 * numpy.dot(F_left, numpy.dot(D, F_right))
+    F_left = I - np.dot(e, s.T)
+    F_right = I - np.dot(s, e.T)
+    F = -0.5 * np.dot(F_left, np.dot(D, F_right))
     # take the matrix square root of the F matrix
     X = get_matrix_square_root(F)
     print >> out, 'euclidean points where the origin is the circumcenter:'
@@ -127,7 +132,7 @@ def get_response(fs):
         print >> out, magnitude(row)
     print >> out
     # get the implied distance matrix
-    D_implied = numpy.zeros((n,n))
+    D_implied = np.zeros((n,n))
     for i, row_a in enumerate(X):
         for j, row_b in enumerate(X):
             D_implied[i][j] = euclidean_distance(row_a, row_b)**2
@@ -135,9 +140,9 @@ def get_response(fs):
     print >> out, MatrixUtil.m_to_string(D_implied)
     print >> out
     # now set the origin to the center of mass
-    F_left = I - numpy.dot(e, e.T) / numpy.dot(e.T, e)
-    F_right = I - numpy.dot(e, e.T) / numpy.dot(e.T, e)
-    F = -0.5 * numpy.dot(F_left, numpy.dot(D, F_right))
+    F_left = I - np.dot(e, e.T) / np.dot(e.T, e)
+    F_right = I - np.dot(e, e.T) / np.dot(e.T, e)
+    F = -0.5 * np.dot(F_left, np.dot(D, F_right))
     # take the matrix square root of the F matrix
     X = get_matrix_square_root(F)
     print >> out, 'euclidean points where the origin is the center of mass:'
@@ -150,7 +155,7 @@ def get_response(fs):
     print >> out, center
     print >> out
     # get the implied distance matrix
-    D_implied = numpy.zeros((n,n))
+    D_implied = np.zeros((n,n))
     for i, row_a in enumerate(X):
         for j, row_b in enumerate(X):
             D_implied[i][j] = euclidean_distance(row_a, row_b)**2

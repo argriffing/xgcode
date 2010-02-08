@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Util
@@ -16,7 +16,7 @@ def get_form():
     @return: the body of a form
     """
     # define the default distance matrix and the ordered labels
-    D = numpy.array([
+    D = np.array([
             [0.0, 3.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
             [3.0, 0.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0],
             [2.0, 3.0, 0.0, 0.1, 0.4, 3.0, 3.0, 3.0],
@@ -28,13 +28,19 @@ def get_form():
     ordered_labels = list('xyabcmnp')
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance),
-            Form.MultiLine('labels', 'ordered labels', '\n'.join(ordered_labels)),
-            Form.RadioGroup('options', 'distance matrix splitting and updating options', [
-                Form.RadioItem('option_a', 'nj split with nj update', True),
-                Form.RadioItem('option_b', 'nj split with laplace update'),
-                Form.RadioItem('option_c', 'spectral split with nj split fallback and laplace update'),
-                Form.RadioItem('option_d', 'spectral split with partial split fallback and laplace update')])]
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance),
+            Form.MultiLine('labels', 'ordered labels',
+                '\n'.join(ordered_labels)),
+            Form.RadioGroup('options', 'distance matrix splitting options', [
+                Form.RadioItem('option_a',
+                    'nj split with nj update', True),
+                Form.RadioItem('option_b',
+                    'nj split with laplace update'),
+                Form.RadioItem('option_c',
+                    'spectral with nj fallback and laplace update'),
+                Form.RadioItem('option_d',
+                    'spectral with partial fallback and laplace update')])]
     return form_objects
 
 def set_to_string(my_set):
@@ -57,7 +63,7 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     # validate the input
     if len(D) != len(ordered_labels):
         raise HandlingError('the number of taxon labels should match the number of rows in the distance matrix')

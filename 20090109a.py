@@ -1,6 +1,9 @@
-"""Get the aligned amino acid region or column associated with a given genomic position.
+"""Get the aligned amino acid region or column of a given genomic position.
 
-This snippet can also be run from the command line to build the data directories required for its operation.
+Get the aligned amino acid region or column
+associated with a given genomic position.
+This snippet can also be run from the command line
+to build the data directories required for its operation.
 """
 
 from StringIO import StringIO
@@ -9,10 +12,11 @@ import os
 
 from SnippetUtil import HandlingError
 import KGEA
-import Form
 import Progress
+from Form import RadioItem
+import Form
 
-# define some web locations that should probably be moved to a config file somewhere
+# define some web locations that should probably be moved to a config file
 g_base_dir = '/var/www/python_scripts/data/exon-alignments'
 g_fasta_dir = g_base_dir + '/fasta-pieces'
 g_index_dir = g_base_dir + '/piece-index-files'
@@ -28,8 +32,8 @@ def get_form():
             Form.SingleLine('chromosome', 'chromosome', 'chr17'),
             Form.Integer('position', 'position', 70360012, low=0),
             Form.RadioGroup('output', 'output options', [
-                Form.RadioItem('show_alignment', 'show the aligned region', True),
-                Form.RadioItem('show_column', 'show the aligned column')])]
+                RadioItem('show_alignment', 'show the aligned region', True),
+                RadioItem('show_column', 'show the aligned column')])]
     return form_objects
 
 def get_response(fs):

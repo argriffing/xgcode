@@ -4,13 +4,14 @@
 from StringIO import StringIO
 
 from SnippetUtil import HandlingError
-import Form
+import Util
 import NewickIO
 import Newick
 import DrawTree
 import FelTree
 import Clustering
-import Util
+from Form import CheckItem
+import Form
 
 def get_form():
     """
@@ -24,11 +25,15 @@ def get_form():
             '((c1:1, c2:1):1, (c3:1, c4:1):1):30);']
     # define the list of form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree', '\n'.join(tree_lines)),
-            Form.MultiLine('names', 'remove these leaves', '\n'.join(('c2', 'c3', 'c4'))),
+            Form.MultiLine('tree', 'newick tree',
+                '\n'.join(tree_lines)),
+            Form.MultiLine('names', 'remove these leaves',
+                '\n'.join(('c2', 'c3', 'c4'))),
             Form.CheckGroup('options', 'output options', [
-                Form.CheckItem('show_newick', 'show the newick string for each tree', True),
-                Form.CheckItem('show_art', 'show the ascii art representation of each tree', True)])]
+                CheckItem('show_newick',
+                    'show the newick string for each tree', True),
+                CheckItem('show_art',
+                    'show the ascii art representation of each tree', True)])]
     return form_objects
 
 def get_pruned_tree(tree, names_to_remove):
@@ -102,7 +107,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # get the set of names
-    selection = list(Util.stripped_lines(StringIO(fs.names)))
+    selection = Util.get_stripped_lines(StringIO(fs.names))
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # assert that the name selection is compatible with the tree

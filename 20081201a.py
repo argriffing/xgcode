@@ -1,21 +1,20 @@
-"""For each of a set of trees, reconstruct the topology from a single eigendecomposition.
+"""For each tree, reconstruct the topology from a single eigendecomposition.
 """
 
 from StringIO import StringIO
 
-import numpy
-import scipy
-from scipy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Form
-import Util
 import Newick
 import FelTree
 import NewickIO
 import TreeComparison
 import MatrixUtil
+import iterutils
+from Form import CheckItem
+import Form
 
 def get_form():
     """
@@ -29,13 +28,19 @@ def get_form():
             '((b:1.749, d:0.523):0.107, e:1.703, (a:0.746, c:0.070):4.025);']
     # define the list of form objects
     form_objects = [
-            Form.MultiLine('trees', 'newick trees (one tree per line)', '\n'.join(default_tree_lines)),
-            Form.Float('epsilon', 'minimum absolute value eigenvector loading that is considered non-negligible', '.000000001'),
-            Form.CheckGroup('options', 'output options', [
-                Form.CheckItem('show_all', 'show all reconstructed trees', True),
-                Form.CheckItem('show_incomplete', 'show incompletely resolved reconstructed trees', True),
-                Form.CheckItem('show_conflicting', 'show conflicting reconstructed trees', True),
-                Form.CheckItem('show_negligible', 'show trees with potentially informative but negligible loadings', True)])]
+            Form.MultiLine('trees', 'newick trees (one tree per line)',
+                '\n'.join(default_tree_lines)),
+            Form.Float('epsilon', 'non-negligible eigenvalue', '1e-9'),
+            Form.CheckGroup('options', 'show these tree sets', [
+                CheckItem('show_all',
+                    'all reconstructed trees', True),
+                CheckItem('show_incomplete',
+                    'incompletely resolved reconstructed trees', True),
+                CheckItem('show_conflicting',
+                    'conflicting reconstructed trees', True),
+                CheckItem('show_negligible',
+                    'trees with potentially informative but small loadings',
+                    True)])]
     return form_objects
 
 
@@ -80,7 +85,7 @@ class AnalysisResult:
         # get the Gower doubly centered matrix
         G = MatrixUtil.double_centered(numpy.array(D))
         # get the eigendecomposition of the Gower matrix
-        eigenvalues, eigenvector_transposes = linalg.eigh(G)
+        eigenvalues, eigenvector_transposes = np.linalg.eigh(G)
         eigenvectors = eigenvector_transposes.T
         self.sorted_eigensystem = list(reversed(list(sorted((abs(w), v) for w, v in zip(eigenvalues, eigenvectors)))))
         # build the tree recursively using the sorted eigensystem
@@ -170,7 +175,7 @@ def get_response(fs):
     """
     # get the newick trees.
     trees = []
-    for tree_string in Util.stripped_lines(StringIO(fs.trees)):
+    for tree_string in iterutils.stripped_lines(StringIO(fs.trees)):
         # parse each tree and make sure that it conforms to various requirements
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]

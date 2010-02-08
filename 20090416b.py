@@ -1,5 +1,6 @@
-"""Search for a counterexample to a conjecture about Euclidean distance matrices.
+"""Search for a Euclidean distance matrix conjecture counterexample.
 
+Search for a counterexample to a conjecture about Euclidean distance matrices.
 The conjecture is that when you convert an EDM to a Laplacian-like matrix,
 and then merge a pair of rows and columns by summation,
 then the eigenvalues of this matrix will remain non-negative.
@@ -11,8 +12,7 @@ from StringIO import StringIO
 import time
 import random
 
-import numpy
-from numpy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -24,7 +24,10 @@ def get_form():
     """
     @return: the body of a form
     """
-    return [Form.Integer('npoints', 'use this many points per matrix', 8, low=3, high=20)]
+    form_objects = [
+            Form.Integer('npoints', 'use this many points per matrix',
+                8, low=3, high=20)]
+    return form_objects
 
 def sample_points(npoints):
     """
@@ -45,7 +48,7 @@ def points_to_edm(points):
     @return: the matrix of pairwise squared Euclidean distances
     """
     n = len(points)
-    D = numpy.zeros((n,n))
+    D = np.zeros((n,n))
     for i, a in enumerate(points):
         for j, b in enumerate(points):
             if i != j:
@@ -77,7 +80,7 @@ def process(npoints, nseconds):
         D = points_to_edm(points)
         L = Euclid.edm_to_laplacian(D)
         L_small = SchurAlgebra.mmerge(L, set([0, 1]))
-        w = linalg.eigvalsh(L_small)
+        w = np.linalg.eigvalsh(L_small)
         D_small = Euclid.laplacian_to_edm(L_small)
         result = Counterexample(points, D, w, D_small)
         # see if the counterexample is interesting

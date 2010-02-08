@@ -28,13 +28,19 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('ntaxa', 'number of taxa per tree', 20, low=4, high=20),
-            Form.Integer('nsamples', 'number of trees to sample', 100, low=1, high=1000),
+            Form.Integer('ntaxa', 'number of taxa per tree',
+                20, low=4, high=20),
+            Form.Integer('nsamples', 'number of trees to sample',
+                100, low=1, high=1000),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))])]
+                Form.RadioItem('pachter_length',
+                    str(BranchLengthSampler.Pachter()), True),
+                Form.RadioItem('exponential_length',
+                    str(BranchLengthSampler.Exponential())),
+                Form.RadioItem('uniform_length_a',
+                    str(BranchLengthSampler.UniformA())),
+                Form.RadioItem('uniform_length_b',
+                    str(BranchLengthSampler.UniformB()))])]
     return form_objects
 
 def get_response(fs):

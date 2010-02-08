@@ -26,7 +26,10 @@ def get_form():
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # return the form objects
-    return [Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string)]
+    form_objects = [
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string)]
+    return form_objects
 
 def get_response(fs):
     """

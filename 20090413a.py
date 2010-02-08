@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -19,7 +19,7 @@ def get_form():
     @return: the body of a form
     """
     # define the default matrix
-    upper_matrix = numpy.array([
+    upper_matrix = np.array([
             [0, 0, 0, 0, 0, 0, 0, 0, 1/.05, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 1/.05, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 1/.2, 0, 0],
@@ -46,9 +46,12 @@ def get_form():
     selected_label_string = '\n'.join(['ab', 'abc', 'mn', 'mnp'])
     # define the sequence of form objects
     form_objects = [
-            Form.Matrix('laplacian', 'laplacian matrix', L, MatrixUtil.assert_symmetric),
-            Form.MultiLine('labels', 'ordered taxa', ordered_label_string),
-            Form.MultiLine('selection', 'taxa to be schur complemented out', selected_label_string)]
+            Form.Matrix('laplacian', 'laplacian matrix',
+                L, MatrixUtil.assert_symmetric),
+            Form.MultiLine('labels', 'ordered taxa',
+                ordered_label_string),
+            Form.MultiLine('selection', 'taxa to be schur complemented out',
+                selected_label_string)]
     # return the sequence of form objects
     return form_objects
 
@@ -60,7 +63,7 @@ def get_response(fs):
     # read the matrix
     L = fs.laplacian
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     if not ordered_labels:
         raise HandlingError('no ordered taxa were provided')
     if len(ordered_labels) != len(set(ordered_labels)):
@@ -68,7 +71,7 @@ def get_response(fs):
     # get the label selection and its complement
     min_selected_labels = 2
     min_unselected_labels = 1
-    selected_labels = set(Util.stripped_lines(StringIO(fs.selection)))
+    selected_labels = set(Util.get_stripped_lines(StringIO(fs.selection)))
     if len(selected_labels) < min_selected_labels:
         raise HandlingError('at least %d taxa should be selected to be grouped' % min_selected_labels)
     # get the set of labels in the complement

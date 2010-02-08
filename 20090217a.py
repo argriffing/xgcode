@@ -13,9 +13,13 @@ def get_form():
     @return: the body of a form
     """
     # define the default list of codons
-    default_codons = ['TTG', 'CTG', 'TTG', 'CTG', 'CTG', 'CTG', 'CTC', 'TTG', 'CTG', 'CTG', 'TTG', 'TTG', 'TTG', 'CTG']
+    default_codons = [
+            'TTG', 'CTG', 'TTG', 'CTG', 'CTG',
+            'CTG', 'CTC', 'TTG', 'CTG', 'CTG', 'TTG', 'TTG', 'TTG', 'CTG']
     # define the form objects
-    form_objects = [Form.MultiLine('codons', 'one codon on each line', '\n'.join(default_codons))]
+    form_objects = [
+            Form.MultiLine('codons', 'one codon on each line',
+                '\n'.join(default_codons))]
     return form_objects
 
 def get_response(fs):
@@ -24,11 +28,12 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the list of codons
-    codons = Util.stripped_lines(StringIO(fs.codons))
+    codons = Util.get_stripped_lines(StringIO(fs.codons))
     # convert codons to upper case
     codons = [codon.upper() for codon in codons]
     # make sure that each codon is valid
-    invalid_codons = set(codon for codon in codons if codon not in Codon.g_non_stop_codons)
+    invalid_codons = set(codon for codon in codons
+            if codon not in Codon.g_non_stop_codons)
     if invalid_codons:
         raise HandlingError('invalid codons: ' + ', '.join(invalid_codons))
     # define the response

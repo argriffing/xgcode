@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -13,12 +13,15 @@ def get_form():
     """
     @return: the body of a form
     """
-    D = numpy.array([
+    D = np.array([
         [0, 4, 5, 7],
         [4, 0, 7, 7],
         [5, 7, 0, 10],
         [7, 7, 10, 0]])
-    return [Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance)]
+    form_objects = [
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance)]
+    return form_objects
 
 def check_three_point_condition(D):
     """

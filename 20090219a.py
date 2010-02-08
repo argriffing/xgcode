@@ -31,13 +31,19 @@ def get_form():
             ('dc', -todec(77, 02), todec(38, 53)),
             ('pitt', -todec(79, 57), todec(40, 27)),
             ('philly', -todec(75, 10), todec(39, 57))]
-    default_labeled_points_string = '\n'.join('%s\t%s\t%s' % (label, str(x), str(y)) for label, x, y in default_labeled_points)
+    tsv = ['\t'.join([(label, str(x), str(y)])
+        for label, x, y in default_labeled_points]
+    default_labeled_points_string = '\n'.join(tsv)
     # define the form objects
     form_objects = [
-            Form.MultiLine('labeled_points', 'labeled points', default_labeled_points_string),
-            Form.Integer('total_width', 'total image width', 640, low=3, high=2000),
-            Form.Integer('total_height', 'total image height', 480, low=3, high=2000),
-            Form.Integer('border', 'image border size', 10, low=0, high=2000),
+            Form.MultiLine('labeled_points', 'labeled points',
+                default_labeled_points_string),
+            Form.Integer('total_width', 'total image width',
+                640, low=3, high=2000),
+            Form.Integer('total_height', 'total image height',
+                480, low=3, high=2000),
+            Form.Integer('border', 'image border size',
+                10, low=0, high=2000),
             Form.RadioGroup('imageformat', 'image format options', [
                 Form.RadioItem('png', 'png', True),
                 Form.RadioItem('svg', 'svg'),
@@ -116,7 +122,7 @@ def get_response(fs):
     # read the labeled points
     labels = []
     points = []
-    labeled_point_lines = list(Util.stripped_lines(StringIO(fs.labeled_points)))
+    labeled_point_lines = Util.get_stripped_lines(StringIO(fs.labeled_points))
     for line in labeled_point_lines:
         labeled_point = line.split()
         if len(labeled_point) != 3:

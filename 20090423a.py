@@ -1,6 +1,8 @@
-"""Given a newick tree, derive a rotated contrast matrix from its distance matrix.
+"""Given a tree, derive a rotated contrast matrix from its distance matrix.
 
-Elements in the output matrix with absolute values smaller than epsilon will be zeroed.
+Given a newick tree, derive a rotated contrast matrix from its distance matrix.
+Elements in the output matrix with absolute values smaller than epsilon
+will be zeroed.
 A command in R to orthogonally rotate matrix M is
 "varimax(M, normalize=FALSE)".
 A command in MATLAB to orthogonally rotate matrix M is
@@ -10,8 +12,7 @@ A command in MATLAB to orthogonally rotate matrix M is
 from StringIO import StringIO
 import math
 
-import numpy
-from numpy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Util
@@ -33,8 +34,10 @@ def get_form():
     ordered_labels = list('abcxmnpy')
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string),
-            Form.MultiLine('labels', 'ordered labels', '\n'.join(ordered_labels)),
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string),
+            Form.MultiLine('labels', 'ordered labels',
+                '\n'.join(ordered_labels)),
             Form.Float('epsilon', 'epsilon', '1e-10'),
             Form.RadioGroup('matrix_format', 'output matrix format', [
                 Form.RadioItem('plain_format', 'plain', True),
@@ -47,7 +50,7 @@ def get_eigendecomposition(M):
     @param M: a numpy array
     @return: the eigenvalues and the eigenvectors
     """
-    w, v = linalg.eigh(M)
+    w, v = np.linalg.eigh(M)
     eigenvalues = w
     eigenvectors = v.T
     return eigenvalues, eigenvectors
@@ -75,7 +78,7 @@ def get_contrast_matrix(w, v, eps=1e-10):
                 coord = v[j][i] * math.sqrt(eigenvalue)
                 p.append(coord)
         points.append(p)
-    return numpy.array(points)
+    return np.array(points)
 
 def get_response(fs):
     """
@@ -85,13 +88,13 @@ def get_response(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     # validate the input
     observed_label_set = set(node.get_name() for node in tree.gen_tips())
     if set(ordered_labels) != observed_label_set:
         raise HandlingError('the ordered labels should match the labels of the leaves of the tree')
     # get the matrix of pairwise distances among the tips
-    D = numpy.array(tree.get_distance_matrix(ordered_labels))
+    D = np.array(tree.get_distance_matrix(ordered_labels))
     L = Euclid.edm_to_laplacian(D)
     w, v = get_eigendecomposition(L)
     C = get_contrast_matrix(w, v)

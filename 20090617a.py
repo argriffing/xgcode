@@ -4,7 +4,7 @@ This is probably useful only as an example.
 """
 
 # Do it like this.
-# python 20090617a.py > junk.tex; latex junk.tex; dvips junk; ps2pdf junk.ps; evince junk.pdf
+# python 20090617a.py > x.tex; latex x.tex; dvips x; ps2pdf x.ps; evince x.pdf
 
 from StringIO import StringIO
 import optparse
@@ -13,6 +13,7 @@ import subprocess
 import os
 
 from SnippetUtil import HandlingError
+from Form import RadioItem
 import Form
 
 
@@ -320,21 +321,22 @@ def get_form():
     """
     form_objects = [
             Form.RadioGroup('nleaves_option', 'use this many leaves', [
-                Form.RadioItem('six_leaves', '6'),
-                Form.RadioItem('seven_leaves', '7', True)]),
-            Form.Float('scaling_factor', 'scaling factor', 1.0, low_exclusive=0),
+                RadioItem('six_leaves', '6'),
+                RadioItem('seven_leaves', '7', True)]),
+            Form.Float('scaling_factor', 'scaling factor',
+                1.0, low_exclusive=0),
             Form.RadioGroup('show_options', 'content options', [
-                Form.RadioItem('full_tree_only', 'full tree only', False),
-                Form.RadioItem('pruned_trees_only', 'pruned trees only', False),
-                Form.RadioItem('all_trees', 'all trees', True)]),
+                RadioItem('full_tree_only', 'full tree only', False),
+                RadioItem('pruned_trees_only', 'pruned trees only', False),
+                RadioItem('all_trees', 'all trees', True)]),
             Form.RadioGroup('output_options', 'output format options', [
-                Form.RadioItem('show_tikz', 'show TikZ code only', True),
-                Form.RadioItem('show_standalone', 'show the contents of a LaTeX file'),
-                Form.RadioItem('download_standalone', 'download a LaTeX file'),
-                Form.RadioItem('show_pdf', 'view the pdf file'),
-                Form.RadioItem('download_pdf', 'download the pdf file'),
-                Form.RadioItem('show_png', 'view the png file'),
-                Form.RadioItem('download_png', 'download the png file')])]
+                RadioItem('show_tikz', 'show TikZ code only', True),
+                RadioItem('show_standalone', 'show contents of a LaTeX file'),
+                RadioItem('download_standalone', 'download a LaTeX file'),
+                RadioItem('show_pdf', 'view the pdf file'),
+                RadioItem('download_pdf', 'download the pdf file'),
+                RadioItem('show_png', 'view the png file'),
+                RadioItem('download_png', 'download the png file')])]
     return form_objects
 
 def get_response(fs):

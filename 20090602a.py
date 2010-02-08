@@ -8,7 +8,8 @@ a sampled tree,
 a nucleotide alignment sampled on the tree using the Jukes-Cantor model,
 a matrix of Jukes-Cantor corrected distances,
 and the trees that have been estimated from this distance matrix.
-Each distance matrix is checked for the Atteson condition with respect to the true tree.
+Each distance matrix is checked for the Atteson condition
+with respect to the true tree.
 For each method,
 the Robinson-Foulds distance
 between the estimated tree and the true tree is calculated.
@@ -20,7 +21,7 @@ import math
 import random
 import optparse
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -40,18 +41,31 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('length', 'sequence length for distance matrix sampling', 1000, low=10, high=20000),
-            Form.Integer('ntaxa', 'number of taxa for distance matrix sampling', 20, low=4, high=20),
+            Form.Integer('length',
+                'sequence length for distance matrix sampling',
+                1000, low=10, high=20000),
+            Form.Integer('ntaxa',
+                'number of taxa for distance matrix sampling',
+                20, low=4, high=20),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))]),
+                Form.RadioItem('pachter_length',
+                    str(BranchLengthSampler.Pachter()), True),
+                Form.RadioItem('exponential_length',
+                    str(BranchLengthSampler.Exponential())),
+                Form.RadioItem('uniform_length_a',
+                    str(BranchLengthSampler.UniformA())),
+                Form.RadioItem('uniform_length_b',
+                    str(BranchLengthSampler.UniformB()))]),
             Form.CheckGroup('method_options', 'compare these methods', [
-                Form.CheckItem('nj', 'neighbor joining', True),
-                Form.CheckItem('modified_nj', 'neighbor joining with laplacian updates', True),
-                Form.CheckItem('all_spectral', 'spectral splitting with laplacian updates and neighbor joining fallback', True),
-                Form.CheckItem('one_spectral', 'an initial spectral split followed by neighbor joining', True)]),
+                Form.CheckItem('nj',
+                    'neighbor joining', True),
+                Form.CheckItem('modified_nj',
+                    'neighbor joining with laplacian updates', True),
+                Form.CheckItem('all_spectral',
+                    'spectral with laplacian updates and nj fallback', True),
+                Form.CheckItem('one_spectral',
+                    'an initial spectral split followed by neighbor joining',
+                    True)]),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as an R table')])]
@@ -60,7 +74,7 @@ def get_form():
 def sample_distance_matrix(xtree_root, sequence_length):
     sequences = JC69.sample_xtree_sequences(xtree_root, sequence_length)
     nsequences = len(sequences)
-    pairwise_mismatch_count = numpy.zeros((nsequences, nsequences))
+    pairwise_mismatch_count = np.zeros((nsequences, nsequences))
     for i, sa in enumerate(sequences):
         for j, sb in enumerate(sequences):
             if i < j:
@@ -70,7 +84,7 @@ def sample_distance_matrix(xtree_root, sequence_length):
                 if nmismatches * 4 >= sequence_length * 3:
                     raise InfiniteDistanceError()
                 pairwise_mismatch_count[i][j] = nmismatches
-    D = numpy.zeros_like(pairwise_mismatch_count)
+    D = np.zeros_like(pairwise_mismatch_count)
     for i in range(nsequences):
         for j in range(nsequences):
             if i < j:

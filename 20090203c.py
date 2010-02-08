@@ -1,14 +1,16 @@
 """Determine whether a Euclidean distance matrix is spherical.
 
-A Euclidean distance matrix is spherical if and only if the sum of the elements of its pseudoinverse is positive.
+A Euclidean distance matrix is spherical if and only if
+the sum of the elements of its pseudoinverse is positive.
 This property is shown in
 "Properties of Euclidean and Non-Euclidean distance matrices".
-The example distance matrix is from the four taxon tree with unit branch lengths and with internal nodes.
+The example distance matrix is from
+the four taxon tree with unit branch lengths and with internal nodes.
 """
 
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -19,7 +21,7 @@ def get_form():
     """
     @return: the body of a form
     """
-    D = numpy.array([
+    D = np.array([
         [0, 2, 3, 3, 1, 2],
         [2, 0, 3, 3, 1, 2],
         [3, 3, 0, 2, 2, 1],
@@ -27,7 +29,10 @@ def get_form():
         [1, 1, 2, 2, 0, 1],
         [2, 2, 1, 1, 1, 0]])
     # define the form objects
-    return [Form.Matrix('matrix', 'Euclidean distance matrix', D, MatrixUtil.assert_predistance)]
+    form_objects = [
+            Form.Matrix('matrix', 'Euclidean distance matrix',
+                D, MatrixUtil.assert_predistance)]
+    return form_objects
 
 def get_response(fs):
     """
@@ -40,7 +45,7 @@ def get_response(fs):
     out = StringIO()
     # look at the eigenvalues of the associated doubly centered covariance matrix
     HSH = Euclid.edm_to_dccov(D)
-    w, V_T = numpy.linalg.eigh(HSH)
+    w, V_T = np.linalg.eigh(HSH)
     V = V_T.T
     print >> out, 'eigenvalues of the associated doubly centered covariance matrix:'
     for x in reversed(sorted(w)):
@@ -52,8 +57,8 @@ def get_response(fs):
         print >> out, x
     print >> out
     # look at another criterion
-    D_pinv = numpy.linalg.pinv(D)
-    criterion = numpy.sum(D_pinv)
+    D_pinv = np.linalg.pinv(D)
+    criterion = np.sum(D_pinv)
     if criterion > 0:
         print >> out, 'sum of elements of the pseudoinverse of the distance matrix is positive'
     else:
