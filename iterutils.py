@@ -1,5 +1,4 @@
-"""
-Iteration utilities.
+"""Iteration utilities.
 The name of this module is semi-standard.
 See the comment by Alex Martelli.
 http://stackoverflow.com/questions/1639772
@@ -13,6 +12,7 @@ Some are miscellaneous custom functions.
 import itertools
 import unittest
 
+class FillerError(Exception): pass
 
 class Filler:
     """
@@ -49,22 +49,22 @@ class Filler:
             else:
                 msg_a = 'position %d ' % position
                 msg_b = 'is outside [%d, %d]' % (self.low, self.high)
-                raise ValueError(msg_a + msg_b)
+                raise FillerError(msg_a + msg_b)
         # check monotonicity
         if self.prev is not None:
             if position <= self.prev:
-                raise ValueError('positions should monotonically increase')
+                raise FillerError('positions should monotonically increase')
         # fill between the previous position and the current position
         for i in xrange(self.get_ngap(position)):
-            yield default_value
+            yield self.default_value
         # yield the value at the current position
         yield value
         self.prev = position
 
     def finish(self):
         nremaining = self.get_ngap(self.high) + 1
-        for i in xrange(self.get_nremaining()):
-            yield default_value
+        for i in xrange(nremaining):
+            yield self.default_value
         self.prev = self.high
 
     def get_ngap(self, position):
@@ -262,6 +262,37 @@ class TestIterutils(unittest.TestCase):
 
     def test_dot_product(self):
         self.assertEquals(dot_product((1, 2, 3), (4, 5, 6)), 1*4 + 2*5 + 3*6)
+
+
+class TestFiller(unittest.TestCase):
+
+    def filler_helper(self, filler, positions):
+        arr = []
+        for p in positions:
+            arr.extend(list(filler.fill(p, 1)))
+        arr.extend(list(filler.finish()))
+        return arr
+
+    def test_filler_truncated(self):
+        f = Filler(low=8, high=20, default_value=9, truncate=True)
+        positions = [1, 12, 16, 18, 50]
+        expected = [9, 9, 9, 9, 1, 9, 9, 9, 1, 9, 1, 9, 9]
+        observed = self.filler_helper(f, positions)
+        self.assertEqual(expected, observed)
+
+    def test_filler_not_truncated_error(self):
+        f = Filler(low=8, high=20, default_value=9, truncate=False)
+        positions = [12, 16, 18, 50]
+        self.assertRaises(FillerError, self.filler_helper, f, positions)
+        positions = [1, 12, 16, 18]
+        self.assertRaises(FillerError, self.filler_helper, f, positions)
+
+    def test_filler_not_truncated_ok(self):
+        f = Filler(low=8, high=20, default_value=9, truncate=False)
+        positions = [12, 16, 18]
+        expected = [9, 9, 9, 9, 1, 9, 9, 9, 1, 9, 1, 9, 9]
+        observed = self.filler_helper(f, positions)
+        self.assertEqual(expected, observed)
 
 
 if __name__ == '__main__':
