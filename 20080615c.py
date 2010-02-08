@@ -53,7 +53,7 @@ def get_response(fs):
     # read the ordered labels
     states = []
     if fs.inlabels:
-        states = list(iterutils.stripped_lines(StringIO(fs.inlabels)))
+        states = Util.get_stripped_lines(StringIO(fs.inlabels))
     if len(states) > 1:
         if set(states) != set(alphabetically_ordered_states):
             msg_a = 'if ordered labels are provided, '

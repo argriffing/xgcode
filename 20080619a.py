@@ -142,7 +142,7 @@ def get_response(fs):
     # read the ordered labels
     ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     # read the set of selected labels
-    selected_labels = Util.get_stripped_lines(StringIO(fs.selection))
+    selected_labels = set(Util.get_stripped_lines(StringIO(fs.selection)))
     # start to prepare the reponse
     out = StringIO()
     # get the set of selected indices and its complement

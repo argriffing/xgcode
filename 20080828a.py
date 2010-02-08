@@ -67,7 +67,7 @@ class DistanceMatrixSampler:
         msg_a = 'the distance matrix sampling procedure takes too long '
         msg_b = 'for these settings'
         error_message = msg_a + msg_b
-        if parenthetical_remark:
+        if msg_c:
             error_message += ' (%s)' % msg_c
         return error_message
 

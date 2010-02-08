@@ -12,14 +12,16 @@ import SnippetUtil
 import Codon
 import Form
 import iterutils
+from Codon import g_sorted_nt_letters as nt_letters
+from Codon import g_sorted_aa_letters as aa_letters
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default nucleotide and amino acid strings
-    default_nt_string = '\n'.join(nt + ' : 1' for nt in sorted(Codon.g_nts))
-    default_aa_string = '\n'.join(aa + ' : 1' for aa in sorted(Codon.g_aas))
+    default_nt_string = '\n'.join(nt + ' : 1' for nt in nt_letters)
+    default_aa_string = '\n'.join(aa + ' : 1' for aa in aa_letters)
     # define the form objects
     form_objects = [
             Form.MultiLine('nucleotides', 'nucleotide distribution weights',
