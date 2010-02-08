@@ -9,7 +9,6 @@ import cairo
 from SnippetUtil import HandlingError
 import Codon
 import Form
-import Util
 import CairoUtil
 
 g_default_data = """

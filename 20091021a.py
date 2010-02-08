@@ -31,7 +31,6 @@ import Euclid
 g_tree_string = '((a:10, b:1):1, c:1, d:10);'
 
 
-
 class Objective:
 
     def __init__(self, a, b, c, d):

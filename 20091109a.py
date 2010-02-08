@@ -6,18 +6,20 @@ from StringIO import StringIO
 import numpy as np
 
 from SnippetUtil import HandlingError
-import Form
-import Util
 import MatrixUtil
 import Euclid
+import iterutils
+import Form
 
 def get_form():
     """
     @return: a list of form objects
     """
     form_objects = [
-            Form.Float('edge_affinity', 'edge affinities', 1.0, low_exclusive=0),
-            Form.Integer('nvertices', 'number of vertices', 5, low=0, high=100),
+            Form.Float('edge_affinity', 'edge affinities',
+                1.0, low_exclusive=0),
+            Form.Integer('nvertices', 'number of vertices',
+                5, low=0, high=100),
             Form.RadioGroup('format', 'output options', [
                 Form.RadioItem('adjacency', 'adjacency matrix'),
                 Form.RadioItem('laplacian', 'laplacian matrix', True)])]
@@ -30,7 +32,7 @@ def create_adjacency_matrix(affinity, nvertices):
     @return: a numpy matrix
     """
     A = np.zeros((nvertices, nvertices))
-    for i, j in Util.pairwise(range(nvertices)):
+    for i, j in iterutils.pairwise(range(nvertices)):
         A[i,j] = affinity
         A[j,i] = affinity
     return A

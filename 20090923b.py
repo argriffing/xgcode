@@ -1,4 +1,4 @@
-"""Look for a counterexample to the eigenvector sign sufficiency conjecture.
+"""Seek a counterexample to the eigenvector sign sufficiency conjecture.
 
 Are the signs of eigenvector loadings of -(1/2)HDH sufficient
 to get the topology of a bifurcating tree?

@@ -45,10 +45,18 @@ def get_form():
     """
     # define the objects
     form_objects = [
-            Form.Integer('good_coverage', 'expected coverage of homozygous and heterozygous positions', 20, low=1),
-            Form.Integer('bad_coverage', 'expected coverage of overcovered positions', 100, low=1),
-            Form.Float('randomization_rate', 'read randomization rate', 0.1, low_exclusive=0, high_inclusive=1),
-            Form.MultiLine('csv_data', 'comma separated values', '\n'.join(g_example_lines))]
+            Form.Integer('good_coverage',
+                'expected coverage of homozygous and heterozygous positions',
+                20, low=1),
+            Form.Integer('bad_coverage',
+                'expected coverage of overcovered positions',
+                100, low=1),
+            Form.Float('randomization_rate',
+                'read randomization rate',
+                0.1, low_exclusive=0, high_inclusive=1),
+            Form.MultiLine('csv_data',
+                'comma separated values',
+                '\n'.join(g_example_lines))]
     return form_objects
 
 def get_response(fs):

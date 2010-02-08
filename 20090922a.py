@@ -1,11 +1,13 @@
-"""Look for a counterexample to the generalized Fiedler eigenvector conjecture.
+"""Look for a counterexample to a generalized Fiedler eigenvector conjecture.
 
-In a 2005 paper Fiedler looks at the hyperplane orthogonal to the nth principal
-axis of the Steiner circumscribed hyperellipse bounding the simplex of a tree embedded in Euclidean space.
+In a 2005 paper Fiedler looks at the hyperplane
+orthogonal to the nth principal axis of the Steiner circumscribed
+hyperellipse bounding the simplex of a tree embedded in Euclidean space.
 He notes that this hyperplane intersects the embedded tree at exactly n points.
 In this snippet I look at whether this intersection property is true of the
-hyperplanes of the Steiner circumscribed hyperellipse that bounds the simplex of
-only the leaves of the tree embedded in Euclidean space.
+hyperplanes of the Steiner circumscribed hyperellipse
+that bounds the simplex of only the leaves of the tree
+embedded in Euclidean space.
 """
 
 from StringIO import StringIO

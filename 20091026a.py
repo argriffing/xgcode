@@ -1,10 +1,15 @@
-"""Examine topological properties of the Brownian motion approximation of allele frequencies.
+"""Examine the Brownian motion approximation of allele frequencies.
 
+Examine topological properties of the Brownian motion approximation
+of allele frequencies.
 In "Phylogenetic Analysis: Models and Estimation Procedures",
-Cavalli-Sforza and Edwards use transformation of allele frequencies due to Fisher.
-In their paper they look at a projection from a Euclidean space that includes a time
-dimension onto the space of the current time: the "now" plane"
-I want to consider a more general projection whose lost dimensions are not time,
+Cavalli-Sforza and Edwards use transformation of allele frequencies
+due to Fisher.
+In their paper they look at a projection from a Euclidean space
+that includes a time dimension
+onto the space of the current time: the "now" plane"
+I want to consider a more general projection
+whose lost dimensions are not time,
 but a separate dimension for each ancestral node.
 To make the comparison more direct,
 I will use allele frequencies as the data that generate this space.
@@ -16,7 +21,6 @@ import math
 import random
 
 import numpy as np
-import scipy
 
 from SnippetUtil import HandlingError
 import SnippetUtil

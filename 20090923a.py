@@ -1,4 +1,7 @@
-"""Look for a counterexample to the principal orthant edge connectivity conjecture.
+"""Seek a counterexample to a principal orthant edge connectivity conjecture.
+
+Look for a counterexample to the principal orthant
+edge connectivity conjecture.
 """
 
 from StringIO import StringIO

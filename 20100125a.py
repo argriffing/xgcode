@@ -21,7 +21,6 @@ import numpy as np
 from SnippetUtil import HandlingError
 import Codon
 import Form
-import Util
 import CairoUtil
 import Euclid
 import BuildTreeTopology

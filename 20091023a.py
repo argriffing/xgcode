@@ -1,5 +1,8 @@
-"""Analyze the "Phylogenetic Analysis Models and Estimation Procedures" tetrahedron.
+"""Analyze a tetrahedron in a paper by Cavalli-Sforza and A.W.F. Edwards.
 
+Analyze the tetrahedron from the paper 
+"Phylogenetic Analysis Models and Estimation Procedures."
+tetrahedron.
 In the paper,
 Cavalli-Sforza and A.W.F Edwards give branch lengths for three trees
 that have been derived from a tetrahedron whose four vertices are
@@ -35,7 +38,9 @@ def get_form():
     """
     # define the list of form objects
     form_objects = [
-            Form.Matrix('tetrahedron', 'tetrahedron with an underlying ((1,2),(3,4)) topology', Steiner.g_X)]
+            Form.Matrix('tetrahedron',
+                'tetrahedron with an underlying ((1,2),(3,4)) topology',
+                Steiner.g_X)]
     return form_objects
 
 def do_steiner_analysis(X):

@@ -1,8 +1,10 @@
 """Look at the effect of added leaflets on the MDS embedding of a tree.
 
-By a leaflet I mean a new leaf that is a negligible distance from an existing vertex.
+By a leaflet I mean a new leaf that is a negligible distance
+from an existing vertex.
 Consider the following three situations:
-1) No leaflet is added, in which case the embedding of the tree is not affected.
+1) No leaflet is added, in which case
+the embedding of the tree is not affected.
 2) One leaflet is added to each leaf in the original tree.
 3) A large number of leaflets are added to each leaf in the original tree.
 I hope that case (3) is like computing the MDS using only leaf distances,

@@ -1,5 +1,9 @@
-"""Look at each step of the projection onto the axes of the Steiner ellipsoid of the leaves.
+"""Examine iterative projection onto axes of the leaf Steiner ellipsoid.
 
+Examine steps of a projection onto axes
+of the Steiner ellipsoid of the leaves.
+Look at each step of the projection onto the
+principal axes of the Steiner ellipsoid of the leaves.
 Because this really is a projection it can obviously be done in one step,
 but I haven't worked this out yet.
 """
@@ -27,7 +31,8 @@ def get_form():
     """
     # define the list of form objects
     form_objects = [
-            Form.Integer('ntaxa', 'number of taxa', 5, low=3, high=20)]
+            Form.Integer('ntaxa', 'number of taxa',
+                5, low=3, high=20)]
     return form_objects
 
 def process(ntaxa):

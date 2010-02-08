@@ -46,7 +46,8 @@ def get_form():
     """
     sample_lines = [','.join(row) for row in g_sample_input_rows]
     form_objects = [
-            Form.MultiLine('multiline_input', 'input file lines', '\n'.join(sample_lines))]
+            Form.MultiLine('multiline_input',
+                'input file lines', '\n'.join(sample_lines))]
     return form_objects
 
 def get_response(fs):

@@ -1,4 +1,7 @@
-"""Project the internal tree vertices onto the 2d plane defined by the MDS of the leaves.
+"""Project the internal tree vertices onto the 2d MDS plane of the leaves.
+
+Project the internal tree vertices onto the 2d plane
+defined by the MDS of the leaves.
 """
 
 from StringIO import StringIO

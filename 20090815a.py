@@ -53,14 +53,26 @@ def get_form():
     # define the default transition matrix
     # define the objects
     form_objects = [
-            Form.Integer('good_coverage', 'expected coverage of homozygous and heterozygous positions', 10, low=1),
-            Form.Integer('bad_coverage', 'expected coverage of overcovered positions', 30, low=1),
-            Form.Float('randomization_rate', 'read randomization rate', 0.1, low_inclusive=0, high_inclusive=1),
-            Form.Integer('npositions', 'number of positions to sample', 100, low=1, high=10000),
-            Form.Matrix('transition_matrix', 'transition matrix', T, MatrixUtil.assert_transition_matrix),
+            Form.Integer('good_coverage',
+                'expected coverage of homozygous and heterozygous positions',
+                10, low=1),
+            Form.Integer('bad_coverage',
+                'expected coverage of overcovered positions',
+                30, low=1),
+            Form.Float('randomization_rate',
+                'read randomization rate',
+                0.1, low_inclusive=0, high_inclusive=1),
+            Form.Integer('npositions',
+                'number of positions to sample',
+                100, low=1, high=10000),
+            Form.Matrix('transition_matrix',
+                'transition matrix',
+                T, MatrixUtil.assert_transition_matrix),
             Form.CheckGroup('options', 'output options', [
-                Form.CheckItem('show_hidden_states', 'show hidden states', True)]),
-            Form.Integer('seed', 'random number seed (or a negative number for no specified seed)', -1)]
+                Form.CheckItem('show_hidden_states',
+                    'show hidden states', True)]),
+            Form.Integer('seed',
+                'prng seed (or a negative for no specified seed)', -1)]
     return form_objects
 
 def get_response(fs):

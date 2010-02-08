@@ -1,4 +1,7 @@
-"""Look for a specific counterexample to the eigenvector sign sufficiency conjecture.
+"""Seek a counterexample to an eigenvector sign sufficiency conjecture.
+
+Look for a specific counterexample
+to the eigenvector sign sufficiency conjecture.
 """
 
 #TODO allow the user to define the string and the target sign pattern

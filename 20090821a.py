@@ -2,12 +2,15 @@
 
 This should use HMMs with various levels of 'stickiness' or 'autocorrelation'.
 Technically, the transition matrix at each state has probability (1-2x/3) of
-no transition in one step, and a probability of (x/3) of each of the two possible transitions,
-where x=(1/10)**alpha where alpha is the 'stickiness' which is a nonnegative integer.
+no transition in one step, and a probability of (x/3)
+of each of the two possible transitions,
+where x=(1/10)**alpha where alpha is the 'stickiness'
+which is a nonnegative integer.
 A stickiness of zero means that the position specific posterior distributions
 do not reflect any prior belief of sequential dependence among hidden states.
 Use a HMM with 3 hidden states.
-A subset of genomic positions are annotated with a posterior hidden state distribution
+A subset of genomic positions are annotated
+with a posterior hidden state distribution
 given observations at each position in the subset.
 The 3x3 transition matrix is known,
 and the emission distributions for each hidden state are known
@@ -48,7 +51,7 @@ import Progress
 import TransitionMatrix
 import ReadCoverage
 import FastHMM
-import Util
+import iterutils
 
 
 class TimeoutError(Exception): pass
@@ -69,11 +72,21 @@ def get_form():
     """
     sample_lines = [',\t'.join(row) for row in g_sample_rows]
     form_objects = [
-            Form.Integer('good_coverage', 'expected read coverage of informative positions', 20, low=1, high=1000),
-            Form.Integer('bad_coverage', 'expected read coverage of overcovered positions', 100, low=1, high=1000),
-            Form.Integer('nstickinesses', 'use this many different levels of stickiness', 5, low=1, high=5),
-            Form.Float('randomization_rate', 'randomization probability per base call', 0.1, low_exclusive=0),
-            Form.MultiLine('input_text', 'calls per nucleotide per base call per chromosome per strain', '\n'.join(sample_lines)),
+            Form.Integer('good_coverage',
+                'expected read coverage of informative positions',
+                20, low=1, high=1000),
+            Form.Integer('bad_coverage',
+                'expected read coverage of overcovered positions',
+                100, low=1, high=1000),
+            Form.Integer('nstickinesses',
+                'use this many different levels of stickiness',
+                5, low=1, high=5),
+            Form.Float('randomization_rate',
+                'randomization probability per base call',
+                0.1, low_exclusive=0),
+            Form.MultiLine('input_text',
+                'calls per nt per base call per chromosome per strain',
+                '\n'.join(sample_lines)),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as a csv file')])]
@@ -153,7 +166,7 @@ class Chromosome:
         hmm = FastHMM.Model(transition_object, hidden_models, cache_size)
         # define the observations and distances
         observations = [tuple(sorted(coverage[:-1])) for coverage in self.nt_coverages]
-        distances = [b - a for a, b in Util.pairwise(self.offsets)]
+        distances = [b - a for a, b in iterutils.pairwise(self.offsets)]
         # do the annotation
         dp_info = hmm.get_dp_info(observations, distances)
         distribution_list = hmm.scaled_posterior_durbin(dp_info)

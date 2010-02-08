@@ -1,8 +1,10 @@
-"""Look for a counterexample to the principal orthant vertex connectivity conjecture.
+"""Look for a counterexample to a principal orthant connectivity conjecture.
+
+Look for a counterexample to the principal orthant
+vertex connectivity conjecture.
 """
 
 from StringIO import StringIO
-import math
 import random
 import time
 

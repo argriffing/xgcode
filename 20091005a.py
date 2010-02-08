@@ -1,5 +1,7 @@
-"""Look at distance properties of a Laplacian-like matrix for non-uniform node weights.
+"""Look at distance properties of a node-weighted Laplacian-like matrix.
 
+Look at distance properties of a Laplacian-like matrix
+for non-uniform node weights.
 This Laplacian-like matrix is the cross-product matrix S from the Abdi paper.
 """
 

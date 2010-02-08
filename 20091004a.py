@@ -1,5 +1,7 @@
-"""Look at the pseudoinverse of a Laplacian-like matrix for non-uniform node weights.
+"""Look at the pseudoinverse of a node-weighted Laplacian-like matrix.
 
+Look at the pseudoinverse of a Laplacian-like matrix
+for non-uniform node weights.
 This Laplacian-like matrix is the cross-product matrix S from the Abdi paper.
 """
 
@@ -25,7 +27,8 @@ def get_form():
     """
     # define the list of form objects
     form_objects = [
-            Form.Integer('ntaxa', 'number of taxa', 5, low=3, high=20)]
+            Form.Integer('ntaxa', 'number of taxa',
+                5, low=3, high=20)]
     return form_objects
 
 def sample_branch_lengths(tree):

@@ -1,7 +1,8 @@
 """Create position-specific annotations of resequenced data.
 
 Use a HMM with 3 hidden states.
-A subset of genomic positions are annotated with a posterior hidden state distribution
+A subset of genomic positions are annotated
+with a posterior hidden state distribution
 given observations at each position in the subset.
 The 3x3 transition matrix is known,
 and the emission distributions for each hidden state are known
@@ -14,12 +15,18 @@ A: an integer representing the number of A reads aligned to the this position
 C: an integer representing the number of C reads aligned to the this position
 G: an integer representing the number of G reads aligned to the this position
 T: an integer representing the number of T reads aligned to the this position
-hom_ll: the floating point non-Markov log likelihood that the position is homozygous
-het_ll: the floating point non-Markov log likelihood that the position is heterozygous
-bad_ll: the floating point non-Markov log likelihood that the position is bad
-hom_post: the floating point posterior probability that the position is homozygous
-het_post: the floating point posterior probability that the position is heterozygous
-bad_post: the floating point posterior probability that the position is bad
+hom_ll: the floating point non-Markov log likelihood
+that the position is homozygous
+het_ll: the floating point non-Markov log likelihood
+that the position is heterozygous
+bad_ll: the floating point non-Markov log likelihood
+that the position is bad
+hom_post: the floating point posterior probability
+that the position is homozygous
+het_post: the floating point posterior probability
+that the position is heterozygous
+bad_post: the floating point posterior probability
+that the position is bad
 """
 
 from StringIO import StringIO
@@ -34,7 +41,7 @@ import Form
 import Progress
 import ReadCoverage
 import MissingHMM
-import Util
+import iterutils
 
 
 class TimeoutError(Exception): pass
@@ -122,10 +129,18 @@ def get_form():
     """
     sample_lines = [',\t'.join(str(x) for x in row) for row in g_sample_rows]
     form_objects = [
-            Form.Integer('good_coverage', 'expected read coverage of informative positions', 20, low=1, high=1000),
-            Form.Integer('bad_coverage', 'expected read coverage of overcovered positions', 100, low=1, high=1000),
-            Form.Float('randomization_rate', 'randomization probability per base call', 0.1, low_exclusive=0),
-            Form.MultiLine('input_text', 'calls per nucleotide per base call per chromosome per strain', '\n'.join(sample_lines)),
+            Form.Integer('good_coverage',
+                'expected read coverage of informative positions',
+                20, low=1, high=1000),
+            Form.Integer('bad_coverage',
+                'expected read coverage of overcovered positions',
+                100, low=1, high=1000),
+            Form.Float('randomization_rate',
+                'randomization probability per base call',
+                0.1, low_exclusive=0),
+            Form.MultiLine('input_text',
+                'calls per nt per base call per chromosome per strain',
+                '\n'.join(sample_lines)),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as a csv file')])]
@@ -212,7 +227,7 @@ class Chromosome:
         hmm = MissingHMM.MissingHMM(T, hidden_models)
         # define the observations and distances
         observations = self.nt_coverages
-        distances = [b - a for a, b in Util.pairwise(self.offsets)]
+        distances = [b - a for a, b in iterutils.pairwise(self.offsets)]
         # do the annotation
         self.posterior_distributions = hmm.scaled_posterior_durbin(observations, distances)
 
