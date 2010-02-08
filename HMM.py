@@ -16,6 +16,7 @@ import scipy.maxentropy
 
 import Util
 import TransitionMatrix
+import iterutils
 
 
 def get_example_rolls():
@@ -162,7 +163,7 @@ class TrainedModel:
         initial_hidden_state = hidden_seq[0]
         log_accum += math.log(self.initial_distribution[initial_hidden_state])
         # add the contribution of hidden state transitions
-        for i, j in Util.pairwise(hidden_seq):
+        for i, j in iterutils.pairwise(hidden_seq):
             log_accum += math.log(self.transition_matrix[i, j])
         # add the contribution of emissions
         for i, observation in zip(hidden_seq, observed_seq):
@@ -229,7 +230,7 @@ class TrainedModel:
         for hidden_sequence in itertools.product(range(nhidden), repeat=len(observations)):
             accum = 0
             accum += math.log(self.initial_distribution[hidden_sequence[0]])
-            for i, j in Util.pairwise(hidden_sequence):
+            for i, j in iterutils.pairwise(hidden_sequence):
                 accum += math.log(self.transition_matrix[i, j])
             for index, log_likelihoods in zip(hidden_sequence, position_log_likelihoods):
                 accum += log_likelihoods[index]
@@ -691,7 +692,7 @@ class TestHMM(unittest.TestCase):
         # using the scaled forward algorithm.
         f, s = hmm.scaled_forward_durbin(observations)
         # assert that the product of the scaling factors is the total probability
-        self.assertAlmostEqual(Util.product(s), total_probability)
+        self.assertAlmostEqual(iterutils.product(s), total_probability)
 
     def test_scaled_posterior_durbin(self):
         hmm = DishonestCasino()

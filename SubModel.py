@@ -1,11 +1,9 @@
 """Do mixture models.
 """
 
-# standard modules
 from StringIO import StringIO
 import unittest
 
-# nonstandard modules
 import Codon
 import MatrixUtil
 import RateMatrix

@@ -7,7 +7,6 @@ from StringIO import StringIO
 import Fasta
 import Newick
 import Monospace
-import Util
 
 # This example is from the RSmatch software documentation.
 stockholm_sample_string = """

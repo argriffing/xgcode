@@ -14,6 +14,7 @@ import numpy as np
 import Util
 import TransitionMatrix
 import HMM
+import iterutils
 
 
 def get_expected_transitions_brute(prandom, nstates, nsteps):
@@ -53,7 +54,7 @@ def get_expected_transitions_brute(prandom, nstates, nsteps):
         # and the number of transitions.
         ntransitions = 0
         p = 1.0 / nstates
-        for a, b in Util.pairwise(sequence):
+        for a, b in iterutils.pairwise(sequence):
             if a == b:
                 p *= p_notrans
             else:
@@ -229,10 +230,10 @@ class Chain:
             sequence = [initial_state] + list(missing_sequence) + [final_state]
             # get the probability of observing this continuation of the initial state
             p = 1.0
-            for a, b in Util.pairwise(sequence):
+            for a, b in iterutils.pairwise(sequence):
                 p *= T(a, b)
             # add the weighted transitions of each type
-            for a, b in Util.pairwise(sequence):
+            for a, b in iterutils.pairwise(sequence):
                 A[a, b] += p
         # divide by the total probability so that the conditioning is correct
         A /= p_total
@@ -265,7 +266,7 @@ class Chain:
             sequence = [initial_state] + list(missing_sequence) + [final_state]
             # get the probability of observing this continuation of the initial state
             p = 1.0
-            for a, b in Util.pairwise(sequence):
+            for a, b in iterutils.pairwise(sequence):
                 p *= T(a, b)
             # add the weighted transitions of each type
             for state in missing_sequence:

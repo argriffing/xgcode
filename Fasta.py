@@ -3,6 +3,7 @@ import unittest
 
 import Codon
 import Util
+import iterutils
 
 
 # from wikipedia
@@ -233,7 +234,7 @@ class Alignment:
         sequence = header_to_sequence[header]
         arr = []
         arr.append('>' + header)
-        arr.append('\n'.join(Util.chopped(sequence, columns)))
+        arr.append('\n'.join(iterutils.chopped(sequence, columns)))
         return '\n'.join(arr)
 
     def to_fasta_string(self, columns=60):
@@ -270,7 +271,7 @@ class CodonAlignment:
         nucleotide_columns = zip(*nucleotide_sequences)
         if len(nucleotide_columns) % 3 != 0:
             raise CodonAlignmentError('the number of aligned nucleotide columns should be a multiple of three')
-        gappy_codon_sequences = [list(Util.chopped(seq, 3)) for seq in nucleotide_sequences]
+        gappy_codon_sequences = [list(iterutils.chopped(seq, 3)) for seq in nucleotide_sequences]
         if not gappy_codon_sequences:
             raise CodonAlignmentError('no codon sequences were found')
         observed_gappy_codons = set(Util.flattened_nonrecursive(gappy_codon_sequences))
@@ -303,7 +304,7 @@ class CodonAlignment:
         sequence = header_to_sequence[header]
         arr = []
         arr.append('>' + header)
-        arr.append('\n'.join(''.join(codons) for codons in Util.chopped(sequence, columns)))
+        arr.append('\n'.join(''.join(codons) for codons in iterutils.chopped(sequence, columns)))
         return '\n'.join(arr)
 
     def to_fasta_string(self, columns=60):

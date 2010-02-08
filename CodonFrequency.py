@@ -4,7 +4,7 @@ from StringIO import StringIO
 import re
 
 import Codon
-import Util
+import iterutils
 
 class CodonFrequency:
 
@@ -76,7 +76,7 @@ class CodonFrequencyA(CodonFrequency):
         for token_list in token_lists:
             for token in token_list:
                 assert type(token) == str
-            for codon, per_thousand, count in Util.chopped(token_list, 3):
+            for codon, per_thousand, count in iterutils.chopped(token_list, 3):
                 # validate the codon
                 assert len(codon) == 3
                 assert set(codon) <= set('ACGU')

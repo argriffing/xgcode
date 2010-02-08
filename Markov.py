@@ -9,7 +9,6 @@ import unittest
 import math
 
 import Codon
-import Util
 
 class TestRateMatrix(unittest.TestCase):
     def test_foo(self):

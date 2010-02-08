@@ -4,7 +4,6 @@ This module is for layouts that use monospaced fonts.
 
 import unittest
 
-import Util
 
 def _justify_helper(value, width, padding_value, left):
     """

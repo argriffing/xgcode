@@ -9,7 +9,6 @@ import unittest
 from StringIO import StringIO
 import math
 
-import Util
 import Codon
 import RateMatrix
 import SubModel

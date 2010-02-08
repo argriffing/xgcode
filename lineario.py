@@ -10,7 +10,7 @@ given some hidden Markov model parameters and a sequence of observations.
 import unittest
 from StringIO import StringIO
 
-import Util
+import iterutils
 
 CLOSED = 0
 READING = 1
@@ -138,7 +138,7 @@ class SequentialFileObjectIO(SequentialIO):
     def read_backward(self):
         if self.state != READING:
             raise SequenceIOError()
-        for line in Util.read_backwards(self.obj):
+        for line in iterutils.read_backwards(self.obj):
             line = line.strip()
             if line:
                 yield self.converter.line_to_value(line)

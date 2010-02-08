@@ -4,7 +4,6 @@ from StringIO import StringIO
 import math
 import random
 
-import Util
 import Newick
 import Fasta
 import RateMatrix

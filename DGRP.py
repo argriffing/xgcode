@@ -7,8 +7,6 @@ Positions in these chromosomes are 1-indexed.
 
 import unittest
 
-import Util
-
 # from flybase 5.13
 g_chromosome_length_pairs = (
         ('YHet', 347038),

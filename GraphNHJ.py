@@ -17,7 +17,6 @@ import NewickIO
 import FelTree
 import NeighborJoining
 import MatrixUtil
-import Util
 import Clustering
 
 

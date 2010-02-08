@@ -10,12 +10,12 @@ import unittest
 
 import numpy as np
 
-import Util
 import HMM
 import FastHMM
 import DiscreteEndpoint
 import TransitionMatrix
 import lineario
+import iterutils
 
 
 class Model:
@@ -142,7 +142,7 @@ class Model:
         A = np.zeros((nhidden, nhidden))
         # get the expected counts for each transition
         dp_source = itertools.izip(observations, forward, backward)
-        for old, new in Util.pairwise(dp_source):
+        for old, new in iterutils.pairwise(dp_source):
             o_old, f_old, b_old = old
             o_new, f_new, b_new = new
             likelihoods = self.get_likelihoods(o_new)

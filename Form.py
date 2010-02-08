@@ -3,7 +3,6 @@ from StringIO import StringIO
 
 import numpy
 
-import Util
 import MatrixUtil
 
 

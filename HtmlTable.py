@@ -6,7 +6,6 @@ import unittest
 import cgi
 from StringIO import StringIO
 
-import Util
 
 def get_labeled_table_string(column_labels, row_labels, row_major_matrix):
     """

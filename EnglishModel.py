@@ -9,7 +9,6 @@ from StringIO import StringIO
 import logging
 import sys
 
-import Util
 import Config
 
 # a directory readable and writable from the web
