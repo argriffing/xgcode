@@ -43,67 +43,6 @@ g_sample_lines = [
         'chrQ 95 T A/T 17 A 8 C 0 G 0 T 9 31 82 31']
 
 
-class Filler:
-    """
-    Generate values over a range of sequential positions.
-    At some of the positions a value is available,
-    but at other positions no value is available.
-    This implementation is memory efficient because it uses iterators.
-    """
-    def __init__(self, low, high, default_value, truncate=False):
-        """
-        @param low: the position for which the first value is yielded
-        @param high: the position for which the last value is yielded
-        @param default_value: the value used for filler
-        @param truncate: disregard positions which are too low or too high
-        """
-        self.low = low
-        self.high = high
-        self.default_value = default_value
-        self.truncate = truncate
-        self.prev = None
-
-    def fill(self, position, value):
-        """
-        Yield an informative value and maybe some uninformative ones.
-        This function should be called repeatedly,
-        and with strictly increasing positions.
-        @param position: an available position
-        @param value: the value at the position
-        """
-        # If the position is outside the range, 
-        # deal with it according to the truncation option.
-        if not (self.low <= position <= self.high):
-            if self.truncate:
-                return
-            else:
-                msg_a = 'position %d ' % position
-                msg_b = 'is outside [%d, %d]' % (self.low, self.high)
-                raise ValueError(msg_a + msg_b)
-        # check monotonicity
-        if self.prev is not None:
-            if position <= self.prev:
-                raise ValueError('positions should monotonically increase')
-        # fill between the previous position and the current position
-        for i in xrange(self.get_ngap(position)):
-            yield default_value
-        # yield the value at the current position
-        yield value
-        self.prev = position
-
-    def finish(self):
-        nremaining = self.get_ngap(self.high) + 1
-        for i in xrange(self.get_nremaining()):
-            yield default_value
-        self.prev = self.high
-
-    def get_ngap(self, position):
-        if self.prev is None:
-            return position - self.low
-        else:
-            return (position - self.prev) - 1
-
-
 
 class ChromInfo:
     """
@@ -125,24 +64,28 @@ class ChromInfo:
         self.low = min(self.low, position)
         self.high = max(self.high, position)
 
-def get_requested_low(chrom, first):
-    if first == 'drosophila':
+def get_requested_low(chrom, first, nofill):
+    if nofill:
+        return chrom.low
+    elif first == 'drosophila':
         return 1
-    elif first in ('min', 'ignore'):
+    elif first == 'min':
         return chrom.low
     else:
         return first
 
-def get_requested_high(chrom, last):
+def get_requested_high(chrom, last, nofill):
+    if nofill:
+        return chrom.high
     if last in ('drosophila', 'truncated_drosophila'):
         return dict(DGRP.g_chromosome_length_pairs)[chrom.name]
-    elif last in ('max', 'ignore'):
+    elif last == 'max':
         return chrom.high
     else:
         return last
 
-def get_requested_npositions(chrom, first, last):
-    if first == 'ignore':
+def get_requested_npositions(chrom, first, last, nofill):
+    if nofill:
         return chrom.nobserved
     else:
         requested_low = get_requested_low(chrom, first)
@@ -248,7 +191,7 @@ class Scanner:
         default_obs = (0, 0, 0, 0)
         default_line = '\t'.join(str(x) for x in default_obs)
         # define the observation iterator
-        if self.first == 'ignore':
+        if self.nofill:
             obs_it = self.gen_named_observations_unfilled(fin)
         else:
             obs_it = self.gen_named_observations_filled(fin)
@@ -465,6 +408,8 @@ if __name__ == '__main__':
             help='profile the script to look for slow spots'),
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
+    parser.add_argument('--nofill', action='store_true',
+            help='do not fill missing positions with default values')
     parser.add_argument('--outdir', default=os.getcwd(),
             help='write the chromosome files to this directory')
     parser.add_argument('--out_prefix', default='chromosome.',
@@ -472,10 +417,10 @@ if __name__ == '__main__':
     parser.add_argument('--out_suffix', default='.txt',
             help='suffix added to the chromosome name in the output filename')
     parser.add_argument('--first', default='drosophila', type=first_position,
-            metavar='{<int>, min, drosophila, ignore}',
+            metavar='{<int>, min, drosophila}',
             help='the first position in a chromosome'),
     parser.add_argument('--last', default='drosophila', type=last_position,
-            metavar='{<int>, max, drosophila, truncated_drosophila, ignore}',
+            metavar='{<int>, max, drosophila, truncated_drosophila}',
             help='the last position in a chromosome'),
     args = parser.parse_args()
     if args.profile:
