@@ -125,7 +125,7 @@ class Scanner:
         # yielding after each written line.
         for row in gen_typed_rows(fin):
             name, position = row[0], row[1]
-            value = convert_row(row)
+            value = DGRP.filtered_pileup_typed_to_obs(row)
             fg = self.name_to_generator[name]
             for obs in fg.fill(position, value):
                 yield name, obs
@@ -201,57 +201,11 @@ def get_response(fs):
             print >> out, line
     return [('Content-Type', 'text/plain')], out.getvalue().strip()
 
-def line_to_row(line):
-    """
-    Parse a line and do error checking.
-    @param line: a stripped line of input
-    @return: a tuple with proper types
-    """
-    values = line.split()
-    if len(values) != 16:
-        raise Exception('expected 16 values per line')
-    if values[2] not in ambignt.g_resolve_nt:
-        msg = 'the reference allele should be a nucleotide code: ' + values[2]
-        raise Exception(msg)
-    msg = 'literal A, C, G, T letters were not found where expected'
-    if values[5] != 'A' or values[7] != 'C':
-        raise Exception(msg)
-    if values[9] != 'G' or values[11] != 'T':
-        raise Exception(msg)
-    typed_values = [
-            values[0], int(values[1]), values[2],
-            values[3], int(values[4]),
-            values[5], int(values[6]), values[7], int(values[8]),
-            values[9], int(values[10]), values[11], int(values[12]),
-            int(values[13]), int(values[14]), int(values[15])]
-    return typed_values
-
 def gen_typed_rows(fin):
-    for line in iterutils.stripped_lines(fin):
-        yield line_to_row(line)
-
-def convert_row(row):
-    """
-    Return a flat tuple consisting of the reference and non-reference counts.
-    The reference allele count is the first element of the tuple.
-    The remaining allele counts are sorted in decreasing count order.
-    @param row: a sequence of values in an expected format
-    @return: a sufficient statistic
-    """
-    name, pos, ref = row[:3]
-    A, C, G, T = row[6], row[8], row[10], row[12]
-    acgt_counts = (A, C, G, T)
-    nt_to_count = dict(zip('ACGT', acgt_counts))
-    # hack the reference allele if it is ambiguous
-    if ref not in list('ACGT'):
-        nts = ambignt.g_resolve_nt[ref]
-        count_nt_pairs = [(nt_to_count[nt], nt) for nt in nts]
-        ref_count, ref = max(count_nt_pairs)
-    # get the count of the reference allele followed by decreasing counts
-    R = nt_to_count[ref]
-    non_ref_counts = [nt_to_count[c] for c in 'ACGT' if c != ref]
-    obs = [R] + list(reversed(sorted(non_ref_counts)))
-    return tuple(obs)
+    for line in fin:
+        srow = line.split()
+        if srow:
+            yield DGRP.filtered_pileup_row_to_typed(srow)
 
 def main(args):
     # read the arguments
