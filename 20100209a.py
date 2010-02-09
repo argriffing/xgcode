@@ -161,9 +161,14 @@ def drosophila_position(value):
             return v
 
 def convert_file(args, fpath_in, fpath_out):
-    with nested(open(fpath_in), open(fpath_out, 'w')) as (fin, fout):
-        for line in gen_output_lines(args, fin):
-            fout.write(line + '\n')
+    if args.dryrun:
+        with open(fpath_in) as fin:
+            for line in gen_output_lines(args, fin):
+                pass
+    else:
+        with nested(open(fpath_in), open(fpath_out, 'w')) as (fin, fout):
+            for line in gen_output_lines(args, fin):
+                fout.write(line + '\n')
 
 def main(args):
     # Define the output directory.
@@ -209,6 +214,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
+    parser.add_argument('--dryrun', action='store_true',
+            help='do not write any files')
     parser.add_argument('--reqambig', action='store_true',
             help='require ambig reference nt for out of bounds positions')
     parser.add_argument('--fill', action='store_true',
