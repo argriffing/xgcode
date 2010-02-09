@@ -215,6 +215,20 @@ class TestFiller(unittest.TestCase):
         self.assertEqual(len(expected), fc.npositions)
         self.assertEqual(expected, observed)
 
+    def test_skip(self):
+        err_low = True
+        err_high = False
+        should_fill = True
+        low = None
+        high = 12
+        positions = [5, 7, 9, 20]
+        expected = [1, 9, 1, 9, 1, 9, 9, 9]
+        fc = FillerCounter(low, high, should_fill, err_low, err_high)
+        fg = FillerGenerator(low, high, should_fill, err_low, err_high, 9)
+        observed = self.helper(fc, fg, positions)
+        self.assertEqual(len(expected), fc.npositions)
+        self.assertEqual(expected, observed)
+
 
 if __name__ == '__main__':
     unittest.main()
