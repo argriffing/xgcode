@@ -23,6 +23,7 @@ No header line is provided.
 
 from StringIO import StringIO
 from contextlib import nested
+from multiprocessing import Pool
 import os
 
 import argparse
@@ -95,6 +96,7 @@ def gen_output_lines(args, fin):
     # create some state maintained across input lines
     filler = None
     chrom_name = None
+    name_to_drosophila_length = dict(DGRP.g_chromosome_length_pairs)
     # define the default line to write
     default_obs = (0, 0, 0, 0)
     # process the input file line by line
@@ -160,6 +162,11 @@ def drosophila_position(value):
         else:
             return v
 
+def convert_file_glom(glom):
+    if len(glom) != 3:
+        raise ValueError('expected three args glommed together')
+    convert_file(*glom)
+
 def convert_file(args, fpath_in, fpath_out):
     if args.dryrun:
         with open(fpath_in) as fin:
@@ -204,14 +211,20 @@ def main(args):
                 msg_a = 'would overwrite the file: '
                 msg_b = fpath_out
                 raise Exception(msg_a + msg_b)
-    # Process each file.
-    # This is where multiprocessing might be handy.
-    for fpath_in, fpath_out in zip(fpaths_in, fpaths_out):
-        convert_file(args, fpath_in, fpath_out)
+    # Process each file using one or more processes.
+    if args.nprocesses < 2:
+        for fpath_in, fpath_out in zip(fpaths_in, fpaths_out):
+            convert_file(args, fpath_in, fpath_out)
+    else:
+        glommed = [(args, fi, fo) for fi, fo in zip(fpaths_in, fpaths_out)]
+        pool = Pool(processes=args.nprocesses)
+        pool.map(convert_file_glom, glommed)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--nprocesses', default=1, type=int,
+            help='use multiprocessing with a pool of this many processes')
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
     parser.add_argument('--dryrun', action='store_true',
