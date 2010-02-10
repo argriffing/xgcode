@@ -12,8 +12,7 @@ from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Form
-import JC69
-
+import DGRP
 
 def get_form():
     """
@@ -31,48 +30,10 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    p_ref_change = JC69.distance_to_probability(fs.ref_length)
-    p_child_change = JC69.distance_to_probability(fs.child_length)
-    # For now sum over all possibilities of non-reference nodes.
-    # This could be done more efficiently using Felsenstein pruning,
-    # but I am ignoring this for now.
-    p_RR = 0.0
-    p_RA = 0.0
-    p_AA = 0.0
-    p_AB = 0.0
-    ref = 0
-    for c12 in range(4):
-        if c12 == ref:
-            p12 = 1.0 - p_ref_change
-        else:
-            p12 = p_ref_change / 3.0
-        for c1 in range(4):
-            if c1 == c12:
-                p1 = p12 * (1.0 - p_child_change)
-            else:
-                p1 = p12 * (p_child_change / 3.0)
-            for c2 in range(4):
-                if c2 == c12:
-                    p2 = p1 * (1.0 - p_child_change)
-                else:
-                    p2 = p1 * (p_child_change / 3.0)
-                # Classify the joint distribution
-                # and add weight to the appropriate state.
-                if c1 == ref and c2 == ref:
-                    p_RR += p2
-                elif c1 == ref or c2 == ref:
-                    p_RA += p2
-                elif c1 == c2:
-                    p_AA += p2
-                else:
-                    p_AB += p2
-    total = p_RR + p_RA + p_AA + p_AB
-    if abs(total - 1) > 1e-7:
-        raise HandlingError('internal error -- probs do not sum to one')
-    # write the distribution
+    distn = DGRP.get_zygosity_distribution(fs.ref_length, fs.child_length)
     out = StringIO()
-    print >> out, 'p(RR):', p_RR
-    print >> out, 'p(RA):', p_RA
-    print >> out, 'p(AA):', p_AA
-    print >> out, 'p(AB):', p_AB
+    print >> out, 'p(RR):', distn[0]
+    print >> out, 'p(RA):', distn[1]
+    print >> out, 'p(AA):', distn[2]
+    print >> out, 'p(AB):', distn[3]
     return [('Content-Type', 'text/plain')], out.getvalue().strip()

@@ -16,6 +16,7 @@ after this filtering has been done the reads can no longer be reconstructed.
 
 import unittest
 
+import JC69
 import ambignt
 
 class DGRPError(Exception): pass
@@ -142,6 +143,54 @@ def filtered_pileup_typed_to_obs(row):
     non_ref_counts = [nt_to_count[c] for c in 'ACGT' if c != ref]
     obs = [R] + list(reversed(sorted(non_ref_counts)))
     return tuple(obs)
+
+def get_zygosity_distribution(ref_length, child_length):
+    """
+    This is based on the Jukes-Cantor model on a three taxon tree.
+    @param ref_length: length of the reference taxon branch
+    @param child_length: length of each child taxon branch
+    @return: the distribution (RR, RA, AA, AB)
+    """
+    p_ref_change = JC69.distance_to_probability(ref_length)
+    p_child_change = JC69.distance_to_probability(child_length)
+    # For now sum over all possibilities of non-reference nodes.
+    # This could be done more efficiently using Felsenstein pruning,
+    # but I am ignoring this for now.
+    p_RR = 0.0
+    p_RA = 0.0
+    p_AA = 0.0
+    p_AB = 0.0
+    ref = 0
+    for c12 in range(4):
+        if c12 == ref:
+            p12 = 1.0 - p_ref_change
+        else:
+            p12 = p_ref_change / 3.0
+        for c1 in range(4):
+            if c1 == c12:
+                p1 = p12 * (1.0 - p_child_change)
+            else:
+                p1 = p12 * (p_child_change / 3.0)
+            for c2 in range(4):
+                if c2 == c12:
+                    p2 = p1 * (1.0 - p_child_change)
+                else:
+                    p2 = p1 * (p_child_change / 3.0)
+                # Classify the joint distribution
+                # and add weight to the appropriate state.
+                if c1 == ref and c2 == ref:
+                    p_RR += p2
+                elif c1 == ref or c2 == ref:
+                    p_RA += p2
+                elif c1 == c2:
+                    p_AA += p2
+                else:
+                    p_AB += p2
+    v = (p_RR, p_RA, p_AA, p_AB)
+    total = sum(v)
+    if abs(total - 1) > 1e-7:
+        raise DGRPError('probabilities do not sum to one')
+    return v
 
 
 class TestDGRP(unittest.TestCase):
