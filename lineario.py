@@ -170,9 +170,9 @@ class SequentialDiskIO(SequentialFileObjectIO):
         self.state = WRITING
 
 class SequentialStringIO(SequentialFileObjectIO):
-    def __init__(self, converter):
+    def __init__(self, converter, file_contents=''):
         self.converter = converter
-        self.file_contents = ''
+        self.file_contents = file_contents
         self.state = CLOSED
     def close(self):
         if self.state == CLOSED:

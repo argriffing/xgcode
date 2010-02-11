@@ -18,6 +18,7 @@ import unittest
 
 import JC69
 import ambignt
+import ReadCoverageRef
 
 class DGRPError(Exception): pass
 
@@ -192,6 +193,37 @@ def get_zygosity_distribution(ref_length, child_length):
         raise DGRPError('probabilities do not sum to one')
     return v
 
+class Model:
+    def from_lines(self, lines):
+        # extract the parameters
+        param_names = ['x', 'y', 'z', 'low', 'med', 'high',
+                'seqerr', 'nomcoverage', 'kmulticoverages']
+        rows = [line.split() for line in lines]
+        if any(len(r)!=2 for r in rows):
+            raise Exception('parameter syntax error')
+        param_to_value = dict(rows)
+        if set(param_names) != set(param_to_value.keys()):
+            raise Exception('invalid or missing parameter')
+        # get the typed parameters
+        self.x = float(param_to_value['x'])
+        self.y = float(param_to_value['y'])
+        self.z = float(param_to_value['z'])
+        self.low = int(param_to_value['low'])
+        self.med = int(param_to_value['med'])
+        self.high = int(param_to_value['high'])
+        self.seqerr = float(param_to_value['seqerr'])
+        self.nomcoverage = int(param_to_value['nomcoverage'])
+        self.kmulticoverages = int(param_to_value['kmulticoverages'])
+        # validate the parameter ranges
+        if not (1 <= self.kmulticoverages <= 5):
+            raise Exception('kmulticoverages is out of range')
+        # create the three states
+        self.recent = ReadCoverageRef.HMMRecent(self.x, self.y, self.z,
+                self.seqerr, self.nomcoverage, self.kmulticoverages)
+        self.ancient = ReadCoverageRef.HMMAncient(self.x, self.y, self.z,
+                self.seqerr, self.nomcoverage, self.kmulticoverages)
+        self.garbage = ReadCoverageRef.HMMGarbage(
+                self.low, self.med, self.high)
 
 class TestDGRP(unittest.TestCase):
 

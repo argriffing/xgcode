@@ -381,13 +381,10 @@ class TestExternalHMM(unittest.TestCase):
         hidden_states = [fair_state, loaded_state]
         # define a sequence of observations
         observations = [1, 2, 6, 6, 1, 2, 3, 4, 5, 6]
+        obs_string = '\n'.join(str(x) for x in observations)
         # define the observation stream
         o_converter = lineario.IntConverter()
-        o_stream = lineario.SequentialStringIO(o_converter)
-        o_stream.open_write()
-        for x in observations:
-            o_stream.write(x)
-        o_stream.close()
+        o_stream = lineario.SequentialStringIO(o_converter, obs_string)
         # create the reference hidden markov model object
         hmm_old = HMM.TrainedModel(M, hidden_states)
         # create the testing hidden markov model object

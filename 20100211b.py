@@ -1,4 +1,4 @@
-"""Analyze a single nucleotide site of a pileup.
+"""Analyze multiple sequential nucleotide sites of a pileup.
 
 Parameters x, y, and z are branch lengths which define the two three-taxon
 trees whose Jukes-Cantor nucleotide distribution at the tips
@@ -15,12 +15,16 @@ nominal coverage multiples which might result from duplications.
 """
 
 from StringIO import StringIO
+import itertools
 
 from SnippetUtil import HandlingError
 import Form
 import DGRP
 import ReadCoverageRef
 import Util
+import ExternalHMM
+import lineario
+import TransitionMatrix
 
 g_default_params = [
         ('x', '0.1'),
@@ -33,21 +37,41 @@ g_default_params = [
         ('nomcoverage', '20'),
         ('kmulticoverages', '4')]
 
+g_default_data = [
+        (20, 0, 0, 0),
+        (22, 2, 2, 1),
+        (20, 1, 0, 5),
+        (6, 14, 0, 0),
+        (21, 0, 2, 1),
+        (28, 1, 2, 1),
+        (21, 2, 0, 1),
+        (20, 0, 0, 0),
+        (12, 12, 0, 1),
+        (20, 1, 0, 5),
+        (6, 14, 0, 0),
+        (9, 0, 11, 1),
+        (28, 1, 2, 1),
+        (21, 2, 0, 1),
+        (20, 0, 0, 0),
+        (12, 12, 5, 1),
+        (20, 30, 0, 5),
+        (6, 14, 0, 0),
+        (9, 0, 0, 1),
+        (4, 1, 2, 1),
+        (21, 2, 0, 1)]
+
 def get_form():
     """
     @return: the body of a form
     """
-    default_counts = [
-            ('A', '20'),
-            ('C', '20'),
-            ('G', '3'),
-            ('T', '1')]
+    data_lines = ['\t'.join(str(x) for x in row) for row in g_default_data]
     form_objects = [
+            Form.Integer('region_size', 'expected region size',
+                10, low=1, high=1000000),
             Form.MultiLine('param_field', 'parameters',
                 '\n'.join('\t'.join(p) for p in g_default_params)),
-            Form.MultiLine('count_field', 'nucleotide read counts',
-                '\n'.join('\t'.join(p) for p in default_counts)),
-            Form.SingleLine('ref', 'reference nucleotide', 'A')]
+            Form.MultiLine('data_field', 'data',
+                '\n'.join(data_lines))]
     return form_objects
 
 def get_response(fs):
@@ -56,40 +80,25 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     out = StringIO()
-    # define the observation
-    lines = Util.get_stripped_lines(StringIO(fs.count_field))
-    if len(lines) != 4:
-        raise Exception('expected 4 nucleotide lines')
-    rows = [line.split() for line in lines]
-    if any(len(r)!=2 for r in rows):
-        raise Exception('nucleotide read count syntax error')
-    typed_rows = [(nt, int(count)) for nt, count in rows]
-    nt_to_count = dict(typed_rows)
-    if set(nt_to_count.keys()) != set('ACGT'):
-        raise Exception('invalid nucleotide in the count field')
-    ref = fs.ref.strip()
-    if ref not in list('ACGT'):
-        raise Exception('invalid reference nucleotide')
-    obs = [nt_to_count[ref]]
-    obs += [nt_to_count[nt] for nt in 'ACGT' if nt != ref]
-    # read the parameters
+    # define the three HMM states
     lines = Util.get_stripped_lines(StringIO(fs.param_field))
     model = DGRP.Model()
     model.from_lines(lines)
-    # see how the three states interact with the observation
+    # see how the three states interact with the observations
     states = (model.recent, model.ancient, model.garbage)
     names = ('recent', 'ancient', 'garbage')
-    likelihoods = [s.get_likelihood(obs) for s in states]
-    log_likelihoods = [s.get_log_likelihood(obs) for s in states]
-    # report the log likelihoods
-    print >> out, 'log likelihoods:'
-    for name, loglik in zip(names, log_likelihoods):
-        print >> out, '%s:\t%s' % (name, loglik)
-    print >> out
-    # report the posterior distribution
-    posterior = [v/sum(likelihoods) for v in likelihoods]
-    print >> out, 'posterior distribution:'
-    for name, p in zip(names, posterior):
-        print >> out, '%s:\t%s' % (name, p)
-    print >> out
+    # define the transition object
+    nstates = len(states)
+    prandom = min(1.0, (nstates / (nstates - 1.0)) / fs.region_size)
+    T = TransitionMatrix.UniformTransitionObject(prandom, nstates)
+    # use StringIO objects for storage
+    hmm = ExternalHMM.ExternalModel(T, states, (None, None, None))
+    converter = lineario.IntTupleConverter()
+    obs_a = lineario.SequentialStringIO(converter, fs.data_field)
+    obs_b = lineario.SequentialStringIO(converter, fs.data_field)
+    obs_b.open_read()
+    hmm.init_dp(obs_a)
+    for p, obs in itertools.izip(hmm.posterior(), obs_b.read_forward()):
+        print >> out, obs, p
+    obs_b.close()
     return [('Content-Type', 'text/plain')], out.getvalue().strip()
