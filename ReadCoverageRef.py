@@ -6,6 +6,7 @@ The remaining three elements are counts of the three other non-ref bases.
 """
 
 import math
+import unittest
 
 import numpy as np
 
@@ -69,7 +70,7 @@ def gen_AB_distns(r):
     @param r: sequencing randomization rate
     """
     for i in range(1, 4):
-        for j in range(i, 4):
+        for j in range(i+1, 4):
             d = [r/4.0]*4
             d[i] = .5 - r/4.0
             d[j] = .5 - r/4.0
@@ -138,7 +139,27 @@ class HMMGarbage(ReadCoverage.UniformMixture):
     """
     This region has states with ill-defined zygosity.
     """
-    def __init__(self, low, med, high, seqerr):
+    def __init__(self, low, med, high):
         states = [ReadCoverageGap.FlatState(4, x) for x in (low, med, high)]
         ReadCoverage.UniformMixture.__init__(self, states)
 
+
+class TestReadCoverageRef:
+
+    def test_gen_xx_distns(self):
+        for r in (.001, .01, .1, .9):
+            RR = list(gen_RR_distns(r))
+            RA = list(gen_RA_distns(r))
+            AA = list(gen_AA_distns(r))
+            AB = list(gen_AB_distns(r))
+            self.assertEqual(len(RR), 1)
+            self.assertEqual(len(RA), 3)
+            self.assertEqual(len(AA), 3)
+            self.assertEqual(len(AB), 6)
+            all_distns = RR + RA + AA + AB
+            for d in all_distns:
+                self.assertAlmostEqual(sum(d), 1.0)
+
+
+if __name__ == '__main__':
+    unittest.main()
