@@ -222,13 +222,18 @@ class Model:
             raise Exception('kmulticoverages is out of range')
         if not (1 <= self.low <= self.med <= self.high):
             raise Exception('expected 1 <= low <= med <= high')
-        # create the three states
-        self.recent = ReadCoverageRef.HMMRecent(self.x, self.y, self.z,
+    def get_recent_state(self):
+        return ReadCoverageRef.HMMRecent(self.x, self.y, self.z,
                 self.seqerr, self.nomcoverage, self.kmulticoverages)
-        self.ancient = ReadCoverageRef.HMMAncient(self.x, self.y, self.z,
+    def get_ancient_state(self):
+        return ReadCoverageRef.HMMAncient(self.x, self.y, self.z,
                 self.seqerr, self.nomcoverage, self.kmulticoverages)
-        self.garbage = ReadCoverageRef.HMMGarbage(
+    def get_garbage_state(self):
+        return ReadCoverageRef.HMMGarbage(
                 self.low, self.med, self.high)
+    def get_misaligned_state(self, w):
+        return ReadCoverageRef.HMMRecent(self.x + w, self.y, self.z,
+                self.seqerr, self.nomcoverage, self.kmulticoverages)
 
 class TestDGRP(unittest.TestCase):
 

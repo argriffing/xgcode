@@ -77,7 +77,10 @@ def get_response(fs):
     model = DGRP.Model()
     model.from_lines(lines)
     # see how the three states interact with the observation
-    states = (model.recent, model.ancient, model.garbage)
+    states = (
+            model.get_recent_state(),
+            model.get_ancient_state(),
+            model.get_garbage_state())
     names = ('recent', 'ancient', 'garbage')
     likelihoods = [s.get_likelihood(obs) for s in states]
     log_likelihoods = [s.get_log_likelihood(obs) for s in states]

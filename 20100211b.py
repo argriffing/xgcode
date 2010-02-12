@@ -68,6 +68,8 @@ def get_form():
     form_objects = [
             Form.Integer('region_size', 'expected region size',
                 10, low=1, high=1000000),
+            Form.Float('misalignment_effect', 'misalignment_effect',
+                '0.5', low_inclusive=0),
             Form.MultiLine('param_field', 'parameters',
                 '\n'.join('\t'.join(p) for p in g_default_params)),
             Form.MultiLine('data_field', 'data',
@@ -85,8 +87,11 @@ def get_response(fs):
     model = DGRP.Model()
     model.from_lines(lines)
     # see how the three states interact with the observations
-    states = (model.recent, model.ancient, model.garbage)
-    names = ('recent', 'ancient', 'garbage')
+    states = (
+            model.get_recent_state(),
+            model.get_ancient_state(),
+            model.get_misaligned_state(fs.misalignment_effect),
+            model.get_garbage_state())
     # define the transition object
     nstates = len(states)
     prandom = min(1.0, (nstates / (nstates - 1.0)) / fs.region_size)
@@ -98,6 +103,9 @@ def get_response(fs):
     obs_b = lineario.SequentialStringIO(converter, fs.data_field)
     obs_b.open_read()
     hmm.init_dp(obs_a)
+    state_header = ('recent', 'ancient', 'misaligned', 'garbage')
+    obs_header = ('ref', 'nonref-x', 'nonref-y', 'nonref-z')
+    print >> out, obs_header, state_header
     for p, obs in itertools.izip(hmm.posterior(), obs_b.read_forward()):
         print >> out, obs, p
     obs_b.close()
