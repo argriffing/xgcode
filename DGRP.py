@@ -193,6 +193,18 @@ def get_zygosity_distribution(ref_length, child_length):
         raise DGRPError('probabilities do not sum to one')
     return v
 
+def get_foo(p_ancient, p_recent, AA_ancient, AA_recent, x2, x3, x4, r):
+    """
+    @param p_ancient: posterior probability of ancient state
+    @param p_recent: posterior probability of recent state
+    @param x2: count of a non-reference nucleotide
+    @param x3: count of a non-reference nucleotide
+    @param x4: count of a non-reference nucleotide
+    @param r: probability of random nucleotide sequencing call
+    @return: posterior polymorphism probability
+    """
+    pass
+
 class Model:
     def from_lines(self, lines):
         # extract the parameters

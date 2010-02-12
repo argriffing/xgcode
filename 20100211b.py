@@ -16,6 +16,7 @@ nominal coverage multiples which might result from duplications.
 
 from StringIO import StringIO
 import itertools
+import math
 
 from SnippetUtil import HandlingError
 import Form
@@ -25,6 +26,7 @@ import Util
 import ExternalHMM
 import lineario
 import TransitionMatrix
+import scipy
 
 g_default_params = [
         ('x', '0.1'),
@@ -105,8 +107,31 @@ def get_response(fs):
     hmm.init_dp(obs_a)
     state_header = ('recent', 'ancient', 'misaligned', 'garbage')
     obs_header = ('ref', 'nonref-x', 'nonref-y', 'nonref-z')
-    print >> out, obs_header, state_header
+    print >> out, obs_header, state_header, 'greatest-polymorphism-posterior'
     for p, obs in itertools.izip(hmm.posterior(), obs_b.read_forward()):
-        print >> out, obs, p
+        p_recent, p_ancient, p_misaligned, p_garbage = p
+        # get the prior probability of polymorphism conditional on state
+        p_recent_AA = states[0].get_posterior_distribution(obs)[2]
+        p_ancient_AA = states[1].get_posterior_distribution(obs)[2]
+        # compute the posterior probability of a polymorphism
+        posterior_polymorphism = 0
+        posterior_polymorphism += p_recent * p_recent_AA
+        posterior_polymorphism += p_ancient * p_ancient_AA
+        # Given that a polymorphism occurred,
+        # get the probability distribution over the
+        # three non-reference nucleotides.
+        r = model.seqerr
+        log_Pr = math.log(r/4.0)
+        log_PA = math.log(1 - 3*r/4.0)
+        logs = [
+                obs[1]*log_PA + obs[2]*log_Pr + obs[3]*log_Pr,
+                obs[1]*log_Pr + obs[2]*log_PA + obs[3]*log_Pr,
+                obs[1]*log_Pr + obs[2]*log_Pr + obs[3]*log_PA]
+        condmaxpost = math.exp(max(logs) - scipy.maxentropy.logsumexp(logs))
+        # get the posterior probability distribution
+        maxpost = posterior_polymorphism * condmaxpost
+        # show the inference for this position
+        print >> out, obs, p, maxpost
     obs_b.close()
     return [('Content-Type', 'text/plain')], out.getvalue().strip()
+

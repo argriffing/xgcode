@@ -63,31 +63,45 @@ class Mixture:
         if not len(states):
             raise ValueError('no states were specified')
         if len(states) != len(distribution):
-            raise ValueError('expected the state sequence and its distribution to be conformant')
+            msg = 'the number of states should match the distribution length'
+            raise ValueError(msg)
         if not np.allclose(sum(distribution), 1):
             raise ValueError('expected the distribution to sum to 1.0')
         if min(distribution) < 0:
-            raise ValueError('expected the distribution to be a stochastic vector')
+            msg = 'expected the distribution to be a stochastic vector'
+            raise ValueError(msg)
         # store the arguments, leaving out states with zero probability
         self.states = [state for state, d in zip(states, distribution) if d]
         self.distribution = [d for d in distribution if d]
         # precompute part of the likelihood
-        self.log_distribution = [math.log(p) if p else float('-inf') for p in self.distribution]
+        self.log_distribution = [math.log(p) if p else float('-inf')
+                for p in self.distribution]
+
+    def get_posterior_distribution(self, observation):
+        log_likelihoods = [state.get_log_likelihood(observation)
+                for state in self.states]
+        weighted_lls = [ll + log_p
+                for ll, log_p in zip(log_likelihoods, self.log_distribution)]
+        obs_ll = scipy.maxentropy.logsumexp(weighted_lls)
+        return [math.exp(ll - obs_ll) for ll in weighted_lls]
 
     def sample_observation(self):
         """
         @return: an observation sampled from the distribution
         """
-        return self.states[Util.random_weighted_int(self.distribution)].sample_observation()
+        state = self.states[Util.random_weighted_int(self.distribution)]
+        return state.sample_observation()
 
     def get_likelihood(self, observation):
         return math.exp(self.get_log_likelihood(observation))
 
     def get_log_likelihood(self, observation):
-        log_likelihoods = [state.get_log_likelihood(observation) for state in self.states]
+        log_likelihoods = [state.get_log_likelihood(observation)
+                for state in self.states]
         if all(ll==float('-inf') for ll in log_likelihoods):
             return float('-inf')
-        weighted_log_likelihoods = [ll + log_p for ll, log_p in zip(log_likelihoods, self.log_distribution)]
+        weighted_log_likelihoods = [ll + log_p
+                for ll, log_p in zip(log_likelihoods, self.log_distribution)]
         return scipy.maxentropy.logsumexp(weighted_log_likelihoods)
 
 
