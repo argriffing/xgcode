@@ -215,8 +215,13 @@ class Model:
         self.nomcoverage = int(param_to_value['nomcoverage'])
         self.kmulticoverages = int(param_to_value['kmulticoverages'])
         # validate the parameter ranges
+        for name in param_names:
+            if getattr(self, name) < 0:
+                raise Exception('parameters should be nonnegative')
         if not (1 <= self.kmulticoverages <= 5):
             raise Exception('kmulticoverages is out of range')
+        if not (1 <= self.low <= self.med <= self.high):
+            raise Exception('expected 1 <= low <= med <= high')
         # create the three states
         self.recent = ReadCoverageRef.HMMRecent(self.x, self.y, self.z,
                 self.seqerr, self.nomcoverage, self.kmulticoverages)
