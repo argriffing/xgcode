@@ -206,15 +206,17 @@ def get_foo(p_ancient, p_recent, AA_ancient, AA_recent, x2, x3, x4, r):
     pass
 
 class Model:
+    def __init__(self):
+        self.expected_param_names = ['x', 'y', 'z', 'low', 'med', 'high',
+                'seqerr', 'nomcoverage', 'kmulticoverages']
     def from_lines(self, lines):
         # extract the parameters
-        param_names = ['x', 'y', 'z', 'low', 'med', 'high',
-                'seqerr', 'nomcoverage', 'kmulticoverages']
         rows = [line.split() for line in lines]
         if any(len(r)!=2 for r in rows):
             raise Exception('parameter syntax error')
         param_to_value = dict(rows)
-        if set(param_names) != set(param_to_value.keys()):
+        # check the parameters
+        if set(self.expected_param_names) != set(param_to_value.keys()):
             raise Exception('invalid or missing parameter')
         # get the typed parameters
         self.x = float(param_to_value['x'])
@@ -226,8 +228,14 @@ class Model:
         self.seqerr = float(param_to_value['seqerr'])
         self.nomcoverage = int(param_to_value['nomcoverage'])
         self.kmulticoverages = int(param_to_value['kmulticoverages'])
+        self.validate()
+    def from_fieldstorage(self, fs):
+        for name in self.expected_param_names:
+            setattr(self, name, getattr(fs, name))
+        self.validate()
+    def validate(self):
         # validate the parameter ranges
-        for name in param_names:
+        for name in self.expected_param_names:
             if getattr(self, name) < 0:
                 raise Exception('parameters should be nonnegative')
         if not (1 <= self.kmulticoverages <= 5):
