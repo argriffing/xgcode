@@ -238,7 +238,7 @@ class Model:
         for name in self.expected_param_names:
             if getattr(self, name) < 0:
                 raise Exception('parameters should be nonnegative')
-        if not (1 <= self.kmulticoverages <= 5):
+        if not (1 <= self.kmulticoverages <= 100):
             raise Exception('kmulticoverages is out of range')
         if not (1 <= self.low <= self.med <= self.high):
             raise Exception('expected 1 <= low <= med <= high')
