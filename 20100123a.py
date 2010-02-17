@@ -22,7 +22,6 @@ import Codon
 import Form
 import CairoUtil
 import Euclid
-import BuildTreeTopology
 
 g_default_data = """
 POINTS
@@ -60,7 +59,7 @@ class ImageInfo:
         @param total_width: total image width in pixels
         @param total_height: total image height in pixels
         @param all_black: True if everything is drawn in black
-        @param show_labels: True if labels are drawn on each node
+        @param show_labels: None if no labels, else the number base
         @param border: image border size in pixels
         @param image_format: image format
         """
@@ -94,11 +93,14 @@ def get_form():
             Form.RadioGroup('edge_weight_options', 'edge weights', [
                 Form.RadioItem('unweighted', 'all weights are 1.0', True),
                 Form.RadioItem('weighted', 'weights are inverse distances')]),
-            Form.CheckGroup('vis_options', 'visualization options', [
-                Form.CheckItem('show_labels', 'show labels')]),
-            Form.RadioGroup('color_options', 'color options', [
+            Form.RadioGroup('vis_options', 'label options', [
+                Form.RadioItem('label_from_0', 'label from 0'),
+                Form.RadioItem('label_from_1', 'label from 1', True),
+                Form.RadioItem('no_labels', 'no labels')]),
+            Form.RadioGroup('color_options', 'node coloration', [
                 Form.RadioItem('black', 'all black', True),
-                Form.RadioItem('color', 'first axis coloration')]),
+                Form.RadioItem('color_fiedler', 'by fiedler valuation'),
+                Form.RadioItem('color_x', 'by x coordinate')]),
             Form.CheckGroup('more_color_options', 'more color options', [
                 Form.CheckItem('flip', 'flip valuation signs', False)]),
             Form.Integer('total_width', 'total image width',
@@ -184,8 +186,9 @@ def get_image_string(points, edges, point_colors, image_info):
         context.fill()
         context.restore()
     # Draw the labels.
-    if image_info.show_labels:
-        labels = [str(i) for i, x in enumerate(x_final)]
+    if image_info.show_labels is not None:
+        base = image_info.show_labels
+        labels = [str(i+base) for i, x in enumerate(x_final)]
         for label, x, y in zip(labels, x_final, y_final):
             context.save()
             context.move_to(x, y)
@@ -242,6 +245,8 @@ def read_points_and_edges(multiline):
             j = int(s_j)
         except ValueError, e:
             raise HandlingError('a value in a EDGES row has the wrong type')
+        if i == j:
+            raise HandlingError('self-edges are not allowed')
         edge = (i, j)
         edges.add(edge)
     # return the points and edges
@@ -319,11 +324,21 @@ def get_response(fs):
         msg = 'the image dimensions do not allow for enough drawable area'
         raise HandlingError(msg)
     # read the image info
+    show_labels = None
+    if fs.label_from_0:
+        show_labels = 0
+    elif fs.label_from_1:
+        show_labels = 1
     info = ImageInfo(fs.total_width, fs.total_height,
-            fs.black, fs.show_labels, fs.border, fs.imageformat)
-    # define the point colors using the unweighted graph Fiedler loadings
-    L = edges_to_laplacian(edges, weights)
-    valuations = BuildTreeTopology.laplacian_to_fiedler(L)
+            fs.black, show_labels, fs.border, fs.imageformat)
+    # define the valuations which will define the node colors
+    if fs.color_x:
+        valuations = [p[0] for p in points]
+    elif fs.color_fiedler:
+        L = edges_to_laplacian(edges, weights)
+        valuations = BuildTreeTopology.laplacian_to_fiedler(L)
+    else:
+        valuations = [0 for p in points]
     valuations = [-v if fs.flip else v for v in valuations]
     colors = valuations_to_colors(valuations)
     # draw the image
