@@ -12,6 +12,7 @@ from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
 import GPS
+import Euclid
 
 def get_locations():
     sqrt2 = math.sqrt(2.0)
