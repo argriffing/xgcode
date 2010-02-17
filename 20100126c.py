@@ -12,7 +12,6 @@ from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
 import GPS
-import Euclid
 
 def get_locations():
     sqrt2 = math.sqrt(2.0)
@@ -87,7 +86,7 @@ def get_response(fs):
     print >> out
     # show the weighted laplacian matrix
     WL = Euclid.adjacency_to_laplacian(WA)
-    print >> out, 'unweighted laplacian matrix:'
+    print >> out, 'weighted laplacian matrix:'
     print >> out, WL
     print >> out
     # write the response
