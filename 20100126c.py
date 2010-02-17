@@ -13,6 +13,7 @@ import SnippetUtil
 import Form
 import GPS
 import Euclid
+import SchurAlgebra
 
 def get_locations():
     sqrt2 = math.sqrt(2.0)
@@ -89,6 +90,19 @@ def get_response(fs):
     WL = Euclid.adjacency_to_laplacian(WA)
     print >> out, 'weighted laplacian matrix:'
     print >> out, WL
+    print >> out
+    # remove the two internal nodes by schur complementation
+    ntips = 4
+    schur_L = SchurAlgebra.schur_helper(WL, 2)
+    X = Euclid.dccov_to_points(np.linalg.pinv(schur_L))
+    print >> out, 'schur graph layout:'
+    print >> out, 'POINTS'
+    for i, v in enumerate(X):
+        print >> out, i, v[0], v[1]
+    print >> out, 'EDGES'
+    for i in range(ntips):
+        for j in range(i+1, ntips):
+            print >> out, i, j
     print >> out
     # write the response
     return [('Content-Type', 'text/plain')], out.getvalue().strip()
