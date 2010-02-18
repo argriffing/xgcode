@@ -22,6 +22,7 @@ import Codon
 import Form
 import CairoUtil
 import Euclid
+import BuildTreeTopology
 
 g_default_data = """
 POINTS
@@ -90,16 +91,16 @@ def get_form():
     form_objects = [
             Form.MultiLine('graph_data', 'connected points',
                 '\n'.join(lines)),
-            Form.RadioGroup('edge_weight_options', 'edge weights', [
-                Form.RadioItem('unweighted', 'all weights are 1.0', True),
-                Form.RadioItem('weighted', 'weights are inverse distances')]),
             Form.RadioGroup('vis_options', 'label options', [
                 Form.RadioItem('label_from_0', 'label from 0'),
                 Form.RadioItem('label_from_1', 'label from 1', True),
                 Form.RadioItem('no_labels', 'no labels')]),
             Form.RadioGroup('color_options', 'node coloration', [
                 Form.RadioItem('black', 'all black', True),
-                Form.RadioItem('color_fiedler', 'by fiedler valuation'),
+                Form.RadioItem('color_fiedler_weighted',
+                    'by weighted fiedler valuation'),
+                Form.RadioItem('color_fiedler_unweighted',
+                    'by unweighted fiedler valuation'),
                 Form.RadioItem('color_x', 'by x coordinate')]),
             Form.CheckGroup('more_color_options', 'more color options', [
                 Form.CheckItem('flip', 'flip valuation signs', False)]),
@@ -310,13 +311,6 @@ def get_response(fs):
     """
     # read the points and edges
     points, edges = read_points_and_edges(fs.graph_data)
-    # define edge weights
-    if fs.weighted:
-        np_points = [np.array(p) for p in points]
-        dists = [np.linalg.norm(np_points[j] - np_points[i]) for i, j in edges]
-        weights = [1.0 / d for d in dists]
-    else:
-        weights = [1.0 for e in edges]
     # get the width and height of the drawable area of the image
     width = fs.total_width - 2*fs.border
     height = fs.total_height - 2*fs.border
@@ -334,7 +328,13 @@ def get_response(fs):
     # define the valuations which will define the node colors
     if fs.color_x:
         valuations = [p[0] for p in points]
-    elif fs.color_fiedler:
+    elif fs.color_fiedler_weighted or fs.color_fiedler_unweighted:
+        if fs.color_fiedler_weighted:
+            X = [np.array(p) for p in points]
+            dists = [np.linalg.norm(X[j] - X[i]) for i, j in edges]
+            weights = [1.0 / d for d in dists]
+        else:
+            weights = [1.0 for e in edges]
         L = edges_to_laplacian(edges, weights)
         valuations = BuildTreeTopology.laplacian_to_fiedler(L)
     else:
