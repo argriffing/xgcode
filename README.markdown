@@ -10,7 +10,7 @@ The main purpose of this project is to consolidate a bunch of random scripts.
 Requirements
 ------------
 
-Operation system requirements:
+Operating system requirements:
 
 * This project was developed using Ubuntu,
   so it will probably work on Debian-based Linux distributions.
