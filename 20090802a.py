@@ -11,14 +11,13 @@ but it is easer to present because it
 can be explained in parallel with neighbor joining.
 """
 
-import StringIO
+from StringIO import StringIO
 import os
 import zipfile
 
 import numpy as np
 
 from SnippetUtil import HandlingError
-import Form
 import NewickIO
 import FelTree
 import Newick
@@ -26,6 +25,11 @@ import BuildTreeTopology
 import SchurAlgebra
 import Euclid
 import MatrixUtil
+from Form import CheckGroup
+from Form import CheckItem
+from Form import RadioGroup
+from Form import RadioItem
+import Form
 
 g_const_data = 'const-data'
 
@@ -36,11 +40,15 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.RadioGroup('distance_options', 'recursive matrix construction', [
-                Form.RadioItem('like_pruning', 'go through the Laplacian, like Felsenstein pruning', True),
-                Form.RadioItem('like_nj', 'directly use distances, like neighbor joining')]),
-            Form.CheckGroup('format_options', 'options', [
-                Form.CheckItem('supplementary', 'download the supplementary data', True)])]
+            RadioGroup('distance_options', 'recursive matrix construction', [
+                RadioItem('like_pruning',
+                    'go through the Laplacian, like Felsenstein pruning',
+                    True),
+                RadioItem('like_nj',
+                    'directly use distances, like neighbor joining')]),
+            CheckGroup('format_options', 'options', [
+                CheckItem('supplementary',
+                    'download the supplementary data', True)])]
     return form_objects
 
 def remove_redundant_nodes(tree):
@@ -195,7 +203,7 @@ class SupplementaryObject:
         """
         @return: a multiline string
         """
-        out = StringIO.StringIO()
+        out = StringIO()
         # create an interestingly ordered list of tips of the full tree
         full_archaea_names = self._get_full_names_in_domain('archaea')
         full_bacteria_names = self._get_full_names_in_domain('bacteria')
@@ -227,7 +235,7 @@ class SupplementaryObject:
         @return: a multiline string
         """
         # begin the response
-        out = StringIO.StringIO()
+        out = StringIO()
         # show the number of taxa in various domains
         print >> out, self._get_name_summary()
         print >> out
@@ -334,7 +342,7 @@ class SupplementarySpreadsheetObject:
         # define the rows of the csv file
         rows = zip(*columns)
         # create the csv contents
-        out = StringIO.StringIO()
+        out = StringIO()
         for row in rows:
             print >> out, ', '.join(str(x) for x in row)
         csv_contents = out.getvalue()
@@ -347,7 +355,7 @@ def get_eigendecomposition_report(D):
     @param D: a distance matrix
     @return: a multi-line string
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get some intermediate matrices and vectors
     L = Euclid.edm_to_laplacian(D)
     laplacian_fiedler = BuildTreeTopology.laplacian_to_fiedler(L)
@@ -374,7 +382,7 @@ def get_standard_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # show a summary of the original data
     print >> out, 'data summary before removing branches with zero length:'
     print >> out, len(archaea_names), 'archaea names in the original tree'
@@ -515,7 +523,7 @@ def get_supplementary_response(supplementary_object):
     @return: a (response_headers, response_text) pair
     """
     # create the zipfile
-    fout = StringIO.StringIO()
+    fout = StringIO()
     zout = zipfile.ZipFile(fout, mode='w', compression=zipfile.ZIP_DEFLATED)
     zout.writestr('all.tree', supplementary_object.get_newick_file_contents())
     zout.writestr('first-split.csv', supplementary_object.get_first_split_file_contents())

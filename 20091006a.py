@@ -1,14 +1,17 @@
 """Compare two Euclidean embeddings of tree vertices.
 
-The first embedding is the limit of the MDS coordinates for all vertices in the tree as
-masses of vertices of articulation go to zero while masses of the leaves remain uniform.
+The first embedding is the limit of the MDS coordinates
+for all vertices in the tree as
+masses of vertices of articulation go to zero
+while masses of the leaves remain uniform.
 The second embedding is the projection of the vertices of articulation
-onto the MDS space defined by the distance matrix of only the (uniformly weighted) leaves.
+onto the MDS space defined by the distance matrix
+of only the (uniformly weighted) leaves.
 Are these two embeddings the same?
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -59,7 +62,7 @@ def process():
     @return: a multi-line string that summarizes the results
     """
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # define a degenerate mass vector
     m_degenerate = np.array([0.25, 0.25, 0.25, 0.25, 0, 0])
     # define some distance matrices

@@ -1,7 +1,7 @@
 """Do some SNP analysis. [UNFINISHED]
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import itertools
 import optparse
@@ -64,10 +64,10 @@ def get_centers(arrs, ncenters, metric, deadline):
 def get_result_string(arrs, max_distance, centers):
     """
     @param arrs: binary arrays
-    @param max_distance: the max distance of a binary string to the nearest center
+    @param max_distance: the max dist of a binary string to the nearest center
     @param centers: the centers found by the search
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'number of binary strings:', len(arrs)
     print >> out, 'length of each binary string:', len(arrs[0])
     print >> out, 'maximum distance from a center:', max_distance

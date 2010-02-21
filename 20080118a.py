@@ -1,7 +1,7 @@
 """Given a newick tree, calculate tip weights.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -41,7 +41,7 @@ def get_response(fs):
     elif fs.thompson:
         name_weight_pairs = LeafWeights.get_thompson_weights(tree)
     # report the weights
-    out = StringIO.StringIO()
+    out = StringIO()
     for name, weight in name_weight_pairs:
         print >> out, '%s: %f' % (name, weight)
     response_headers = [('Content-Type', 'text/plain')]

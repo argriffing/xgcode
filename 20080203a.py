@@ -1,17 +1,18 @@
-"""Given a first order Markov model, generate an endpoint-constrained N-character string.
+"""Given a Markov model, generate an endpoint-constrained N-character string.
 
+The input Markov model is first order.
 In the transition matrix, the 27 states are ordered from space to z.
-The default transition matrix was estimated from A Tale of Two Cities by Charles Dickens.
+The default transition matrix was estimated from
+A Tale of Two Cities by Charles Dickens.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import PathSampler
 import EnglishModel
-import Util
 import MatrixUtil
 import Form
 
@@ -22,10 +23,12 @@ def get_form():
     # define the default transition matrix
     dictionary_rate_matrix = EnglishModel.get_transition_matrix()
     labels = list(sorted(set(a for a, b in dictionary_rate_matrix)))
-    T = numpy.array(MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels))
+    T = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels)
+    T = np.array(T)
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'transition matrix', T, MatrixUtil.assert_transition_matrix),
+            Form.Matrix('matrix', 'transition matrix',
+                T, MatrixUtil.assert_transition_matrix),
             Form.SingleLine('first', 'first letter', 'a'),
             Form.SingleLine('last', 'last letter', 'b'),
             Form.Integer('count', 'character count', 10, low=1, high=80)]
@@ -45,14 +48,18 @@ def get_response(fs):
     if fs.last not in states:
         raise HandlingError('invalid last letter')
     if fs.count == 1 and fs.first != fs.last:
-        raise HandlingError('if a single letter is to be simulated then the first letter must be the same as the last letter.')
+        msg_a = 'if a single letter is to be simulated '
+        msg_b = 'then the first letter must be the same as the last letter.'
+        raise HandlingError(msg_a + msg_b)
     # read the transition matrix from the form data
     T = fs.matrix
     if T.shape[0] != len(states):
-        raise HandlingError('expected the transition matrix to have %d lines' % len(states))
+        msg = 'expected the transition matrix to have %d lines' % len(states)
+        raise HandlingError(msg)
     matrix = MatrixUtil.row_major_to_dict(T.tolist(), states, states)
     # simulate the path
-    path = PathSampler.get_discrete_path_sample(fs.first, fs.last, states, fs.count, matrix)
+    path = PathSampler.get_discrete_path_sample(fs.first, fs.last,
+            states, fs.count, matrix)
     # show the simulated path in convenient text form
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, ''.join(path)

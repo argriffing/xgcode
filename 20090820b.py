@@ -11,10 +11,11 @@ A: an integer representing the number of A reads aligned to the this position
 C: an integer representing the number of C reads aligned to the this position
 G: an integer representing the number of G reads aligned to the this position
 T: an integer representing the number of T reads aligned to the this position
-gap: an integer representing the number of gaps reads aligned to the this position
+gap: an integer representing the number of gaps reads
+aligned to the this position
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys
@@ -26,7 +27,6 @@ from SnippetUtil import HandlingError
 import Form
 import Progress
 import ReadCoverage
-import Util
 
 
 class TimeoutError(Exception): pass
@@ -163,7 +163,7 @@ def process(pathnames, good_coverage, bad_coverage, randomization_rate, nseconds
     cache_size = 100000
     oracle = Oracle(models, cache_size)
     # do some initialization
-    out = StringIO.StringIO()
+    out = StringIO()
     start_time = time.time()
     nfiles = len(pathnames)
     pbar = Progress.Bar(nfiles) if (use_pbar and nfiles > 1) else None

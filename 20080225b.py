@@ -1,12 +1,11 @@
 """Given a rate matrix, get the stationary distribution.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
-import Util
 import MatrixUtil
 import RateMatrix
 import Form
@@ -18,8 +17,12 @@ def get_form():
     # define the default rate matrix
     dictionary_rate_matrix = RateMatrix.get_sample_codon_rate_matrix()
     labels = list(sorted(set(a for a, b in dictionary_rate_matrix)))
-    R = numpy.array(MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels))
-    return [Form.Matrix('matrix', 'rate matrix', R, MatrixUtil.assert_rate_matrix)]
+    R = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels)
+    R = np.array(R)
+    form_objects = [
+            Form.Matrix('matrix', 'rate matrix',
+                R, MatrixUtil.assert_rate_matrix)]
+    return form_objects
 
 def get_response(fs):
     """
@@ -30,11 +33,12 @@ def get_response(fs):
     R = fs.matrix
     # get the stationary distribution of the rate matrix
     try:
-        stationary_distribution = RateMatrix.get_stationary_distribution(R.tolist())
+        v = RateMatrix.get_stationary_distribution(R.tolist())
     except RateMatrix.RateMatrixError, e:
-        raise HandlingError('error calculating the stationary distribution: ' + str(e))
+        msg = 'error calculating the stationary distribution: ' + str(e)
+        raise HandlingError(msg)
     # get the stationary distribution string
-    stationary_distribution_string = '\n'.join(str(x) for x in stationary_distribution)
+    stationary_distribution_string = '\n'.join(str(x) for x in d)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, stationary_distribution_string

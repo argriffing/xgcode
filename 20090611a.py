@@ -1,5 +1,6 @@
-"""Find an Atteson distance matrix and tree for which the first eigensplit fails.
+"""Find an Atteson distance matrix and tree where the first eigensplit fails.
 
+Find an Atteson distance matrix and tree for which the first eigensplit fails.
 The first eigensplit is the split defined
 by the signs of the loadings of the first principal eigenvector of
 the doubly centered distance matrix.
@@ -10,12 +11,12 @@ have at least one positively valuated tip
 and one negatively valuated tip.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import random
 import optparse
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -32,10 +33,14 @@ def get_form():
     form_objects = [
             Form.Integer('ntaxa', 'number of taxa', 20, low=4, high=20),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))])]
+                Form.RadioItem('pachter_length',
+                    str(BranchLengthSampler.Pachter()), True),
+                Form.RadioItem('exponential_length',
+                    str(BranchLengthSampler.Exponential())),
+                Form.RadioItem('uniform_length_a',
+                    str(BranchLengthSampler.UniformA())),
+                Form.RadioItem('uniform_length_b',
+                    str(BranchLengthSampler.UniformB()))])]
     return form_objects
 
 def sample_atteson_distance_matrix(xtree_root):
@@ -45,7 +50,7 @@ def sample_atteson_distance_matrix(xtree_root):
     # get the minimum branch length
     shortest_branch_length = min(branch.length for branch in xtree_root.get_branches())
     # get the true distance matrix
-    D = numpy.array(xtree_root.get_distance_matrix())
+    D = np.array(xtree_root.get_distance_matrix())
     n = len(D)
     # perturb entries of the distance matrix in a way that satisfies the Atteson condition
     for i in range(n):
@@ -109,7 +114,7 @@ def process(ntaxa, nseconds, branch_length_sampler):
     except KeyboardInterrupt, e:
         pass
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     if invalid_split_count:
         print >> out, 'A counterexample was found!'
         print >> out, 'D:'

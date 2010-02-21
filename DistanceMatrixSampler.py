@@ -1,5 +1,5 @@
 
-import StringIO
+from StringIO import StringIO
 import unittest
 import math
 import random

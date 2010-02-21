@@ -1,10 +1,14 @@
-"""Look at each step of the projection onto the axes of the Steiner ellipsoid of the leaves.
+"""Examine iterative projection onto axes of the leaf Steiner ellipsoid.
 
+Examine steps of a projection onto axes
+of the Steiner ellipsoid of the leaves.
+Look at each step of the projection onto the
+principal axes of the Steiner ellipsoid of the leaves.
 Because this really is a projection it can obviously be done in one step,
 but I haven't worked this out yet.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 import argparse
@@ -27,12 +31,13 @@ def get_form():
     """
     # define the list of form objects
     form_objects = [
-            Form.Integer('ntaxa', 'number of taxa', 5, low=3, high=20)]
+            Form.Integer('ntaxa', 'number of taxa',
+                5, low=3, high=20)]
     return form_objects
 
 def process(ntaxa):
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # sample an xtree topology
     xtree = TreeSampler.sample_agglomerated_tree(ntaxa)
     # sample an xtree with exponentially distributed branch lengths

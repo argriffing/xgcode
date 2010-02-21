@@ -1,9 +1,14 @@
-"""Create a tree MDS animation showing progressive downweighting of internal nodes.
+"""Create a tree MDS animation showing downweighting of internal nodes.
 
-A sequence of .png files should be written to some existing specified output directory.
-If a web interface is used, maybe show one frame at some stage between 0 and 1.
+Create a tree MDS animation
+showing progressive downweighting of internal nodes.
+A sequence of .png files should be written
+to some existing specified output directory.
+If a web interface is used, maybe show one frame
+at some stage between 0 and 1.
 Input for web usage:
-the tree, a progress fraction, a scaling factor, image format, and image delivery.
+the tree, a progress fraction, a scaling factor,
+image format, and image delivery.
 Input for command line usage:
 the path to the output directory for the images, a scaling factor, a tree,
 and a physical width and height.
@@ -13,7 +18,7 @@ Resolutions preferred by YouTube are 640x360 and 480x360.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import os
 import math
@@ -43,9 +48,12 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree_string', 'newick tree', g_tree_string),
-            Form.Float('scale', 'scale the image of the tree by this factor', 200.0, low_exclusive=0.0),
-            Form.Float('progress', 'animation progress between 0.0 and 1.0', 0.5, low_inclusive=0.0, high_inclusive=1.0),
+            Form.MultiLine('tree_string', 'newick tree',
+                g_tree_string),
+            Form.Float('scale', 'scale the image of the tree by this factor',
+                200.0, low_exclusive=0.0),
+            Form.Float('progress', 'animation progress between 0.0 and 1.0',
+                0.5, low_inclusive=0.0, high_inclusive=1.0),
             Form.RadioGroup('imageformat', 'image format', [
                 Form.RadioItem('png', 'png', True),
                 Form.RadioItem('svg', 'svg'),

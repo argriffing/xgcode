@@ -1,4 +1,7 @@
-""" Given a newick tree and tip constraints, simulate Jukes-Cantor nucleotide substitutions.
+""" Given a tree and tip constraints, simulate JC nucleotide substitutions.
+
+The tree should be in the Newick format.
+JC is Jukes-Cantor.
 """
 
 # This example tree might be useful for debugging.
@@ -7,7 +10,7 @@
 # ((a:1, b:2)A:1, (c:3, d:4)B:1, (e:0.25, f:0.5)C:1);
 g_tree_string = '((a:1, b:2)A:1, (c:3, d:4)B:1, (e:0.25, f:0.5)C:1);'
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -15,12 +18,12 @@ import RateMatrix
 import PathSampler
 import Newick
 import SpatialTree
-import Util
 import DrawTreeImage
 import EqualArcLayout
 import PhyLikelihood
 import MatrixUtil
 import Form
+import iterutils
 
 def get_form():
     """
@@ -68,7 +71,7 @@ def get_response(fs):
     # get the dictionary mapping the branch name to the nucleotide
     name_to_nucleotide = {}
     # parse the column string
-    for line in Util.stripped_lines(StringIO.StringIO(fs.column)):
+    for line in iterutils.stripped_lines(StringIO(fs.column)):
         name_string, nucleotide_string = SnippetUtil.get_state_value_pair(line)
         if nucleotide_string not in list('acgtACGT'):
             raise HandlingError('"%s" is not a valid nucleotide' % nucleotide_string)

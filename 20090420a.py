@@ -1,20 +1,23 @@
 """Compare a spectral tree topology estimation method to neighbor joining.
 
-Several phylogenetic tree topologies and corresponding approximate distance matrices are sampled,
-and for each distance matrix a tree topology is estimated using each of two methods.
+Several phylogenetic tree topologies
+and corresponding approximate distance matrices are sampled,
+and for each distance matrix a tree topology
+is estimated using each of two methods.
 Phylogenetic trees are sampled by random agglomeration of some number of taxa.
 A distance matrix is sampled given a phylogenetic tree by first sampling
 a nucleotide alignment according to a Jukes-Cantor model,
-and then estimating the pairwise distances by the maximum likelihood Jukes-Cantor distance.
+and then estimating the pairwise distances
+by the maximum likelihood Jukes-Cantor distance.
 A sample is rejected when a pairwise distance is zero or infinity.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -32,27 +35,33 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('length', 'sequence length', 1000, low=10, high=20000),
-            Form.Integer('ntaxa', 'number of taxa', 20, low=4, high=20),
+            Form.Integer('length', 'sequence length',
+                1000, low=10, high=20000),
+            Form.Integer('ntaxa', 'number of taxa',
+                20, low=4, high=20),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))]),
-            Form.RadioGroup('first_method', 'first topology estimation method', [
+                Form.RadioItem('pachter_length',
+                    str(BranchLengthSampler.Pachter()), True),
+                Form.RadioItem('exponential_length',
+                    str(BranchLengthSampler.Exponential())),
+                Form.RadioItem('uniform_length_a',
+                    str(BranchLengthSampler.UniformA())),
+                Form.RadioItem('uniform_length_b',
+                    str(BranchLengthSampler.UniformB()))]),
+            Form.RadioGroup('first_method', 'first estimation method', [
                 Form.RadioItem('first_nj', 'neighbor joining', True),
                 Form.RadioItem('first_modnj', 'modified neighbor joining'),
                 Form.RadioItem('first_specnj', 'spectral reconstruction')]),
-            Form.RadioGroup('second_method', 'second topology estimation method', [
+            Form.RadioGroup('second_method', 'second estimation method', [
                 Form.RadioItem('second_nj', 'neighbor joining'),
                 Form.RadioItem('second_modnj', 'modified neighbor joining'),
-                Form.RadioItem('second_specnj', 'spectral reconstruction', True)])]
+                Form.RadioItem('second_specnj', 'spectral', True)])]
     return form_objects
 
 def sample_distance_matrix(xtree_root, sequence_length):
     sequences = JC69.sample_xtree_sequences(xtree_root, sequence_length)
     nsequences = len(sequences)
-    pairwise_mismatch_count = numpy.zeros((nsequences, nsequences))
+    pairwise_mismatch_count = np.zeros((nsequences, nsequences))
     for i, sa in enumerate(sequences):
         for j, sb in enumerate(sequences):
             if i < j:
@@ -62,7 +71,7 @@ def sample_distance_matrix(xtree_root, sequence_length):
                 if nmismatches * 4 >= sequence_length * 3:
                     raise InfiniteDistanceError()
                 pairwise_mismatch_count[i][j] = nmismatches
-    D = numpy.zeros_like(pairwise_mismatch_count)
+    D = np.zeros_like(pairwise_mismatch_count)
     for i in range(nsequences):
         for j in range(nsequences):
             if i < j:
@@ -155,7 +164,7 @@ def process(ntaxa, length, nseconds, builders, branch_length_sampler):
         pass
     # make the response
     result_to_string = ['failed', 'succeeded']
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, elapsed_time, 'seconds spent on this group'
     print >> out, n_zero_errors, 'samples were rejected because of an estimated distance of zero'
     print >> out, n_infinite_errors, 'samples were rejected because of an estimated distance of infinity'

@@ -4,7 +4,7 @@ MAPP stands for Multivariate Analysis of Protein Polymorphism.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 import cairo
 
@@ -61,9 +61,10 @@ class ColumnData:
         return self.gene + ':' + self.wild + str(self.offset) + self.mutant
 
 
-def get_image_string(pvalue_lists, header_list, wild_list, mutant_list, image_format):
+def get_image_string(
+        pvalue_lists, header_list, wild_list, mutant_list, image_format):
     """
-    @param pvalue_lists: for each amino acid column, a list of amino acid pvalues
+    @param pvalue_lists: for each amino acid column, a list of aa pvalues
     @param wild_list: for each amino acid column, the wild type amino acid
     @param mutant_list: for each amino acid column, the mutant amino acid
     @param image_format: something like 'png'
@@ -72,23 +73,28 @@ def get_image_string(pvalue_lists, header_list, wild_list, mutant_list, image_fo
     initial_width = 100
     initial_height = 100
     initial_cairo_helper = CairoUtil.CairoHelper(image_format)
-    initial_surface = initial_cairo_helper.create_surface(initial_width, initial_height)
+    initial_surface = initial_cairo_helper.create_surface(
+            initial_width, initial_height)
     initial_context = cairo.Context(initial_surface)
-    initial_context.select_font_face('monospace', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL);
+    initial_context.select_font_face(
+            'monospace', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL);
     initial_context.set_font_size(12)
-    ascent, descent, font_height, max_x_advance, max_y_advance = initial_context.font_extents()
+    extents = initial_context.font_extents()
+    ascent, descent, font_height, max_x_advance, max_y_advance = extents
     # get the blank image because multiple surfaces cannot exist simultaneously
     dummy_string = initial_cairo_helper.get_image_string()
     # use a standard image width
     image_width = 640
-    # use one row of text for each alignment column header, and three rows for the axis
+    # Use one row of text for each alignment column header,
+    # and three rows for the axis.
     image_height = font_height * (3 + len(header_list))
     # create the context with realistic image dimensions
     cairo_helper = CairoUtil.CairoHelper(image_format)
     surface = cairo_helper.create_surface(image_width, image_height)
     context = cairo.Context(surface)
     # set the font size to be used throughout the visualization
-    context.select_font_face('monospace', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL);
+    context.select_font_face(
+            'monospace', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL);
     context.set_font_size(12)
     # draw a light gray background so you can see it in a white canvas
     context.save()
@@ -96,10 +102,12 @@ def get_image_string(pvalue_lists, header_list, wild_list, mutant_list, image_fo
     context.paint()
     context.restore()
     # get the x advance of the longest header
-    max_header_advance = max(context.text_extents(header)[4] for header in header_list)
+    max_header_advance = max(
+            context.text_extents(header)[4] for header in header_list)
     # draw the right-justified headers
     for i, header in enumerate(header_list):
-        x_bearing, y_bearing, text_width, text_height, x_advance, y_advance = context.text_extents(header)
+        extents = context.text_extents(header)
+        x_bearing, y_bearing, text_w, text_h, x_advance, y_advance = extents
         x_offset = max_header_advance - x_advance
         y_offset = font_height * (i + 1)
         context.move_to(x_offset, y_offset)
@@ -113,7 +121,8 @@ def get_image_string(pvalue_lists, header_list, wild_list, mutant_list, image_fo
     # get the pixel width of the x axis
     x_axis_width = (image_width - max_x_advance) - x_axis_offset
     # get the number of pixels per log p-value
-    pixels_per_log_pvalue = x_axis_width / (math.log(pvalue_min) / math.log(10))
+    pixels_per_log_pvalue = (
+            x_axis_width / (math.log(pvalue_min) / math.log(10)))
     # draw the amino acid letters in gray,
     # but do not draw the wild type or the mutant amino acids
     context.save()
@@ -209,8 +218,10 @@ def get_form():
     mutant_string = ''.join(info.mutant for info in column_info_list)
     # define the form objects
     form_objects = [
-            Form.MultiLine('mapp', 'MAPP output', g_mapp_output.strip()),
-            Form.MultiLine('headers', 'alignment column headers', '\n'.join(data_lines)),
+            Form.MultiLine('mapp', 'MAPP output',
+                g_mapp_output.strip()),
+            Form.MultiLine('headers', 'alignment column headers',
+                '\n'.join(data_lines)),
             Form.SingleLine('wild', 'wild type amino acids', wild_string),
             Form.SingleLine('mutant', 'mutant amino acids', mutant_string),
             Form.RadioGroup('imageformat', 'image format options', [
@@ -231,33 +242,45 @@ def get_response(fs):
     # start writing the response type
     response_headers = []
     # read the headers
-    headers = list(Util.stripped_lines(StringIO.StringIO(fs.headers)))
+    headers = Util.get_stripped_lines(StringIO(fs.headers))
     # read the wild type amino acid list
     wild_list = list(fs.wild.strip())
     extra_letters = set(wild_list) - set(Codon.g_aa_letters)
     if extra_letters:
-        raise HandlingError('some invalid wild type amino acids were specified: ' + str(tuple(extra_letters)))
+        msg_a = 'some invalid wild type amino acids were specified: '
+        msg_b = str(tuple(extra_letters))
+        raise HandlingError(msg_a + msg_b)
     # read the mutant amino acid list
     mutant_list = list(fs.mutant.strip())
     extra_letters = set(mutant_list) - set(Codon.g_aa_letters)
     if extra_letters:
-        raise HandlingError('some invalid mutant amino acids were specified: ' + str(tuple(extra_letters)))
+        msg_a = 'some invalid mutant amino acids were specified: '
+        msg_b = str(tuple(extra_letters))
+        raise HandlingError(msg_a + msg_b)
     # read the tab separated MAPP output
     tsv_lists = []
-    for line in StringIO.StringIO(fs.mapp):
+    for line in StringIO(fs.mapp):
         if line.strip():
             tsv_list = [element.strip() for element in line.split('\t')]
             tsv_lists.append(tsv_list)
     # check input consistency
     if len(headers) != len(tsv_lists) - 1:
-        raise HandlingError('the number of headers should be one fewer than the number of MAPP lines')
+        msg_a = 'the number of headers should be '
+        msg_b = 'one fewer than the number of MAPP lines'
+        raise HandlingError(msg_a + msg_b)
     if len(mutant_list) != len(tsv_lists) - 1:
-        raise HandlingError('the number of mutant amino acids should be one fewer than the number of MAPP lines')
+        msg_a = 'the number of mutant amino acids should be '
+        msg_b = 'one fewer than the number of MAPP lines'
+        raise HandlingError(msg_a + msg_b)
     if len(wild_list) != len(tsv_lists) - 1:
-        raise HandlingError('the number of wild type amino acids should be one fewer than the number of MAPP lines')
+        msg_a = 'the number of wild type amino acids should be '
+        msg_b = 'one fewer than the number of MAPP lines'
+        raise HandlingError(msg_a + msg_b)
     length_set = set(len(tsv_list) for tsv_list in tsv_lists)
     if length_set != set([54]):
-        raise HandlingError('each line in the MAPP output should have 54 tab separated values')
+        msg_a = 'each line in the MAPP output should have '
+        msg_b = '54 tab separated values'
+        raise HandlingError(msg_a + msg_b)
     # read the p-values
     pvalue_lists = []
     for tsv_list in tsv_lists[1:]:
@@ -274,7 +297,8 @@ def get_response(fs):
         pvalue_lists.append(pvalue_list)
     # draw the image
     try:
-        image_string = get_image_string(pvalue_lists, headers, wild_list, mutant_list, fs.imageformat)
+        image_string = get_image_string(
+                pvalue_lists, headers, wild_list, mutant_list, fs.imageformat)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
     # specify the content type

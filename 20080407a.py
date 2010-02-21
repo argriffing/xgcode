@@ -4,7 +4,7 @@ The nexus data should have a tree and an alignment.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 import os
 import subprocess
 
@@ -21,7 +21,7 @@ hyphy_nexus = os.path.join(Config.data_path, 'hyphy.nex')
 global hyphy_bf
 hyphy_bf = os.path.join(Config.data_path, 'model.bf')
 # tell hyphy to use this model
-hky_hyphy_model_sio = StringIO.StringIO()
+hky_hyphy_model_sio = StringIO()
 print >> hky_hyphy_model_sio, 'VERBOSITY_LEVEL = 1;'
 print >> hky_hyphy_model_sio, 'ACCEPT_BRANCH_LENGTHS = 1;'
 print >> hky_hyphy_model_sio, 'DataSet spectrinData = ReadDataFile ("%s");' % hyphy_nexus
@@ -85,7 +85,7 @@ def get_response(fs):
     # read the nexus data
     nexus = Nexus.Nexus()
     try:
-        nexus.load(StringIO.StringIO(fs.nexus))
+        nexus.load(StringIO(fs.nexus))
     except Nexus.NexusError, e:
         raise HandlingError(e)
     # move to the data directory
@@ -105,8 +105,8 @@ def get_response(fs):
     # move back to the original directory
     os.chdir(original_directory)
     # read the hyphy output
-    ns = Hyphy.get_hyphy_namespace(StringIO.StringIO(hyphy_output))
-    out = StringIO.StringIO()
+    ns = Hyphy.get_hyphy_namespace(StringIO(hyphy_output))
+    out = StringIO()
     if fs.outdebug:
         print >> out, get_hyphy_debug_info(hyphy_output)
         print >> out, ''
@@ -137,8 +137,8 @@ def get_hyphy_debug_info(hyphy_output):
     @param hyphy_output: the string representing the hyphy output
     @return: a string explaining how the output was interpreted
     """
-    ns = Hyphy.get_hyphy_namespace(StringIO.StringIO(hyphy_output))
-    out = StringIO.StringIO()
+    ns = Hyphy.get_hyphy_namespace(StringIO(hyphy_output))
+    out = StringIO()
     print >> out, 'raw hyphy output:'
     print >> out, '---------------------------------------'
     print >> out, hyphy_output

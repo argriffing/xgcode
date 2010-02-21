@@ -1,11 +1,12 @@
 """Check an example of partial autocorrelation.
 
-Say that there is a discrete time process where the deltas are alternating in sign.
+Say that there is a discrete time process
+where the deltas are alternating in sign.
 What does this imply about the lag 1 and lag 2 partial autocorrelations?
 I am doing this analysis out of curiosity based on a poster by Reed Cartwright.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 
 from SnippetUtil import HandlingError
@@ -15,7 +16,10 @@ def get_form():
     """
     @return: the body of a form
     """
-    return [Form.Integer('n', 'sequence length', 100, low=3, high=1000)]
+    form_objects = [
+            Form.Integer('n', 'sequence length',
+                100, low=3, high=1000)]
+    return form_objects
 
 def get_pairs(seq, lag):
     """
@@ -93,7 +97,7 @@ def get_response(fs):
     test_seq = [13, 8, 15, 4, 4, 12, 11, 7, 14, 12]
     assert len(test_seq) == 10
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # show test results
     print >> out, 'test results:'
     print >> out, 'expected autocorrelation of lag 1: -0.188'

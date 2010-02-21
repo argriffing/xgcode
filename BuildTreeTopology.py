@@ -21,7 +21,7 @@ import MatrixUtil
 import SchurAlgebra
 import Euclid
 import Xtree
-import Util
+import iterutils
 
 def eigenvector_to_split(v, epsilon=1e-14):
     """
@@ -331,7 +331,7 @@ def update_generalized_nj(D, index_set):
     label_sets = SchurAlgebra.vmerge([set([i]) for i in range(n)], index_set)
     for i, labels in enumerate(label_sets):
         if i != outgroup_index:
-            a = Util.get_only(labels)
+            a = iterutils.get_only(labels)
             d = R[a] - beta - 0.5 * gamma
             D_out[i,outgroup_index] = D_out[outgroup_index,i] = d
     return D_out

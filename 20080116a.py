@@ -1,7 +1,7 @@
 """Given a newick tree, draw an ascii representation.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -35,7 +35,7 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # start writing the output
-    out = StringIO.StringIO()
+    out = StringIO()
     # Draw the tree using a simple indented format if the user chose the first option.
     # Otherwise create a drawing object and draw fancier ascii art.
     if fs.choice1:

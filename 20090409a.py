@@ -11,9 +11,9 @@ When a perturbed distance matrix is used,
 all pairwise distances should be affected.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -29,7 +29,7 @@ def get_form():
     """
     # define the default distance matrix
     # this is from figure two of a paper called why neighbor joining works
-    D = numpy.array([
+    D = np.array([
             [  0, 2.7, 2.6, 2.6, 2.6, 4.4, 4.4, 4.4],
             [2.7,   0, 4.4, 4.4, 4.4, 2.6, 2.6, 2.6],
             [2.6, 4.4,   0, 0.1, 0.4, 2.7, 2.7, 2.7],
@@ -44,9 +44,12 @@ def get_form():
     selected_label_string = '\n'.join(['m', 'n'])
     # define the sequence of form objects
     form_objects = [
-            Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance),
-            Form.MultiLine('labels', 'ordered taxa', ordered_label_string),
-            Form.MultiLine('selection', 'taxa to be grouped', selected_label_string)]
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance),
+            Form.MultiLine('labels', 'ordered taxa',
+                ordered_label_string),
+            Form.MultiLine('selection', 'taxa to be grouped',
+                selected_label_string)]
     # return the sequence of form objects
     return form_objects
 
@@ -58,7 +61,7 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     if not ordered_labels:
         raise HandlingError('no ordered taxa were provided')
     if len(ordered_labels) != len(set(ordered_labels)):
@@ -66,7 +69,7 @@ def get_response(fs):
     # get the label selection and its complement
     min_selected_labels = 2
     min_unselected_labels = 1
-    selected_labels = set(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selected_labels = set(Util.get_stripped_lines(StringIO(fs.selection)))
     if len(selected_labels) < min_selected_labels:
         raise HandlingError('at least %d taxa should be selected to be grouped' % min_selected_labels)
     # get the set of labels in the complement
@@ -85,7 +88,7 @@ def get_response(fs):
     index_selection = set(i for i, label in enumerate(ordered_labels) if label in selected_labels)
     index_complement = set(range(n)) - index_selection
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the ordered list of sets of indices to merge
     merged_indices = SchurAlgebra.vmerge([set([x]) for x in range(n)], index_selection)
     # calculate the new distance matrix

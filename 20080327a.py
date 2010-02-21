@@ -1,8 +1,7 @@
 """Given a newick tree, scale the branch lengths.
 """
 
-import cgi
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil

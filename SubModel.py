@@ -1,11 +1,9 @@
 """Do mixture models.
 """
 
-# standard modules
-import StringIO
+from StringIO import StringIO
 import unittest
 
-# nonstandard modules
 import Codon
 import MatrixUtil
 import RateMatrix
@@ -60,11 +58,11 @@ class MixtureModel:
         @return: the expected rate of the substitution model
         """
         expected_rates = [matrix.get_expected_rate() for matrix in self.rate_matrices]
-        return Util.dot_product(self.mixture_parameters, expected_rates)
+        return iterutils.dot_product(self.mixture_parameters, expected_rates)
 
     def get_stationary_distribution(self):
         stationary_distributions = [matrix.get_stationary_distribution() for matrix in self.rate_matrices]
-        return [Util.dot_product(proportions, self.mixture_parameters) for proportions in zip(*stationary_distributions)]
+        return [iterutils.dot_product(proportions, self.mixture_parameters) for proportions in zip(*stationary_distributions)]
 
     def simulate_states(self, tree):
         """
@@ -91,7 +89,7 @@ class MixtureModel:
         @param tree: a tree with branch lengths and leaf states
         """
         likelihoods = [matrix.get_likelihood(tree) for matrix in self.rate_matrices]
-        return Util.dot_product(self.mixture_parameters, likelihoods)
+        return iterutils.dot_product(self.mixture_parameters, likelihoods)
 
     def get_membership(self, tree):
         """
@@ -100,7 +98,7 @@ class MixtureModel:
         @return: an ordered list of membership proportions
         """
         likelihoods = [matrix.get_likelihood(tree) for matrix in self.rate_matrices]
-        total = Util.dot_product(self.mixture_parameters, likelihoods)
+        total = iterutils.dot_product(self.mixture_parameters, likelihoods)
         return [(p * likelihood) / total for p, likelihood in zip(self.mixture_parameters, likelihoods)]
 
 

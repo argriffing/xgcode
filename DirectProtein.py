@@ -6,7 +6,7 @@ For more information about this model see:
 
 from xml.etree import ElementTree as ET
 import unittest
-import StringIO
+from StringIO import StringIO
 import math
 
 import Util
@@ -15,6 +15,7 @@ import RateMatrix
 import SubModel
 import MatrixUtil
 import XmlUtil
+import iterutils
 
 # for testing
 import PhyLikelihood
@@ -112,7 +113,7 @@ def get_nt_distribution_and_aa_energies(mutation_distribution, aa_distribution):
     codon_to_weight = {}
     for codon in codons_ordered:
         aa = Codon.g_codon_to_aa_letter[codon]
-        weight = Util.product(nt_to_weight[nt] for nt in codon)
+        weight = iterutils.product(nt_to_weight[nt] for nt in codon)
         codon_to_weight[codon] = weight
         aa_to_weight[aa] += weight
     # rescale codon and amino acid weights to sum to one
@@ -348,9 +349,9 @@ class TestDirectProtein(unittest.TestCase):
         # get the original sample xml string
         input_xml_string = get_sample_xml_string()
         # create a tree from the string
-        element_tree = ET.parse(StringIO.StringIO(input_xml_string))
+        element_tree = ET.parse(StringIO(input_xml_string))
         # create an xml string from the tree
-        out = StringIO.StringIO()
+        out = StringIO()
         element_tree.write(out)
         output_xml_string = out.getvalue()
         # verify that the output string is the same as the input string
@@ -366,7 +367,7 @@ class TestDirectProtein(unittest.TestCase):
         # create an xml string from the mixture model
         element_tree = mixture_model.to_element_tree()
         XmlUtil.indent(element_tree.getroot())
-        out = StringIO.StringIO()
+        out = StringIO()
         element_tree.write(out)
         output_xml_string = out.getvalue()
         # verify that the xml string we get out is the same as the one we put in
@@ -379,7 +380,7 @@ class TestDirectProtein(unittest.TestCase):
         input_xml_string = get_sample_xml_string()
         model = deserialize_mixture_model(input_xml_string)
         # get an alignment
-        alignment = Fasta.CodonAlignment(StringIO.StringIO(long_sample_codon_alignment_string))
+        alignment = Fasta.CodonAlignment(StringIO(long_sample_codon_alignment_string))
         # get the likelihood
         log_likelihood = PhyLikelihood.get_log_likelihood(tree, alignment, model)
 
@@ -476,7 +477,7 @@ def deserialize_mixture_model(xml_string):
     @param xml_string: the xml string representing the substitution model
     @return: a L{DirectProteinMixture} object
     """
-    element_tree = ET.parse(StringIO.StringIO(xml_string))
+    element_tree = ET.parse(StringIO(xml_string))
     root = element_tree.getroot()
     # get the mutation parameters
     mutation = root.find('mutation')
@@ -525,7 +526,7 @@ def get_sample_xml_string():
     XmlUtil.indent(root)
     # get the string representing the tree
     tree = ET.ElementTree(root)
-    out = StringIO.StringIO()
+    out = StringIO()
     tree.write(out)
     return out.getvalue()
 
@@ -540,7 +541,7 @@ def demo_xml():
     body.text = "Hello, World!"
     tree = ET.ElementTree(root)
     # show the tree
-    out = StringIO.StringIO()
+    out = StringIO()
     tree.write(out)
     print out.getvalue()
 

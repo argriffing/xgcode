@@ -25,7 +25,7 @@ substate_1: MAP conditional substate for no prior_stickiness
 .
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys
@@ -39,7 +39,7 @@ import Progress
 import ReadCoverageGap
 import FastHMM
 import TransitionMatrix
-import Util
+import iterutils
 
 
 class TimeoutError(Exception): pass
@@ -61,10 +61,18 @@ def get_form():
     """
     sample_lines = [',\t'.join(row) for row in g_sample_rows]
     form_objects = [
-            Form.Integer('good_coverage', 'expected read coverage of informative positions', 20, low=1, high=1000),
-            Form.Float('randomization_rate', 'randomization probability per base call', 0.1, low_exclusive=0),
-            Form.Integer('nstickinesses', 'use this many different levels of stickiness', 3, low=1, high=4),
-            Form.MultiLine('input_text', 'calls per nucleotide per base call per chromosome per strain', '\n'.join(sample_lines)),
+            Form.Integer('good_coverage',
+                'expected read coverage of informative positions',
+                20, low=1, high=1000),
+            Form.Float('randomization_rate',
+                'randomization probability per base call',
+                0.1, low_exclusive=0),
+            Form.Integer('nstickinesses',
+                'use this many different levels of stickiness',
+                3, low=1, high=4),
+            Form.MultiLine('input_text',
+                'calls per nt per base call per chromosome per strain',
+                '\n'.join(sample_lines)),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as a csv file')])]
@@ -79,7 +87,7 @@ def get_response(fs):
     nseconds = 2
     use_pbar = False
     # get the lines from the multi-line input
-    lines = StringIO.StringIO(fs.input_text).readlines()
+    lines = StringIO(fs.input_text).readlines()
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
     # try to get the response
@@ -143,7 +151,7 @@ class Chromosome:
         hmm = FastHMM.Model(transition_object, hidden_models, cache_size)
         # define the observations and distances
         observations = [tuple(sorted(coverage)) for coverage in self.nt_coverages]
-        distances = [b - a for a, b in Util.pairwise(self.offsets)]
+        distances = [b - a for a, b in iterutils.pairwise(self.offsets)]
         # get the posterior distribution for each observation
         dp_info = hmm.get_dp_info(observations, distances)
         distribution_list = hmm.scaled_posterior_durbin(dp_info)
@@ -243,7 +251,7 @@ def process(input_lines, good_coverage, randomization_rate, nstickinesses, nseco
     @return: the multi-line string of the resulting csv file
     """
     # do some initialization
-    out = StringIO.StringIO()
+    out = StringIO()
     pbar = None
     start_time = time.time()
     # define the superstates

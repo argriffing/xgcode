@@ -2,7 +2,7 @@
 Launch a cherrypy server.
 """
 
-import StringIO
+from StringIO import StringIO
 import sys
 import os
 import subprocess
@@ -28,7 +28,7 @@ def get_first_line(multi_line_string):
     """
     @return: a single line string or None
     """
-    lines = StringIO.StringIO(multi_line_string).readlines()
+    lines = StringIO(multi_line_string).readlines()
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
     if lines:

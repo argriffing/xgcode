@@ -1,7 +1,7 @@
 """Given a newick tree, break the tree into segments.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -18,7 +18,8 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.Integer('segments', 'minimum segment count', 200, low=1, high=10000)]
+            Form.Integer('segments', 'minimum segment count',
+                200, low=1, high=10000)]
     return form_objects
 
 def get_response(fs):
@@ -40,9 +41,11 @@ def get_response(fs):
         for node in old_nodes:
             if node is tree.root:
                 if node.blen is not None:
-                    raise HandlingError('the root node should not have a branch length')
+                    msg = 'the root node should not have a branch length'
+                    raise HandlingError(msg)
             elif node.blen is None:
-                raise HandlingError('each non-root node should have a branch length')
+                msg = 'each non-root node should have a branch length'
+                raise HandlingError(msg)
             elif node.blen > max_branch_length:
                 # create a new node and set its attributes
                 new = Newick.NewickNode()

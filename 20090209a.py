@@ -1,15 +1,17 @@
 """Check a determinantal property of the full Laplacian matrix of a tree.
 
 Note that this determinantal property fails for the full Laplacian matrix.
-The determinant should be near zero if the two sides define a valid split of the tree.
-That is, the reported determinant should be near zero when the reported branch length is positive,
-and the reported determinant should be nonzero when the reported branch length is negative.
+The determinant should be near zero
+if the two sides define a valid split of the tree.
+That is, the reported determinant should be near zero
+when the reported branch length is positive,
+and the reported determinant should be nonzero
+when the reported branch length is negative.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
-import scipy.linalg as linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -28,15 +30,23 @@ def get_form():
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string),
-            Form.SingleLine('lhs_a', 'the first taxon on one side of the split', 'a'),
-            Form.SingleLine('lhs_b', 'the second taxon on one side of the split', 'b'),
-            Form.SingleLine('rhs_a', 'the first taxon on the other side of the split', 'x'),
-            Form.SingleLine('rhs_b', 'the second taxon on the other side of the split', 'y'),
+            Form.MultiLine('tree',
+                'newick tree with branch lengths', formatted_tree_string),
+            Form.SingleLine('lhs_a',
+                'the first taxon on one side of the split', 'a'),
+            Form.SingleLine('lhs_b',
+                'the second taxon on one side of the split', 'b'),
+            Form.SingleLine('rhs_a',
+                'the first taxon on the other side of the split', 'x'),
+            Form.SingleLine('rhs_b',
+                'the second taxon on the other side of the split', 'y'),
             Form.CheckGroup('options', 'output options', [
-                Form.CheckItem('show_response', 'show the full Laplacian matrix'),
-                Form.CheckItem('show_reduced_response', 'show the 2x2 submatrix'),
-                Form.CheckItem('show_blen', 'show the branch length implied by the split')])]
+                Form.CheckItem('show_response',
+                    'show the full Laplacian matrix'),
+                Form.CheckItem('show_reduced_response',
+                    'show the 2x2 submatrix'),
+                Form.CheckItem('show_blen',
+                    'show the branch length implied by the split')])]
     return form_objects
 
 def get_response(fs):
@@ -61,7 +71,7 @@ def get_response(fs):
     # get the full Laplacian matrix
     row_sums = [sum(row) for row in A]
     n = len(ordered_names)
-    L = numpy.zeros((n, n))
+    L = np.zeros((n, n))
     for i in range(n):
         for j in range(n):
             if i == j:
@@ -72,7 +82,7 @@ def get_response(fs):
     D = tree.get_full_distance_matrix(ordered_ids)
     # get the two by two matrix
     name_to_index = dict((name, i) for i, name in enumerate(ordered_names))
-    L_reduced = numpy.zeros((2,2))
+    L_reduced = np.zeros((2,2))
     la = name_to_index[fs.lhs_a]
     lb = name_to_index[fs.lhs_b]
     ra = name_to_index[fs.rhs_a]
@@ -82,7 +92,7 @@ def get_response(fs):
     L_reduced[1][0] = L[lb][ra]
     L_reduced[1][1] = L[lb][rb]
     epsilon = 0.0000000000001
-    criterion = linalg.det(L_reduced)
+    criterion = np.linalg.det(L_reduced)
     if abs(criterion) < epsilon:
         criterion = 0
     # in analogy to the four point condition, use two different ways of calculating the distance
@@ -90,7 +100,7 @@ def get_response(fs):
     blen_b = (D[la][ra] + D[lb][rb] - D[la][lb] - D[ra][rb]) / 2.0
     blen = min(blen_a, blen_b)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     paragraphs = []
     if fs.show_response:
         paragraph = [

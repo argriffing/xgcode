@@ -1,5 +1,7 @@
-"""Given D NxN and a split, get a (M+1)x(M+1) and a (N-M+1)x(N-M+1) distance matrix.
+"""Given an NxN distance matrix and a split, get two smaller distance matrices.
 
+Given D NxN and a split,
+get a (M+1)x(M+1) and a (N-M+1)x(N-M+1) distance matrix.
 Given a distance matrix relating tips of the tree,
 a conformant list of ordered tip names,
 and a list of selected tip names,
@@ -8,7 +10,7 @@ the two new distance matrices,
 including nodes that represent the other side of the tree.
 """
 
-import StringIO
+from StringIO import StringIO
 import itertools
 
 import numpy as np
@@ -24,7 +26,8 @@ def get_form():
     """
     @return: the body of a form
     """
-    # define the default distance matrix, the ordered labels, and the selected labels
+    # Define the default distance matrix, the ordered labels,
+    # and the selected labels.
     D = np.array([
         [ 0,  8, 15, 11, 13,  5],
         [ 8,  0, 11, 15, 17,  9],
@@ -36,9 +39,12 @@ def get_form():
     selected_labels = list('123')
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance),
-            Form.MultiLine('labels', 'ordered labels', '\n'.join(ordered_labels)),
-            Form.MultiLine('selection', 'selected labels', '\n'.join(selected_labels))]
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance),
+            Form.MultiLine('labels', 'ordered labels',
+                '\n'.join(ordered_labels)),
+            Form.MultiLine('selection', 'selected labels',
+                '\n'.join(selected_labels))]
     return form_objects
 
 def set_to_string(my_set):
@@ -91,8 +97,8 @@ def get_response(fs):
     D = np.array(fs.matrix)
     n = len(D)
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
-    selected_labels = list(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
+    selected_labels = Util.get_stripped_lines(StringIO(fs.selection))
     # validate the input
     if n != len(ordered_labels):
         raise HandlingError('the number of taxon labels should match the number of rows in the distance matrix')
@@ -109,7 +115,7 @@ def get_response(fs):
     D_A_names = [set_to_string(x) for x in SchurAlgebra.vmerge(all_names, index_set_B)]
     D_B_names = [set_to_string(x) for x in SchurAlgebra.vmerge(all_names, index_set_A)]
     # show the results
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'alpha:', alpha
     print >> out, 'beta:', beta
     print >> out, 'gamma:', gamma

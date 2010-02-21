@@ -6,16 +6,17 @@ NOTE: Here the term 'M matrix' is not necessarily used in its technical sense.
 I should probably change the notation.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
-import scipy.linalg as linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Clustering
 import NewickIO
 import FelTree
+from Form import RadioItem
+from Form import CheckItem
 import Form
 
 g_sample_tree_string = """(
@@ -35,19 +36,22 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.RadioGroup('matrix', 'use these nodes for the distance matrix', [
-                Form.RadioItem('standard', 'tips only', True),
-                Form.RadioItem('augmented', 'all nodes'),
-                Form.RadioItem('named', 'all named nodes')]),
+            Form.RadioGroup('matrix', 'nodes used for the distance matrix', [
+                RadioItem('standard', 'tips only', True),
+                RadioItem('augmented', 'all nodes'),
+                RadioItem('named', 'all named nodes')]),
             Form.CheckGroup('output_options' , 'output options', [
-                Form.CheckItem('show_split', 'exact criterion partition', True),
-                Form.CheckItem('show_value', 'exact criterion value', True),
-                Form.CheckItem('show_value_minus_trace', 'exact criterion value minus trace', True),
-                Form.CheckItem('show_fiedler_split', 'show the spectral sign partition', True),
-                Form.CheckItem('show_fiedler_eigenvector', 'show the eigenvector of interest', True),
-                Form.CheckItem('show_labels', 'ordered labels', True),
-                Form.CheckItem('show_distance_matrix', 'distance matrix', True),
-                Form.CheckItem('show_M_matrix', 'M matrix', True)])]
+                CheckItem('show_split', 'exact criterion partition', True),
+                CheckItem('show_value', 'exact criterion value', True),
+                CheckItem('show_value_minus_trace',
+                    'exact criterion value minus trace', True),
+                CheckItem('show_fiedler_split',
+                    'show the spectral sign partition', True),
+                CheckItem('show_fiedler_eigenvector',
+                    'show the eigenvector of interest', True),
+                CheckItem('show_labels', 'ordered labels', True),
+                CheckItem('show_distance_matrix', 'distance matrix', True),
+                CheckItem('show_M_matrix', 'M matrix', True)])]
     return form_objects
 
 def get_eigenvector_of_interest(row_major_matrix):
@@ -56,8 +60,8 @@ def get_eigenvector_of_interest(row_major_matrix):
     @param row_major_matrix: a matrix
     @return: an eigenvector
     """
-    R = numpy.array(row_major_matrix)
-    w, vl, vr = linalg.eig(R, left=True, right=True)
+    R = np.array(row_major_matrix)
+    w, vl, vr = np.linalg.eig(R, left=True, right=True)
     eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
     stationary_eigenvector_index = eigenvalue_info[0][1]
     first_axis_eigenvector_index = eigenvalue_info[1][1]
@@ -120,12 +124,14 @@ def get_response(fs):
         value_Y_pairs.append((value, Y))
     best_value, best_Y = max(value_Y_pairs)
     # convert the best Y vector to a partition
-    pos_set = set(ordered_names[i] for i, elem in enumerate(best_Y) if elem > 0)
-    neg_set = set(ordered_names[i] for i, elem in enumerate(best_Y) if elem < 0)
+    pos_set = set(ordered_names[i] for i, el in enumerate(best_Y) if el > 0)
+    neg_set = set(ordered_names[i] for i, el in enumerate(best_Y) if el < 0)
     # get fiedler split information
     fiedler_eigenvector = get_eigenvector_of_interest(R)
-    fiedler_pos_set = set(ordered_names[i] for i, elem in enumerate(fiedler_eigenvector) if elem > 0)
-    fiedler_neg_set = set(ordered_names[i] for i, elem in enumerate(fiedler_eigenvector) if elem < 0)
+    fiedler_pos_set = set(ordered_names[i]
+            for i, elem in enumerate(fiedler_eigenvector) if elem > 0)
+    fiedler_neg_set = set(ordered_names[i]
+            for i, elem in enumerate(fiedler_eigenvector) if elem < 0)
     # write the paragraphs
     paragraphs = []
     if fs.show_split:
@@ -150,7 +156,8 @@ def get_response(fs):
     if fs.show_fiedler_split:
         lines = [
                 'spectral sign partition:',
-                set_to_string((set_to_string(fiedler_neg_set), set_to_string(fiedler_pos_set)))
+                set_to_string((set_to_string(fiedler_neg_set),
+                    set_to_string(fiedler_pos_set)))
                 ]
         paragraphs.append('\n'.join(lines))
     if fs.show_fiedler_eigenvector:
@@ -181,7 +188,7 @@ def get_response(fs):
                 ]
         paragraphs.append('\n'.join(lines))
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '\n\n'.join(paragraphs)
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

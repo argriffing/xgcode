@@ -12,7 +12,7 @@ T: the number of T reads aligned to the this position
 gap: the number of gaps aligned to the this position
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys
@@ -23,7 +23,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import Form
 import Progress
-import Util
+import iterutils
 
 
 class TimeoutError(Exception): pass
@@ -132,7 +132,7 @@ def parse(row_source, output_directory_path):
     validated_row_source = gen_validated_data_rows(row_source, header_row)
     # go through validated rows in groups of five
     chromosome_dict = {}
-    for position_rows in Util.grouper(validated_row_source, 5):
+    for position_rows in iterutils.grouper(validated_row_source, 5):
         if not all(position_rows):
             raise ValueError('the number of non-header rows was not a multiple of five')
         process_genomic_position(position_rows, strain_names, chromosome_dict)

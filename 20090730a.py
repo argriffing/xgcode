@@ -1,7 +1,7 @@
 """Explore some remedial statistics concepts. [UNFINISHED]
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 
 import numpy as np
@@ -74,7 +74,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # create the response
-    out = StringIO.StringIO()
+    out = StringIO()
     phen, snpa, snpb = sample_stuff()
     print >> out, get_estimates_a(phen, snpa, snpb)
     print >> out, get_estimates_b(phen, snpa, snpb)

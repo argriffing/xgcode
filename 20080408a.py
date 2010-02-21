@@ -3,7 +3,7 @@
 This is a silly model that I am using to experiment with HyPhy.
 """
 
-import StringIO
+from StringIO import StringIO
 import random
 
 from xml.etree import ElementTree as ET
@@ -29,8 +29,10 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('model', 'DNA frequency mixture model', get_sample_xml_string().strip()),
-            Form.Integer('ncols', 'sample this many nucleotide columns', 200, low=1, high=1000),
+            Form.MultiLine('model', 'DNA frequency mixture model',
+                get_sample_xml_string().strip()),
+            Form.Integer('ncols', 'sample this many nucleotide columns',
+                200, low=1, high=1000),
             Form.Integer('seed', 'random number seed', 314159, low=0),
             Form.RadioGroup('format', 'output format', [
                 Form.RadioItem('fastaformat', 'fasta alignment'),
@@ -52,7 +54,8 @@ def get_response(fs):
     mixture_model = deserialize_mixture_model(fs.model)
     # sample the alignment, possibly using a specified seed
     try:
-        alignment = PhyLikelihood.simulate_alignment(tree, mixture_model, fs.ncols, fs.seed)
+        alignment = PhyLikelihood.simulate_alignment(
+                tree, mixture_model, fs.ncols, fs.seed)
     except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
     # get the output string
@@ -101,7 +104,7 @@ def get_sample_xml_string():
     XmlUtil.indent(root)
     # get the string representing the tree
     tree = ET.ElementTree(root)
-    out = StringIO.StringIO()
+    out = StringIO()
     tree.write(out)
     return out.getvalue()
 
@@ -116,7 +119,7 @@ def deserialize_mixture_model(xml_string):
     category_weights = []
     nt_dicts = []
     # get the variables that define the model
-    element_tree = ET.parse(StringIO.StringIO(xml_string))
+    element_tree = ET.parse(StringIO(xml_string))
     root = element_tree.getroot()
     kappa = float(root.get('kappa'))
     for category in root:
@@ -132,10 +135,12 @@ def deserialize_mixture_model(xml_string):
     # create a mixture model from the variables that define the model
     rate_matrix_objects = []
     for nt_dict in nt_dicts:
-        rate_matrix_object = RateMatrix.get_unscaled_hky85_rate_matrix(nt_dict, kappa)
+        rate_matrix_object = RateMatrix.get_unscaled_hky85_rate_matrix(
+                nt_dict, kappa)
         rate_matrix_objects.append(rate_matrix_object)
     total = float(sum(category_weights))
     category_distribution = [weight / total for weight in category_weights]
-    mixture_model = SubModel.MixtureModel(category_distribution, rate_matrix_objects)
+    mixture_model = SubModel.MixtureModel(
+            category_distribution, rate_matrix_objects)
     mixture_model.normalize()
     return mixture_model

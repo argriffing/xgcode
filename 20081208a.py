@@ -1,10 +1,12 @@
-"""Visualize an internal state of a distance based tree reconstruction algorithm.
+"""Visualize an internal state of a tree reconstruction algorithm.
+
+Visualize an internal state of a distance based tree reconstruction algorithm.
 """
 
-import StringIO
+from StringIO import StringIO
 import tempfile
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -19,26 +21,29 @@ def get_form():
     @return: the body of a form
     """
     # define the default distance matrix
-    D = numpy.array(NeighborJoining.g_mito_matrix)
+    D = np.array(NeighborJoining.g_mito_matrix)
     ordered_labels = ['gorilla', 'orangutan', 'human', 'chimp', 'gibbon']
     # get some strings that are default values
     ordered_label_string = '\n'.join(ordered_labels)
     # create some form objects
     form_objects = [
-            Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance),
-            Form.MultiLine('labels', 'ordered labels', ordered_label_string),
-            Form.Integer('iteration', 'the iteration to visualize', 1),
-            Form.RadioGroup('contentdisposition', 'options for the presentation of the image', [
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance),
+            Form.MultiLine('labels', 'ordered labels',
+                ordered_label_string),
+            Form.Integer('iteration', 'the iteration to visualize',
+                1),
+            Form.RadioGroup('contentdisposition', 'image display options', [
                 Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image', False)])]
+                Form.RadioItem('attachment', 'download the image')])]
     # return the objects
     return form_objects
 
 def get_image_string(D, ordered_labels, iteration):
     """
     @param D: a numpy distance matrix
-    @param ordered_labels: the each label is the taxon name of a distance matrix row
-    @param iteration: the iteration whose graphical representation is requested
+    @param ordered_labels: each label is the name of a distance matrix row
+    @param iteration: the iteration whose graphical view is requested
     @return: the string representation of a png graphics file
     """
     # do some basic validation of the input
@@ -81,13 +86,16 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     if len(D) < 3:
-        raise HandlingError('the distance matrix should have at least three rows')
+        msg = 'the distance matrix should have at least three rows'
+        raise HandlingError(msg)
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
     if not ordered_labels:
         raise HandlingError('no ordered labels were provided')
     if len(ordered_labels) != len(D):
-        raise HandlingError('the number of ordered labels should be the same as the number of rows in the matrix')
+        msg_a = 'the number of ordered labels '
+        msg_b = 'should be the same as the number of rows in the matrix'
+        raise HandlingError(msg_a + msg_b)
     if len(set(ordered_labels)) != len(ordered_labels):
         raise HandlingError('the ordered labels must be unique')
     # read the index of the iteration that will be visualized
@@ -95,7 +103,9 @@ def get_response(fs):
     max_iteration = len(D) - 2
     iteration = fs.iteration
     if not (min_iteration <= iteration <= max_iteration):
-        raise HandlingError('the iteration index should be between %d and %d inclusive' % (min_iteration, max_iteration))
+        msg_a = 'the iteration index '
+        msg_b = 'should be in [%d, %d]' % (min_iteration, max_iteration)
+        raise HandlingError(msg_a + msg_b)
     # get the image string
     image_string = get_image_string(D, ordered_labels, iteration)
     # specify the content type (hard coded to png)

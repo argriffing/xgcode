@@ -1,5 +1,7 @@
-"""Check the balancedness and quality of first spectral splits for a research paper.
+"""Check the balancedness and quality of first spectral splits.
 
+Check the balancedness and quality
+of first spectral splits for a research paper.
 Set a sequence length; for example 200 base pairs.
 Sample some number of trees,
 and from each tree sample an alignment and then a distance matrix.
@@ -9,7 +11,7 @@ whether or not it was compatible with the tree.
 Return the results as an R table.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
@@ -25,8 +27,8 @@ import BuildTreeTopology
 import Xtree
 import JC69
 import Euclid
-import Form
 import Progress
+import Form
 
 class InfiniteDistanceError(Exception): pass
 class ZeroDistanceError(Exception): pass
@@ -38,14 +40,24 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('ntaxa', 'number of taxa for distance matrix sampling', 20, low=4, high=20),
-            Form.Integer('seqlen', 'sequence length for distance matrix sampling', 200, low=100, high=10000),
-            Form.Integer('nsamples', 'number of samples', 10, low=1, high=1000),
+            Form.Integer('ntaxa',
+                'number of taxa for distance matrix sampling',
+                20, low=4, high=20),
+            Form.Integer('seqlen',
+                'sequence length for distance matrix sampling',
+                200, low=100, high=10000),
+            Form.Integer('nsamples',
+                'number of samples',
+                10, low=1, high=1000),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))]),
+                Form.RadioItem('pachter_length',
+                    str(BranchLengthSampler.Pachter()), True),
+                Form.RadioItem('exponential_length',
+                    str(BranchLengthSampler.Exponential())),
+                Form.RadioItem('uniform_length_a',
+                    str(BranchLengthSampler.UniformA())),
+                Form.RadioItem('uniform_length_b',
+                    str(BranchLengthSampler.UniformB()))]),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as an R table')])]
@@ -191,7 +203,7 @@ def process(ntaxa, nseconds, seqlen, nsamples, branch_length_sampler, use_pbar):
     else:
         time_limit_string = 'no time limit was imposed'
     # create the results in convenient R table form
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '#', "R usage: mytable <- read.table('this.filename', header=T)"
     print >> out, '#', time.time() - start_time, 'elapsed seconds'
     print >> out, '#', time_limit_string

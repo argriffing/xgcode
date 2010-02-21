@@ -1,7 +1,8 @@
 """Annotate a single resequenced chromosome in a single genetic line.
 
 Use a HMM with 3 hidden states.
-A subset of genomic positions are annotated with a posterior hidden state distribution
+A subset of genomic positions are annotated
+with a posterior hidden state distribution
 given observations at each position in the subset.
 The 3x3 transition matrix is known,
 and the emission distributions for each hidden state are known
@@ -14,16 +15,23 @@ A: an integer representing the number of A reads aligned to the this position
 C: an integer representing the number of C reads aligned to the this position
 G: an integer representing the number of G reads aligned to the this position
 T: an integer representing the number of T reads aligned to the this position
-gap: an integer representing the number of gaps reads aligned to the this position
-hom_ll: the floating point non-Markov log likelihood that the position is homozygous
-het_ll: the floating point non-Markov log likelihood that the position is heterozygous
-bad_ll: the floating point non-Markov log likelihood that the position is bad
-hom_post: the floating point posterior probability that the position is homozygous
-het_post: the floating point posterior probability that the position is heterozygous
-bad_post: the floating point posterior probability that the position is bad
+gap: an integer representing the number of gaps reads
+aligned to the this position
+hom_ll: the floating point non-Markov log likelihood
+that the position is homozygous
+het_ll: the floating point non-Markov log likelihood
+that the position is heterozygous
+bad_ll: the floating point non-Markov log likelihood
+that the position is bad
+hom_post: the floating point posterior probability
+that the position is homozygous
+het_post: the floating point posterior probability
+that the position is heterozygous
+bad_post: the floating point posterior probability
+that the position is bad
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import optparse
 import sys
@@ -37,7 +45,7 @@ import Progress
 import ReadCoverage
 import FastHMM
 import TransitionMatrix
-import Util
+import iterutils
 
 
 class TimeoutError(Exception): pass
@@ -124,7 +132,7 @@ class Chromosome:
         hmm = FastHMM.Model(transition_object, hidden_models, cache_size)
         # define the observations and distances
         observations = [tuple(sorted(coverage[:-1])) for coverage in self.nt_coverages]
-        distances = [b - a for a, b in Util.pairwise(self.offsets)]
+        distances = [b - a for a, b in iterutils.pairwise(self.offsets)]
         # do the annotation
         dp_info = hmm.get_dp_info(observations, distances)
         self.posterior_distributions = hmm.scaled_posterior_durbin(dp_info)
@@ -210,7 +218,7 @@ def process(input_lines, good_coverage, bad_coverage, randomization_rate, transi
     @return: the multi-line string of the resulting csv file
     """
     # do some initialization
-    out = StringIO.StringIO()
+    out = StringIO()
     pbar = None
     start_time = time.time()
     # define the three models

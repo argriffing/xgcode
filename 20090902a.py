@@ -8,9 +8,9 @@ a matrix that is an inverse distance matrix perturbation of the laplacian.
 Maybe there is some connection between these matrices, or maybe not.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -20,12 +20,15 @@ def get_form():
     """
     @return: the body of a form
     """
-    D = numpy.array([
+    D = np.array([
             [0, 4.0, 5.0, 7.0],
             [4.0, 0, 7.0, 7.0],
             [5.0, 7.0, 0, 10.0],
             [7.0, 7.0, 10.0, 0]])
-    return [Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance)]
+    form_objects = [
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance)]
+    return form_objects
 
 def get_response(fs):
     """
@@ -38,12 +41,12 @@ def get_response(fs):
     # get the list of implied variances
     V = [sum(row) / (n - 2) for row in D]
     # create the sigma matrix
-    sigma = numpy.zeros((n,n))
+    sigma = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
             sigma[i][j] = (V[i] + V[j] - D[i][j]) / 2
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(sigma)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

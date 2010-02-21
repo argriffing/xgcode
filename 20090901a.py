@@ -1,7 +1,7 @@
 """Compare the Atteson and spectral bounds for some trees.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import random
 import optparse
@@ -106,7 +106,7 @@ def process(ntaxa, nseconds, branch_length_sampler):
     except KeyboardInterrupt, e:
         pass
     # make the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '#', elapsed_time, 'seconds of run time'
     print >> out, '#', ntaxa, 'taxa per tree'
     print >> out, '#', branch_length_sampler

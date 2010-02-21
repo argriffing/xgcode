@@ -3,7 +3,7 @@ This is an interface
 between cherrypy and the other scripts.
 """
 
-import StringIO
+from StringIO import StringIO
 import sys
 import os
 import re

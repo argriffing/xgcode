@@ -4,7 +4,7 @@ The nexus data should have a tree and an alignment.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 import os
 import popen2
 
@@ -20,7 +20,8 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.MultiLine('nexus', 'nexus data', Nexus.nexus_sample_string.strip()),
+            Form.MultiLine('nexus', 'nexus data',
+                Nexus.nexus_sample_string.strip()),
             Form.CheckGroup('options', 'output options', [
                 Form.CheckItem('outdebug', 'show debug info'),
                 Form.CheckItem('outmodel', 'show the model')])]
@@ -34,7 +35,7 @@ def get_response(fs):
     # read the nexus data
     nexus = Nexus.Nexus()
     try:
-        nexus.load(StringIO.StringIO(fs.nexus))
+        nexus.load(StringIO(fs.nexus))
     except Nexus.NexusError, e:
         raise HandlingError(e)
     # define some paths
@@ -60,8 +61,8 @@ def get_response(fs):
     fout.close()
     # create the baseml.phylip alignment file
     fout = open(baseml_phylip, 'wt')
-    phylip_string = Phylip.get_alignment_string_non_interleaved(nexus.alignment)
-    print >> fout, phylip_string
+    s_phylip = Phylip.get_alignment_string_non_interleaved(nexus.alignment)
+    print >> fout, s_phylip
     fout.close()
     # run PAML
     ctl_path = baseml_ctl
@@ -74,7 +75,7 @@ def get_response(fs):
     fin = open(Paml.baseml_out)
     d = Paml.parse_hky_output(fin)
     fin.close()
-    out = StringIO.StringIO()
+    out = StringIO()
     if fs.outdebug:
         print >> out, 'baseml stdout:'
         print >> out, '-----------------------------------------'

@@ -6,7 +6,7 @@ and the fraction of the distance between the parent and the child
 where the root will be added.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil

@@ -1,19 +1,18 @@
 """Given a newick tree, calculate various matrices.
 """
 
-import StringIO
-import math
+from StringIO import StringIO
 
 from scipy import linalg
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
-import Util
 import MatrixUtil
 import NewickIO
 import FelTree
 import NeighborJoining
 import Form
+import iterutils
 
 def get_form():
     """
@@ -26,9 +25,10 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', default_tree_string),
-            Form.MultiLine('inlabels', 'ordered labels', '\n'.join(ordered_labels)),
+            Form.MultiLine('inlabels', 'ordered labels',
+                '\n'.join(ordered_labels)),
             Form.CheckGroup('options', 'output options', [
-                Form.CheckItem('distance', 'path resistance (distance) matrix', True),
+                Form.CheckItem('distance', 'path resistance matrix', True),
                 Form.CheckItem('edge', 'edge resistance matrix'),
                 Form.CheckItem('affinity', 'affinity matrix'),
                 Form.CheckItem('laplacian', 'laplacian matrix'),
@@ -45,37 +45,40 @@ def get_response(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get the names of the tips of the tree
-    alphabetically_ordered_states = list(sorted(node.name for node in tree.gen_tips()))
+    alphabetically_ordered_states = list(sorted(node.name
+        for node in tree.gen_tips()))
     n = len(alphabetically_ordered_states)
     if n < 2:
         raise HandlingError('the newick tree should have at least two leaves')
     # read the ordered labels
     states = []
     if fs.inlabels:
-        states = list(Util.stripped_lines(StringIO.StringIO(fs.inlabels)))
+        states = Util.get_stripped_lines(StringIO(fs.inlabels))
     if len(states) > 1:
         if set(states) != set(alphabetically_ordered_states):
-            raise HandlingError('if ordered labels are provided, each should correspond to a leaf of the newick tree')
+            msg_a = 'if ordered labels are provided, '
+            msg_b = 'each should correspond to a leaf of the newick tree'
+            raise HandlingError(msg_a + msg_b)
     else:
         states = alphabetically_ordered_states
     # create the distance matrix
     D = tree.get_distance_matrix(states)
     # create the laplacian matrix
-    M = numpy.array(D)
-    P = numpy.eye(n) - numpy.ones((n,n))/n
-    L_pinv = - 0.5 * numpy.dot(P, numpy.dot(M, P))
+    M = np.array(D)
+    P = np.eye(n) - np.ones((n,n))/n
+    L_pinv = - 0.5 * np.dot(P, np.dot(M, P))
     L = linalg.pinv(L_pinv)
     # start collecting the paragraphs
     paragraphs = []
     # show the distance matrix if requested
     if fs.distance:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'path resistance (distance) matrix:'
         print >> paragraph, MatrixUtil.m_to_string(D)
         paragraphs.append(paragraph.getvalue().strip())
     # show the edge matrix if requested
     if fs.edge:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'edge resistance matrix:'
         edge_matrix = L.copy()
         for i in range(n):
@@ -88,7 +91,7 @@ def get_response(fs):
         paragraphs.append(paragraph.getvalue().strip())
     # show the affinity matrix if requested
     if fs.affinity:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'affinity matrix:'
         affinity_matrix = L.copy()
         for i in range(n):
@@ -101,31 +104,31 @@ def get_response(fs):
         paragraphs.append(paragraph.getvalue().strip())
     # show the laplacian matrix if requested
     if fs.laplacian:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'laplacian matrix:'
         print >> paragraph, MatrixUtil.m_to_string(L)
         paragraphs.append(paragraph.getvalue().strip())
     # show the negative laplacian matrix if requested
     if fs.neglaplacian:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'negative laplacian matrix:'
         print >> paragraph, MatrixUtil.m_to_string(-L)
         paragraphs.append(paragraph.getvalue().strip())
     # show the neighbor joining Q matrix
     if fs.Q:
         Q = NeighborJoining.get_Q_matrix(D)
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'neighbor-joining Q matrix:'
         print >> paragraph, MatrixUtil.m_to_string(Q)
         paragraphs.append(paragraph.getvalue().strip())
     # show the ordered labels if requested
     if fs.labels:
-        paragraph = StringIO.StringIO()
+        paragraph = StringIO()
         print >> paragraph, 'ordered labels:'
         print >> paragraph, '\n'.join(states)
         paragraphs.append(paragraph.getvalue().strip())
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '\n\n'.join(paragraphs)
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

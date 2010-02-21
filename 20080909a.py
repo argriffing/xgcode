@@ -3,7 +3,7 @@
 Taxa with zero branch length to the rest of the tree may be removed.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick

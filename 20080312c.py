@@ -5,7 +5,7 @@ See "Population Genetics Without Intraspecific Data" by Thorne et al.
 for more information about the Direct Protein model.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -23,9 +23,12 @@ def get_form():
     formatted_tree_string = Newick.get_narrow_newick_string(tree, 60)
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('model', 'Direct Protein mixture model', DirectProtein.get_sample_xml_string().strip()),
-            Form.Integer('ncols', 'sample this many codon columns', 100, low=1, high=1000)]
+            Form.MultiLine('tree', 'newick tree',
+                formatted_tree_string),
+            Form.MultiLine('model', 'Direct Protein mixture model',
+                DirectProtein.get_sample_xml_string().strip()),
+            Form.Integer('ncols', 'sample this many codon columns',
+                100, low=1, high=1000)]
     return form_objects
 
 def get_response(fs):
@@ -44,7 +47,8 @@ def get_response(fs):
     mixture_model.normalize()
     # simulate the alignment
     try:
-        alignment = PhyLikelihood.simulate_alignment(tree, mixture_model, fs.ncols)
+        alignment = PhyLikelihood.simulate_alignment(tree,
+                mixture_model, fs.ncols)
     except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
     # get the alignment string

@@ -4,9 +4,9 @@ This shows two ways of perturbing the inverse of a distance matrix
 so that its rows and columns each end up summing to zero.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -18,7 +18,7 @@ def get_form():
     """
     # define the default distance matrix
     # this is from figure 2 of a paper called why neighbor joining works
-    D = numpy.array([
+    D = np.array([
         [0.0, 3.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
         [3.0, 0.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0],
         [2.0, 3.0, 0.0, 0.1, 0.4, 3.0, 3.0, 3.0],
@@ -27,7 +27,10 @@ def get_form():
         [3.0, 2.0, 3.0, 3.0, 3.0, 0.0, 0.1, 0.4],
         [3.0, 2.0, 3.0, 3.0, 3.0, 0.1, 0.0, 0.4],
         [3.0, 2.0, 3.0, 3.0, 3.0, 0.4, 0.4, 0.0]])
-    return [Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance)]
+    form_objects = [
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance)]
+    return form_objects
 
 def get_response(fs):
     """
@@ -40,21 +43,21 @@ def get_response(fs):
     if n < 3:
         raise HandlingError('the matrix should have at least three rows')
     # define the other matrices
-    D_inv = numpy.linalg.inv(D)
-    row_sums = numpy.sum(D_inv, 0)
-    grand_sum = numpy.sum(D_inv)
-    A = numpy.zeros((n,n))
-    B = numpy.zeros((n,n))
+    D_inv = np.linalg.inv(D)
+    row_sums = np.sum(D_inv, 0)
+    grand_sum = np.sum(D_inv)
+    A = np.zeros((n,n))
+    B = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
             A[i][j] = row_sums[i] + row_sums[j] - grand_sum
             B[i][j] = row_sums[i] * row_sums[j] / grand_sum
-    C = numpy.zeros((n,n))
+    C = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
             C[i][j] = D_inv[i][j] - B[i][j]
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'additive:'
     print >> out, MatrixUtil.m_to_string(A)
     print >> out, 'multiplicative:'

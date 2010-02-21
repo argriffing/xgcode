@@ -1,7 +1,7 @@
 """Plot the first few eigenfunctions of the Laplacian of a path.
 """
 
-import StringIO
+from StringIO import StringIO
 from itertools import product
 
 import numpy as np
@@ -11,7 +11,7 @@ from SnippetUtil import HandlingError
 import Form
 import Euclid
 import CairoUtil
-import Util
+import iterutils
 
 g_naxes = 4
 
@@ -21,13 +21,18 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            Form.Integer('nvertices', 'use this many vertices', 20, low=g_naxes+1, high=100),
+            Form.Integer('nvertices', 'use this many vertices',
+                20, low=g_naxes+1, high=100),
             Form.RadioGroup('eigenvalue_option', 'eigenvalue usage', [
-                Form.RadioItem('eigenvalue_scaling', 'scale by square roots of eigenvalues', True),
-                Form.RadioItem('eigenvalue_ignoring', 'ignore eigenvalues')]),
+                Form.RadioItem('eigenvalue_scaling',
+                    'scale by square roots of eigenvalues', True),
+                Form.RadioItem('eigenvalue_ignoring',
+                    'ignore eigenvalues')]),
             Form.RadioGroup('xaxis_option', 'plotting options', [
-                Form.RadioItem('xaxis_length', 'x axis is the path distance', True),
-                Form.RadioItem('xaxis_firstvector', 'x axis is the first MDS vector')]),
+                Form.RadioItem('xaxis_length',
+                    'x axis is the path distance', True),
+                Form.RadioItem('xaxis_firstvector',
+                    'x axis is the first MDS vector')]),
             Form.RadioGroup('imageformat', 'image format', [
                 Form.RadioItem('png', 'png', True),
                 Form.RadioItem('svg', 'svg'),
@@ -46,7 +51,7 @@ def create_laplacian_matrix(nvertices):
     """
     affinity = nvertices * 2.0
     A = np.zeros((nvertices, nvertices), dtype=float)
-    for i, j in Util.pairwise(range(nvertices)):
+    for i, j in iterutils.pairwise(range(nvertices)):
         A[i,j] = affinity
         A[j,i] = affinity
     L = Euclid.adjacency_to_laplacian(A)
@@ -142,7 +147,7 @@ def create_image_string(image_format, physical_size, F, xaxis_length):
         # draw the eigenfunction
         context.save()
         context.set_source_rgb(*color)
-        for (xa, ya), (xb, yb) in Util.pairwise(seq):
+        for (xa, ya), (xb, yb) in iterutils.pairwise(seq):
             context.move_to(xa, ya)
             context.line_to(xb, yb)
             context.stroke()

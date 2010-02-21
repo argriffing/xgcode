@@ -1,8 +1,10 @@
 """Look at the effect of added leaflets on the MDS embedding of a tree.
 
-By a leaflet I mean a new leaf that is a negligible distance from an existing vertex.
+By a leaflet I mean a new leaf that is a negligible distance
+from an existing vertex.
 Consider the following three situations:
-1) No leaflet is added, in which case the embedding of the tree is not affected.
+1) No leaflet is added, in which case
+the embedding of the tree is not affected.
 2) One leaflet is added to each leaf in the original tree.
 3) A large number of leaflets are added to each leaf in the original tree.
 I hope that case (3) is like computing the MDS using only leaf distances,
@@ -15,7 +17,7 @@ so now I will try to find the correct way to use the mass vector.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -109,7 +111,7 @@ def process():
     @return: a multi-line string that summarizes the results
     """
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # define some distance matrices
     D_leaves = Euclid.g_D_b
     D_all = Euclid.g_D_c

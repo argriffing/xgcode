@@ -9,11 +9,10 @@ derived from a dissimilarity matrix does not necessarily
 split the tree in a way that defines a unique branch.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
-import numpy
-from scipy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
@@ -35,7 +34,7 @@ def get_principal_eigenvector(M):
     @param M: a 2d numpy array representing a matrix
     @return: the principal eigenvector of M
     """
-    eigenvalues, eigenvector_transposes = linalg.eigh(M)
+    eigenvalues, eigenvector_transposes = np.linalg.eigh(M)
     eigenvectors = eigenvector_transposes.T
     eigensystem = [(abs(w), w, v.tolist()) for w, v in zip(eigenvalues, eigenvectors)]
     sorted_eigensystem = list(reversed(sorted(eigensystem)))
@@ -64,7 +63,10 @@ def get_form():
     tree = NewickIO.parse(default_tree_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # return the form objects
-    return [Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string)]
+    form_objects = [
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string)]
+    return form_objects
 
 def get_response(fs):
     """
@@ -74,17 +76,17 @@ def get_response(fs):
     # arbitrarily define the size of the alphabet
     k = 4
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # define the order of the tip names
     ordered_tip_names = list(sorted(node.get_name() for node in tree.gen_tips()))
     n = len(ordered_tip_names)
     # get the matrix of pairwise distances among the tips
-    D = numpy.array(tree.get_distance_matrix(ordered_tip_names))
+    D = np.array(tree.get_distance_matrix(ordered_tip_names))
     D_vector = get_principal_coordinate(D)
     # get the dissimilarity matrix from the distance matrix
-    dissimilarity = numpy.array([[distance_to_dissimilarity(d, k) for d in row] for row in D])
+    dissimilarity = np.array([[distance_to_dissimilarity(d, k) for d in row] for row in D])
     dissimilarity_vector = get_principal_coordinate(dissimilarity)
     # get the principal coordinates of the distance-like matrices
     print >> out, 'original distance matrix:'

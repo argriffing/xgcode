@@ -7,7 +7,7 @@ This module should only be accessed through its draw() function.
 
 import math
 import cairo
-import StringIO
+from StringIO import StringIO
 import CairoUtil
 
 from optparse import OptionParser
@@ -103,7 +103,7 @@ class DrawTreeImage:
             theta = i * (2*math.pi) / increment_count
             """
             # get the extents by doing a dry run
-            dummy_file = StringIO.StringIO()
+            dummy_file = StringIO()
             dummy_surface = surface_factory(dummy_file, 1, 1)
             dummy_context = cairo.Context(dummy_surface)
             _draw_stroke(dummy_context, list(_gen_rotated_edges(edges, theta)))
@@ -160,7 +160,7 @@ class DrawTreeImage:
         #new_width = (xmax - xmin)
         #new_height = (ymax - ymin)
         # emulate a file open for writing
-        out = StringIO.StringIO()
+        out = StringIO()
         # create the surface
         #surface = surface_factory(out, new_width, new_height)
         # create the context
@@ -178,7 +178,7 @@ class DrawTreeImage:
         """
         # extract the data representing the file
         if format == 'png':
-            out_png = StringIO.StringIO()
+            out_png = StringIO()
             surface.write_to_png(out_png)
             surface.finish()
             return out_png.getvalue()

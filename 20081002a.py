@@ -5,29 +5,33 @@ The label is either 1 or -1 depending on the group to which the point belongs.
 This is not so useful.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from SnippetUtil import HandlingError
-import Form
 import RUtil
 import SpiralSampler
+from Form import CheckItem
+from Form import RadioItem
+import Form
 
 def get_form():
     """
     @return: a list of form objects
     """
     form_objects = [
-            Form.Integer('npoints', 'sample this many points per group', 100, low=0, high=10000),
-            Form.Float('stddev', 'standard deviation of the noise', 0.1, low_exclusive=0),
+            Form.Integer('npoints', 'sample this many points per group',
+                100, low=0, high=10000),
+            Form.Float('stddev', 'standard deviation of the noise',
+                0.1, low_exclusive=0),
             Form.CheckGroup('label_options', 'label options', [
-                Form.CheckItem('add_labels', 'add the group label to each row', True)]),
+                CheckItem('add_labels', 'add group label to each row', True)]),
             Form.RadioGroup('format', 'format options', [
-                Form.RadioItem('raw', 'rows of tab separated values', True),
-                Form.RadioItem('table', 'R table format')]),
+                RadioItem('raw', 'rows of tab separated values', True),
+                RadioItem('table', 'R table format')]),
             Form.RadioGroup('contentdisposition', 'delivery options', [
-                Form.RadioItem('inline', 'view', True),
-                Form.RadioItem('attachment', 'download')])]
+                RadioItem('inline', 'view', True),
+                RadioItem('attachment', 'download')])]
     return form_objects
 
 def get_response(fs):
@@ -35,13 +39,16 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
+    # unpack some options
+    npoints = fs.npoints
+    stddev = fs.stddev
     # define the data rows and the headers
     if fs.add_labels:
         headers = ('x', 'y', 'label')
-        data_rows = list(SpiralSampler.gen_labeled_points(fs.npoints, fs.stddev))
+        data_rows = list(SpiralSampler.gen_labeled_points(npoints, stddev))
     else:
         headers = ('x', 'y')
-        data_rows = list(SpiralSampler.gen_points(fs.npoints, fs.stddev))
+        data_rows = list(SpiralSampler.gen_points(npoints, stddev))
     # begin the response
     if fs.raw:
         lines = []
@@ -53,6 +60,7 @@ def get_response(fs):
         response_text = RUtil.get_table_string(data_rows, headers)
     # return the response
     response_headers = [('Content-Type', 'text/plain')]
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, 'spiral.table')))
+    disposition = "%s; filename=%s" % (fs.contentdisposition, 'spiral.table')
+    response_headers.append(('Content-Disposition', disposition))
     return response_headers, response_text
 

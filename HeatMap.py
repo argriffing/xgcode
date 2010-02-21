@@ -1,11 +1,12 @@
 
 import unittest
 import sys
-import StringIO
+from StringIO import StringIO
 
 import Util
 import Discretizer
 import Monospace
+import iterutils
 
 
 # This sample row major matrix is used to demonstrate matrix visualization.
@@ -134,7 +135,7 @@ class HtmlHeatMap:
         self.heatmap = heatmap
 
     def get_legend(self):
-        out = StringIO.StringIO()
+        out = StringIO()
         print >> out, '<code>'
         print >> out, '<br/>\n'.join(self.heatmap.legend.gen_legend_lines())
         print >> out, '</code>'
@@ -144,7 +145,7 @@ class HtmlHeatMap:
         """
         @return: the string representing an entire html file
         """
-        sio = StringIO.StringIO()
+        sio = StringIO()
         print >> sio, '<html>'
         print >> sio, '<head>'
         print >> sio, '<style type="text/css">'
@@ -235,7 +236,7 @@ class HeatMap:
         for row in self.row_major_matrix:
             arr = []
             css_classes = [self.legend.value_to_css_class(v) for v in row]
-            for css_class, count in Util.rle(css_classes):
+            for css_class, count in iterutils.rle(css_classes):
                 arr.append('<span class="%s">' % css_class)
                 arr.append('&nbsp;' * count)
                 arr.append('</span>')

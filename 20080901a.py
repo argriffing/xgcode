@@ -3,7 +3,7 @@
 MAPP stands for Multivariate Analysis of Protein Polymorphism.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -72,8 +72,10 @@ def get_form():
     data_lines = [str(info) for info in column_info_list]
     # define the form objects
     form_objects = [
-            Form.MultiLine('mapp', 'MAPP output', g_mapp_output.strip()),
-            Form.MultiLine('headers', 'alignment column headers', '\n'.join(data_lines))]
+            Form.MultiLine('mapp', 'MAPP output',
+                g_mapp_output.strip()),
+            Form.MultiLine('headers', 'alignment column headers',
+                '\n'.join(data_lines))]
     return form_objects
 
 def get_response(fs):
@@ -82,23 +84,27 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the headers
-    headers = list(Util.stripped_lines(StringIO.StringIO(fs.headers)))
+    headers = list(Util.stripped_lines(StringIO(fs.headers)))
     # read the tab separated MAPP output
     tsv_lists = []
-    for line in StringIO.StringIO(fs.mapp):
+    for line in StringIO(fs.mapp):
         if line.strip():
             tsv_list = [element.strip() for element in line.split('\t')]
             tsv_lists.append(tsv_list)
     # validate the headers, possibly providing default values
     if headers:
         if len(headers) != len(tsv_lists) - 1:
-            raise HandlingError('the number of headers should be one fewer than the number of MAPP lines')
+            msg_a = 'the number of headers should be one fewer than '
+            msg_b = 'the number of MAPP lines'
+            raise HandlingError(msg_a + msg_b)
     else:
         headers = [str(i+1) for i in range(len(tsv_lists) - 1)]
     # check input consistency
     length_set = set(len(tsv_list) for tsv_list in tsv_lists)
     if length_set != set([54]):
-        raise HandlingError('each line in the MAPP output should have 54 tab separated values: %s' % str(length_set))
+        msg_a = 'each line in the MAPP output should have 54 '
+        msg_b = 'tab separated values: %s' % str(length_set)
+        raise HandlingError(msg_a + msg_b)
     # read the p-values
     pvalue_lists = []
     for tsv_list in tsv_lists[1:]:
@@ -111,7 +117,7 @@ def get_response(fs):
             pvalue_list.append(pvalue)
         pvalue_lists.append(pvalue_list)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for header, pvalue_list in zip(headers, pvalue_lists):
         # if a p-value is bad then do not show anything for this column
         if None in pvalue_list:

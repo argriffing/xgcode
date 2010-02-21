@@ -1,7 +1,7 @@
 """Check a split consistency condition for a research paper.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import math
 import random
@@ -28,13 +28,19 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('ntaxa', 'number of taxa per tree', 20, low=4, high=20),
-            Form.Integer('nsamples', 'number of trees to sample', 100, low=1, high=1000),
+            Form.Integer('ntaxa', 'number of taxa per tree',
+                20, low=4, high=20),
+            Form.Integer('nsamples', 'number of trees to sample',
+                100, low=1, high=1000),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))])]
+                Form.RadioItem('pachter_length',
+                    str(BranchLengthSampler.Pachter()), True),
+                Form.RadioItem('exponential_length',
+                    str(BranchLengthSampler.Exponential())),
+                Form.RadioItem('uniform_length_a',
+                    str(BranchLengthSampler.UniformA())),
+                Form.RadioItem('uniform_length_b',
+                    str(BranchLengthSampler.UniformB()))])]
     return form_objects
 
 def get_response(fs):
@@ -188,7 +194,7 @@ def process(ntaxa, nseconds, nsamples, branch_length_sampler, use_pbar):
     else:
         time_limit_string = 'no time limit was imposed'
     # create the results
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'debug information:'
     print >> out, time.time() - start_time, 'elapsed seconds'
     print >> out, time_limit_string

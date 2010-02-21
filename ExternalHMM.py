@@ -10,12 +10,12 @@ import unittest
 
 import numpy as np
 
-import Util
 import HMM
 import FastHMM
 import DiscreteEndpoint
 import TransitionMatrix
 import lineario
+import iterutils
 
 
 class Model:
@@ -142,7 +142,7 @@ class Model:
         A = np.zeros((nhidden, nhidden))
         # get the expected counts for each transition
         dp_source = itertools.izip(observations, forward, backward)
-        for old, new in Util.pairwise(dp_source):
+        for old, new in iterutils.pairwise(dp_source):
             o_old, f_old, b_old = old
             o_new, f_new, b_new = new
             likelihoods = self.get_likelihoods(o_new)
@@ -381,13 +381,10 @@ class TestExternalHMM(unittest.TestCase):
         hidden_states = [fair_state, loaded_state]
         # define a sequence of observations
         observations = [1, 2, 6, 6, 1, 2, 3, 4, 5, 6]
+        obs_string = '\n'.join(str(x) for x in observations)
         # define the observation stream
         o_converter = lineario.IntConverter()
-        o_stream = lineario.SequentialStringIO(o_converter)
-        o_stream.open_write()
-        for x in observations:
-            o_stream.write(x)
-        o_stream.close()
+        o_stream = lineario.SequentialStringIO(o_converter, obs_string)
         # create the reference hidden markov model object
         hmm_old = HMM.TrainedModel(M, hidden_states)
         # create the testing hidden markov model object

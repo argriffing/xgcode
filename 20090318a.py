@@ -1,31 +1,32 @@
-"""Look for a principal coordinate invalid split when pairwise leaf distances are squared.
+"""Look for an invalid spectral split when pairwise leaf distances are squared.
 
-Distances between tips of a tree are in some sense already squared euclidean distances.
+Look for a principal coordinate invalid split
+when pairwise leaf distances are squared.
+Distances between tips of a tree are in some sense
+already squared euclidean distances.
 The signs of the principal eigenvector of this double centered distance matrix
 define a split that is compatible with the tree.
 This has not been shown to be the case when the entries of the distance matrix
 are transformed by an arbitrary monotonic function,
 so this snippet tries to find such a counterexample.
 A particular monotonic function of interest is the squaring function,
-because the distances may be erroneously squared if Gower's principal coordinate analysis
-is applied naively.
+because the distances may be erroneously squared
+if Gower's principal coordinate analysis is applied naively.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
-import scipy
-from scipy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Form
-import Util
 import FelTree
 import NewickIO
 import TreeComparison
 import MatrixUtil
 import TreeSampler
+import iterutils
+import Form
 
 def get_form():
     """
@@ -39,7 +40,9 @@ def get_form():
             '((d:0.083, b:0.614):0.150, e:0.581, (c:1.290, a:0.359):1.070);',
             '((b:1.749, d:0.523):0.107, e:1.703, (a:0.746, c:0.070):4.025);']
     # define the list of form objects
-    form_objects = [Form.MultiLine('trees', 'one newick tree per line', '\n'.join(default_tree_lines))]
+    form_objects = [
+            Form.MultiLine('trees', 'one newick tree per line',
+                '\n'.join(default_tree_lines))]
     return form_objects
 
 def partition_to_string(part):
@@ -55,7 +58,7 @@ def get_principal_eigenvector(M):
     @param M: a 2d numpy array representing a matrix
     @return: the principal eigenvector of M
     """
-    eigenvalues, eigenvector_transposes = linalg.eigh(M)
+    eigenvalues, eigenvector_transposes = np.linalg.eigh(M)
     eigenvectors = eigenvector_transposes.T
     eigensystem = [(abs(w), w, v.tolist()) for w, v in zip(eigenvalues, eigenvectors)]
     sorted_eigensystem = list(reversed(sorted(eigensystem)))
@@ -91,7 +94,7 @@ def get_response(fs):
     """
     # get the newick trees.
     trees = []
-    for tree_string in Util.stripped_lines(StringIO.StringIO(fs.trees)):
+    for tree_string in iterutils.stripped_lines(StringIO(fs.trees)):
         # parse each tree and make sure that it conforms to various requirements
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]
@@ -103,7 +106,7 @@ def get_response(fs):
             raise HandlingError('each terminal node label must be unique')
         trees.append(tree)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # look at each tree
     nerrors = 0
     ncounterexamples = 0
@@ -112,7 +115,7 @@ def get_response(fs):
         valid_parts = TreeComparison.get_partitions(tree)
         ordered_tip_names = [tip.get_name() for tip in tree.gen_tips()]
         # assert that the partition implied by the correct formula is valid
-        D = numpy.array(tree.get_distance_matrix(ordered_tip_names))
+        D = np.array(tree.get_distance_matrix(ordered_tip_names))
         loadings = get_principal_coordinate(D)
         nonneg_leaf_set = frozenset(tip for tip, v in zip(ordered_tip_names, loadings) if v >= 0)
         neg_leaf_set = frozenset(tip for tip, v in zip(ordered_tip_names, loadings) if v < 0)
@@ -164,7 +167,7 @@ def main():
             valid_parts = TreeComparison.get_partitions(tree)
             ordered_tip_names = [tip.get_name() for tip in tree.gen_tips()]
             # assert that the partition implied by the correct formula is valid
-            D = numpy.array(tree.get_distance_matrix(ordered_tip_names))
+            D = np.array(tree.get_distance_matrix(ordered_tip_names))
             loadings = get_principal_coordinate(D)
             nonneg_leaf_set = frozenset(tip for tip, v in zip(ordered_tip_names, loadings) if v >= 0)
             neg_leaf_set = frozenset(tip for tip, v in zip(ordered_tip_names, loadings) if v < 0)

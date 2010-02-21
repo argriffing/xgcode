@@ -2,7 +2,7 @@
 """
 
 
-import StringIO
+from StringIO import StringIO
 import random
 import time
 
@@ -62,7 +62,7 @@ def process(tree_string):
     @return: a multi-line string that summarizes the results
     """
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # build the newick tree from the string
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
     # get ordered names and ids

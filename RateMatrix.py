@@ -4,16 +4,13 @@ Use matrix exponentiation to get a transition matrix
 from a rate matrix and a time or branch length.
 """
 
-# standard modules
-import StringIO
+from StringIO import StringIO
 import unittest
 import math
 
-# extension modules
 import numpy as np
 import scipy
 
-# nonstandard modules
 import CodonFrequency
 import Codon
 import MatrixUtil

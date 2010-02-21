@@ -1,7 +1,7 @@
 """ Given a newick tree, split each branch into two branches.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick

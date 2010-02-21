@@ -1,16 +1,18 @@
-"""Given strings find vectors whose correlations are proportions of matching sites.
+"""Given some sequences, find vectors whose correlations are match proportions.
+
+Given strings, find vectors whose correlations are
+proportions of matching sites.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
-from numpy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Form
-import Util
 import MatrixUtil
+import iterutils
+import Form
 
 def get_form():
     """
@@ -23,8 +25,10 @@ def get_form():
             'acaa']
     # define the list of form objects
     form_objects = [
-            Form.MultiLine('sequences', 'one sequence per line', '\n'.join(default_sequences)),
-            Form.Float('epsilon', 'small values will be shown as zero', '1e-10', low_inclusive=0)]
+            Form.MultiLine('sequences', 'one sequence per line',
+                '\n'.join(default_sequences)),
+            Form.Float('epsilon', 'small values will be shown as zero',
+                '1e-10', low_inclusive=0)]
     return form_objects
 
 def get_vectors(n):
@@ -37,8 +41,8 @@ def get_vectors(n):
     @param n: get this many vectors
     @return: a list of n vectors
     """
-    H = numpy.identity(n+1) - numpy.ones((n+1, n+1)) / (n+1)
-    w, V_t = linalg.eigh(H)
+    H = np.identity(n+1) - np.ones((n+1, n+1)) / (n+1)
+    w, V_t = np.linalg.eigh(H)
     V = [v.tolist() for v in V_t.T]
     sorted_wV = list(sorted((x, v) for x, v in zip(w, V)))
     sorted_w, sorted_V = zip(*sorted_wV)
@@ -61,7 +65,7 @@ def get_response(fs):
     """
     # get the sequences
     sequences = []
-    for raw_string in Util.stripped_lines(StringIO.StringIO(fs.sequences)):
+    for raw_string in iterutils.stripped_lines(StringIO(fs.sequences)):
         sequences.append(raw_string.strip())
     # get the alphabet
     alphabet = list(sorted(set(''.join(sequences))))
@@ -79,7 +83,7 @@ def get_response(fs):
             number_list.extend(letter_to_vector[letter])
         number_lists.append(number_list)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # print the correlation matrix
     print >> out, MatrixUtil.m_to_string(number_lists)
     # write the response

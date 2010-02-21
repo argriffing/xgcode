@@ -1,12 +1,8 @@
-"""Get intermediate values from a MAPP calculation on a single alignment column.
+"""Get intermediate values from a single column MAPP calculation.
 """
 
 import cgi
-import StringIO
-
-import numpy
-import scipy
-from scipy import linalg
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Form
@@ -99,9 +95,10 @@ def get_tree_and_column(fs):
     tree = NewickIO.parse(fs.tree, Newick.NewickTree)
     unordered_tip_names = set(node.name for node in tree.gen_tips())
     # get the lines that give an amino acid for each of several taxa
-    column_lines = list(Util.stripped_lines(StringIO.StringIO(fs.column)))
+    column_lines = Util.get_stripped_lines(StringIO(fs.column))
     if len(column_lines) < 7:
-        raise HandlingError('the alignment column should have at least seven taxa')
+        msg = 'the alignment column should have at least seven taxa'
+        raise HandlingError(msg)
     # get the mapping from taxon to amino acid
     taxon_to_aa_letter = {}
     for line in column_lines:
@@ -111,20 +108,24 @@ def get_tree_and_column(fs):
         taxon, aa_letter = pair
         aa_letter = aa_letter.upper()
         if aa_letter not in Codon.g_aa_letters:
-            raise HandlingError('expected an amino acid instead of whatever this is: %s' % aa_letter)
+            msg = 'expected an amino acid instead of this: %s' % aa_letter
+            raise HandlingError(msg)
         taxon_to_aa_letter[taxon] = aa_letter
-    # assert that the names in the column are a subset of the names of the tips of the tree
+    # Assert that the names in the column are a subset of the names
+    # of the tips of the tree.
     unordered_taxon_names = set(taxon_to_aa_letter)
     weird_names = unordered_taxon_names - unordered_tip_names
     if weird_names:
-        raise HandlingError('these taxa were not found on the tree: %s' % str(weird_names))
+        msg = 'these taxa were not found on the tree: %s' % str(weird_names)
+        raise HandlingError(msg)
     # define the taxa that will be pruned
     names_to_remove = unordered_tip_names - unordered_taxon_names
     # prune the tree
     for name in names_to_remove:
         tree.prune(tree.get_unique_node(name))
     # merge segmented branches 
-    internal_nodes_to_remove = [node for node in tree.preorder() if node.get_child_count() == 1] 
+    internal_nodes_to_remove = [node for node in tree.preorder()
+            if node.get_child_count() == 1] 
     for node in internal_nodes_to_remove: 
         tree.remove_node(node) 
     return tree, taxon_to_aa_letter
@@ -135,7 +136,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # start writing the html response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<body>'
     # get the tree and the column sent by the user
@@ -176,7 +177,7 @@ def get_response(fs):
     # show the pruned tree
     if fs.show_tree:
         tree_string = NewickIO.get_narrow_newick_string(pruned_tree, 80)
-        lines = StringIO.StringIO(tree_string).readlines()
+        lines = StringIO(tree_string).readlines()
         lines = [line.rstrip() for line in lines]
         print >> out, 'pruned phylogenetic tree in newick format:'
         print >> out, '<pre>'

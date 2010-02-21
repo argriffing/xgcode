@@ -2,7 +2,7 @@
 This module is written to test some hypothesis about the CAT model.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 import numpy as np
@@ -32,7 +32,7 @@ def profile_power(profile, exponent):
 
 def main():
     fin = open(g_filename)
-    lines = list(Util.stripped_lines(fin.readlines()))
+    lines = Util.get_stripped_lines(fin.readlines())
     float_rows = [[float(x) for x in line.split()] for line in lines[1:]]
     mixture_profile = np.array([row[0] for row in float_rows])
     aa_profiles = np.array([row[1:] for row in float_rows])

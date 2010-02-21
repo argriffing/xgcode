@@ -1,9 +1,10 @@
-"""Given a weighted adjacency matrix, find the optimal bipartition using some objective function.
+"""Given an adjacency matrix, find an optimal bipartition.
+
+Given a weighted adjacency matrix,
+find the optimal bipartition using some objective function.
 """
 
-import StringIO
-
-import numpy
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Util
@@ -17,12 +18,14 @@ def get_form():
     @return: the body of a form
     """
     # define the default matrix and its ordered labels
-    A = numpy.array(StoerWagner.g_stoer_wagner_affinity)
+    A = np.array(StoerWagner.g_stoer_wagner_affinity)
     ordered_labels = [str(i+1) for i in range(len(A))]
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'weighted adjacency matrix', A, MatrixUtil.assert_weighted_adjacency),
-            Form.MultiLine('labels', 'ordered labels', '\n'.join(ordered_labels)),
+            Form.Matrix('matrix', 'weighted adjacency matrix',
+                A, MatrixUtil.assert_weighted_adjacency),
+            Form.MultiLine('labels', 'ordered labels',
+                '\n'.join(ordered_labels)),
             Form.RadioGroup('objective', 'bipartition objective function', [
                 Form.RadioItem('min', 'min cut', True),
                 Form.RadioItem('conductance', 'min conductance cut')])]
@@ -30,8 +33,10 @@ def get_form():
 
 def get_conductance(assignment, affinity):
     """
-    @param assignment: a vector of 1 or -1 according to the cluster membership of the state
-    @param affinity: a numpy affinity matrix
+    The assignment vector has elements equal to 1 or -1.
+    These elements define the cluster membership.
+    @param assignment: defines the cluster membership
+    @param affinity: an affinity matrix
     """
     # if the assignment defines a trivial partition then return None
     if set(assignment) != set([-1, 1]):
@@ -64,17 +69,23 @@ def get_response(fs):
     # read the weighted adjacency matrix
     A = fs.matrix
     # read the labels
-    ordered_labels = list(Util.stripped_lines(StringIO.StringIO(fs.labels)))
-    # assert that the number of labels is compatible with the shape of the matrix
+    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
+    # Assert that the number of labels
+    # is compatible with the shape of the matrix.
     n = len(A)
     if len(ordered_labels) != n:
-        raise HandlingError('the number of labels does not match the number of rows in the matrix')
+        msg = 'the number of labels does not match the size of the matrix'
+        raise HandlingError(msg)
     # get the best objective function value and the corresponding best cluster
     if fs.conductance:
         max_size = 20
         if n > max_size:
-            raise HandlingError('for the min conductance objective function please limit the size of the matrix to %d rows' % max_size)
-        best_objective, best_assignment = min([(get_conductance(assignment, A), assignment) for assignment in Clustering.gen_assignments(n)])
+            msg_a = 'for the min conductance objective function please '
+            msg_b = 'limit the size of the matrix to %d rows' % max_size
+            raise HandlingError(msg_a + msg_b)
+        pairs = [(get_conductance(assignment, A), assignment)
+                for assignment in Clustering.gen_assignments(n)]
+        best_objective, best_assignment = min(pairs)
         best_cluster = set(i for i in range(n) if best_assignment[i] == 1)
     if fs.min:
         best_cluster = StoerWagner.stoer_wagner_min_cut(A.tolist())
@@ -82,9 +93,10 @@ def get_response(fs):
         best_objective = sum(A[i][j] for i in best_cluster for j in complement)
     # get the smaller of the two clusters
     complement = set(range(n)) - best_cluster
-    small_cluster = min((len(best_cluster), best_cluster), (len(complement), complement))[1]
+    small_cluster = min((len(best_cluster), best_cluster),
+            (len(complement), complement))[1]
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'smallest cluster defined by the bipartition:'
     for index in sorted(small_cluster):
         print >> out, ordered_labels[index]

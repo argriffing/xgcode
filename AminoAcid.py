@@ -2,7 +2,7 @@
 """
 
 import unittest
-import StringIO
+from StringIO import StringIO
 
 g_fitch66_distance = {}
 
@@ -47,7 +47,7 @@ def _init_fitch66_distance():
     # declare that we want to modify this global variable
     global g_fitch66_distance
     # get processed lines
-    raw_lines = StringIO.StringIO(g_fitch66_multiline_data_string).readlines()
+    raw_lines = StringIO(g_fitch66_multiline_data_string).readlines()
     stripped_lines = [line.strip() for line in raw_lines]
     nonempty_stripped_lines = [line for line in stripped_lines if line]
     # read the matrix from the processed lines

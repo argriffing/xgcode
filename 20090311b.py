@@ -1,14 +1,11 @@
 """Sample variances of differences of brownian motion on a graph.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import random
 import math
 import optparse
-
-from scipy import linalg
-import numpy
 
 from SnippetUtil import HandlingError
 import Util
@@ -37,11 +34,15 @@ def get_form():
     @return: the body of a form
     """
     default_edge_lines = [str(edge) for edge in g_default_edges]
+    graphlines_data = '\n'.join(default_edge_lines)
     # define the form objects
     form_objects = [
-            Form.MultiLine('graphlines', 'edge sources, sinks, and distances', '\n'.join(default_edge_lines)),
-            Form.Float('epsilon', 'use this much sloppiness in the conditioning', '1.0'),
-            Form.Integer('nsamples', 'estimate variance from this many accepted joint samples', '100')]
+            Form.MultiLine('graphlines',
+                'edge sources, sinks, and distances', graphlines_data),
+            Form.Float('epsilon',
+                'use this much sloppiness in the conditioning', '1.0'),
+            Form.Integer('nsamples',
+                'accepted joint samples for variance estimation', '100')]
     return form_objects
 
 class RejectionError(Exception):
@@ -120,7 +121,7 @@ def process(edges, epsilon, nsamples, deadline, pbar):
                 difference = state_to_value[b] - state_to_value[a]
                 pairwise_differences[(a,b)].append(difference)
     # write the variance of each pairwise distance
-    out = StringIO.StringIO()
+    out = StringIO()
     nstates = len(ordered_states)
     for i in range(nstates-1):
         for j in range(i+1, nstates):
@@ -136,7 +137,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the graph lines
-    lines = list(Util.stripped_lines(StringIO.StringIO(fs.graphlines)))
+    lines = Util.get_stripped_lines(StringIO(fs.graphlines))
     edges = []
     for line in lines:
         items = line.split()

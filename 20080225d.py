@@ -1,9 +1,9 @@
 """Normalize a rate matrix to have one expected transition per unit time.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -15,13 +15,16 @@ def get_form():
     @return: the body of a form
     """
     # define the default matrix string
-    R = numpy.array([
+    R = np.array([
             [-3, 1, 1, 1],
             [1, -3, 1, 1],
             [1, 1, -3, 1],
             [1, 1, 1, -3]])
     # define the form objects
-    return [Form.Matrix('matrix', 'rate matrix', R, MatrixUtil.assert_rate_matrix)]
+    form_objects = [
+            Form.Matrix('matrix', 'rate matrix',
+                R, MatrixUtil.assert_rate_matrix)]
+    return form_objects
 
 def get_response(fs):
     """

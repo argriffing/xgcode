@@ -13,16 +13,16 @@ If edges are like conductances,
 then the input and output edges are like reciprocal ohms.
 """
 
-import StringIO
+from StringIO import StringIO
 
-from scipy import linalg
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
-import Form
-import Util
 import MatrixUtil
+import iterutils
+from Form import RadioItem
+import Form
 
 def get_form():
     """
@@ -49,13 +49,15 @@ def get_form():
     vertices_to_be_removed = ['A', 'a']
     # define the list of form objects
     form_objects = [
-            Form.MultiLine('graph', 'sparse graph with edge weights', '\n'.join(edge_lines)),
-            Form.MultiLine('vertices', 'vertices to be removed', '\n'.join(vertices_to_be_removed)),
+            Form.MultiLine('graph', 'sparse graph with edge weights',
+                '\n'.join(edge_lines)),
+            Form.MultiLine('vertices', 'vertices to be removed',
+                '\n'.join(vertices_to_be_removed)),
             Form.RadioGroup('method', 'transformation method', [
-                Form.RadioItem('funky', 'some funky method'),
-                Form.RadioItem('funky_corrected', 'some funky method (corrected; edges are like conductances)'),
-                Form.RadioItem('ohm', 'edges are like ohms'),
-                Form.RadioItem('conductance', 'edges are like conductances', True)])]
+                RadioItem('funky', 'some funky method'),
+                RadioItem('funky_corrected', 'some funky method (corrected)'),
+                RadioItem('ohm', 'edges are ohms'),
+                RadioItem('conductance', 'edges are conductances', True)])]
     return form_objects
 
 def get_funky_transformation(edge_triples, name_to_index, reduced_ordered_vertex_names):
@@ -67,7 +69,7 @@ def get_funky_transformation(edge_triples, name_to_index, reduced_ordered_vertex
     """
     # create the graph laplacian
     n = len(name_to_index)
-    L = numpy.zeros((n, n))
+    L = np.zeros((n, n))
     for name_a, name_b, weight in edge_triples:
         a = name_to_index[name_a]
         b = name_to_index[name_b]
@@ -76,18 +78,18 @@ def get_funky_transformation(edge_triples, name_to_index, reduced_ordered_vertex
         L[a][a] += weight
         L[b][b] += weight
     # get the Moore-Penrose inverse of the laplacian
-    L_pinv = linalg.pinv(numpy.array(L))
+    L_pinv = np.linalg.pinv(np.array(L))
     # remove rows and columns of specified indices to create a sub matrix
     reduced_name_to_index = dict((name, i) for i, name in enumerate(reduced_ordered_vertex_names))
     reduced_n = len(reduced_ordered_vertex_names)
-    reduced_L_pinv = numpy.zeros((reduced_n, reduced_n))
+    reduced_L_pinv = np.zeros((reduced_n, reduced_n))
     for reduced_i in range(reduced_n):
         for reduced_j in range(reduced_n):
             i = name_to_index[reduced_ordered_vertex_names[reduced_i]]
             j = name_to_index[reduced_ordered_vertex_names[reduced_j]]
             reduced_L_pinv[reduced_i][reduced_j] = L_pinv[i][j]
     # get the Moore-Penrose inverse of this reduced matrix
-    reduced_L = linalg.pinv(reduced_L_pinv)
+    reduced_L = np.linalg.pinv(reduced_L_pinv)
     # get reduced edge triples
     reduced_edge_triples = []
     epsilon = 0.00000000001
@@ -109,7 +111,7 @@ def get_corrected_funky_transformation(edge_triples, name_to_index, reduced_orde
     """
     # create the graph laplacian
     n = len(name_to_index)
-    L = numpy.zeros((n, n))
+    L = np.zeros((n, n))
     for name_a, name_b, weight in edge_triples:
         a = name_to_index[name_a]
         b = name_to_index[name_b]
@@ -118,11 +120,11 @@ def get_corrected_funky_transformation(edge_triples, name_to_index, reduced_orde
         L[a][a] += weight
         L[b][b] += weight
     # get the Moore-Penrose inverse of the laplacian
-    L_pinv = linalg.pinv(numpy.array(L))
+    L_pinv = np.linalg.pinv(np.array(L))
     # remove rows and columns of specified indices to create a sub matrix
     reduced_name_to_index = dict((name, i) for i, name in enumerate(reduced_ordered_vertex_names))
     reduced_n = len(reduced_ordered_vertex_names)
-    reduced_L_pinv = numpy.zeros((reduced_n, reduced_n))
+    reduced_L_pinv = np.zeros((reduced_n, reduced_n))
     for reduced_i in range(reduced_n):
         for reduced_j in range(reduced_n):
             i = name_to_index[reduced_ordered_vertex_names[reduced_i]]
@@ -131,7 +133,7 @@ def get_corrected_funky_transformation(edge_triples, name_to_index, reduced_orde
     # double center the matrix
     reduced_L_pinv = MatrixUtil.double_centered(reduced_L_pinv)
     # get the Moore-Penrose inverse of this reduced matrix
-    reduced_L = linalg.pinv(reduced_L_pinv)
+    reduced_L = np.linalg.pinv(reduced_L_pinv)
     # get reduced edge triples
     reduced_edge_triples = []
     epsilon = 0.00000000001
@@ -153,7 +155,7 @@ def get_ohm_transformation(edge_triples, name_to_index, reduced_ordered_vertex_n
     """
     # get the graph laplacian given the resistor network
     n = len(name_to_index)
-    L = numpy.zeros((n, n))
+    L = np.zeros((n, n))
     for name_a, name_b, ohm in edge_triples:
         conductance = 1/ohm
         a = name_to_index[name_a]
@@ -163,22 +165,22 @@ def get_ohm_transformation(edge_triples, name_to_index, reduced_ordered_vertex_n
         L[a][a] += conductance
         L[b][b] += conductance
     # get the effective resistance matrix 
-    L_pinv = linalg.pinv(L) 
-    R = numpy.zeros((n, n)) 
+    L_pinv = np.linalg.pinv(L) 
+    R = np.zeros((n, n)) 
     for i in range(n): 
         for j in range(n): 
             R[i][j] = L_pinv[i][i] + L_pinv[j][j] - L_pinv[i][j] - L_pinv[j][i] 
     # remove rows and columns of specified indices to create a reduced resistance matrix
     reduced_name_to_index = dict((name, i) for i, name in enumerate(reduced_ordered_vertex_names))
     reduced_n = len(reduced_ordered_vertex_names)
-    reduced_R = numpy.zeros((reduced_n, reduced_n))
+    reduced_R = np.zeros((reduced_n, reduced_n))
     for reduced_i in range(reduced_n):
         for reduced_j in range(reduced_n):
             i = name_to_index[reduced_ordered_vertex_names[reduced_i]]
             j = name_to_index[reduced_ordered_vertex_names[reduced_j]]
             reduced_R[reduced_i][reduced_j] = R[i][j]
     # find the laplacian that corresponds to this reduced resistance matrix
-    reduced_L = -2*linalg.pinv(MatrixUtil.double_centered(reduced_R))
+    reduced_L = -2*np.linalg.pinv(MatrixUtil.double_centered(reduced_R))
     # get reduced edge triples
     reduced_edge_triples = []
     epsilon = 0.00000000001
@@ -201,7 +203,7 @@ def get_conductance_transformation(edge_triples, name_to_index, reduced_ordered_
     """
     # get the graph laplacian given the conductance network
     n = len(name_to_index)
-    L = numpy.zeros((n, n))
+    L = np.zeros((n, n))
     for name_a, name_b, conductance in edge_triples:
         a = name_to_index[name_a]
         b = name_to_index[name_b]
@@ -210,22 +212,22 @@ def get_conductance_transformation(edge_triples, name_to_index, reduced_ordered_
         L[a][a] += conductance
         L[b][b] += conductance
     # get the effective resistance matrix 
-    L_pinv = linalg.pinv(L) 
-    R = numpy.zeros((n, n)) 
+    L_pinv = np.linalg.pinv(L) 
+    R = np.zeros((n, n)) 
     for i in range(n): 
         for j in range(n): 
             R[i][j] = L_pinv[i][i] + L_pinv[j][j] - L_pinv[i][j] - L_pinv[j][i] 
     # remove rows and columns of specified indices to create a reduced resistance matrix
     reduced_name_to_index = dict((name, i) for i, name in enumerate(reduced_ordered_vertex_names))
     reduced_n = len(reduced_ordered_vertex_names)
-    reduced_R = numpy.zeros((reduced_n, reduced_n))
+    reduced_R = np.zeros((reduced_n, reduced_n))
     for reduced_i in range(reduced_n):
         for reduced_j in range(reduced_n):
             i = name_to_index[reduced_ordered_vertex_names[reduced_i]]
             j = name_to_index[reduced_ordered_vertex_names[reduced_j]]
             reduced_R[reduced_i][reduced_j] = R[i][j]
     # find the laplacian that corresponds to this reduced resistance matrix
-    reduced_L = -2*linalg.pinv(MatrixUtil.double_centered(reduced_R))
+    reduced_L = -2*np.linalg.pinv(MatrixUtil.double_centered(reduced_R))
     # get reduced edge triples
     reduced_edge_triples = []
     epsilon = 0.00000000001
@@ -245,7 +247,7 @@ def get_response(fs):
     """
     # read the edge triples (vertex name, vertex name, edge weight)
     edge_triples = []
-    for line in Util.stripped_lines(StringIO.StringIO(fs.graph)):
+    for line in iterutils.stripped_lines(StringIO(fs.graph)):
         string_triple = line.split()
         if len(string_triple) != 3:
             raise HandlingError('each graph edge should have two vertex names and a weight')
@@ -277,7 +279,7 @@ def get_response(fs):
     n = len(ordered_vertex_names)
     # read the set of vertices that the user wants to remove
     vertex_names_to_remove = set()
-    for name in Util.stripped_lines(StringIO.StringIO(fs.vertices)):
+    for name in iterutils.stripped_lines(StringIO(fs.vertices)):
         if name in vertex_names_to_remove:
             raise HandlingError('vertices should be named for removal at most once')
         vertex_names_to_remove.add(name)
@@ -297,7 +299,7 @@ def get_response(fs):
     elif fs.conductance:
         reduced_edge_triples = get_conductance_transformation(edge_triples, name_to_index, reduced_ordered_vertex_names)
     # write the reduced edge triples
-    out = StringIO.StringIO()
+    out = StringIO()
     for name_a, name_b, weight in reduced_edge_triples:
         print >> out, name_a, name_b, weight
     # write the response

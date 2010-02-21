@@ -1,7 +1,7 @@
 """Given a fasta alignment, check it for syntax errors and briefly summarize it.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Fasta
@@ -19,9 +19,9 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.fasta))
+        alignment = Fasta.Alignment(StringIO(fs.fasta))
         print >> out, 'This is a valid alignment.'
     except Fasta.AlignmentError, e:
         alignment = None
@@ -37,7 +37,7 @@ def get_response(fs):
                 print >> out, 'This is a valid nucleotide alignment.'
         except Fasta.AlignmentError, e:
             print >> out, 'This is not a valid nucleotide alignment:', e
-    for header, sequence in Fasta.gen_header_sequence_pairs(StringIO.StringIO(fs.fasta)):
+    for header, sequence in Fasta.gen_header_sequence_pairs(StringIO(fs.fasta)):
         print >> out, '%s: %d' % (header, len(sequence))
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

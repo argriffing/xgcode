@@ -1,12 +1,14 @@
-"""Look for a matrix where index merging and Schur complementation do not commute.
+"""Seek a matrix where index merging and Schur complementation do not commute.
+
+Look for a matrix where index merging and Schur complementation do not commute.
 """
 
 # Matrices in this script are implemented as two dimensional numpy arrays.
 
-import StringIO
+from StringIO import StringIO
 import random
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
@@ -16,7 +18,10 @@ def get_form():
     """
     @return: the body of a form
     """
-    return [Form.Integer('block_size', 'block size', 2, low=1, high=6)]
+    form_objects = [
+            Form.Integer('block_size', 'block size',
+                2, low=1, high=6)]
+    return form_objects
 
 def sample_matrix(block_size):
     """
@@ -27,7 +32,7 @@ def sample_matrix(block_size):
     """
     n = block_size * 4
     expected_value = 1.0
-    M = numpy.zeros((n,n))
+    M = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
             M[i,j] = random.expovariate(expected_value)
@@ -41,7 +46,7 @@ def analyze_matrix(M, block_size):
     @return: a string of results
     """
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the new matrix using the first composition of functions
     M_11 = SchurAlgebra.mmerge(M, set(range(2*block_size)))
     M_12 = SchurAlgebra.mschur(M_11, set(1 + block_size + k for k in range(block_size)))
@@ -50,7 +55,7 @@ def analyze_matrix(M, block_size):
     M_21 = SchurAlgebra.mschur(M, set(3*block_size + k for k in range(block_size)))
     M_22 = SchurAlgebra.mmerge(M_21, set(range(2*block_size)))
     print >> out, M_22
-    if numpy.allclose(M_12, M_22):
+    if np.allclose(M_12, M_22):
         print >> out, 'the matrices are similar'
     else:
         print >> out, 'the matrices are different'
@@ -62,7 +67,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # sample a matrix
     b = fs.block_size
     M = sample_matrix(b)

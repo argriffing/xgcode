@@ -2,7 +2,7 @@
 Neighbor joining related algorithms.
 """
 
-import StringIO
+from StringIO import StringIO
 import unittest
 
 import Newick

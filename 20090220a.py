@@ -1,19 +1,21 @@
-"""Given a distance matrix, get the first two principal coordinates of each point.
+"""Given a distance matrix, get the first two principal coords of each point.
 
+Given a distance matrix,
+get the first two principal coordinates of each point.
 If the tree-like option is used,
-then the squared pairwise distances between the output points approximates the input distances.
+then the squared pairwise distances between the output points approximates
+the input distances.
 If the plane-like option is used,
-then the pairwise distances between the output points approximates the input distances.
+then the pairwise distances between the output points approximates
+the input distances.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
-from scipy import linalg
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
-import Util
 import MatrixUtil
 import Form
 
@@ -22,7 +24,7 @@ def get_form():
     @return: the body of a form
     """
     # define the default distance matrix
-    D = numpy.array([
+    D = np.array([
             [0, 405, 278, 502, 414],
             [405, 0, 542, 521, 774],
             [278, 542, 0, 246, 137],
@@ -30,7 +32,8 @@ def get_form():
             [414, 774, 137, 304, 0]])
     # define the form objects
     form_objects = [
-            Form.Matrix('matrix', 'distance matrix', D, MatrixUtil.assert_predistance),
+            Form.Matrix('matrix', 'distance matrix',
+                D, MatrixUtil.assert_predistance),
             Form.RadioGroup('options', 'topology', [
                 Form.RadioItem('treelike', 'distances are tree-like', True),
                 Form.RadioItem('planelike', 'distances are plane-like')])]
@@ -51,7 +54,7 @@ def get_response(fs):
     # get the doubly centered A matrix
     HAH = MatrixUtil.double_centered(A)
     # do the eigendecomposition
-    eigenvalues, eigenvector_transposes = linalg.eigh(HAH)
+    eigenvalues, eigenvector_transposes = np.linalg.eigh(HAH)
     eigenvectors = eigenvector_transposes.T
     eigensystem = [(abs(w), w, v.tolist()) for w, v in zip(eigenvalues, eigenvectors)]
     sorted_eigensystem = list(reversed(sorted(eigensystem)))
@@ -68,7 +71,7 @@ def get_response(fs):
         axes.append(axis)
     points = zip(*axes)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     for point in points:
         print >> out, '\t'.join(str(v) for v in point)
     # write the response

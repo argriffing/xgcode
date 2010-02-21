@@ -1,20 +1,24 @@
-"""Find the matrix of maximum likelihood distances between pairs of aligned sequences using JC69.
+"""Find the matrix of ML distances between pairs of sequences using JC69.
 
-The rows and columns of the output distance matrix are ordered according to the sequence order in the alignment.
-The likelihood maximization can be done analytically because of the simplicity of the model.
+Find the matrix of maximum likelihood distances
+between pairs of aligned sequences using JC69.
+The rows and columns of the output distance matrix
+are ordered according to the sequence order in the alignment.
+The likelihood maximization can be done analytically
+because of the simplicity of the model.
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Fasta
 import MatrixUtil
-import Util
 import JC69
 import Form
 
-# HKY simulation parameters: transition/transversion ratio 2, C:4, G:4, A:1, T:1, scaled to one
+# HKY simulation parameters:
+# transition/transversion ratio 2, C:4, G:4, A:1, T:1, scaled to one
 g_fasta = """
 >a
 TGGGGGCGCACTGTCGGCCGCGTTGCGCAGCACTCCACCGCCTGGCGCTCCCCCGGCGCC
@@ -36,8 +40,10 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            Form.MultiLine('fasta', 'aligned sequences without gaps', g_fasta.strip()),
-            Form.Float('infinity', 'use this value for estimates of infinity', 100.0)]
+            Form.MultiLine('fasta', 'aligned sequences without gaps',
+                g_fasta.strip()),
+            Form.Float('infinity', 'use this value for estimates of infinity',
+                100.0)]
     return form_objects
 
 def get_response(fs):
@@ -47,17 +53,19 @@ def get_response(fs):
     """
     # read the alignment
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.fasta))
+        alignment = Fasta.Alignment(StringIO(fs.fasta))
     except Fasta.AlignmentError, e:
         raise HandlingError('fasta alignment error: ' + str(e))
     if alignment.get_sequence_count() < 2:
         raise HandlingError('expected at least two sequences')
-    # create the distance matrix, replacing values of None with the representation for infinity
+    # Create the distance matrix,
+    # replacing values of None with the representation for infinity.
     row_major_distance_matrix = []
     for row in JC69.get_ML_distance_matrix(alignment.sequences):
-        row_major_distance_matrix.append([fs.infinity if x == float('inf') else x for x in row])
+        corrected_row = [fs.infinity if x == float('inf') else x for x in row]
+        row_major_distance_matrix.append(corrected_row)
     # write the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, MatrixUtil.m_to_string(row_major_distance_matrix)
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

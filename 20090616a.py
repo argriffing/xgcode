@@ -1,12 +1,12 @@
 """Construct an example tree with pedagogically useful properties.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import random
 import optparse
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -17,6 +17,8 @@ import BranchLengthSampler
 import BuildTreeTopology
 import Dendrogram
 import Xtree
+from Form import RadioItem
+from Form import CheckItem
 import Form
 
 def get_form():
@@ -25,16 +27,26 @@ def get_form():
     """
     form_objects = [
             Form.RadioGroup('leaf_options', 'number of leaves', [
-                Form.RadioItem('six_leaves', '6', True),
-                Form.RadioItem('seven_leaves', '7')]),
+                RadioItem('six_leaves', '6', True),
+                RadioItem('seven_leaves', '7')]),
             Form.CheckGroup('requirements', 'requirements', [
-                Form.CheckItem('invalid_dendrogram', 'the topology of the naive dendrogram must be incorrect', True),
-                Form.CheckItem('informative_children', 'splits of the child trees must be informative', True),
-                Form.CheckItem('force_difference', 'the split of the full graph must differ from that of the Schur graph', False),
-                Form.CheckItem('informative_full_split', 'the split of the full graph must be informative', False)]),
-            Form.CheckGroup('sampling_options', 'branch length sampling details', [
-                Form.CheckItem('allow_integers', 'allow single digit integer branch lengths', True),
-                Form.CheckItem('allow_reciprocals', 'allow reciprocals of single digit integer branch lengths', False)])]
+                CheckItem('invalid_dendrogram',
+                    'the topology of the naive dendrogram must be incorrect',
+                    True),
+                CheckItem('informative_children',
+                    'splits of the child trees must be informative',
+                    True),
+                CheckItem('force_difference',
+                    'full graph split must differ from Schur graph split',
+                    False),
+                CheckItem('informative_full_split',
+                    'full graph split must be informative', False)]),
+            Form.CheckGroup('sampling_options', 'branch length sampling', [
+                CheckItem('allow_integers',
+                    'allow single digit integer branch lengths', True),
+                CheckItem('allow_reciprocals',
+                    'allow reciprocal single digit integer branch lengths',
+                    False)])]
     return form_objects
 
 
@@ -81,7 +93,7 @@ class TreeSearch:
         """
         @return: a multi-line string of text
         """
-        out = StringIO.StringIO()
+        out = StringIO()
         if self.force_difference or self.informative_full_split:
             print >> out, 'full graph split stats:'
             print >> out, self.aug_split_collision_count, 'full graph splits collided with the desired primary split'
@@ -123,11 +135,11 @@ class TreeSearch:
             for branch in self.tree.get_branches():
                 branch.length = sampling_function()
             # get the distance matrix so we can use a library function to get the split
-            D = numpy.array(self.tree.get_distance_matrix())
+            D = np.array(self.tree.get_distance_matrix())
             ntips = len(D)
             # get the Laplacian matrix of the full tree and the corresponding Fiedler split of the leaves
             if self.force_difference or self.informative_full_split:
-                A_aug = numpy.array(self.tree.get_weighted_adjacency_matrix(self.id_to_index))
+                A_aug = np.array(self.tree.get_weighted_adjacency_matrix(self.id_to_index))
                 L_aug = Euclid.adjacency_to_laplacian(A_aug)
                 v_aug = BuildTreeTopology.laplacian_to_fiedler(L_aug)
                 left_aug, right_aug = BuildTreeTopology.eigenvector_to_split(v_aug)
@@ -236,7 +248,7 @@ def do_tree_search(tree_search, nseconds, sampling_function):
     @param nseconds: the allowed time for the search or None to search until interrupted
     @param sampling_function: a function that samples a branch length
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     try:
         success = tree_search.do_search(nseconds, sampling_function)
     except KeyboardInterrupt, e:

@@ -2,10 +2,9 @@
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
-import Util
 import DirectProtein
 import RateMatrix
 import Form
@@ -34,22 +33,27 @@ def get_response(fs):
     # substitution per unit of branch length.
     mixture_model.normalize()
     # begin writing the html file
-    out = StringIO.StringIO()
+    out = StringIO()
     # write the html header
     print >> out, '<html>'
-    print >> out, '<head><style type="text/css">td{font-size:x-small;}</style></head>'
+    print >> out, '<head>'
+    print >> out, '<style type="text/css">td{font-size:x-small;}</style>'
+    print >> out, '</head>'
     print >> out, '<body>'
     # write the symmetric components of the rate matrices
-    for category_index, matrix_object in enumerate(mixture_model.rate_matrices):
-        codon_stationary_distribution = matrix_object.get_stationary_distribution()
+    for category_i, matrix_object in enumerate(mixture_model.rate_matrices):
+        codon_v = matrix_object.get_stationary_distribution()
         matrix = matrix_object.dictionary_rate_matrix
         symmetric_matrix = {}
-        for ca, pa in zip(codons, codon_stationary_distribution):
-            for cb, pb in zip(codons, codon_stationary_distribution):
-                symmetric_matrix[(ca, cb)] = matrix[(ca, cb)] / (math.sqrt(pb) / math.sqrt(pa))
-        print >> out, 'the symmetric component of the rate matrix for category %d:' % (category_index + 1)
+        for ca, pa in zip(codons, codon_v):
+            for cb, pb in zip(codons, codon_v):
+                value = matrix[(ca, cb)] / (math.sqrt(pb) / math.sqrt(pa))
+                symmetric_matrix[(ca, cb)] = value
+        print >> out, 'the symmetric component of the rate matrix'
+        print >> out, 'for category %d:' % (category_i + 1)
         print >> out, '<table>'
-        print >> out, RateMatrix.codon_rate_matrix_to_html_string(symmetric_matrix)
+        print >> out, RateMatrix.codon_rate_matrix_to_html_string(
+                symmetric_matrix)
         print >> out, '</table>'
         print >> out, '<br/><br/>'
     # write the html footer

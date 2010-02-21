@@ -5,7 +5,7 @@ Kappa controls the transition / transversion rate.
 Omega controls the non-synonymous / synonymous rate.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -27,7 +27,8 @@ def get_form():
         default_weight_lines.append(line)
     # define the form objects
     form_objects = [
-            Form.MultiLine('weights', 'codon weights', '\n'.join(default_weight_lines)),
+            Form.MultiLine('weights', 'codon weights',
+                '\n'.join(default_weight_lines)),
             Form.Float('kappa', 'kappa', 2),
             Form.Float('omega', 'omega', .01)]
     return form_objects
@@ -43,7 +44,7 @@ def get_response(fs):
     # get the rate matrix defined by the weights and kappa and omega
     r = RateMatrix.get_gy94_rate_matrix(distribution, fs.kappa, fs.omega)
     # show the rate matrix in convenient text form
-    out = StringIO.StringIO()
+    out = StringIO()
     for ca in codons:
         print >> out, '\t'.join(str(r[(ca, cb)]) for cb in codons)
     response_headers = [('Content-Type', 'text/plain')]

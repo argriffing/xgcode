@@ -1,10 +1,12 @@
-"""Find a 4-taxon tree that is comparable to a tree whose taxa are partitioned into four groups.
+"""Find a 4-taxon tree that is in some sense equivalent to a partitioned tree.
+
+Find a 4-taxon tree that is comparable to a tree 
+whose taxa are partitioned into four groups.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
-from numpy import linalg
+import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -16,18 +18,32 @@ import Newick
 import Clustering
 import MatrixUtil
 
+def get_block_structure(taxa_a1, taxa_a2, taxa_b1, taxa_b2):
+    a1 = [0]*len(taxa_a1)
+    a2 = [1]*len(taxa_a2)
+    b1 = [2]*len(taxa_b1)
+    b2 = [3]*len(taxa_b2)
+    return a1 + a2 + b1 + b2
+
 def get_form():
     """
     @return: a list of form objects
     """
     form_objects = [
-            Form.MultiLine('subtree_a', 'rooted subtree A', '(a:1, (b:2, c:3):4);'),
-            Form.MultiLine('taxa_a1', 'first group of taxa in subtree A', '\n'.join('a')),
-            Form.MultiLine('taxa_a2', 'second group of taxa in subtree A', '\n'.join('bc')),
-            Form.MultiLine('subtree_b', 'rooted subtree B', '((d:5, e:6):9, (f:7, g:8):10);'),
-            Form.MultiLine('taxa_b1', 'first group of taxa in subtree B', '\n'.join('de')),
-            Form.MultiLine('taxa_b2', 'second group of taxa in subtree B', '\n'.join('fg')),
-            Form.Float('blen', 'branch length connecting the subtrees at their roots', 10)]
+            Form.MultiLine('subtree_a', 'rooted subtree A',
+                '(a:1, (b:2, c:3):4);'),
+            Form.MultiLine('taxa_a1', 'first group of taxa in subtree A',
+                '\n'.join('a')),
+            Form.MultiLine('taxa_a2', 'second group of taxa in subtree A',
+                '\n'.join('bc')),
+            Form.MultiLine('subtree_b', 'rooted subtree B',
+                '((d:5, e:6):9, (f:7, g:8):10);'),
+            Form.MultiLine('taxa_b1', 'first group of taxa in subtree B',
+                '\n'.join('de')),
+            Form.MultiLine('taxa_b2', 'second group of taxa in subtree B',
+                '\n'.join('fg')),
+            Form.Float('blen', 'branch length between subtree roots',
+                10)]
     return form_objects
 
 def get_response(fs):
@@ -37,11 +53,11 @@ def get_response(fs):
     """
     # read the values from the form
     subtree_a = NewickIO.parse(fs.subtree_a, Newick.NewickTree)
-    taxa_a1 = list(Util.stripped_lines(StringIO.StringIO(fs.taxa_a1)))
-    taxa_a2 = list(Util.stripped_lines(StringIO.StringIO(fs.taxa_a2)))
+    taxa_a1 = Util.get_stripped_lines(StringIO(fs.taxa_a1))
+    taxa_a2 = Util.get_stripped_lines(StringIO(fs.taxa_a2))
     subtree_b = NewickIO.parse(fs.subtree_b, Newick.NewickTree)
-    taxa_b1 = list(Util.stripped_lines(StringIO.StringIO(fs.taxa_b1)))
-    taxa_b2 = list(Util.stripped_lines(StringIO.StringIO(fs.taxa_b2)))
+    taxa_b1 = Util.get_stripped_lines(StringIO(fs.taxa_b1))
+    taxa_b2 = Util.get_stripped_lines(StringIO(fs.taxa_b2))
     connecting_branch_length = fs.blen
     # assert that no group of taxa contains duplicates
     for taxa in (taxa_a1, taxa_a2, taxa_b1, taxa_b2):
@@ -55,30 +71,41 @@ def get_response(fs):
         if len(set(tip_names)) != len(tip_names):
             raise HandlingError('a subtree has duplicate tip names')
     # assert that the partitions are valid
-    for tree_name, tree, taxa_1, taxa_2 in (('A', subtree_a, taxa_a1, taxa_a2), ('B', subtree_b, taxa_b1, taxa_b2)):
+    first_group = ('A', subtree_a, taxa_a1, taxa_a2) 
+    second_group = ('B', subtree_b, taxa_b1, taxa_b2)
+    for tree_name, tree, taxa_1, taxa_2 in (first_group, second_group):
         tip_names = set(node.get_name() for node in tree.gen_tips())
         for group_name, taxa in (('1', taxa_1), ('2', taxa_2)):
             nonsense_names = list(set(taxa) - set(tip_names))
-            message = 'the following taxa in group %s of subtree %s are not valid tips: %s' % (group_name, tree_name, str(nonsense_names))
+            msg_a = 'the following taxa in group %s ' % group_name
+            msg_b = 'of subtree %s ' % tree_name
+            msg_c = 'are not valid tips: %s' % str(nonsense_names)
+            message = msg_a + msg_b + msg_c
             if nonsense_names:
                 raise HandlingError(message)
         if set(taxa_1) & set(taxa_2):
-            raise HandlingError('the taxon lists for subtree %s are not disjoint' % tree_name)
+            msg_a = 'the taxon lists for subtree %s ' % tree_name
+            msg_b = 'are not disjoint'
+            raise HandlingError(msg_a + msg_b)
         if set(taxa_1) | set(taxa_2) < tip_names:
-            raise HandlingError('a tip in subtree %s is not represented in either of the groups' % tree_name)
+            msg_a = 'a tip in subtree %s ' % tree_name
+            msg_b = 'is not represented in either of the groups'
+            raise HandlingError(msg_a + msg_b)
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the results for the first method
-    do_first_method(subtree_a, subtree_b, taxa_a1, taxa_a2, taxa_b1, taxa_b2, connecting_branch_length, out)
+    do_first_method(subtree_a, subtree_b, taxa_a1, taxa_a2,
+            taxa_b1, taxa_b2, connecting_branch_length, out)
     # define the entire tree by connecting the subtrees
     subtree_b.get_root().set_branch_length(connecting_branch_length)
     subtree_a.get_root().add_child(subtree_b.get_root())
     tree = subtree_a
     # define the order and structure of the distance matrix
-    block_structure = [0]*len(taxa_a1) + [1]*len(taxa_a2) + [2]*len(taxa_b1) + [3]*len(taxa_b2)
+    block_structure = get_block_structure(taxa_a1, taxa_a2, taxa_b1, taxa_b2)
     name_order = taxa_a1 + taxa_a2 + taxa_b1 + taxa_b2
     # get the distance matrix
-    fel_tree = NewickIO.parse(NewickIO.get_newick_string(tree), FelTree.NewickTree)
+    fel_tree = NewickIO.parse(NewickIO.get_newick_string(tree),
+            FelTree.NewickTree)
     D = fel_tree.get_distance_matrix(name_order)
     # get the R matrix
     R = Clustering.get_R_balaji(D)
@@ -97,8 +124,10 @@ def get_response(fs):
         neo.name = 'special'
         neo.blen = connecting_branch_length / 2
         t.get_root().add_child(neo)
-    feltree_m3_a = NewickIO.parse(NewickIO.get_newick_string(tree_m3_a), FelTree.NewickTree)
-    feltree_m3_b = NewickIO.parse(NewickIO.get_newick_string(tree_m3_b), FelTree.NewickTree)
+    feltree_m3_a = NewickIO.parse(NewickIO.get_newick_string(tree_m3_a),
+            FelTree.NewickTree)
+    feltree_m3_b = NewickIO.parse(NewickIO.get_newick_string(tree_m3_b),
+            FelTree.NewickTree)
     tree_m3_a = NewickIO.parse(fs.subtree_a, Newick.NewickTree)
     tree_m3_b = NewickIO.parse(fs.subtree_b, Newick.NewickTree)
     new_root = Newick.NewickNode()
@@ -107,9 +136,11 @@ def get_response(fs):
     new_root.add_child(tree_m3_a.get_root())
     new_root.add_child(tree_m3_b.get_root())
     tree_m3 = Newick.NewickTree(new_root)
-    feltree_m3 = NewickIO.parse(NewickIO.get_newick_string(tree_m3), FelTree.NewickTree)
+    feltree_m3 = NewickIO.parse(NewickIO.get_newick_string(tree_m3),
+            FelTree.NewickTree)
     branch_d2 = connecting_branch_length / 2
-    do_third_method(feltree_m3_a, feltree_m3_b, feltree_m3, branch_d2, taxa_a1, taxa_a2, taxa_b1, taxa_b2, out)
+    do_third_method(feltree_m3_a, feltree_m3_b, feltree_m3,
+            branch_d2, taxa_a1, taxa_a2, taxa_b1, taxa_b2, out)
     # show the expected results
     print >> out, 'M:'
     print >> out, MatrixUtil.m_to_string(R)
@@ -119,24 +150,25 @@ def get_response(fs):
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()
 
-def do_third_method(tree_a, tree_b, tree, branch_d2, taxa_a1, taxa_a2, taxa_b1, taxa_b2, out):
+def do_third_method(tree_a, tree_b, tree, branch_d2,
+        taxa_a1, taxa_a2, taxa_b1, taxa_b2, out):
     print >> out, 'third method:'
     # get the covariance matrices of the mini trees
     ordered_names = taxa_a1 + taxa_a2 + taxa_b1 + taxa_b2
     ordered_names_a = taxa_a1 + taxa_a2 + ['special']
     ordered_names_b = taxa_b1 + taxa_b2 + ['special']
-    block_structure = [0]*len(taxa_a1) + [1]*len(taxa_a2) + [2]*len(taxa_b1) + [3]*len(taxa_b2)
+    block_structure = get_block_structure(taxa_a1, taxa_a2, taxa_b1, taxa_b2)
     block_structure_a = [0]*len(taxa_a1) + [1]*len(taxa_a2) + [2]
     block_structure_b = [0]*len(taxa_b1) + [1]*len(taxa_b2) + [2]
-    cov = numpy.array(tree.get_covariance_matrix(ordered_names))
-    cov_a = numpy.array(tree_a.get_covariance_matrix(ordered_names_a))
-    cov_b = numpy.array(tree_b.get_covariance_matrix(ordered_names_b))
-    prec_a = numpy.linalg.inv(cov_a)
+    cov = np.array(tree.get_covariance_matrix(ordered_names))
+    cov_a = np.array(tree_a.get_covariance_matrix(ordered_names_a))
+    cov_b = np.array(tree_b.get_covariance_matrix(ordered_names_b))
+    prec_a = np.linalg.inv(cov_a)
     block_prec_a = [[0]*3 for i in range(3)]
     for i, block_i in enumerate(block_structure_a):
         for j, block_j in enumerate(block_structure_a):
             block_prec_a[block_i][block_j] += prec_a[i][j]
-    prec_b = numpy.linalg.inv(cov_b)
+    prec_b = np.linalg.inv(cov_b)
     block_prec_b = [[0]*3 for i in range(3)]
     for i, block_i in enumerate(block_structure_b):
         for j, block_j in enumerate(block_structure_b):
@@ -165,11 +197,15 @@ def do_third_method(tree_a, tree_b, tree, branch_d2, taxa_a1, taxa_a2, taxa_b1, 
     den_a2 = (den_a / den_b) * glom
     den_b2 = (den_b / den_a) * glom
     Q_c = [
-            [(a+b)*(a+b)/den_a2, (a+b)*(b+d)/den_a2, (a+b)*(e+f)/glom, (a+b)*(f+h)/glom],
-            [(b+d)*(a+b)/den_a2, (b+d)*(b+d)/den_a2, (b+d)*(e+f)/glom, (b+d)*(f+h)/glom],
-            [(e+f)*(a+b)/glom, (e+f)*(b+d)/glom, (e+f)*(e+f)/den_b2, (e+f)*(f+h)/den_b2],
-            [(f+h)*(a+b)/glom, (f+h)*(b+d)/glom, (f+h)*(e+f)/den_b2, (f+h)*(f+h)/den_b2]]
-    Q = numpy.array(Q_a) - numpy.array(Q_b) - numpy.array(Q_c)
+            [(a+b)*(a+b)/den_a2, (a+b)*(b+d)/den_a2,
+                (a+b)*(e+f)/glom, (a+b)*(f+h)/glom],
+            [(b+d)*(a+b)/den_a2, (b+d)*(b+d)/den_a2,
+                (b+d)*(e+f)/glom, (b+d)*(f+h)/glom],
+            [(e+f)*(a+b)/glom, (e+f)*(b+d)/glom,
+                (e+f)*(e+f)/den_b2, (e+f)*(f+h)/den_b2],
+            [(f+h)*(a+b)/glom, (f+h)*(b+d)/glom,
+                (f+h)*(e+f)/den_b2, (f+h)*(f+h)/den_b2]]
+    Q = np.array(Q_a) - np.array(Q_b) - np.array(Q_c)
     print >> out, 'cleverly constructed block M:'
     print >> out, MatrixUtil.m_to_string(Q)
     # make the equivalent tree
@@ -245,18 +281,18 @@ def do_third_method(tree_a, tree_b, tree, branch_d2, taxa_a1, taxa_a2, taxa_b1, 
 def do_second_method(tree, taxa_a1, taxa_a2, taxa_b1, taxa_b2, out):
     # get the covariance matrix
     ordered_names = taxa_a1 + taxa_a2 + taxa_b1 + taxa_b2
-    cov = numpy.array(tree.get_covariance_matrix(ordered_names))
+    cov = np.array(tree.get_covariance_matrix(ordered_names))
     # invert the covariance matrix to make the precision matrix
-    prec = numpy.linalg.inv(cov)
+    prec = np.linalg.inv(cov)
     # take the block sums of the precision matrix
-    block_structure = [0]*len(taxa_a1) + [1]*len(taxa_a2) + [2]*len(taxa_b1) + [3]*len(taxa_b2)
+    block_structure = get_block_structure(taxa_a1, taxa_a2, taxa_b1, taxa_b2)
     name_order = taxa_a1 + taxa_a2 + taxa_b1 + taxa_b2
     block_prec = [[0]*4 for i in range(4)]
     for i, block_i in enumerate(block_structure):
         for j, block_j in enumerate(block_structure):
             block_prec[block_i][block_j] += prec[i][j]
     # invert the block summed precision matrix
-    reduced_cov = numpy.linalg.inv(numpy.array(block_prec))
+    reduced_cov = np.linalg.inv(np.array(block_prec))
     # extract the branch lengths from the reduced covariance matrix
     a = reduced_cov[0][0] - reduced_cov[0][1]
     b = reduced_cov[1][1] - reduced_cov[0][1]
@@ -279,10 +315,13 @@ def do_second_method(tree, taxa_a1, taxa_a2, taxa_b1, taxa_b2, out):
     print >> out, MatrixUtil.m_to_string(reduced_R)
     print >> out
 
-def do_first_method(subtree_a, subtree_b, taxa_a1, taxa_a2, taxa_b1, taxa_b2, connecting_branch_length, out):
+def do_first_method(subtree_a, subtree_b,
+        taxa_a1, taxa_a2, taxa_b1, taxa_b2, connecting_branch_length, out):
     # define the branch lengths of the reduced tree
-    blen_a1, blen_a2, blen_ar = get_branch_length_equivalents(subtree_a, taxa_a1, taxa_a2)
-    blen_b1, blen_b2, blen_br = get_branch_length_equivalents(subtree_b, taxa_b1, taxa_b2)
+    blen_a1, blen_a2, blen_ar = get_branch_length_equivalents(
+            subtree_a, taxa_a1, taxa_a2)
+    blen_b1, blen_b2, blen_br = get_branch_length_equivalents(
+            subtree_b, taxa_b1, taxa_b2)
     # define the distance matrix of the reduced tree
     a, b = blen_a1, blen_a2
     c, d = blen_b1, blen_b2
@@ -313,7 +352,8 @@ def get_branch_length_equivalents(tree, first_taxa, second_taxa):
     D_aug = get_root_augmented_distance_matrix(tree, first_taxa, second_taxa)
     # get the R matrix
     R_aug = Clustering.get_R_balaji(D_aug)
-    # get the matrix whose elements are block element sums of the root-augmented R matrix
+    # Get the matrix whose elements are block element sums
+    # of the root-augmented R matrix.
     block_structure = [0]*len(first_taxa) + [1]*len(second_taxa) + [2]
     B = [[0]*3 for i in range(3)]
     for i, block_i in enumerate(block_structure):
@@ -334,7 +374,8 @@ def get_root_augmented_distance_matrix(tree_in, first_taxa, second_taxa):
     @return: a distance matrix
     """
     # first convert the tree to the appropriate data structure
-    tree = NewickIO.parse(NewickIO.get_newick_string(tree_in), FelTree.NewickTree)
+    tree = NewickIO.parse(NewickIO.get_newick_string(tree_in),
+            FelTree.NewickTree)
     # now get the ordered ids
     ordered_ids = []
     for taxa in (first_taxa, second_taxa):

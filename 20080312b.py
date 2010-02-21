@@ -4,7 +4,7 @@ See "Population Genetics Without Intraspecific Data" by Thorne et al.
 for more information about the Direct RNA model.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -24,8 +24,10 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('model', 'Direct RNA mixture model', DirectRna.get_sample_xml_string().strip()),
-            Form.Integer('ncols', 'sample this many columns', 100, low=1, high=10000)]
+            Form.MultiLine('model', 'Direct RNA mixture model',
+                DirectRna.get_sample_xml_string().strip()),
+            Form.Integer('ncols', 'sample this many columns',
+                100, low=1, high=10000)]
     return form_objects
 
 def get_response(fs):
@@ -41,7 +43,8 @@ def get_response(fs):
     mixture_model.normalize()
     # simulate the alignment
     try:
-        alignment = PhyLikelihood.simulate_alignment(tree, mixture_model, fs.ncols)
+        alignment = PhyLikelihood.simulate_alignment(tree,
+                mixture_model, fs.ncols)
     except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
     # get the alignment string

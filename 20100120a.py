@@ -13,7 +13,7 @@ index_ak index_bk
 """
 
 
-import StringIO
+from StringIO import StringIO
 import math
 import random
 import itertools
@@ -111,7 +111,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # start writing the response
-    out = StringIO.StringIO()
+    out = StringIO()
     # define the points; each is a numpy array of length 2
     G = []
     P = []

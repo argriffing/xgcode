@@ -1,9 +1,12 @@
-"""Evaluate a split of taxa for a given tree using the exact criterion for deep splits.
+"""Evaluate a taxon split for a tree using the exact deep split criterion.
+
+Evaluate a split of taxa for a given tree
+using the exact criterion for deep splits.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
@@ -21,8 +24,10 @@ def get_form():
     default_selection = ('A', 'B', 'C')
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree with branch lengths', default_tree_string),
-            Form.MultiLine('selection', 'selected taxa', '\n'.join(default_selection))]
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                default_tree_string),
+            Form.MultiLine('selection', 'selected taxa',
+                '\n'.join(default_selection))]
     return form_objects
 
 def get_response(fs):
@@ -33,14 +38,16 @@ def get_response(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get the selected names
-    selection = list(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selection = Util.get_stripped_lines(StringIO(fs.selection))
     selected_name_set = set(selection)
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set
     if extra_names:
-        raise HandlingError('the following selected names are not valid tips: %s' % str(tuple(extra_names)))
+        msg_a = 'the following selected names '
+        msg_b = 'are not valid tips: %s' % str(tuple(extra_names))
+        raise HandlingError(msg_a + msg_b)
     complement_name_set = possible_name_set - selected_name_set
-    # assert that neither the set of selected names nor its complement is empty
+    # assert that neither the selected name set nor its complement is empty
     if not selected_name_set or not complement_name_set:
         raise HandlingError('the selection is degenerate')
     # define an ordering on the tips
@@ -53,14 +60,14 @@ def get_response(fs):
         else:
             value = -1
         Y_as_list.append(value)
-    Y = numpy.array(Y_as_list)
+    Y = np.array(Y_as_list)
     # get the distance matrix
     D = tree.get_distance_matrix(ordered_names)
     # get the R matrix
     R = Clustering.get_R_balaji(D)
-    value = numpy.dot(numpy.dot(Y, R), Y.T)
+    value = np.dot(np.dot(Y, R), Y.T)
     # report the results
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, value
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

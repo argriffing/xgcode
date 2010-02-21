@@ -1,7 +1,7 @@
 """Given a newick tree, merge segmented branches.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
@@ -27,7 +27,7 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # modify the tree
-    segmenting_nodes = [node for node in tree.preorder() if len(node.children) == 1]
+    segmenting_nodes = [p for p in tree.preorder() if len(p.children) == 1]
     for node in segmenting_nodes:
         tree.remove_node(node)
     # write the response

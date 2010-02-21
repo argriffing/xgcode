@@ -1,8 +1,9 @@
-import StringIO
+from StringIO import StringIO
 import unittest
 
 import Codon
 import Util
+import iterutils
 
 
 # from wikipedia
@@ -173,7 +174,7 @@ def create_alignment(headers, sequences):
     for header, sequence in zip(headers, sequences):
         aln.append('>' + header)
         aln.append(sequence)
-    return Alignment(StringIO.StringIO('\n'.join(aln)))
+    return Alignment(StringIO('\n'.join(aln)))
 
 
 class Alignment:
@@ -233,7 +234,7 @@ class Alignment:
         sequence = header_to_sequence[header]
         arr = []
         arr.append('>' + header)
-        arr.append('\n'.join(Util.chopped(sequence, columns)))
+        arr.append('\n'.join(iterutils.chopped(sequence, columns)))
         return '\n'.join(arr)
 
     def to_fasta_string(self, columns=60):
@@ -270,7 +271,7 @@ class CodonAlignment:
         nucleotide_columns = zip(*nucleotide_sequences)
         if len(nucleotide_columns) % 3 != 0:
             raise CodonAlignmentError('the number of aligned nucleotide columns should be a multiple of three')
-        gappy_codon_sequences = [list(Util.chopped(seq, 3)) for seq in nucleotide_sequences]
+        gappy_codon_sequences = [list(iterutils.chopped(seq, 3)) for seq in nucleotide_sequences]
         if not gappy_codon_sequences:
             raise CodonAlignmentError('no codon sequences were found')
         observed_gappy_codons = set(Util.flattened_nonrecursive(gappy_codon_sequences))
@@ -303,7 +304,7 @@ class CodonAlignment:
         sequence = header_to_sequence[header]
         arr = []
         arr.append('>' + header)
-        arr.append('\n'.join(''.join(codons) for codons in Util.chopped(sequence, columns)))
+        arr.append('\n'.join(''.join(codons) for codons in iterutils.chopped(sequence, columns)))
         return '\n'.join(arr)
 
     def to_fasta_string(self, columns=60):
@@ -348,11 +349,11 @@ class TestFasta(unittest.TestCase):
 
     def setUp(self):
         nucleotide_string = '>foo\nacgt-CATac--ACGT\n>bar\nacgtACGTacgtA-GT'
-        self.simple_alignment = Alignment(StringIO.StringIO(nucleotide_string))
+        self.simple_alignment = Alignment(StringIO(nucleotide_string))
         self.simple_alignment.force_nucleotide()
 
     def test_alignment(self):
-        fin = StringIO.StringIO(brown_example_alignment)
+        fin = StringIO(brown_example_alignment)
         alignment = Alignment(fin)
         self.assertEquals(len(alignment.headers), 5)
         self.assertEquals(len(alignment.sequences), 5)
@@ -372,13 +373,13 @@ class TestFasta(unittest.TestCase):
         self.assertEquals(expected_alignment_string, observed_alignment_string)
 
     def test_codon(self):
-        alignment = CodonAlignment(StringIO.StringIO(simulated_codon_alignment))
+        alignment = CodonAlignment(StringIO(simulated_codon_alignment))
         self.assertEquals(len(alignment.sequences), 5)
         self.assertEquals(len(alignment.columns), 50)
 
 
 def main():
-    fin = StringIO.StringIO(brown_example_alignment)
+    fin = StringIO(brown_example_alignment)
     print 'example alignment header and sequence length pairs:'
     for header, sequence in gen_header_sequence_pairs(fin):
         print header

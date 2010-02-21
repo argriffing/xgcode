@@ -2,7 +2,7 @@
 """
 
 
-import StringIO
+from StringIO import StringIO
 import os
 import math
 
@@ -13,6 +13,7 @@ import SnippetUtil
 import Form
 import GPS
 import Euclid
+import SchurAlgebra
 
 def get_locations():
     sqrt2 = math.sqrt(2.0)
@@ -53,7 +54,7 @@ def get_response(fs):
     npoints = len(locations)
     # start writing the response
     np.set_printoptions(linewidth=200)
-    out = StringIO.StringIO()
+    out = StringIO()
     # print the layout data
     print >> out, 'POINTS'
     for i, (x, y) in enumerate(locations):
@@ -87,8 +88,21 @@ def get_response(fs):
     print >> out
     # show the weighted laplacian matrix
     WL = Euclid.adjacency_to_laplacian(WA)
-    print >> out, 'unweighted laplacian matrix:'
+    print >> out, 'weighted laplacian matrix:'
     print >> out, WL
+    print >> out
+    # remove the two internal nodes by schur complementation
+    ntips = 4
+    schur_L = SchurAlgebra.schur_helper(WL, 2)
+    X = Euclid.dccov_to_points(np.linalg.pinv(schur_L))
+    print >> out, 'schur graph layout:'
+    print >> out, 'POINTS'
+    for i, v in enumerate(X):
+        print >> out, i, v[0], v[1]
+    print >> out, 'EDGES'
+    for i in range(ntips):
+        for j in range(i+1, ntips):
+            print >> out, i, j
     print >> out
     # write the response
     return [('Content-Type', 'text/plain')], out.getvalue().strip()

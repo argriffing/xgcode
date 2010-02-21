@@ -1,16 +1,18 @@
 """Evaluate the quality of various distance matrix tree reconstruction methods.
 
 This evaluation procedure is somewhat complicated.
-Several nucleotide alignments are simulated using the JC69 model and the original tree.
+Several nucleotide alignments are simulated
+using the JC69 model and the original tree.
 Distance matrices are estimated from these alignments using maximum likelihood,
 and distance matrices containing an element that is infinite are rejected.
-The tree reconstruction method then builds a tree from each estimated distance matrix.
+The tree reconstruction method then builds a tree
+from each estimated distance matrix.
 The reconstructed trees are then compared to the original tree,
 and the distribution of the number of implied partition errors is reported.
 The exact bipartition criterion is a matrix function by Eric Stone.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -21,15 +23,18 @@ import NeighborhoodJoining
 import JC69
 import PhyLikelihood
 import RateMatrix
+from Form import RadioItem
+from Form import CheckItem
 import Form
 
 
 class DistanceMatrixSampler:
     """
-    Sample estimated distance matrices, rejecting those with infinite branch lengths.
+    Sample estimated distance matrices,
+    rejecting those with infinite branch lengths.
     The complexity of generating the samples is also estimated,
-    which is important because otherwise the rejection sampling could get stuck in a loop
-    if every sample is rejected.
+    which is important because otherwise the rejection sampling
+    could get stuck in a loop if every sample is rejected.
     """
 
     def __init__(self, tree, ordered_names, sequence_length):
@@ -39,9 +44,11 @@ class DistanceMatrixSampler:
         self.sequence_length = sequence_length
         self.requested_matrix_count = 0
         self.accepted_sample_count = 0
-        # initialize the number of samples rejected because of an infinitely long branch length estimate
+        # Initialize the number of samples rejected
+        # because of an infinitely long branch length estimate.
         self.rejected_inf_sample_count = 0
-        # initialize the number of samples rejected because of a branch length estimate of zero
+        # Initialize the number of samples rejected
+        # because of a branch length estimate of zero.
         self.rejected_zero_sample_count = 0
 
     def get_sampling_error_message(self):
@@ -50,16 +57,18 @@ class DistanceMatrixSampler:
         rejected_zero = self.rejected_zero_sample_count
         rejected = rejected_inf + rejected_zero
         total = accepted + rejected
-        parenthetical_remark = None
+        msg_c = None
         if total:
-            parenthetical_remark = '%d of %d samples accepted' % (accepted, total)
+            msg_c = '%d of %d samples accepted' % (accepted, total)
             if accepted < rejected_inf:
-                parenthetical_remark += '; use shorter branch lengths or longer sequences'
+                msg_c += '; use shorter branch lengths or longer sequences'
             elif accepted < rejected_zero:
-                parenthetical_remark += '; use longer branch lengths or longer sequences'
-        error_message = 'the distance matrix sampling procedure takes too long for these settings'
-        if parenthetical_remark:
-            error_message += ' (%s)' % parenthetical_remark
+                msg_c += '; use longer branch lengths or longer sequences'
+        msg_a = 'the distance matrix sampling procedure takes too long '
+        msg_b = 'for these settings'
+        error_message = msg_a + msg_b
+        if msg_c:
+            error_message += ' (%s)' % msg_c
         return error_message
 
     def get_rejected_sample_count(self):
@@ -68,54 +77,69 @@ class DistanceMatrixSampler:
     def get_acceptance_probability(self):
         """
         This is for progress bar stuff.
-        @return: an optimistic acceptance probability for the rejection sampling
+        @return: an optimistic acceptance probability for rejection sampling
         """
-        total_samples = self.accepted_sample_count + self.get_rejected_sample_count()
+        total_samples = (
+                self.accepted_sample_count + self.get_rejected_sample_count())
         if total_samples < 100:
             # if not enough samples have been taken then be optimistic
             return 1.0
         else:
-            # if a reasonable number of samples have been taken then be realistic
+            # If a reasonable number of samples have been taken
+            # then be realistic.
             return self.accepted_sample_count / float(total_samples)
 
     def get_complexity(self):
         """
         This is for progress bar stuff.
-        @return: the predicted total number of steps required, for some step granularity
+        Return the predicted total number of steps required,
+        for some step granularity.
+        @return: the predicted total number of steps
         """
         # if all of the samples are rejected then the complexity is infinite
         acceptance_probability = self.get_acceptance_probability()
         if not acceptance_probability:
             return float('inf')
-        # if there is some predicted probability of accepting a sample then make a guess
+        # If there is some predicted probability of accepting a sample
+        # then make a guess.
         n = len(self.ordered_names)
         steps_per_sample = n * n * self.sequence_length
         required_accepted_samples = self.requested_matrix_count
         samples_per_accepted_sample = 1.0 / acceptance_probability
-        steps = steps_per_sample * samples_per_accepted_sample * required_accepted_samples
+        # compute the number of steps
+        steps = steps_per_sample
+        steps *= samples_per_accepted_sample * required_accepted_samples
         return steps
 
     def gen_distance_matrices(self, count, max_steps):
         """
         Yield (ordered sequence list, distance matrix) pairs .
-        The generator will stop if it sees that it cannot meet its goal in the allotted number of steps.
+        The generator will stop if it sees that it cannot meet its goal
+        in the allotted number of steps.
         @param count: the requested number of distance matrices
-        @param max_steps: an upper bound on the number of steps allowed for the computation
+        @param max_steps: an upper bound on the allowed number of steps
         """
         # define the jukes cantor rate matrix
         dictionary_rate_matrix = RateMatrix.get_jukes_cantor_rate_matrix()
         ordered_states = list('ACGT')
-        row_major_rate_matrix = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, ordered_states, ordered_states)
+        row_major_rate_matrix = MatrixUtil.dict_to_row_major(
+                dictionary_rate_matrix, ordered_states, ordered_states)
         model = RateMatrix.RateMatrix(row_major_rate_matrix, ordered_states)
         # record the requested number of samples
         self.requested_matrix_count = count
         # do some rejection sampling
-        while self.get_complexity() < max_steps and self.accepted_sample_count < count:
+        while True:
+            if self.get_complexity() >= max_steps:
+                break
+            if self.accepted_sample_count >= count:
+                break
             # simulate an alignment from the tree
-            alignment = PhyLikelihood.simulate_alignment(self.tree, model, self.sequence_length)
+            alignment = PhyLikelihood.simulate_alignment(
+                    self.tree, model, self.sequence_length)
             # extract the ordered list of sequences from the alignment object
             name_to_sequence = dict(zip(alignment.headers, alignment.sequences))
-            sequence_list = [name_to_sequence[name] for name in self.ordered_names]
+            sequence_list = [name_to_sequence[name]
+                    for name in self.ordered_names]
             # get the estimated distance matrix
             distance_matrix = JC69.get_ML_distance_matrix(sequence_list)
             # look for degeneracies
@@ -155,20 +179,23 @@ def get_form():
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'original tree with branch lengths', formatted_tree_string),
-            Form.Integer('iterations', 'reconstruct this many trees', 10, low=1),
-            Form.Integer('length', 'use sequences that are this long', 100, low=2),
+            Form.MultiLine('tree', 'original tree with branch lengths',
+                formatted_tree_string),
+            Form.Integer('iterations', 'reconstruct this many trees',
+                10, low=1),
+            Form.Integer('length', 'use sequences that are this long',
+                100, low=2),
             Form.RadioGroup('criterion', 'bipartition function', [
-                Form.RadioItem('exact', 'exact criterion'),
-                Form.RadioItem('sign', 'spectral sign approximation', True),
-                Form.RadioItem('threshold', 'spectral threshold approximation'),
-                Form.RadioItem('nj', 'neighbor joining criterion'),
-                Form.RadioItem('random', 'random bipartition')]),
-            Form.RadioGroup('recourse', 'recourse for degenerate bipartitions', [
-                Form.RadioItem('njrecourse', 'neighbor joining', True),
-                Form.RadioItem('halvingrecourse', 'leaf stem length halving')]),
+                RadioItem('exact', 'exact criterion'),
+                RadioItem('sign', 'spectral sign approximation', True),
+                RadioItem('threshold', 'spectral threshold approximation'),
+                RadioItem('nj', 'neighbor joining criterion'),
+                RadioItem('random', 'random bipartition')]),
+            Form.RadioGroup('recourse', 'recourse for degenerate partitions', [
+                RadioItem('njrecourse', 'neighbor joining', True),
+                RadioItem('halvingrecourse', 'leaf stem length halving')]),
             Form.CheckGroup('output_options', 'extra output option', [
-                Form.CheckItem('showtrees', 'show reconstructed tree topologies')])]
+                CheckItem('showtrees', 'show reconstructed tree topologies')])]
     return form_objects
 
 def get_response(fs):
@@ -189,10 +216,13 @@ def get_response(fs):
         splitter = Clustering.RandomDMS()
     # read the original tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
-    # make sure that the splitter object is appropriate for the number of taxa and the number of tree reconstructions
+    # Make sure that the splitter object is appropriate for the number
+    # of taxa and the number of tree reconstructions.
     ntaxa = len(list(tree.gen_tips()))
     if splitter.get_complexity(ntaxa) * fs.iterations > 1000000:
-        raise HandlingError('use a faster bipartition function, fewer taxa, or fewer tree reconstructions')
+        msg_a = 'use a faster bipartition function, fewer taxa, '
+        msg_b = 'or fewer tree reconstructions'
+        raise HandlingError(msg_a + msg_b)
     # sample a bunch of sequences
     ordered_names = [node.name for node in tree.gen_tips()]
     sampler = DistanceMatrixSampler(tree, ordered_names, fs.length)
@@ -200,10 +230,13 @@ def get_response(fs):
     mismatch_count_tree_pairs = []
     error_count_histogram = {}
     max_steps = 1000000
-    for sequence_list, distance_matrix in sampler.gen_distance_matrices(fs.iterations, max_steps):
+    for sequence_list, distance_matrix in sampler.gen_distance_matrices(
+            fs.iterations, max_steps):
         # create the tree builder
-        tree_builder = NeighborhoodJoining.ValidatingTreeBuilder(distance_matrix, ordered_names, splitter)
-        # read the recourse string and set the corresponding method in the tree builder
+        tree_builder = NeighborhoodJoining.ValidatingTreeBuilder(
+                distance_matrix, ordered_names, splitter)
+        # Read the recourse string and set the corresponding method
+        # in the tree builder.
         if fs.njrecourse:
             tree_builder.set_fallback_name('nj')
         elif fs.halvingrecourse:
@@ -217,17 +250,19 @@ def get_response(fs):
         if mismatch_count not in error_count_histogram:
             error_count_histogram[mismatch_count] = 0
         error_count_histogram[mismatch_count] += 1
-        # if we are saving the reconstructed trees then remove branch lengths and add to the tree list
+        # If we are saving the reconstructed trees
+        # then remove branch lengths and add to the tree list.
         if fs.showtrees:
             for node in reconstructed_tree.preorder():
                 node.set_branch_length(None)
             mismatch_count_tree_pair = (mismatch_count, reconstructed_tree)
             mismatch_count_tree_pairs.append(mismatch_count_tree_pair)
-    # see if we bailed early because the sampling was predicted to take too long
+    # See if we bailed early because
+    # the sampling was predicted to take too long.
     if sampler.accepted_sample_count < fs.iterations:
         raise HandlingError(sampler.get_sampling_error_message())
     # define the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'partition error count frequencies:'
     max_mismatch_count = max(error_count_histogram)
     for i in range(max_mismatch_count + 1):
@@ -251,15 +286,18 @@ class Simulation:
 
     def __init__(self, splitter, fallback_name, description):
         """
+        The description is of the method used to split the distance matrix.
         @param splitter: a distance matrix splitter
         @param fallback_name: the name
-        @param description: a description of the method used to split the distance matrix
+        @param description: a description of the method 
         """
-        # these simulation parameters are set at initialization time
+        # These simulation parameters are set
+        # at initialization time.
         self.splitter = splitter
         self.fallback_name = fallback_name
         self.description = description
-        # these simulation parameters are set after the object has been initialized
+        # These simulation parameters are set
+        # after the object has been initialized.
         self.sequence_length = None
         self.step_limit = None
         self.original_tree = None
@@ -269,7 +307,10 @@ class Simulation:
 
     def add_error_count(self, error_count):
         """
-        @param error_count: the number of partition errors in a reconstructed tree relative to the original tree
+        Add an error count.
+        The error count is the number of partition errors
+        in a reconstructed tree relative to the original tree.
+        @param error_count: the number of partition errors
         """
         if error_count not in self.histogram:
             self.histogram[error_count] = 0
@@ -277,9 +318,13 @@ class Simulation:
 
     def get_count_list(self):
         """
-        The first element of the returned list is the number of times that no errors occurred.
-        The second element is the number of times that one error occurred.
-        The length of the list is equal to the number of errors in the reconstruction with the most errors.
+        Get a list of error counts.
+        The first element of the returned list
+        is the number of times that no errors occurred.
+        The second element
+        is the number of times that one error occurred.
+        The length of the list is equal to
+        the number of errors in the reconstruction with the most errors.
         @return: a list of error counts
         """
         max_error_count = max(self.histogram)
@@ -287,9 +332,12 @@ class Simulation:
 
     def get_histogram_string(self):
         """
-        @return: a multi-line string summarizing the quality of the trees reconstructed during the simulation
+        Return a multi-line string.
+        It summarizes the quality of the trees
+        reconstructed during the simulation
+        @return: a multi-line string
         """
-        out = StringIO.StringIO()
+        out = StringIO()
         for i, count in enumerate(self.get_count_list()):
             print >> out, i, ':', count
         return out.getvalue().strip()
@@ -308,7 +356,7 @@ class Simulation:
 
     def set_step_limit(self, step_limit):
         """
-        @param step_limit: this is a cap on the number of steps allowed in the computation
+        @param step_limit: a cap on the number of steps allowed
         """
         self.step_limit = step_limit
 
@@ -321,10 +369,13 @@ class Simulation:
     def run(self):
         # simulate a bunch of distance matrices
         ordered_names = [node.name for node in self.original_tree.gen_tips()]
-        sampler = DistanceMatrixSampler(self.original_tree, ordered_names, self.sequence_length)
-        for sequence_list, distance_matrix in sampler.gen_distance_matrices(self.reconstruction_count, self.step_limit):
+        sampler = DistanceMatrixSampler(
+                self.original_tree, ordered_names, self.sequence_length)
+        for sequence_list, distance_matrix in sampler.gen_distance_matrices(
+                self.reconstruction_count, self.step_limit):
             # create the tree builder
-            tree_builder = NeighborhoodJoining.ValidatingTreeBuilder(distance_matrix, ordered_names, self.splitter)
+            tree_builder = NeighborhoodJoining.ValidatingTreeBuilder(
+                    distance_matrix, ordered_names, self.splitter)
             # set parameters of the tree validating tree builder
             tree_builder.set_fallback_name(self.fallback_name)
             tree_builder.set_original_tree(self.original_tree)
@@ -338,7 +389,8 @@ class Simulation:
                     print sequence
             # note the number of partition errors during the reconstruction
             self.add_error_count(tree_builder.get_mismatch_count())
-        # see if we bailed early because the sampling was predicted to take too long
+        # See if we bailed early
+        # because the sampling was predicted to take too long.
         if sampler.accepted_sample_count < self.reconstruction_count:
             raise HandlingError(sampler.get_sampling_error_message())
 
@@ -349,12 +401,18 @@ def main():
     """
     # initialize the simulation objects
     sims = [
-        Simulation(Clustering.NeighborJoiningDMS(), 'nj', 'neighbor joining'),
-        Simulation(Clustering.RandomDMS(), 'nj', 'random partitioning'),
-        Simulation(Clustering.StoneExactDMS(), 'nj', 'exact criterion with neighbor joining fallback'),
-        #Simulation(Clustering.StoneExactDMS(), 'halving', 'exact criterion with stem halving fallback'),
-        Simulation(Clustering.StoneSpectralSignDMS(), 'nj', 'spectral sign cut with neighbor joining fallback')
-        #Simulation(Clustering.StoneSpectralSignDMS(), 'halving', 'spectral sign cut with stem halving fallback')
+        Simulation(Clustering.NeighborJoiningDMS(),
+            'nj', 'neighbor joining'),
+        Simulation(Clustering.RandomDMS(),
+            'nj', 'random partitioning'),
+        Simulation(Clustering.StoneExactDMS(),
+            'nj', 'exact criterion with neighbor joining fallback'),
+        #Simulation(Clustering.StoneExactDMS(),
+        #'halving', 'exact criterion with stem halving fallback'),
+        Simulation(Clustering.StoneSpectralSignDMS(),
+            'nj', 'spectral sign cut with neighbor joining fallback')
+        #Simulation(Clustering.StoneSpectralSignDMS(),
+        #'halving', 'spectral sign cut with stem halving fallback')
         ]
     # define the simulation parameters
     tree = get_default_original_tree()

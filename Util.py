@@ -1,11 +1,18 @@
 
 import random
 import unittest
-import itertools
 from math import log
 
 import scipy.stats
 from scipy.special import gammaln
+
+import iterutils
+
+def get_stripped_lines(lines):
+    """
+    @return: a list of nonempty stripped lines
+    """
+    return list(iterutils.stripped_lines(lines))
 
 def binomial_log_pmf(observed_n, max_n, p_success):
     #TODO special cases
@@ -67,49 +74,6 @@ def multinomial_log_pmf(distribution, counts):
             accum += count * log(p)
     return accum
 
-def get_only(collection):
-    """
-    @param collection: a collection with only one item
-    """
-    if len(collection) != 1:
-        raise ValueError('expected the collection to have a single element')
-    for value in collection:
-        return value
-
-def read_backwards(fin, blocksize=4096):
-    """
-    Read a file line by line, backwards.
-    http://code.activestate.com/recipes/439045/
-    contrib: Peter Astrand, Raymond Hettinger
-    @param fin: a file open for reading
-    @param blocksize: read this many bytes at a time
-    """
-    buf = ""
-    fin.seek(-1, 2)
-    lastchar = fin.read(1)
-    trailing_newline = (lastchar == "\n")
-    while 1:
-        newline_pos = buf.rfind("\n")
-        pos = fin.tell()
-        if newline_pos != -1:
-            # found a newline
-            line = buf[newline_pos+1:]
-            buf = buf[:newline_pos]
-            if pos or newline_pos or trailing_newline:
-                line += "\n"
-            yield line
-        elif pos:
-            # need to fill buffer
-            toread = min(blocksize, pos)
-            fin.seek(-toread, 1)
-            buf = fin.read(toread) + buf
-            fin.seek(-toread, 1)
-            if pos == toread:
-                buf = "\n" + buf
-        else:
-            # start of file
-            return
-
 def choose(n, k):
     """
     A fast way to calculate binomial coefficients by Andrew Dalke (contrib).
@@ -146,43 +110,6 @@ def flattened_nonrecursive(lists):
 def hamming_distance(first, second):
     return sum(1 for a, b in zip(first, second) if a != b)
 
-def stripped_lines(lines):
-    """
-    This function yields nonempty stripped lines.
-    """
-    for line in lines:
-        line = line.strip()
-        if line:
-            yield line
-
-def dot_product(va, vb):
-    assert len(va) == len(vb)
-    return sum(a * b for a, b in zip(va, vb))
-
-def product(numbers):
-    x = 1
-    for number in numbers:
-        x *= number
-    return x
-
-def rle(sequence):
-    """
-    Yield (value, length) pairs.
-    """
-    first = True
-    for v in sequence:
-        if first:
-            first = False
-            value = v
-            count = 1
-        elif value == v:
-            count += 1
-        else:
-            yield (value, count)
-            value = v
-            count = 1
-    yield (value, count)
-
 def bresenham_line(x_count, y_count):
     """
     Yield a y value for each x.
@@ -209,16 +136,17 @@ def bresenham_line(x_count, y_count):
 
 def chopped_bresenham(sequence, nchunks):
     """
-    Yield chunks of a sequence whose lengths differ from each other by at most one.
+    Yield chunks of a sequence.
+    The lengths of the yielded chunks differ from each other by at most one.
     @param sequence: can be iterated and its length can be found
     @param nchunks: the number of yielded chunks
     """
     assert len(sequence) >= nchunks
     chunk = []
     current_category = None
-    for value, category in zip(sequence, bresenham_line(len(sequence), nchunks)):
+    for v, category in zip(sequence, bresenham_line(len(sequence), nchunks)):
         if category == current_category:
-            chunk.append(value)
+            chunk.append(v)
         else:
             if current_category is not None:
                 if type(sequence) is str:
@@ -226,84 +154,7 @@ def chopped_bresenham(sequence, nchunks):
                 else:
                     yield tuple(chunk)
             current_category = category
-            chunk = [value]
-    if chunk:
-        if type(sequence) is str:
-            yield ''.join(chunk)
-        else:
-            yield tuple(chunk)
-
-def chopped(sequence, size):
-    """
-    Yields regular sized chunks of a sequence, but the last one may be ragged.
-    Notice that strings are treated differently than other iterables.
-    """
-    assert size > 0
-    if len(sequence) == 1:
-        yield sequence[0]
-        return
-    chunk = []
-    for item in sequence:
-        chunk.append(item)
-        if len(chunk) == size:
-            if type(sequence) is str:
-                yield ''.join(chunk)
-            else:
-                yield tuple(chunk)
-            chunk = []
-    if chunk:
-        if type(sequence) is str:
-            yield ''.join(chunk)
-        else:
-            yield tuple(chunk)
-
-def grouper(sequence, size, fillvalue=None):
-    """
-    This is like the chopped function but works for generators.
-    This is directly from the python itertools documentation.
-    For example,
-    grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
-    @param sequence: an iterable
-    @param size: the size of the chunks
-    """
-    args = [iter(sequence)] * size
-    return itertools.izip_longest(fillvalue=fillvalue, *args)
-
-def pairwise(iterable):
-    """
-    Yield pairs of neighbors.
-    This is directly from the python itertools documentation.
-    For example,
-    s -> (s0,s1), (s1,s2), (s2, s3), ...
-    """
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return itertools.izip(a, b)
-
-def chopped_nonbreaking(sequence, size):
-    """
-    Like L{chopped} but forces consecutive identical elements to be in the same chunk.
-    Chunks containing consecutive identical elements may be larger than the desired chunk size.
-    The last chunk may be smaller than the desired chunk size.
-    @param sequence: something iterable
-    @param size: the desired size of a chunk
-    """
-    assert size > 0
-    if len(sequence) == 1:
-        yield sequence[0]
-        return
-    chunk = []
-    for item in sequence:
-        # if the chunk has at least the desired size
-        # and the item is different from the last chunk item,
-        # then start a new chunk.
-        if len(chunk) >= size and chunk[-1] != item:
-            if type(sequence) is str:
-                yield ''.join(chunk)
-            else:
-                yield tuple(chunk)
-            chunk = []
-        chunk.append(item)
+            chunk = [v]
     if chunk:
         if type(sequence) is str:
             yield ''.join(chunk)
@@ -377,41 +228,21 @@ class Cache:
             return self.cache[arg]
         except KeyError:
             value = self.callback(arg)
-            if (self.cache_limit is None) or (len(self.cache) < self.cache_limit):
+            if not self.is_full():
                 self.cache[arg] = value
             return value
+    def is_full(self):
+        if self.cache_limit is None:
+            return False
+        return (len(self.cache) >= self.cache_limit)
 
 
 class TestUtil(unittest.TestCase):
 
-    def test_chopped_nonbreaking(self):
-        seq = (1, 1, 1, 2, 2, 3)
-        groups = tuple(chopped_nonbreaking(seq, 3))
-        self.assertEquals(groups, ((1, 1, 1), (2, 2, 3)))
-        groups = tuple(chopped_nonbreaking(seq, 2))
-        self.assertEquals(groups, ((1, 1, 1), (2, 2), (3,)))
-
-    def test_chopped(self):
-        seq = (1, 1, 1, 2, 2, 3)
-        groups = tuple(chopped(seq, 3))
-        self.assertEquals(groups, ((1, 1, 1), (2, 2, 3)))
-        groups = tuple(chopped(seq, 2))
-        self.assertEquals(groups, ((1, 1), (1, 2), (2, 3)))
-
-    def test_grouper(self):
-        mygen = (a for a in range(10))
-        observed = tuple(grouper(mygen, 3))
-        expected = ((0,1,2),(3,4,5),(6,7,8),(9,None,None))
-        self.assertEqual(observed, expected)
-
-    def test_rle(self):
-        seq = (1, 1, 1, 2, 2, 3)
-        result = tuple(rle(seq))
-        self.assertEquals(result, ((1, 3), (2, 2), (3, 1)))
-
     def test_chopped_bresenham(self):
         """
-        Inspired by this U{image<http://en.wikipedia.org/wiki/Image:Bresenham.svg>}.
+        This example was inspired by wikipedia.
+        U{image<http://en.wikipedia.org/wiki/Image:Bresenham.svg>}
         """
         seq = (1, 1, 1, 2, 2, 3, 0, 0, 0, 0, 0)
         self.assertEquals(len(seq), 11)
@@ -419,9 +250,6 @@ class TestUtil(unittest.TestCase):
         self.assertEquals(categories, (0, 0, 1, 1, 2, 2, 2, 3, 3, 4, 4))
         result = tuple(chopped_bresenham(seq, 5))
         self.assertEquals(result, ((1,1), (1,2), (2,3,0), (0,0), (0,0)))
-
-    def test_dot_product(self):
-        self.assertEquals(dot_product((1, 2, 3), (4, 5, 6)), 1*4 + 2*5 + 3*6)
 
     def test_select(self):
         unsorted_arr = (1, 5, 2, 7, 8, 9, 1)

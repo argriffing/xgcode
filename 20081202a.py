@@ -6,7 +6,7 @@ The column labels are the eigenvalues,
 and the other numbers are the eigenvectors.
 """
 
-import StringIO
+from StringIO import StringIO
 
 import numpy as np
 
@@ -26,7 +26,10 @@ def get_form():
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # return the form objects
-    return [Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string)]
+    form_objects = [
+            Form.MultiLine('tree', 'newick tree with branch lengths',
+                formatted_tree_string)]
+    return form_objects
 
 def get_response(fs):
     """
@@ -48,7 +51,7 @@ def get_response(fs):
     sorted_eigenvalues, sorted_eigenvectors = zip(*sorted_eigensystem)
     M = zip(*sorted_eigenvectors)
     # write the html
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, '<html>'
     print >> out, '<body>'
     print >> out, HtmlTable.get_labeled_table_string(sorted_eigenvalues, ordered_names, M)

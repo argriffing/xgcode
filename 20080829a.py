@@ -1,12 +1,13 @@
 """Given a newick tree, calculate weights for a subset of the tips.
 """
 
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Newick
 import LeafWeights
 import Util
+from Form import RadioItem
 import Form
 
 # This tree is from UCSC.
@@ -39,10 +40,11 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('selection', 'selected tip names', '\n'.join(default_name_selection)),
+            Form.MultiLine('selection', 'selected tip names',
+                '\n'.join(default_name_selection)),
             Form.RadioGroup('method', 'weighting method', [
-                Form.RadioItem('stone', 'use the method of Stone and Sidow', True),
-                Form.RadioItem('thompson', 'use the method of Thompson et al.')])]
+                RadioItem('stone', 'use the method of Stone and Sidow', True),
+                RadioItem('thompson', 'use the method of Thompson et al.')])]
     return form_objects
 
 def get_response(fs):
@@ -55,14 +57,18 @@ def get_response(fs):
     tree.assert_valid()
     tree.add_branch_lengths()
     if tree.has_negative_branch_lengths():
-        raise HandlingError('calculating weights for a tree with negative branch lengths is not implemented')
+        msg_a = 'calculating weights for a tree '
+        msg_b = 'with negative branch lengths is not implemented'
+        raise HandlingError(msg_a + msg_b)
     # get the selected names
-    selection = list(Util.stripped_lines(StringIO.StringIO(fs.selection)))
+    selection = Util.get_stripped_lines(StringIO(fs.selection))
     selected_name_set = set(selection)
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set
     if extra_names:
-        raise HandlingError('the following selected names are not valid tips: %s' % str(tuple(extra_names)))
+        msg_a = 'the following selected names are not valid tips: '
+        msg_b = str(tuple(extra_names))
+        raise HandlingError(msg_a + msg_b)
     # prune the tree 
     for name in set(node.name for node in tree.gen_tips()) - set(selection): 
         try: 
@@ -76,7 +82,7 @@ def get_response(fs):
     elif fs.thompson:
         name_weight_pairs = LeafWeights.get_thompson_weights(tree)
     # report the weights
-    out = StringIO.StringIO()
+    out = StringIO()
     for name, weight in name_weight_pairs:
         print >> out, '%s: %f' % (name, weight)
     response_headers = [('Content-Type', 'text/plain')]

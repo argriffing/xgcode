@@ -2,7 +2,7 @@
 """
 
 import math
-import StringIO
+from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Fasta
@@ -21,7 +21,10 @@ def get_form():
     """
     @return: the body of a form
     """
-    return [Form.MultiLine('fasta', 'nucleotide sequence pair', g_sample_fasta_string.strip())]
+    form_objects = [
+            Form.MultiLine('fasta', 'nucleotide sequence pair',
+                g_sample_fasta_string.strip())]
+    return form_objects
 
 def get_response(fs):
     """
@@ -30,7 +33,7 @@ def get_response(fs):
     """
     # get the alignment object
     try:
-        alignment = Fasta.Alignment(StringIO.StringIO(fs.fasta))
+        alignment = Fasta.Alignment(StringIO(fs.fasta))
     except Fasta.AlignmentError, e:
         raise HandlingError('alignment error: ' + str(e))
     # assert that the alignment is of exactly two sequences
@@ -44,12 +47,13 @@ def get_response(fs):
         raise HandlingError('nucleotide alignment error: ' + str(e))
     new_column_count = alignment.get_column_count()
     if old_column_count != new_column_count:
-        raise HandlingError('expected a gapless unambiguous nucleotide alignment')
+        msg = 'expected a gapless unambiguous nucleotide alignment'
+        raise HandlingError(msg)
     # get the maximum likelihood estimate
     sequence_pair = alignment.sequences
     count = sum(1 for a, b in zip(*alignment.sequences) if a != b)
     # begin the response
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'difference count:', count
     # write the response
     response_headers = [('Content-Type', 'text/plain')]

@@ -1,9 +1,9 @@
 """Compute some splits of a tree.
 """
 
-import StringIO
+from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
@@ -18,14 +18,17 @@ def get_form():
     """
     @return: the body of a form
     """
-    # define the default tree string with branch lengths and named internal nodes
+    # Define the default tree string with branch lengths
+    # and named internal nodes.
     tree_string = '(a:2, (b:2, c:9)g:4, ((d:1, e:3)i:7, f:2)j:1)h;'
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree with branch lengths', formatted_tree_string),
-            Form.Float('scaling_factor', 'show Laplacian matrices scaled by this amount', 13320),
+            Form.MultiLine('tree',
+                'newick tree with branch lengths', formatted_tree_string),
+            Form.Float('scaling_factor',
+                'show Laplacian matrices scaled by this amount', 13320),
             Form.RadioGroup('matrix_format', 'matrix format', [
                 Form.RadioItem('plain_matrix', 'plain', True),
                 Form.RadioItem('latex_matrix', 'LaTeX')])]
@@ -40,7 +43,7 @@ def get_reciprocal_matrix(M):
     for line in M:
         row = [0 if not value else 1/value for value in line]
         arr.append(row)
-    return numpy.array(arr)
+    return np.array(arr)
 
 def get_full_tree_message(tree, m_to_string):
     """
@@ -49,14 +52,14 @@ def get_full_tree_message(tree, m_to_string):
     @param m_to_string: a function that converts a matrix to a string
     @return: a message about the split of the tips of the tree induced by the fiedler vector
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the alphabetically ordered names
     ordered_names = list(sorted(node.get_name() for node in tree.preorder()))
     # get the corresponding ordered ids
     name_to_id = dict((node.get_name(), id(node)) for node in tree.preorder())
     ordered_ids = [name_to_id[name] for name in ordered_names]
     # get the full weighted adjacency matrix
-    A = numpy.array(tree.get_affinity_matrix(ordered_ids))
+    A = np.array(tree.get_affinity_matrix(ordered_ids))
     print >> out, 'the weighted reciprocal adjacency matrix of the full tree:'
     print >> out, m_to_string(get_reciprocal_matrix(A))
     print >> out
@@ -90,7 +93,7 @@ def get_child_messages(L, eigensplit, ordered_tip_names, m_to_string, scaling_fa
     @param scaling_factor: show the Laplacian scaled by this factor
     @return: a multi-line string
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     n = len(L)
     ordered_label_sets = [set([i]) for i in range(n)]
     all_labels = set(range(n))
@@ -116,7 +119,7 @@ def get_subtree_messages(D, eigensplit, ordered_tip_names):
     @param ordered_tip_names: names of the tips of the tree conformant to v and D
     @return: a multi-line string
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     n = len(D)
     ordered_label_sets = [set([i]) for i in range(n)]
     all_labels = set(range(n))
@@ -137,7 +140,7 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # assert that each node is named
@@ -158,7 +161,7 @@ def get_response(fs):
     tip_name_to_id = dict((tip.get_name(), id(tip)) for tip in tree.gen_tips())
     ordered_tip_ids = [tip_name_to_id[name] for name in ordered_tip_names]
     # get the distance matrix defined by the tips of the tree
-    D = numpy.array(tree.get_partial_distance_matrix(ordered_tip_ids))
+    D = np.array(tree.get_partial_distance_matrix(ordered_tip_ids))
     L = Euclid.edm_to_laplacian(D)
     #print >> out, 'the Laplacian obtained from the full tree by Schur complementation:'
     #print >> out, MatrixUtil.m_to_string(L)

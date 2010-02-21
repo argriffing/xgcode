@@ -5,7 +5,7 @@ This script interfaces directly with mod_python and dispatches requests to other
 g_script_directory = '/var/www/python_scripts'
 g_extension_directory = '/var/www-extensions'
 
-import StringIO
+from StringIO import StringIO
 import sys
 import os
 import re

@@ -13,7 +13,7 @@ The output filenames include the chromosome name.
 """
 
 
-import StringIO
+from StringIO import StringIO
 import argparse
 import os
 
@@ -21,7 +21,7 @@ from SnippetUtil import HandlingError
 import Form
 import Progress
 import DGRP
-import Util
+import iterutils
 
 
 g_sample_lines = [
@@ -51,22 +51,22 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # quickly skim the lines to get some info
-    fin = StringIO.StringIO(fs.data_in)
+    fin = StringIO(fs.data_in)
     skimmer = DGRP.ChromoSkimmer()
     for chromo_name in skimmer.skim(gen_untyped_rows(fin)):
         pass
     chromo_names = skimmer.name_list
     nlines = skimmer.linecount
     # check formatting and monotonicity
-    fin = StringIO.StringIO(fs.data_in)
+    fin = StringIO(fs.data_in)
     for i in DGRP.check_chromo_monotonicity(gen_typed_rows(fin)):
         pass
     # begin writing
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'writing the first of', len(chromo_names), 'chromosomes:'
     print >> out
     # write only the first chromosome
-    fin = StringIO.StringIO(fs.data_in)
+    fin = StringIO(fs.data_in)
     print >> out, g_header
     for row in gen_typed_rows(fin):
         name = row[0]
@@ -97,11 +97,11 @@ def line_to_row(line):
     return typed_values
 
 def gen_typed_rows(fin):
-    for line in Util.stripped_lines(fin):
+    for line in iterutils.stripped_lines(fin):
         yield line_to_row(line)
 
 def gen_untyped_rows(fin):
-    for line in Util.stripped_lines(fin):
+    for line in iterutils.stripped_lines(fin):
         yield line.split()
 
 def convert_row(row):

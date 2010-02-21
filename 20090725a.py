@@ -1,7 +1,7 @@
 """Find centers of clusters of some binary strings.
 """
 
-import StringIO
+from StringIO import StringIO
 import time
 import itertools
 import optparse
@@ -108,7 +108,7 @@ def get_result_string(arrs, max_distance, centers):
     @param max_distance: the max distance of a binary string to the nearest center
     @param centers: the centers found by the search
     """
-    out = StringIO.StringIO()
+    out = StringIO()
     print >> out, 'number of binary strings:', len(arrs)
     print >> out, 'length of each binary string:', len(arrs[0])
     print >> out, 'maximum distance from a center:', max_distance
@@ -123,7 +123,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the bstring lines
-    lines = StringIO.StringIO(fs.bstrings).readlines()
+    lines = StringIO(fs.bstrings).readlines()
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
     # do some validation

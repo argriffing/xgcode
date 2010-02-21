@@ -3,7 +3,7 @@ This module uses graph representations for neighborhood joining algorithms.
 The name GraphNHJ is a shortened name for graph based neighborhood joining.
 """
 
-import StringIO
+from StringIO import StringIO
 import unittest
 
 import numpy
@@ -17,7 +17,6 @@ import NewickIO
 import FelTree
 import NeighborJoining
 import MatrixUtil
-import Util
 import Clustering
 
 

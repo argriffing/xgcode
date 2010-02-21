@@ -1,12 +1,11 @@
 """Consider the graph laplacian matrix for a phylogenetic tree.
 """
 
-import StringIO
+from StringIO import StringIO
 import math
 
 from scipy import linalg
-import scipy
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Newick
@@ -80,7 +79,7 @@ def get_response(fs):
     # get the lexicographically ordered tip names
     states = list(sorted(node.name for node in tree.gen_tips()))
     # start to prepare the reponse
-    out = StringIO.StringIO()
+    out = StringIO()
     # create the dictionary distance matrix
     dictionary_distance_matrix = {}
     for ta in tree.gen_tips():
@@ -132,14 +131,15 @@ def get_response(fs):
     for a in states:
         row = [unnormalized_rate_matrix[(a, b)] for b in states]
         row_major.append(row)
-    L = numpy.array(row_major)
-    D = scipy.diag([math.sqrt(-1/unnormalized_rate_matrix[(a, a)]) for a in states])
-    numpy_matrix = numpy.dot(D, numpy.dot(L, D))
+    L = np.array(row_major)
+    D = np.diag([math.sqrt(-1/unnormalized_rate_matrix[(a, a)])
+        for a in states])
+    np_matrix = np.dot(D, np.dot(L, D))
     print >> out, 'symmetrically normalized matrix:'
-    print >> out, numpy_matrix
+    print >> out, np_matrix
     print >> out, ''
     # show the eigendecomposition of the matrix
-    w, vl, vr = linalg.eig(numpy_matrix, left=True, right=True)
+    w, vl, vr = linalg.eig(np_matrix, left=True, right=True)
     print >> out, 'eigenvalues:'
     print >> out, w
     print >> out, 'left eigenvectors:'
@@ -147,7 +147,8 @@ def get_response(fs):
     print >> out, 'right eigenvectors:'
     print >> out, vr
     # get the eigenvalues sorted by absolute value
-    ordered_eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
+    ordered_eigenvalue_info = list(sorted((abs(x), i) 
+        for i, x in enumerate(w)))
     # get the index of the eigenvector with the second smallest absolute value
     fiedler_eigenvalue, fiedler_eigenvalue_index = ordered_eigenvalue_info[1]
     fiedler_vector = vl.T[fiedler_eigenvalue_index]
@@ -156,20 +157,22 @@ def get_response(fs):
     print >> out, 'corresponding fiedler vector:'
     print >> out, fiedler_vector
     print >> out, 'corresponding partition:'
-    print >> out, [name for name, value in zip(states, fiedler_vector) if value < 0]
-    print >> out, [name for name, value in zip(states, fiedler_vector) if value >= 0]
+    print >> out, [name
+            for name, value in zip(states, fiedler_vector) if value < 0]
+    print >> out, [name
+            for name, value in zip(states, fiedler_vector) if value >= 0]
     # get the laplacian according to the method of balaji and bapat
     # create the numpy distance matrix
     row_major = []
     for a in states:
         row = [dictionary_distance_matrix[(a, b)] for b in states]
         row_major.append(row)
-    numpy_distance_matrix = numpy.array(row_major)
+    np_distance_matrix = np.array(row_major)
     # get the inverse of the numpy distance matrix,
     # using the notation of balaji and bapat
-    E_inv = linalg.inv(numpy_distance_matrix)
-    ones = numpy.ones((len(states), len(states)))
-    numerator = numpy.dot(E_inv, numpy.dot(ones, E_inv))
+    E_inv = linalg.inv(np_distance_matrix)
+    ones = np.ones((len(states), len(states)))
+    numerator = np.dot(E_inv, np.dot(ones, E_inv))
     denominator = sum(sum(E_inv))
     R = E_inv - numerator / denominator
     print >> out, 'R:'
@@ -180,7 +183,8 @@ def get_response(fs):
     w, v = linalg.eig(R)
     print >> out, w
     # get the eigenvalues sorted by absolute value
-    ordered_eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
+    ordered_eigenvalue_info = list(sorted((abs(x), i)
+        for i, x in enumerate(w)))
     # get the index of the eigenvector with the second smallest absolute value
     fiedler_eigenvalue, fiedler_eigenvalue_index = ordered_eigenvalue_info[1]
     fiedler_vector = v.T[fiedler_eigenvalue_index]
@@ -189,16 +193,19 @@ def get_response(fs):
     print >> out, 'corresponding fiedler vector:'
     print >> out, fiedler_vector
     print >> out, 'corresponding partition:'
-    print >> out, [name for name, value in zip(states, fiedler_vector) if value < 0]
-    print >> out, [name for name, value in zip(states, fiedler_vector) if value >= 0]
+    print >> out, [name
+            for name, value in zip(states, fiedler_vector) if value < 0]
+    print >> out, [name
+            for name, value in zip(states, fiedler_vector) if value >= 0]
     # try an alternative formulation for R
     n = len(states)
-    P = numpy.eye(n) - numpy.ones((n, n)) / n
-    R_inv = numpy.dot(P, numpy.dot(numpy_distance_matrix, P))
+    P = np.eye(n) - np.ones((n, n)) / n
+    R_inv = np.dot(P, np.dot(np_distance_matrix, P))
     print >> out, 'alternative formulation of R inverse:'
     print >> out, R_inv
     w, v = linalg.eigh(R_inv)
-    ordered_eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
+    ordered_eigenvalue_info = list(sorted((abs(x), i)
+        for i, x in enumerate(w)))
     fiedler_eigenvalue, fiedler_eigenvalue_index = ordered_eigenvalue_info[1]
     fiedler_vector = v.T[fiedler_eigenvalue_index]
     print >> out, 'eigensystem:'
@@ -210,7 +217,8 @@ def get_response(fs):
     R = linalg.pinv(R_inv)
     print >> out, R
     w, v = linalg.eigh(R)
-    ordered_eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
+    ordered_eigenvalue_info = list(sorted((abs(x), i)
+        for i, x in enumerate(w)))
     fiedler_eigenvalue, fiedler_eigenvalue_index = ordered_eigenvalue_info[1]
     fiedler_vector = v.T[fiedler_eigenvalue_index]
     print >> out, 'eigensystem:'

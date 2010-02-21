@@ -1,7 +1,6 @@
 
 import unittest
 
-import Util
 
 def indent(elem, level=0):
     """

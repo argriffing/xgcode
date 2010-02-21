@@ -10,7 +10,7 @@ g_doc_directory = 'web-build/epydoc-html'
 g_web_script_directory = '/python_scripts'
 g_web_doc_directory = '/phydoc'
 
-import StringIO
+from StringIO import StringIO
 import sys
 import os
 import re
