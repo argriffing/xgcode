@@ -45,12 +45,11 @@ class AxisInfo:
 
 class ImageInfo:
     def __init__(self, width, height,
-            all_black, show_edges, show_labels,
+            all_black, show_labels,
             axis_info, border_info, image_format):
         self.width = width
         self.height = height
         self.all_black = all_black
-        self.show_edges = show_edges
         self.show_labels = show_labels
         self.axis_info = axis_info
         self.border_info = border_info
@@ -67,7 +66,6 @@ def get_image_string(x_coords, y_coords,
     # unpack axis options
     show_x = image_info.axis_info.show_x
     show_y = image_info.axis_info.show_y
-    show_edges = image_info.show_edges
     show_labels = image_info.show_labels
     all_black = image_info.all_black
     # flip axes if necessary
@@ -80,33 +78,6 @@ def get_image_string(x_coords, y_coords,
     border_y = image_info.border_info.border_y
     # unpack the image format
     image_format = image_info.image_format
-    # Define the scaling factors in the x+, x-, y+, and y- directions
-    # which would fill the entire drawable (non-border) region.
-    # The smallest of these scaling factors will be used for all directions.
-    """
-    xpos_coords = [x for x in x_coords if x > 0]
-    xneg_coords = [x for x in x_coords if x < 0]
-    ypos_coords = [y for y in y_coords if y > 0]
-    yneg_coords = [y for y in y_coords if y < 0]
-    sf_list = []
-    if xpos_coords:
-        available = (t_width / 2.0) - border_x
-        used = max(xpos_coords)
-        sf_list.append(available / used)
-    if xneg_coords:
-        available = (t_width / 2.0) - border_x
-        used = -min(xneg_coords)
-        sf_list.append(available / used)
-    if ypos_coords:
-        available = (t_height / 2.0) - border_y
-        used = max(ypos_coords)
-        sf_list.append(available / used)
-    if yneg_coords:
-        available = (t_height / 2.0) - border_y
-        used = -min(yneg_coords)
-        sf_list.append(available / used)
-    scaling_factor = min(sf_list)
-    """
     # Update the coordinates using the new scaling factor.
     x_coords = [x*scaling_factor for x in x_coords]
     y_coords = [y*scaling_factor for y in y_coords]
@@ -139,19 +110,6 @@ def get_image_string(x_coords, y_coords,
         context.line_to(t_width / 2.0, t_height)
         context.stroke()
         context.restore()
-    # Draw the edges.
-    """
-    if show_edges:
-        for i, j in edges:
-            context.save()
-            if not all_black:
-                context.set_source_rgb(0.6, 0.6, 0.6)
-            context.move_to(x_coords[i], y_coords[i])
-            context.line_to(x_coords[j], y_coords[j])
-            context.close_path()
-            context.stroke()
-            context.restore()
-    """
     # Draw the points.
     dot_radius = 3.0
     for x, y, point_color in zip(x_coords, y_coords, point_colors):
@@ -183,21 +141,20 @@ def get_form():
             Form.CheckGroup('axis_options', 'axis options', [
                 Form.CheckItem('flip_x', 'flip x axis'),
                 Form.CheckItem('flip_y', 'flip y axis'),
-                Form.CheckItem('show_x', 'show x axis'),
-                Form.CheckItem('show_y', 'show y axis')]),
+                Form.CheckItem('show_x', 'show x axis', True),
+                Form.CheckItem('show_y', 'show y axis', True)]),
             Form.CheckGroup('vis_options', 'visualization options', [
-                Form.CheckItem('show_edges', 'show edges', True),
                 Form.CheckItem('show_labels', 'show labels')]),
             Form.RadioGroup('edge_weight_options', 'edge weights', [
                 Form.RadioItem('unweighted', 'all weights are 1.0', True),
                 Form.RadioItem('weighted', 'weights are inverse distances')]),
             Form.RadioGroup('color_options', 'color options', [
-                Form.RadioItem('black', 'all black', True),
-                Form.RadioItem('color', 'first axis coloration')]),
+                Form.RadioItem('black', 'all black'),
+                Form.RadioItem('color', 'first axis coloration', True)]),
             Form.CheckGroup('schur_options', 'Schur options', [
                 Form.CheckItem('schur', 'use schur complement', True)]),
             Form.Float('scale', 'scaling factor',
-                '1.0', low_exclusive=0),
+                '150.0', low_exclusive=0),
             Form.Integer('width', 'image width in pixels',
                 640, low=1, high=2000),
             Form.Integer('height', 'image height in pixels',
@@ -344,7 +301,7 @@ def get_response(fs):
     # Collect the image format information.
     axis_info = AxisInfo(fs.flip_x, fs.flip_y, fs.show_x, fs.show_y)
     image_info = ImageInfo(fs.width, fs.height,
-            fs.black, fs.show_edges, fs.show_labels,
+            fs.black, fs.show_labels,
             axis_info, border_info, fs.imageformat)
     # read the points and edges
     points, edges = read_points_and_edges(fs.graph_data)
