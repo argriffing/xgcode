@@ -8,6 +8,10 @@ from scipy.special import gammaln
 
 import iterutils
 
+def get_first(elements):
+    for element in elements:
+        return element
+
 def get_stripped_lines(lines):
     """
     @return: a list of nonempty stripped lines

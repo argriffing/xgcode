@@ -1,0 +1,20 @@
+# The seven csv entries on the first row of each block are:
+# internal variant id, chromosome, hg18 position,
+# internal gene id, HUGO gene name,
+# major nucleotide allele, minor nucleotide allele, and orientation.
+# The next entry in a block is the codon at the given position.
+# Next is the position of the nucleotide within the codon (1, 2, or 3).
+# Finally are the aligned amino acids at the position
+# for the following species:
+# human, rhesus, mouse, dog, elephant,
+# opossum, platypus, chicken, lizard, x_tropicalis, and stickleback.
+
+"v65124",1,20912571,"G00237","KIF17","G","T",-
+ccg
+2
+rnhrrr-qrrr
+
+"v67944",1,201919092,"G00301","ATP2B4","G","A",+
+gtc
+1
+vvavd=e-d-e

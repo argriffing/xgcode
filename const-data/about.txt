@@ -77,3 +77,18 @@ A graphical layout of a tree in a notebook of Darwin.
 Each line in the POINTS section gives the index of the point,
 the x coordinate of the point, and the y coordinate of the point.
 Each line in the EDGE section gives two point indices connected by an edge.
+
+20100524a.dat
+A .hud file giving a vector of binary character values
+for each of several OTUs.
+
+20100526a.dat
+The first couple of SNPs from a research project.
+
+20100526b.dat
+The tree relating the species in the multiz44way multiple sequence alignment.
+Downloaded from
+ftp://hgdownload.cse.ucsc.edu/goldenPath/hg18/multiz44way/44way.nh
+See also
+ftp://hgdownload.cse.ucsc.edu/goldenPath/hg18/multiz44way/README.txt
+
