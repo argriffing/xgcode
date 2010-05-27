@@ -1,4 +1,4 @@
-"""Convert a .hud file to a .snp file.
+"""Convert a .hud file to a .snp file. [UNFINISHED]
 
 The input file gives a binary character vector for each OTU.
 The output file is in Eigenstrat format.
@@ -23,6 +23,7 @@ foo 1 1 1
 bar 1 1 1
 baz 1 0 1
 """.strip()
+
 def get_form():
     """
     @return: the body of a form
