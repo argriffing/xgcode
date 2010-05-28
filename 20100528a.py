@@ -276,7 +276,8 @@ def get_response(fs):
         impact = impacts[aa_letter_to_aa_index(snp.mutant_aa)]
         pvalue = pvalues[aa_letter_to_aa_index(snp.mutant_aa)]
         trans = snp.column[0] + '->' + snp.mutant_aa
-        row_out = [snp.variant_id, trans, impact, pvalue]
+        col = snp.get_simple_column()
+        row_out = [snp.variant_id, trans, col, impact, pvalue]
         print >> out, '\t'.join(str(x) for x in row_out)
     # return the response
     response_headers = [('Content-Type', 'text/plain')]
