@@ -10,13 +10,15 @@ import subprocess
 import os
 
 from SnippetUtil import HandlingError
-import Config
 import FelTree
 import NewickIO
 import Codon
 import Fasta
 import iterutils
 import Form
+
+# TODO de-hardcode this path to the jar file
+g_mapp_jar_path = '/home/argriffi/mapp-analysis/MAPP.jar'
 
 # this is some sample data
 g_default_csv_lines = [
@@ -167,11 +169,10 @@ def get_mapp_output(data_string, tree_string):
     print >> temp_newick_file, tree_string
     temp_newick_file.close()
     # call the mapp program
-    mapp_jar_pathname = Config.mapp_exe_path + '/' + 'MAPP.jar'
     cmd = [
             'gij',
             '-jar',
-            mapp_jar_pathname,
+            g_mapp_jar_path,
             '-f',
             temp_fasta_filename,
             '-t',

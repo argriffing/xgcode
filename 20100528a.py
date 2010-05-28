@@ -1,8 +1,11 @@
-"""Do a MAPP analysis using reimplemented python MAPP.
+"""Do a MAPP analysis using MAPP.jar. [UNFINISHED]
 """
 
 from StringIO import StringIO
 import string
+import tempfile
+import subprocess
+import os
 
 import argparse
 
@@ -17,6 +20,9 @@ import HtmlTable
 import MAPP
 import Codon
 import LeafWeights
+
+# TODO de-hardcode this path to the jar file
+g_mapp_jar_path = '/home/argriffi/mapp-analysis/MAPP.jar'
 
 g_ordered_taxon_names = [
         'hg18',
@@ -184,27 +190,8 @@ class Snp(object):
             msg_b = 'but found ' + self.orientation
             raise SnpError(msg_a + msg_b)
 
-    def get_pruned_tree(self, tree_string):
-        taxa = set(t for aa, t in zip(self.column, g_ordered_taxon_names) if aa)
-        # get the newick tree
-        tree = NewickIO.parse(tree_string, Newick.NewickTree)
-        # define the taxa that will be pruned
-        tree_taxa = set(node.name for node in tree.gen_tips())
-        names_to_remove = tree_taxa - taxa
-        bad_names = taxa - tree_taxa
-        if bad_names:
-            raise SnpError(
-                    'expected the tree to contain '
-                    'the following taxa: ' + str(list(bad_names)))
-        # prune the tree
-        for name in names_to_remove:
-            tree.prune(tree.get_unique_node(name))
-        # merge segmented branches 
-        internal_nodes_to_remove = [node for node in tree.preorder()
-                if node.get_child_count() == 1] 
-        for node in internal_nodes_to_remove: 
-            tree.remove_node(node) 
-        return tree
+    def get_simple_column(self):
+        return ''.join(('-' if not x else x) for x in self.column)
 
 
 def get_form():
@@ -236,65 +223,61 @@ def aa_letter_to_aa_index(aa_letter):
         if aa == aa_letter:
             return i
 
-def process_snp(snp, full_tree_string):
-    if sum(1 for x in snp.column if x) < 7:
-        return '\t'.join(str(x) for x in (snp.variant_id, '*', '*'))
-    pruned_tree = snp.get_pruned_tree(full_tree_string)
-    # define the map from the taxon to the amino acid
-    taxon_aa_pairs = zip(g_ordered_taxon_names, snp.column)
-    taxon_to_aa_letter = dict((t, aa) for t, aa in taxon_aa_pairs if aa)
-    # get the weights of the taxa
-    taxon_weight_pairs = LeafWeights.get_stone_weights(pruned_tree)
-    # calculate the standardized physicochemical property table
-    standardized_property_array = MAPP.get_standardized_property_array(
-            MAPP.g_property_array)
-    # calculate the physicochemical property correlation matrix
-    correlation_matrix = MAPP.get_property_correlation_matrix(
-            standardized_property_array)
-    # estimate the amino acid distribution for the column,
-    # taking into account the tree and a uniform prior.
-    weights = []
-    aa_indices = []
-    for taxon, weight in taxon_weight_pairs:
-        weights.append(weight)
-        aa_index = aa_letter_to_aa_index(taxon_to_aa_letter[taxon])
-        aa_indices.append(aa_index)
-    aa_distribution = MAPP.estimate_aa_distribution(weights, aa_indices)
-    # estimate the mean and variance of each physicochemical property
-    est_pc_means = MAPP.estimate_property_means(
-            standardized_property_array, aa_distribution)
-    est_pc_variances = MAPP.estimate_property_variances(
-            standardized_property_array, aa_distribution)
-    # calculate the deviation from each property mean
-    # for each possible amino acid
-    deviations = MAPP.get_deviations(
-            est_pc_means, est_pc_variances, standardized_property_array)
-    # calculate the impact scores
-    impact_scores = MAPP.get_impact_scores(correlation_matrix, deviations)
-    # calculate the p-values
-    p_values = []
-    for score in impact_scores:
-        ntaxa = len(taxon_weight_pairs)
-        p_values.append(MAPP.get_p_value(score, ntaxa))
-    # show the impact score and p-value for the mutant
-    letter_to_impact = dict(zip(Codon.g_aa_letters, impact_scores))
-    letter_to_pvalue = dict(zip(Codon.g_aa_letters, p_values))
-    impact = letter_to_impact[snp.mutant_aa]
-    pvalue = letter_to_pvalue[snp.mutant_aa]
-    return '\t'.join(str(x) for x in (snp.variant_id, impact, pvalue))
-
 def get_response(fs):
     """
     @param fs: a FieldStorage object decorated with field values
     @return: a (response_headers, response_text) pair
     """
-    # start writing the html response
-    out = StringIO()
     # get the list of annotated snps
     snps = list(lines_to_annotated_snps(StringIO(fs.annotation)))
-    # write a line for each snp
-    for snp in snps:
-        print >> out, process_snp(snp, fs.tree)
+    # define the names of the temporary files
+    temp_tree_filename = tempfile.mktemp(suffix='.tree')
+    temp_fasta_filename = tempfile.mktemp(suffix='.fa')
+    # write the temporary tree file
+    with open(temp_tree_filename, 'w') as fout:
+        print >> fout, fs.tree
+    # write the temporary fasta file
+    columns = [snp.get_simple_column() for snp in snps]
+    sequences = [''.join(row) for row in zip(*columns)]
+    with open(temp_fasta_filename, 'w') as fout:
+        for sequence, taxon in zip(sequences, g_ordered_taxon_names):
+            print >> fout, '>' + taxon
+            print >> fout, sequence
+    # call the mapp program
+    cmd = [
+            'gij',
+            '-jar',
+            g_mapp_jar_path,
+            '-t',
+            temp_tree_filename,
+            '-f',
+            temp_fasta_filename]
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    mapp_out, mapp_err = p.communicate()
+    # get the mapp output snp lines and skip the header
+    lines = mapp_out.splitlines()[1:]
+    lines = [line.rstrip('\n') for line in lines]
+    lines = [line for line in lines if line]
+    if len(snps) != len(lines):
+        msg_a = 'found %d snps ' % len(snps)
+        msg_b = 'but %d mapp data output lines' % len(lines)
+        raise HandlingError(msg_a + msg_b)
+    # write the output
+    out = StringIO()
+    for data_line, snp in zip(lines, snps):
+        ignore = string.whitespace + "'" + '"'
+        row = [x.strip(ignore) for x in data_line.split('\t')]
+        if len(row) != 54:
+            msg_a = 'expected 54 mapp output columns '
+            msg_b = 'but found %d' % len(row)
+            raise HandlingError(msg_a + msg_b + '\n' + str(row))
+        impacts = [float(x) for x in row[12:32]]
+        pvalues = [float(x) for x in row[32:52]]
+        impact = impacts[aa_letter_to_aa_index(snp.mutant_aa)]
+        pvalue = pvalues[aa_letter_to_aa_index(snp.mutant_aa)]
+        trans = snp.column[0] + '->' + snp.mutant_aa
+        row_out = [snp.variant_id, trans, impact, pvalue]
+        print >> out, '\t'.join(str(x) for x in row_out)
     # return the response
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().rstrip()
