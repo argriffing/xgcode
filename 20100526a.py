@@ -48,7 +48,10 @@ def lines_to_annotated_snps(lines):
     @param lines: raw lines
     """
     for clump in gen_clumped_lines(lines):
-        yield Snp(clump)
+        try:
+            yield Snp(clump)
+        except KnownBadSnpError, e:
+            pass
 
 def gen_clumped_lines(lines):
     """
@@ -72,6 +75,8 @@ def gen_clumped_lines(lines):
 
 class SnpError(Exception): pass
 
+class KnownBadSnpError(SnpError): pass
+
 class Snp(object):
 
     def __init__(self, lines):
@@ -80,6 +85,9 @@ class Snp(object):
             msg_a = 'expected 4 lines per annotated SNP '
             msg_b = 'but found %d' % len(lines)
             raise SnpError(msg_a + msg_b)
+        # check for a known bad snp
+        if lines[-1] == '?':
+            raise KnownBadSnpError()
         # unpack the lines into member variables
         self.parse_first_line(lines[0])
         self.codon = lines[1].upper()
@@ -108,8 +116,8 @@ class Snp(object):
             observed_nt = codon[2 - (self.within_codon_pos - 1)]
         if expected_nt != observed_nt:
             raise SnpError(
-                    'the major allele is not in the codon '
-                    'at the correct position '
+                    'in ' + self.variant_id + ' the major allele '
+                    'is not in the codon at the correct position '
                     'even after taking into account the strand orientation.')
         # Assert that the human amino acid,
         # the first amino acid in the column,
@@ -123,7 +131,8 @@ class Snp(object):
         observed_aa = Codon.g_codon_to_aa_letter[codon]
         if expected_aa != observed_aa:
             raise SnpError(
-                    'the oriented codon does not translate to '
+                    'in ' + self.variant_id + ' the oriented codon '
+                    'does not translate to '
                     'the human amino acid in the aligned column')
         # Get the mutant amino acid.
         if self.orientation == '+':
@@ -226,115 +235,10 @@ def aa_letter_to_aa_index(aa_letter):
     for i, aa in enumerate(Codon.g_aa_letters):
         if aa == aa_letter:
             return i
-    return None
-
-def get_tree_and_column(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: the pruned tree and a map from taxa to amino acids
-    """
-    # get the newick tree.
-    tree = NewickIO.parse(fs.tree, Newick.NewickTree)
-    unordered_tip_names = set(node.name for node in tree.gen_tips())
-    # get the lines that give an amino acid for each of several taxa
-    column_lines = Util.get_stripped_lines(StringIO(fs.column))
-    if len(column_lines) < 7:
-        msg = 'the alignment column should have at least seven taxa'
-        raise HandlingError(msg)
-    # get the mapping from taxon to amino acid
-    taxon_to_aa_letter = {}
-    for line in column_lines:
-        pair = line.split()
-        if len(pair) != 2:
-            raise HandlingError('invalid line: %s' % line)
-        taxon, aa_letter = pair
-        aa_letter = aa_letter.upper()
-        if aa_letter not in Codon.g_aa_letters:
-            msg = 'expected an amino acid instead of this: %s' % aa_letter
-            raise HandlingError(msg)
-        taxon_to_aa_letter[taxon] = aa_letter
-    # Assert that the names in the column are a subset of the names
-    # of the tips of the tree.
-    unordered_taxon_names = set(taxon_to_aa_letter)
-    weird_names = unordered_taxon_names - unordered_tip_names
-    if weird_names:
-        msg = 'these taxa were not found on the tree: %s' % str(weird_names)
-        raise HandlingError(msg)
-    # define the taxa that will be pruned
-    names_to_remove = unordered_tip_names - unordered_taxon_names
-    # prune the tree
-    for name in names_to_remove:
-        tree.prune(tree.get_unique_node(name))
-    # merge segmented branches 
-    internal_nodes_to_remove = [node for node in tree.preorder()
-            if node.get_child_count() == 1] 
-    for node in internal_nodes_to_remove: 
-        tree.remove_node(node) 
-    return tree, taxon_to_aa_letter
-
-def process_obsolete():
-    print >> out, '<html>'
-    print >> out, '<body>'
-    # get the tree and the column sent by the user
-    pruned_tree, taxon_to_aa_letter = get_tree_and_column(fs)
-    # get the weights of the taxa
-    taxon_weight_pairs = LeafWeights.get_stone_weights(pruned_tree)
-    # calculate the standardized physicochemical property table
-    standardized_property_array = MAPP.get_standardized_property_array(
-            MAPP.g_property_array)
-    # calculate the physicochemical property correlation matrix
-    correlation_matrix = MAPP.get_property_correlation_matrix(
-            standardized_property_array)
-    # estimate the amino acid distribution for the column,
-    # taking into account the tree and a uniform prior.
-    weights = []
-    aa_indices = []
-    for taxon, weight in taxon_weight_pairs:
-        weights.append(weight)
-        aa_indices.append(aa_letter_to_aa_index(taxon_to_aa_letter[taxon]))
-    aa_distribution = MAPP.estimate_aa_distribution(weights, aa_indices)
-    # estimate the mean and variance of each physicochemical property
-    est_pc_means = MAPP.estimate_property_means(
-            standardized_property_array, aa_distribution)
-    est_pc_variances = MAPP.estimate_property_variances(
-            standardized_property_array, aa_distribution)
-    # calculate the deviation from each property mean
-    # for each possible amino acid
-    deviations = MAPP.get_deviations(
-            est_pc_means, est_pc_variances, standardized_property_array)
-    # calculate the impact scores
-    impact_scores = MAPP.get_impact_scores(correlation_matrix, deviations)
-    # show the impact scores
-    table = [impact_scores]
-    row_labels = ['impact']
-    col_labels = Codon.g_aa_letters
-    print >> out, 'impact scores:'
-    print >> out, '<br/>'
-    print >> out, HtmlTable.get_labeled_table_string(
-            col_labels, row_labels, table)
-    print >> out, '<br/><br/>'
-    # calculate the p-values
-    p_values = []
-    for score in impact_scores:
-        ntaxa = len(taxon_weight_pairs)
-        p_values.append(MAPP.get_p_value(score, ntaxa))
-    # show the p-values
-    table = [p_values]
-    row_labels = ['p-value']
-    col_labels = Codon.g_aa_letters
-    print >> out, 'p-values:'
-    print >> out, '<br/>'
-    print >> out, HtmlTable.get_labeled_table_string(
-            col_labels, row_labels, table)
-    print >> out, '<br/><br/>'
-    # write the html footer
-    print >> out, '</body>'
-    print >> out, '</html>'
-    # write the response
-    response_headers = [('Content-Type', 'text/html')]
-    return response_headers, out.getvalue()
 
 def process_snp(snp, full_tree_string):
+    if sum(1 for x in snp.column if x) < 7:
+        return '\t'.join(str(x) for x in (snp.variant_id, '*', '*'))
     pruned_tree = snp.get_pruned_tree(full_tree_string)
     # define the map from the taxon to the amino acid
     taxon_aa_pairs = zip(g_ordered_taxon_names, snp.column)
@@ -353,7 +257,8 @@ def process_snp(snp, full_tree_string):
     aa_indices = []
     for taxon, weight in taxon_weight_pairs:
         weights.append(weight)
-        aa_indices.append(aa_letter_to_aa_index(taxon_to_aa_letter[taxon]))
+        aa_index = aa_letter_to_aa_index(taxon_to_aa_letter[taxon])
+        aa_indices.append(aa_index)
     aa_distribution = MAPP.estimate_aa_distribution(weights, aa_indices)
     # estimate the mean and variance of each physicochemical property
     est_pc_means = MAPP.estimate_property_means(
