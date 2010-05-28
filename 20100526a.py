@@ -134,6 +134,13 @@ class Snp(object):
             c[2 - (self.within_codon_pos - 1)] = self.minor_allele
         codon = ''.join(c)
         self.mutant_aa = Codon.g_codon_to_aa_letter[codon]
+        # Assert that the mutation is a missense mutation,
+        # that is, that the wild and mutant amino acids are different.
+        if self.mutant_aa == self.column[0]:
+            raise SnpError(
+                    'expected a missense mutation '
+                    'but the wild type amino acid '
+                    'is the same as the mutant amino acid')
 
     def parse_first_line(self, line):
         """
@@ -169,12 +176,17 @@ class Snp(object):
             raise SnpError(msg_a + msg_b)
 
     def get_pruned_tree(self, tree_string):
-        all_taxon_aa_pairs = zip(g_ordered_taxon_names, snp.column)
-        # get the newick tree.
-        tree = NewickIO.parse(fs.tree, Newick.NewickTree)
+        taxa = set(t for aa, t in zip(self.column, g_ordered_taxon_names) if aa)
+        # get the newick tree
+        tree = NewickIO.parse(tree_string, Newick.NewickTree)
         # define the taxa that will be pruned
-        unordered_tip_names = set(node.name for node in tree.gen_tips())
-        names_to_remove = unordered_tip_names - observed_taxon_names
+        tree_taxa = set(node.name for node in tree.gen_tips())
+        names_to_remove = tree_taxa - taxa
+        bad_names = taxa - tree_taxa
+        if bad_names:
+            raise SnpError(
+                    'expected the tree to contain '
+                    'the following taxa: ' + str(list(bad_names)))
         # prune the tree
         for name in names_to_remove:
             tree.prune(tree.get_unique_node(name))
@@ -183,7 +195,7 @@ class Snp(object):
                 if node.get_child_count() == 1] 
         for node in internal_nodes_to_remove: 
             tree.remove_node(node) 
-
+        return tree
 
 
 def get_form():
@@ -322,26 +334,10 @@ def process_obsolete():
     response_headers = [('Content-Type', 'text/html')]
     return response_headers, out.getvalue()
 
-def get_pruned_tree(snp, full_tree_string):
-    all_taxon_aa_pairs = zip(g_ordered_taxon_names, snp.column)
-    # get the newick tree.
-    tree = NewickIO.parse(fs.tree, Newick.NewickTree)
-    # define the taxa that will be pruned
-    unordered_tip_names = set(node.name for node in tree.gen_tips())
-    names_to_remove = unordered_tip_names - observed_taxon_names
-    # prune the tree
-    for name in names_to_remove:
-        tree.prune(tree.get_unique_node(name))
-    # merge segmented branches 
-    internal_nodes_to_remove = [node for node in tree.preorder()
-            if node.get_child_count() == 1] 
-    for node in internal_nodes_to_remove: 
-        tree.remove_node(node) 
-
 def process_snp(snp, full_tree_string):
-
+    pruned_tree = snp.get_pruned_tree(full_tree_string)
     # define the map from the taxon to the amino acid
-    all_taxon_aa_pairs = zip(g_ordered_taxon_names, snp.column)
+    taxon_aa_pairs = zip(g_ordered_taxon_names, snp.column)
     taxon_to_aa_letter = dict((t, aa) for t, aa in taxon_aa_pairs if aa)
     # get the weights of the taxa
     taxon_weight_pairs = LeafWeights.get_stone_weights(pruned_tree)
@@ -370,29 +366,17 @@ def process_snp(snp, full_tree_string):
             est_pc_means, est_pc_variances, standardized_property_array)
     # calculate the impact scores
     impact_scores = MAPP.get_impact_scores(correlation_matrix, deviations)
-    # show the impact scores
-    table = [impact_scores]
-    row_labels = ['impact']
-    col_labels = Codon.g_aa_letters
-    print >> out, 'impact scores:'
-    print >> out, '<br/>'
-    print >> out, HtmlTable.get_labeled_table_string(
-            col_labels, row_labels, table)
-    print >> out, '<br/><br/>'
     # calculate the p-values
     p_values = []
     for score in impact_scores:
         ntaxa = len(taxon_weight_pairs)
         p_values.append(MAPP.get_p_value(score, ntaxa))
-    # show the p-values
-    table = [p_values]
-    row_labels = ['p-value']
-    col_labels = Codon.g_aa_letters
-    print >> out, 'p-values:'
-    print >> out, '<br/>'
-    print >> out, HtmlTable.get_labeled_table_string(
-            col_labels, row_labels, table)
-    print >> out, '<br/><br/>'
+    # show the impact score and p-value for the mutant
+    letter_to_impact = dict(zip(Codon.g_aa_letters, impact_scores))
+    letter_to_pvalue = dict(zip(Codon.g_aa_letters, p_values))
+    impact = letter_to_impact[snp.mutant_aa]
+    pvalue = letter_to_pvalue[snp.mutant_aa]
+    return '\t'.join(str(x) for x in (snp.variant_id, impact, pvalue))
 
 def get_response(fs):
     """
