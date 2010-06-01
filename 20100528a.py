@@ -1,4 +1,4 @@
-"""Do a MAPP analysis using MAPP.jar. [UNFINISHED]
+"""Do a MAPP analysis using MAPP.jar.
 """
 
 from StringIO import StringIO
