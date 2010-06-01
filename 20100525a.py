@@ -6,49 +6,20 @@ Note that only the first line of the input file is used.
 """
 
 from StringIO import StringIO
-import itertools
-import random
-import time
 import sys
 
 import argparse
-import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
 import Util
+import Carbone
 
 g_default_string = """
 foo 1 1 1
 bar 1 1 1
 baz 1 0 1
 """.strip()
-
-
-class WordError(Exception): pass
-
-class Word(object):
-    def __init__(self, line):
-        # store the original line
-        self.line = line
-        # extract the name and the binary vector
-        elements = line.split()
-        self.name = elements[0]
-        for x in elements[1:]:
-            if x not in ('0', '1'):
-                msg = 'expected 0 or 1 but got ' + x
-                raise WordError(msg)
-        self.v = np.array([int(x) for x in elements[1:]])
-
-def validate_words(words):
-    """
-    Make sure the binary vectors are the same lengths.
-    @param words: word objects
-    """
-    lengths = set(len(w.v) for w in words)
-    if len(lengths) != 1:
-        msg = 'each binary vector should be the same length'
-        raise WordError(msg)
 
 
 def get_form():
@@ -67,8 +38,8 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     lines = Util.get_stripped_lines(StringIO(fs.data))
-    words = [Word(line) for line in lines]
-    validate_words(words)
+    words = [Carbone.Word(line) for line in lines]
+    Carbone.validate_words(words)
     text = process(words[0])
     return [('Content-Type', 'text/plain')], text
 
@@ -85,8 +56,8 @@ def process(word):
 
 def main(args):
     lines = Util.get_stripped_lines(sys.stdin)
-    words = [Word(line) for line in lines]
-    validate_words(words)
+    words = [Carbone.Word(line) for line in lines]
+    Carbone.validate_words(words)
     print process(words[0])
 
 if __name__ == '__main__':
