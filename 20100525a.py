@@ -21,6 +21,20 @@ bar 1 1 1
 baz 1 0 1
 """.strip()
 
+def process(lines):
+    """
+    @param lines: lines of a .hud file
+    """
+    word = Carbone.get_words(lines)[0]
+    out = StringIO()
+    for i, genotype in enumerate(word.v):
+        name = 'SNP_%d' % i
+        chromosome = '1'
+        morgans = '0.0'
+        bases = i+1
+        row = [name, chromosome, morgans, bases]
+        print >> out, '\t'.join(str(x) for x in row)
+    return out.getvalue().rstrip()
 
 def get_form():
     """
@@ -37,30 +51,12 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    lines = Util.get_stripped_lines(StringIO(fs.data))
-    words = [Carbone.Word(line) for line in lines]
-    Carbone.validate_words(words)
-    text = process(words[0])
+    text = process(fs.data.splitlines())
     return [('Content-Type', 'text/plain')], text
 
-def process(word):
-    out = StringIO()
-    for i, genotype in enumerate(word.v):
-        name = 'SNP_%d' % i
-        chromosome = '1'
-        morgans = '0.0'
-        bases = i+1
-        row = [name, chromosome, morgans, bases]
-        print >> out, '\t'.join(str(x) for x in row)
-    return out.getvalue().rstrip()
-
 def main(args):
-    lines = Util.get_stripped_lines(sys.stdin)
-    words = [Carbone.Word(line) for line in lines]
-    Carbone.validate_words(words)
-    print process(words[0])
+    print process(sys.stdin)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    args = parser.parse_args()
-    main(args)
+    main(parser.parse_args())

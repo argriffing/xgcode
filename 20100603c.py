@@ -8,13 +8,11 @@ and each line has one character per individual.
 from StringIO import StringIO
 import sys
 import os
-import csv
 
 import argparse
 
 from SnippetUtil import HandlingError
 import Form
-import Util
 import Carbone
 
 g_default_hud_string = """
@@ -23,15 +21,9 @@ IC2 1 1 1 0
 IC3 1 0 1 0
 """.strip()
 
-def get_validated_words(lines):
-    lines = Util.get_stripped_lines(lines)
-    words = [Carbone.Word(line) for line in lines]
-    Carbone.validate_words(words)
-    return words
-
 def process(hud_lines):
     out = StringIO()
-    words = get_validated_words(hud_lines)
+    words = Carbone.get_words(hud_lines)
     # for each individual get the genotype of each SNP
     array_per_individual = []
     for word in words:

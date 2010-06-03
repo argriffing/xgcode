@@ -40,13 +40,6 @@ class DataRowError(Exception):
         msg = '\n'.join(lines)
         Exception.__init__(self, msg)
 
-def get_validated_words(lines):
-    lines = Util.get_stripped_lines(lines)
-    words = [Carbone.Word(line) for line in lines]
-    Carbone.validate_words(words)
-    return words
-
-
 def get_form():
     """
     @return: the body of a form
@@ -97,7 +90,7 @@ def get_temperature_info(data_rows, threshold):
 def process(hud_lines, info_lines, threshold):
     out = StringIO()
     # extract names from the .hud file
-    words = get_validated_words(hud_lines)
+    words = Carbone.get_words(hud_lines)
     names = [word.name for word in words]
     # read the csv file
     rows = list(csv.reader(info_lines))
