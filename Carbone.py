@@ -4,6 +4,7 @@ Add stuff specific to this PCA fungus project.
 
 import numpy as np
 
+import Util
 
 class WordError(Exception): pass
 
@@ -29,3 +30,13 @@ def validate_words(words):
     if len(lengths) != 1:
         msg = 'each binary vector should be the same length'
         raise WordError(msg)
+
+def get_words(lines):
+    """
+    @param lines: lines of a .hud file
+    @return: a list of validated words
+    """
+    lines = Util.get_stripped_lines(lines)
+    words = [Word(line) for line in lines]
+    validate_words(words)
+    return words
