@@ -1,18 +1,91 @@
-"""
-Convert a .hud file and a amdS_PCA_Info.csv file to an .ind file.
+"""Create a fungus precipitation .ind file
+Create an .ind precipitation file from a .hud and a amdS_PCA_Info.csv file.
+
 The .hud file provides the names of the OTUs.
 The amdS_PCA_Info.csv file provides the 'case-control' status,
 representing binarized location, temperature, or precipitation.
 The output file is in eigenstrat format.
 """
 
-import os
+from StringIO import StringIO
 import sys
+import os
 import csv
 
 import argparse
 
-import util
+from SnippetUtil import HandlingError
+import Form
+import Util
+import Carbone
+
+g_default_hud_string = """
+foo 1 1 1
+bar 1 1 1
+baz 1 0 1
+""".strip()
+
+g_default_info_lines = [
+        '"IC","Haplo","Location","Temp (C)","Precip (mm)","Species",'
+            '"B1","B2","G1","G2","OMST"',
+        '"1","H42","GA","15","600","Ap","+","+","+","+","-"',
+        '"2","H42","GA","15","600","Ap","+","+","+","+","-"',
+        '"3","*","GA","15","600","Ap","+","+","+","+","-"']
+
+g_default_info_string = '\n'.join(g_default_info_lines)
+
+def get_validated_words(lines):
+    lines = Util.get_stripped_lines(lines)
+    words = [Carbone.Word(line) for line in lines]
+    Carbone.validate_words(words)
+    return words
+
+
+def get_form():
+    """
+    @return: the body of a form
+    """
+    form_objects = [
+            Form.MultiLine('hud',
+                'a list of OTUs names and binary character vectors',
+                g_default_hud_string),
+            Form.Multiline('info',
+                'amdS_PCA_Info.csv lines',
+                g_default_info_lines),
+            Form.Float('threshold',
+                    'precipitation threshold (mm)',
+                    '750.0')]
+    return form_objects
+
+def get_response(fs):
+    """
+    @param fs: a FieldStorage object containing the cgi arguments
+    @return: a (response_headers, response_text) pair
+    """
+    lines = Util.get_stripped_lines(StringIO(fs.hud))
+    words = get_validated_words(lines)
+    return [('Content-Type', 'text/plain')], text
+
+def main(args):
+    # extract names from the .hud file
+    with open(args.hud) as fin:
+        lines = Util.get_stripped_lines(fin)
+    words = get_validated_words(lines)
+    names = [word.name for word in words]
+    with open(args.info) as fin:
+        pass
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--hud', help='.hud file')
+    parser.add_argument('--info', help='a .csv like amdS_PCA_Info.csv')
+    parser.add_argument('--threshold', type=float, default=750,
+            help='precipitation threshold (mm)')
+    args = parser.parse_args()
+    main(args)
+
+
+
 
 class DataRowError(Exception):
     def __init__(self, row, e):
@@ -79,68 +152,12 @@ def get_precipitation_info(data_rows, threshold):
             raise DataRowError(row, e)
     return cases, controls
 
-def get_temperature_info(data_rows, threshold):
-    """
-    Asterisk is missing data.
-    @param data_rows: rows of string elements
-    @param threshold: temperature threshold in Celcius
-    @return: temperature case and control OTU sets
-    """
-    cases = set()
-    controls = set()
-    for row in data_rows:
-        try:
-            otu = 'IC' + row[0]
-            temperature = row[3]
-            if temperature == '*':
-                continue
-            if float(temperature) < threshold:
-                cases.add(otu)
-            else:
-                controls.add(otu)
-        except Exception, e:
-            raise DataRowError(row, e)
-    return cases, controls
-
-def get_location_info(data_rows, control_location):
-    """
-    Asterisk is missing data.
-    @param data_rows: rows of string elements
-    @param control_location: the location treated as the control
-    @return: location case and control OTU sets
-    """
-    cases = set()
-    controls = set()
-    for row in data_rows:
-        try:
-            otu = 'IC' + row[0]
-            location = row[2]
-            if location == '*':
-                continue
-            if location == control_location:
-                controls.add(otu)
-            else:
-                cases.add(otu)
-        except Exception, e:
-            raise DataRowError(row, e)
-    return cases, controls
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--precipitation_threshold', type=float,
             default=750,
             help='threshold classifying the amount of precipitation (mm)')
-    parser.add_argument('--temperature_threshold', type=float,
-            default=22,
-            help='threshold to classify the temperature (C)')
-    parser.add_argument('--control_location',
-            default='GA',
-            help='use this location as the control location')
-    parser.add_argument('--environment',
-            choices=['location', 'temperature', 'precipitation'],
-            default='temperature',
-            help='the environmental variable of interest')
     parser.add_argument('--hud', required=True,
             help='an input .hud file')
     parser.add_argument('--csv', required=True,
