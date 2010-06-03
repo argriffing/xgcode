@@ -1,0 +1,3 @@
+
+# ignore bytecode files compiled from python scripts or modules
+*.pyc
