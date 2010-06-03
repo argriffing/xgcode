@@ -311,11 +311,11 @@ class Indexer:
         # check some conditions so we fail early instead of late
         if not os.path.isdir(self.pieces_directory):
             msg_a = 'missing the directory '
-            msg_b = 'with fasta files: ' + self.pieces_directory)
+            msg_b = 'with fasta files: ' + self.pieces_directory
             raise KGEAError(msg_a + msg_b)
         if not os.path.isdir(self.index_directory):
             msg_a = 'missing the directory to which the index files '
-            msg_b = 'should be written: ' + self.index_directory)
+            msg_b = 'should be written: ' + self.index_directory
             raise KGEAError(msg_a + msg_b)
 
     def run(self, verbose=False):
@@ -395,7 +395,7 @@ class Finder:
             fin = open(chrom_list_filename)
         except IOError, e:
             msg_a = 'there was a problem opening '
-            msg_b = 'the chromosome list file: ' + chrom_list_filename)
+            msg_b = 'the chromosome list file: ' + chrom_list_filename
             raise KGEAError(msg_a + msg_b)
         lines = [line.strip() for line in fin.readlines()]
         fin.close()
