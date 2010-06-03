@@ -1,6 +1,6 @@
 """Create a fungus .ind file for location.
 
-Create an .ind temperature file from a .hud and a amdS_PCA_Info.csv file.
+Create an .ind location file from a .hud and a amdS_PCA_Info.csv file.
 The .hud file provides the names of the OTUs.
 The amdS_PCA_Info.csv file provides the 'case-control' status,
 representing binarized location, temperature, or precipitation.
@@ -28,7 +28,7 @@ IC3 1 0 1 0
 g_default_info_lines = [
         '"IC","Haplo","Location","Temp (C)","Precip (mm)","Species",'
             '"B1","B2","G1","G2","OMST"',
-        '"1","H42","GA","15","600","Ap","+","+","+","+","-"',
+        '"1","H42","NC","15","600","Ap","+","+","+","+","-"',
         '"2","H42","GA","30","700","Ap","+","+","+","+","-"',
         '"3","*","GA","45","800","Ap","+","+","+","+","-"']
 
@@ -58,9 +58,9 @@ def get_form():
             Form.MultiLine('info',
                 'amdS_PCA_Info.csv lines',
                 g_default_info_string),
-            Form.Float('threshold',
-                    'temperature threshold (C)',
-                    '22.0')]
+            Form.SingleLine('location',
+                'control location',
+                'GA')]
     return form_objects
 
 def get_response(fs):
@@ -68,25 +68,25 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    text = process(fs.hud.splitlines(), fs.info.splitlines(), fs.threshold)
+    text = process(fs.hud.splitlines(), fs.info.splitlines(), fs.location)
     return [('Content-Type', 'text/plain')], text
 
-def get_temperature_info(data_rows, threshold):
+def get_location_info(data_rows, control_location):
     """
     Asterisk is missing data.
     @param data_rows: rows of string elements
-    @param threshold: temperature threshold in Celcius
-    @return: temperature case and control OTU sets
+    @param control_location: control location string
+    @return: location case and control OTU sets
     """
     cases = set()
     controls = set()
     for row in data_rows:
         try:
             otu = 'IC' + row[0]
-            temperature = row[3]
-            if temperature == '*':
+            location = row[2]
+            if location == '*':
                 continue
-            if float(temperature) < threshold:
+            if location != control_location:
                 cases.add(otu)
             else:
                 controls.add(otu)
@@ -94,7 +94,12 @@ def get_temperature_info(data_rows, threshold):
             raise DataRowError(row, e)
     return cases, controls
 
-def process(hud_lines, info_lines, threshold):
+def process(hud_lines, info_lines, location):
+    """
+    @param hud_lines: lines of a .hud file
+    @param info_lines: lines of a phenotype .csv file
+    @param location: the control location string
+    """
     out = StringIO()
     # extract names from the .hud file
     words = get_validated_words(hud_lines)
@@ -102,7 +107,7 @@ def process(hud_lines, info_lines, threshold):
     # read the csv file
     rows = list(csv.reader(info_lines))
     header, data_rows = rows[0], rows[1:]
-    cases, controls = get_temperature_info(data_rows, threshold)
+    cases, controls = get_location_info(data_rows, location)
     # write the .ind file contents
     for name in names:
         gender = 'U'
@@ -118,12 +123,12 @@ def process(hud_lines, info_lines, threshold):
 def main(args):
     with open(os.path.expanduser(args.hud)) as fin_hud:
         with open(os.path.expanduser(args.csv)) as fin_info:
-            print process(fin_hud, fin_info, args.threshold)
+            print process(fin_hud, fin_info, args.location)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--hud', help='.hud file')
     parser.add_argument('--info', help='a .csv like amdS_PCA_Info.csv')
-    parser.add_argument('--threshold', type=float, default=22.0,
-            help='temperature threshold (C)')
+    parser.add_argument('--location', default='GA',
+            help='control location')
     main(parser.parse_args())
