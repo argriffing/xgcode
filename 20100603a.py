@@ -1,6 +1,6 @@
-"""Create a fungus .ind file for precipitation.
+"""Create a fungus .ind file for temperature.
 
-Create an .ind precipitation file from a .hud and a amdS_PCA_Info.csv file.
+Create an .ind temperature file from a .hud and a amdS_PCA_Info.csv file.
 The .hud file provides the names of the OTUs.
 The amdS_PCA_Info.csv file provides the 'case-control' status,
 representing binarized location, temperature, or precipitation.
@@ -59,8 +59,8 @@ def get_form():
                 'amdS_PCA_Info.csv lines',
                 g_default_info_string),
             Form.Float('threshold',
-                    'precipitation threshold (mm)',
-                    '750.0')]
+                    'temperature threshold (C)',
+                    '22.0')]
     return form_objects
 
 def get_response(fs):
@@ -71,22 +71,22 @@ def get_response(fs):
     text = process(fs.hud.splitlines(), fs.info.splitlines(), fs.threshold)
     return [('Content-Type', 'text/plain')], text
 
-def get_precipitation_info(data_rows, threshold):
+def get_temperature_info(data_rows, threshold):
     """
     Asterisk is missing data.
     @param data_rows: rows of string elements
-    @param threshold: precipitation threshold in millimeters
-    @return: precipitation case and control OTU sets
+    @param threshold: temperature threshold in Celcius
+    @return: temperature case and control OTU sets
     """
     cases = set()
     controls = set()
     for row in data_rows:
         try:
             otu = 'IC' + row[0]
-            precipitation = row[4]
-            if precipitation == '*':
+            temperature = row[3]
+            if temperature == '*':
                 continue
-            if float(precipitation) < threshold:
+            if float(temperature) < threshold:
                 cases.add(otu)
             else:
                 controls.add(otu)
@@ -102,7 +102,7 @@ def process(hud_lines, info_lines, threshold):
     # read the csv file
     rows = list(csv.reader(info_lines))
     header, data_rows = rows[0], rows[1:]
-    cases, controls = get_precipitation_info(data_rows, threshold)
+    cases, controls = get_temperature_info(data_rows, threshold)
     # write the .ind file contents
     for name in names:
         gender = 'U'
@@ -124,7 +124,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--hud', help='.hud file')
     parser.add_argument('--info', help='a .csv like amdS_PCA_Info.csv')
-    parser.add_argument('--threshold', type=float, default=750.0,
-            help='precipitation threshold (mm)')
+    parser.add_argument('--threshold', type=float, default=22.0,
+            help='temperature threshold (C)')
     main(parser.parse_args())
-
