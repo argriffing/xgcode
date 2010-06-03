@@ -12,6 +12,7 @@ import math
 import numpy as np
 
 import Util
+import StatsUtil
 import TransitionMatrix
 import HMM
 import iterutils
@@ -98,7 +99,8 @@ def get_expected_transitions_binomial(prandom, nstates, nsteps):
     e_different = 0
     # define expectations
     for ntrans in range(nsteps+1):
-        p_ntrans = math.exp(Util.binomial_log_pmf(ntrans, nsteps, p_any_trans))
+        log_p_ntrans = StatsUtil.binomial_log_pmf(ntrans, nsteps, p_any_trans)
+        p_ntrans = math.exp(log_p_ntrans)
         p_same = (1 - (1 - nstates)**(1 - ntrans))/nstates
         e_same += p_same * p_ntrans * ntrans
         e_different += (1 - p_same) * p_ntrans * ntrans

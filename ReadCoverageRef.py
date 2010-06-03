@@ -11,6 +11,7 @@ import unittest
 import numpy as np
 
 import Util
+import StatsUtil
 import ReadCoverage
 import ReadCoverageGap
 import DGRP
@@ -21,9 +22,9 @@ class WrappedPoisson:
     def sample_observation(self):
         return np.random.poisson(self.expectation)
     def get_log_likelihood(self, obs):
-        return Util.poisson_log_pmf(obs, self.expectation)
+        return StatsUtil.poisson_log_pmf(obs, self.expectation)
     def get_likelihood(self, obs):
-        return math.exp(Util.poisson_log_pmf(obs, self.expectation))
+        return math.exp(StatsUtil.poisson_log_pmf(obs, self.expectation))
 
 class GoodMultiCoverage(ReadCoverage.UniformMixture):
     """
@@ -91,7 +92,7 @@ class SinglePatternState:
         n = sum(obs)
         accum = 0
         accum += self.coverage_distribution.get_log_likelihood(n)
-        accum += Util.multinomial_log_pmf(self.distribution, obs)
+        accum += StatsUtil.multinomial_log_pmf(self.distribution, obs)
         return accum
     def get_likelihood(self, obs):
         return math.exp(self.get_log_likelihood(obs))

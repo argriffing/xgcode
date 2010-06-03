@@ -17,6 +17,7 @@ import scipy.stats
 import scipy.maxentropy
 
 import Util
+import StatsUtil
 
 
 def get_homozygous_distributions(randomization_rate):
@@ -158,8 +159,8 @@ class SinglePatternState:
             raise ValueError('expected the observation to be a vector of four integers')
         n = sum(observation)
         accum = 0
-        accum += Util.poisson_log_pmf(n, self.expected_coverage)
-        accum += Util.multinomial_log_pmf(self.distribution, observation)
+        accum += StatsUtil.poisson_log_pmf(n, self.expected_coverage)
+        accum += StatsUtil.multinomial_log_pmf(self.distribution, observation)
         return accum
 
     def get_likelihood(self, observation):
@@ -192,7 +193,7 @@ class FlatState:
             raise ValueError('expected the observation to be a vector of four integers')
         mu = self.expected_coverage / 4.0
         pr = 1/(mu+1)
-        return sum(Util.geometric_log_pmf(obs, pr) for obs in observation)
+        return sum(StatsUtil.geometric_log_pmf(obs, pr) for obs in observation)
 
     def get_likelihood(self, observation):
         return math.exp(self.get_log_likelihood(observation))
