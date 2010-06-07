@@ -41,6 +41,20 @@ def my_eigh(M):
     w, v = zip(*sorted_pairs)
     return np.array(w), [np.array(x) for x in v]
 
+def get_tracy_widom_statistic(m, n, L):
+    """
+    The interpretation of the parameters is purposely vague.
+    It depends on whether you are doing linkage correction.
+    @param m: like the number of OTUs
+    @param n: like the number of SNPs
+    @param L: like a normalized principal eigenvalue
+    @return: the Tracy-Widom statistic
+    """
+    alpha = math.sqrt(n-1) + math.sqrt(m)
+    mu = (alpha*alpha) / n
+    sigma = (alpha / n) * (1/math.sqrt(n-1) + 1/math.sqrt(m))**(1./3.)
+    return (L - mu) / sigma
+
 def process(hud_lines):
     """
     @param hud_lines: lines of a .hud file
@@ -65,14 +79,17 @@ def process(hud_lines):
     X = np.dot(M, M.T) / n
     # get the eigendecomposition of the covariance matrix
     evals, evecs = my_eigh(X)
-    # compute some constants that only depend on the shape of the matrix
-    alpha = math.sqrt(n-1) + math.sqrt(m)
-    mu = (alpha*alpha) / n
-    sigma = (alpha / n) * (1/math.sqrt(n-1) + 1/math.sqrt(m))**(1./3.)
+    L1 = evals.sum()
+    L2 = np.dot(evals, evals)
+    proportion = evals[0] / L1
     # compute the relative size of the first eigenvalue
-    L = evals[0] / evals.sum()
+    L = m*proportion
     # compute the Tracy-Widom statistic
-    x = (m*L - mu) / sigma
+    x = get_tracy_widom_statistic(m, n, L)
+    # do linkage correction
+    n_prime = ((m+1)*L1*L1) / ((m-1)*L2 - L1*L1)
+    L_prime = (m-1)*proportion
+    x_prime = get_tracy_widom_statistic(m, n_prime, L_prime)
     # print some infos
     print >> out, 'number of isolates:'
     print >> out, m_full
@@ -83,11 +100,17 @@ def process(hud_lines):
     print >> out, 'number of informative SNPs:'
     print >> out, n
     print >> out
-    print >> out, 'Tracy-Widom statistic:'
+    print >> out, 'effective number of linkage-corrected SNPs:'
+    print >> out, n_prime
+    print >> out
+    print >> out, 'Tracy-Widom statistic (linkage-naive):'
     print >> out, x
     print >> out
+    print >> out, 'Tracy-Widom statistic (linkage-corrected):'
+    print >> out, x_prime
+    print >> out
     print >> out, 'proportion of variance explained by principal axis:'
-    print >> out, L
+    print >> out, proportion
     print >> out
     print >> out, 'eigenvalues:'
     for w in evals:
