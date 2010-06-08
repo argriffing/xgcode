@@ -14,6 +14,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Carbone
+import EigUtil
 import Form
 from Form import RadioItem
 
@@ -28,24 +29,6 @@ IC32 1 1 1 0
 IC33 1 0 1 1
 IC34 0 0 1 0
 """.strip()
-
-def my_eigh(M):
-    """
-    Unlike numpy.eigh, the results of this function are ordered.
-    The returned eigenvalues and eigenvectors are sorted
-    by decreasing eigenvalue.
-    The eigenvectors are returned as a list of one dimensional numpy arrays.
-    If treated as a 2D array, the returned eigenvector list is the transpose
-    of the eigenvector result of numpy.eig.
-    The eigenvectors are normalized unit right eigenvectors.
-    @param M: a symmetric numpy 2D array
-    @return: eigenvalues and eigenvectors
-    """
-    w, vt = np.linalg.eigh(M)
-    ws, vs = w.tolist(), vt.T.tolist()
-    sorted_pairs = list(reversed(sorted(zip(ws, vs))))
-    w, v = zip(*sorted_pairs)
-    return np.array(w), [np.array(x) for x in v]
 
 def process(hud_lines):
     """
@@ -70,7 +53,7 @@ def process(hud_lines):
     # construct the sample covariance matrix
     X = np.dot(M, M.T) / n
     # get the eigendecomposition of the covariance matrix
-    evals, evecs = my_eigh(X)
+    evals, evecs = EigUtil.eigh(X)
     # scale the eigenvectos by the eigenvalues
     pcs = [w*v for w, v in zip(evals, evecs)]
     # check for sufficient number of eigenvectors
