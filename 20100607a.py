@@ -1,4 +1,4 @@
-"""Compute the Tracy-Widom statistic given a count matrix.
+"""Compute the Tracy-Widom statistic given a .hud file.
 
 Following Patterson et al. each row of the input .hud file
 gives an OTU name followed by presence or absence of each SNP.
@@ -14,6 +14,7 @@ import argparse
 from SnippetUtil import HandlingError
 import Form
 import Carbone
+import EigUtil
 
 
 g_default_hud_string = """
@@ -23,23 +24,32 @@ IC33 1 0 1 1
 IC34 0 0 1 0
 """.strip()
 
-def my_eigh(M):
+def get_corrected_structure(crit, eigenvalues, m, n_prime):
     """
-    Unlike numpy.eigh, the results of this function are ordered.
-    The returned eigenvalues and eigenvectors are sorted
-    by decreasing eigenvalue.
-    The eigenvectors are returned as a list of one dimensional numpy arrays.
-    If treated as a 2D array, the returned eigenvector list is the transpose
-    of the eigenvector result of numpy.eig.
-    The eigenvectors are normalized unit right eigenvectors.
-    @param M: a symmetric numpy 2D array
-    @return: eigenvalues and eigenvectors
+    @param crit: critical value of the Tracy-Widom statistic
+    @param eigenvalues: all eigenvalues sorted in descending order
+    @param m: the number of OTUs
+    @param n_prime: the effective number of SNPs
+    @return: significant statistics, one insignificant statistic
     """
-    w, vt = np.linalg.eigh(M)
-    ws, vs = w.tolist(), vt.T.tolist()
-    sorted_pairs = list(reversed(sorted(zip(ws, vs))))
-    w, v = zip(*sorted_pairs)
-    return np.array(w), [np.array(x) for x in v]
+    if len(eigenvalues) != m:
+        msg_a = 'expected the number of eigenvalues to equal '
+        msg_b = 'the number of OTUs'
+        raise ValueError(msg_a + msg_b)
+    w = eigenvalues[:]
+    significant_xs = []
+    insignificant_x = None
+    while insignificant_x is None:
+        m_curr = len(w)
+        proportion = w[0] / w.sum()
+        L_prime = (m_curr-1)*proportion
+        x_prime = get_tracy_widom_statistic(m_curr, n_prime, L_prime)
+        if x_prime > crit:
+            significant_xs.append(x_prime)
+        else:
+            insignificant_x = x_prime
+        w = w[1:]
+    return significant_xs, insignificant_x
 
 def get_tracy_widom_statistic(m, n, L):
     """
@@ -78,7 +88,7 @@ def process(hud_lines):
     # construct the sample covariance matrix
     X = np.dot(M, M.T) / n
     # get the eigendecomposition of the covariance matrix
-    evals, evecs = my_eigh(X)
+    evals, evecs = EigUtil.eigh(X)
     L1 = evals.sum()
     L2 = np.dot(evals, evals)
     proportion = evals[0] / L1
@@ -90,6 +100,9 @@ def process(hud_lines):
     n_prime = ((m+1)*L1*L1) / ((m-1)*L2 - L1*L1)
     L_prime = (m-1)*proportion
     x_prime = get_tracy_widom_statistic(m, n_prime, L_prime)
+    # detect additional structure using alpha level of 0.05
+    crit = 0.9794
+    sigs, insig = get_corrected_structure(crit, evals, m, n_prime)
     # print some infos
     print >> out, 'number of isolates:'
     print >> out, m_full
@@ -111,6 +124,16 @@ def process(hud_lines):
     print >> out
     print >> out, 'proportion of variance explained by principal axis:'
     print >> out, proportion
+    print >> out
+    print >> out, 'number of significant axes of variation:'
+    print >> out, len(sigs)
+    print >> out
+    print >> out, 'significant Tracy-Widom statistics:'
+    for sig in sigs:
+        print >> out, sig
+    print >> out
+    print >> out, 'first insignificant Tracy-Widom statistic:'
+    print >> out, insig
     print >> out
     print >> out, 'eigenvalues:'
     for w in evals:
