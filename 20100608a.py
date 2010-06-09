@@ -20,9 +20,6 @@ from Form import RadioItem
 
 
 
-
-# TODO add raw R output disposition for downloading
-
 g_default_hud_string = """
 IC31 1 1 0 0
 IC32 1 1 1 0
