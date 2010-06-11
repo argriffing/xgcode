@@ -71,9 +71,7 @@ def get_form():
                 RadioItem('pdf', 'pdf'),
                 RadioItem('postscript', 'postscript'),
                 RadioItem('svg', 'svg')]),
-            Form.RadioGroup('contentdisposition', 'delivery options', [ 
-                RadioItem('inline', 'view', True), 
-                RadioItem('attachment', 'download')])] 
+            Form.ContentDisposition()]
     return form_objects
 
 def create_filename(args):

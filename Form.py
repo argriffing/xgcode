@@ -683,3 +683,18 @@ class MultiLine:
             raise FormError(msg)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
+
+
+class ContentDisposition(RadioGroup):
+
+    def __init__(self):
+        """
+        The group label is automatically contentdisposition.
+        The description and radio items are hard coded.
+        """
+        label = 'contentdisposition'
+        description = 'delivery options'
+        radio_items = [
+                RadioItem('inline', 'view', True),
+                RadioItem('attachment', 'download')]
+        RadioGroup.__init__(self, label, description, radio_items)
