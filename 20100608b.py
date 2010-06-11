@@ -154,16 +154,25 @@ def process(hud_lines, info_lines):
         otu_to_info[otu] = info
     # write the R table
     out = StringIO()
+    #h = ('otu', 'species', 'location', 'temperature', 'precipitation',
+        #'pc1', 'pc2', 'pc3', 'species.symbol', 'location.symbol')
     h = ('otu', 'species', 'location', 'temperature', 'precipitation',
-        'pc1', 'pc2', 'pc3', 'species.symbol')
+        'pc1', 'pc2', 'pc3')
     print >> out, '\t'.join(h)
     for i, name in enumerate(names):
         if name in otu_to_info:
             info = otu_to_info[name]
             rowpcs = [pcs[0][i], pcs[1][i], pcs[2][i]]
-            symbol = ['AfL', 'Aa', 'Ac', 'Ano', 'Ao', 'Ap', 'AfX', 'At',
-                    'Afu', 'Aso', 'AfS'].index(info[0]) + 1
-            row = [i+1, name] + info + rowpcs + [symbol]
+            #species_symbol = ['AfL', 'Aa', 'Ac', 'Ano',
+                    #'Ao', 'Ap', 'AfX', 'At',
+                    #'Afu', 'Aso', 'AfS'].index(info[0]) + 1
+            #symbols = [species_symbol]
+            #symbols = [species_symbol, location_symbol]
+            #location_symbol = ['AfL', 'Aa', 'Ac', 'Ano',
+                    #'Ao', 'Ap', 'AfX', 'At',
+                    #'Afu', 'Aso', 'AfS'].index(info[0]) + 1
+            #row = [i+1, name] + info + rowpcs + symbols
+            row = [i+1, name] + info + rowpcs
             print >> out, '\t'.join(str(x) for x in row)
     return out.getvalue()
 
