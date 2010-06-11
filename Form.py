@@ -1,7 +1,7 @@
 import cgi
 from StringIO import StringIO
 
-import numpy
+import numpy as np
 
 import MatrixUtil
 
@@ -22,6 +22,71 @@ class FormError(Exception):
     pass
 
 
+def _get_checkbox_line(esc_label, checked):
+    """
+    @param esc_label: escaped label
+    @param checked: boolean to specify whether item is checked or not
+    """
+    lines = (
+            'input type="checkbox" name="%s"' % esc_label,
+            'id="%s"' % esc_label,
+            'value="%s"' % esc_label)
+    base = ' '.join(lines)
+    if checked:
+        return '<%s checked="yes"/>' % base
+    else:
+        return '<%s/>' % base
+
+def _get_radio_line(esc_group_label, esc_label, checked):
+    """
+    @param esc_group_label: escaped label for the whole group
+    @param esc_label: escaped label for the particular button
+    @param checked: boolean to specify whether item is checked or not
+    """
+    lines = (
+            'input type="radio" name="%s"' % esc_group_label,
+            'id="%s"' % esc_label,
+            'value="%s"' % esc_label)
+    base = ' '.join(lines)
+    if checked:
+        return '<%s checked="yes"/>' % base
+    else:
+        return '<%s/>' % base
+
+def _get_label_line(esc_label, esc_description):
+    """
+    @param esc_label: escaped label
+    @param esc_description: escaped description
+    @return: labeled description
+    """
+    return '<label for="%s">%s:</label>' % (esc_label, esc_description)
+
+def _get_textbox_line(esc_label, esc_default_line, width):
+    """
+    @param esc_label: escaped label
+    @param esc_default_line: escaped default line
+    @param width: width of the textbox
+    """
+    lines = (
+            '<input type="text" name="%s"' % esc_label,
+            'id="%s"' % esc_label,
+            'value="%s"' % esc_default_line,
+            'size="%d"/>' % width)
+    return ' '.join(lines)
+
+def _get_textarea_header(esc_label, nrows):
+    """
+    @param esc_label: escaped label
+    @param nrows: the number of rows in the text area
+    @return: the single line header for the textarea
+    """
+    lines = (
+            '<textarea name="%s"' % esc_label,
+            'id="%s"' % esc_label,
+            'rows="%d" cols="70" wrap="off">' % nrows)
+    return ' '.join(lines)
+
+
 class RadioGroup:
     """
     In html, radio buttons must be grouped.
@@ -34,9 +99,10 @@ class RadioGroup:
         @param radio_items: a sequence of RadioItem objects
         """
         # assert that exactly one radio_item is checked
-        checked_list = [radio_item for radio_item in radio_items if radio_item.default]
+        checked_list = [item for item in radio_items if item.default]
         if len(checked_list) != 1:
-            raise FormError('exactly one radio button should be checked by default')
+            msg = 'exactly one radio button should be checked by default'
+            raise FormError(msg)
         # initialize the member variables
         self.label = label
         self.description = description
@@ -62,29 +128,39 @@ class RadioGroup:
 
     def process_fieldstorage(self, fs):
         """
-        @param fs: a FieldStorage object that will be decorated with extra attributes
+        @param fs: a FieldStorage object to be decorated with extra attributes
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            raise FormError('the object already has the attribute "%s"' % self.label)
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
-            raise FormError('no radio button option was selected for the field "%s"' % self.label)
+            lines = (
+                    'no radio button option',
+                    'was selected for the field "%s"' % self.label)
+            raise FormError(' '.join(lines))
         elif len(values) == 1:
             value = values[0]
         elif len(values) > 2:
-            raise FormError('the value for the field "%s" is ambiguous' % self.label)
-        # assert that the selected value is actually one of the radio button options
+            msg = 'the value for the field "%s" is ambiguous' % self.label
+            raise FormError(msg)
+        # Assert that the selected value
+        # is actually one of the radio button options.
         if value not in set(item.label for item in self.radio_items):
-            raise FormError('an invalid radio button option was selected: %s' % value)
-        # for the group, set the value for the attribute in the fieldstorage object
+            msg = 'an invalid radio button option was selected: %s' % value
+            raise FormError(msg)
+        # For the group,
+        # set the value for the attribute in the fieldstorage object.
         setattr(fs, self.label, value)
-        # for each item, set the value for the attribute in the fieldstorage object
+        # For each item,
+        # set the value for the attribute in the fieldstorage object.
         for radio_item in self.radio_items:
             # verify that the attribute is not already taken
             if hasattr(fs, radio_item.label):
-                raise FormError('the object already has the attribute "%s"' % self.label)
+                msg = 'the object already has the attribute "%s"' % self.label
+                raise FormError(msg)
             is_checked = (radio_item.label == value)
             setattr(fs, radio_item.label, is_checked)
 
@@ -127,12 +203,14 @@ class CheckGroup:
 
     def process_fieldstorage(self, fs):
         """
-        @param fs: a FieldStorage object that will be decorated with extra attributes
+        @param fs: a FieldStorage object to be decorated with extra attributes
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            raise FormError('the object already has the attribute "%s"' % self.label)
-        # decorate the FieldStorage object with the boolean values of each item separately
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
+        # Decorate the FieldStorage object
+        # with the boolean values of each item separately.
         for check_item in self.check_items:
             check_item.process_fieldstorage(fs)
         # get the set of checked item labels
@@ -159,24 +237,18 @@ class RadioItem:
 
     def get_html_lines(self, group_label):
         """
-        @param group_label: the label of the radio button group of which this item is a member
+        @param group_label: the label of the radio button group
         @return: the list of lines of html text
         """
         lines = []
         # get the escaped label and description
-        escaped_label = cgi.escape(self.label)
-        escaped_description = cgi.escape(self.description)
-        escaped_group_label = cgi.escape(group_label)
-        # add the line that makes the checkbox
-        radio_button_line_base = 'input type="radio" name="%s" id="%s" value="%s"' % (escaped_group_label, escaped_label, escaped_label)
-        if self.default:
-            radio_button_line = '<%s checked="yes"/>' % radio_button_line_base
-        else:
-            radio_button_line = '<%s/>' % radio_button_line_base
-        lines.append(radio_button_line)
+        esc_label = cgi.escape(self.label)
+        esc_description = cgi.escape(self.description)
+        esc_group_label = cgi.escape(group_label)
+        # add the line that makes the radiobox
+        lines.append(_get_radio_line(esc_group_label, esc_label, self.default))
         # add the line that makes the label
-        label_line = '<label for="%s">%s</label>' % (escaped_label, escaped_description)
-        lines.append(label_line)
+        lines.append(_get_label_line(esc_label, esc_description))
         # return the list of lines
         return lines
 
@@ -202,25 +274,20 @@ class CheckItem:
         escaped_label = cgi.escape(self.label)
         escaped_description = cgi.escape(self.description)
         # add the line that makes the checkbox
-        checkbox_line_base = 'input type="checkbox" name="%s" id="%s" value="%s"' % (escaped_label, escaped_label, escaped_label)
-        if self.default:
-            checkbox_line = '<%s checked="yes"/>' % checkbox_line_base
-        else:
-            checkbox_line = '<%s/>' % checkbox_line_base
-        lines.append(checkbox_line)
+        lines.append(_get_checkbox_line(escaped_label, self.default))
         # add the line that makes the label
-        label_line = '<label for="%s">%s</label>' % (escaped_label, escaped_description)
-        lines.append(label_line)
+        lines.append(_get_label_line(escape_label, escaped_description))
         # return the list of lines
         return lines
 
     def process_fieldstorage(self, fs):
         """
-        @param fs: a FieldStorage object that will be decorated with extra attributes
+        @param fs: a FieldStorage object to be decorated with extra attributes
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            raise FormError('the object already has the attribute "%s"' % self.label)
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         # set the value for the attribute in the fieldstorage object
@@ -258,22 +325,21 @@ class SingleLine:
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(self.default_line)
         # add the label line followed by a line break
-        label_line = '<label for="%s">%s:</label>' % (esc_label, esc_description)
-        lines.append(label_line)
+        lines.append(_get_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textbox line
-        textbox_line = '<input type="text" name="%s" id="%s" value="%s" size="%d"/>' % (esc_label, esc_label, esc_default_line, width)
-        lines.append(textbox_line)
+        lines.append(_get_textbox_line(esc_label, esc_default_line, width))
         # return the list of lines
         return lines
 
     def process_fieldstorage(self, fs):
         """
-        @param fs: a FieldStorage object that will be decorated with extra attributes
+        @param fs: a FieldStorage object to be decorated with extra attributes
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            raise FormError('the object already has the attribute "%s"' % self.label)
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
@@ -281,7 +347,8 @@ class SingleLine:
         elif len(values) == 1:
             value = values[0]
         elif len(values) > 2:
-            raise FormError('the value for the field "%s" is ambiguous' % self.label)
+            msg = 'the value for the field "%s" is ambiguous' % self.label
+            raise FormError(msg)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -291,7 +358,9 @@ class Float:
     An floating point number is requested using a single line in the form.
     """
 
-    def __init__(self, label, description, default_float, low_exclusive=None, low_inclusive=None, high_exclusive=None, high_inclusive=None):
+    def __init__(self, label, description, default_float,
+            low_exclusive=None, low_inclusive=None,
+            high_exclusive=None, high_inclusive=None):
         """
         @param label: something like a variable name
         @param description: a single line description of the item
@@ -325,48 +394,66 @@ class Float:
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(default_line)
         # add the label line followed by a line break
-        label_line = '<label for="%s">%s:</label>' % (esc_label, esc_description)
-        lines.append(label_line)
+        lines.append(_get_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textbox line
-        textbox_line = '<input type="text" name="%s" id="%s" value="%s" size="%d"/>' % (esc_label, esc_label, esc_default_line, width)
-        lines.append(textbox_line)
+        lines.append(_get_textbox_line(esc_label, esc_default_line, width)
         # return the list of lines
         return lines
 
     def process_fieldstorage(self, fs):
         """
-        @param fs: a FieldStorage object that will be decorated with extra attributes
+        @param fs: a FieldStorage object to be decorated with extra attributes
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            raise FormError('the object already has the attribute "%s"' % self.label)
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
-            raise FormError('no floating point number was given for the field "%s"' % self.label)
+            lines = (
+                    'no floating point number',
+                    'was given for the field "%s"' % self.label)
+            raise FormError(' '.join(lines))
         elif len(values) == 1:
             value_string = values[0]
             try:
                 value = float(value_string)
             except ValueError, e:
-                raise FormError('%s could not be interpreted as a floating point number' % value_string)
+                lines = (
+                        '%s could not be interpreted' % value_string,
+                        'as a floating point number')
+                raise FormError(' '.join(lines))
         elif len(values) > 2:
-            raise FormError('the value for the field "%s" is ambiguous' % self.label)
+            msg = 'the value for the field "%s" is ambiguous' % self.label
+            raise FormError(msg)
         # assert that the floating point number is not out of bounds
         identifier = 'the floating point number in the field "%s"' % self.label
         if self.low_exclusive is not None:
             if value <= self.low_exclusive:
-                raise FormError('%s must be greater than %f' % (identifier, self.low_exclusive))
+                lines = (
+                        '%s must be' % identifier
+                        'greater than %f' % self.low_exclusive)
+                raise FormError(' '.join(lines))
         if self.low_inclusive is not None:
             if value < self.low_inclusive:
-                raise FormError('%s must be greater than or equal to %f' % (identifier, self.low_inclusive))
+                lines = (
+                        '%s must be' % identifier
+                        'greater than or equal to %f' % self.low_inclusive)
+                raise FormError(' '.join(lines))
         if self.high_exclusive is not None:
             if value >= self.high_exclusive:
-                raise FormError('%s must be less than %f' % (identifier, self.high_exclusive))
+                lines = (
+                        '%s must be' % identifier
+                        'less than %f' % self.high_exclusive)
+                raise FormError(' '.join(lines))
         if self.high_inclusive is not None:
             if value > self.high_inclusive:
-                raise FormError('%s must be less than or equal to %f' % (identifier, self.high_inclusive))
+                lines = (
+                        '%s must be' % identifier
+                        'less than or equal to %f' % self.high_inclusive)
+                raise FormError(' '.join(lines))
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -376,7 +463,8 @@ class Integer:
     An integer is requested using a single line in the form.
     """
 
-    def __init__(self, label, description, default_integer, low=None, high=None):
+    def __init__(self, label, description, default_integer,
+            low=None, high=None):
         """
         @param label: something like a variable name
         @param description: a single line description of the item
@@ -404,41 +492,46 @@ class Integer:
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(default_line)
         # add the label line followed by a line break
-        label_line = '<label for="%s">%s:</label>' % (esc_label, esc_description)
-        lines.append(label_line)
+        lines.append(_get_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textbox line
-        textbox_line = '<input type="text" name="%s" id="%s" value="%s" size="%d"/>' % (esc_label, esc_label, esc_default_line, width)
-        lines.append(textbox_line)
+        lines.append(_get_textbox_line(esc_label, esc_default_line, width))
         # return the list of lines
         return lines
 
     def process_fieldstorage(self, fs):
         """
-        @param fs: a FieldStorage object that will be decorated with extra attributes
+        @param fs: a FieldStorage object to be decorated with extra attributes
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            raise FormError('the object already has the attribute "%s"' % self.label)
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
-            raise FormError('no integer was given for the field "%s"' % self.label)
+            msg = 'no integer was given for the field "%s"' % self.label
+            raise FormError(msg)
         elif len(values) == 1:
             value_string = values[0]
             try:
                 value = int(value_string)
             except ValueError, e:
-                raise FormError('%s could not be interpreted as an integer' % value_string)
+                raise FormError('%s is not an integer' % value_string)
         elif len(values) > 2:
-            raise FormError('the value for the field "%s" is ambiguous' % self.label)
+            msg = 'the value for the field "%s" is ambiguous' % self.label
+            raise FormError(msg)
         # make sure that the value is in bounds
         if self.low is not None:
             if value < self.low:
-                raise FormError('the integer in the field "%s" must be at least %d' % (self.label, self.low))
+                msg_a = 'the integer in the field "%s" ' % self.label
+                msg_b = 'must be at least %d' % self.low
+                raise FormError(msg_a + msg_b)
         if self.high is not None:
             if value > self.high:
-                raise FormError('the integer in the field "%s" must be at most %d' % (self.label, self.high))
+                msg_a = 'the integer in the field "%s" ' % self.label
+                msg_b = 'must be at most %d' % self.high
+                raise FormError(msg_a + msg_b)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -450,12 +543,15 @@ class Matrix:
     Each non-empty line should be a row of whitespace separated numbers.
     """
 
-    def __init__(self, label, description, default_matrix, matrix_assertion=None):
+    def __init__(self, label, description, default_matrix,
+            matrix_assertion=None):
         """
+        The matrix_assertion may be a function or None.
+        If it is a function then it may raise MatrixUtil.MatrixError.
         @param label: something like a variable name
         @param description: a single line description of the item
         @param default_matrix: the default numpy array
-        @param matrix_assertion: a function of a matrix that may raise MatrixUtil.MatrixError
+        @param matrix_assertion: None or a function of a matrix
         """
         self.label = label
         self.description = description
@@ -471,17 +567,17 @@ class Matrix:
         sio = StringIO(MatrixUtil.m_to_string(self.default_matrix))
         nrows = len(list(sio.readlines())) + 1
         nrows = min(nrows, 12)
+        # get the matrix as an unescaped string
+        default_string = MatrixUtil.m_to_string(self.default_matrix)
         # get escaped values
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
-        esc_default_string = cgi.escape(MatrixUtil.m_to_string(self.default_matrix))
+        esc_default_string = cgi.escape(default_string)
         # add the label line followed by a line break
-        label_line = '<label for="%s">%s:</label>' % (esc_label, esc_description)
-        lines.append(label_line)
+        lines.append(_get_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textarea header
-        textarea_header = '<textarea name="%s" id="%s" rows="%d" cols="70" wrap="off">' % (esc_label, esc_label, nrows)
-        lines.append(textarea_header)
+        lines.append(_get_textarea_header(esc_label, nrows))
         # add the multiple lines of default text
         lines.append(esc_default_string)
         # add the textarea footer
@@ -492,24 +588,27 @@ class Matrix:
 
     def process_fieldstorage(self, fs):
         """
-        @param fs: a FieldStorage object that will be decorated with extra attributes
+        @param fs: a FieldStorage object to be decorated with extra attributes
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            raise FormError('the object already has the attribute "%s"' % self.label)
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
-            raise FormError('the value for the field "%s" is empty' % self.label)
+            msg = 'the value for the field "%s" is empty' % self.label
+            raise FormError(msg)
         elif len(values) == 1:
             try:
-                value = numpy.array(MatrixUtil.read_matrix(StringIO(values[0])))
+                value = np.array(MatrixUtil.read_matrix(StringIO(values[0])))
                 if self.matrix_assertion:
                     self.matrix_assertion(value)
             except MatrixUtil.MatrixError, e:
                 raise FormError(e)
         elif len(values) > 2:
-            raise FormError('the value for the field "%s" is ambiguous' % self.label)
+            msg = 'the value for the field "%s" is ambiguous' % self.label
+            raise FormError(msg)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -545,12 +644,10 @@ class MultiLine:
         esc_description = cgi.escape(self.description)
         esc_default_string = cgi.escape(self.default_string)
         # add the label line followed by a line break
-        label_line = '<label for="%s">%s:</label>' % (esc_label, esc_description)
-        lines.append(label_line)
+        lines.append(_get_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textarea header
-        textarea_header = '<textarea name="%s" id="%s" rows="%d" cols="70" wrap="off">' % (esc_label, esc_label, nrows)
-        lines.append(textarea_header)
+        lines.append(_get_textarea_header(esc_label, nrows))
         # add the multiple lines of default text
         lines.append(esc_default_string)
         # add the textarea footer
@@ -561,11 +658,12 @@ class MultiLine:
 
     def process_fieldstorage(self, fs):
         """
-        @param fs: a FieldStorage object that will be decorated with extra attributes
+        @param fs: a FieldStorage object to be decorated with extra attributes
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            raise FormError('the object already has the attribute "%s"' % self.label)
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
@@ -573,7 +671,7 @@ class MultiLine:
         elif len(values) == 1:
             value = values[0]
         elif len(values) > 2:
-            raise FormError('the value for the field "%s" is ambiguous' % self.label)
+            msg = 'the value for the field "%s" is ambiguous' % self.label
+            raise FormError(msg)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
-
