@@ -53,13 +53,21 @@ def _get_radio_line(esc_group_label, esc_label, checked):
     else:
         return '<%s/>' % base
 
-def _get_label_line(esc_label, esc_description):
+def _get_colon_label_line(esc_label, esc_description):
     """
     @param esc_label: escaped label
     @param esc_description: escaped description
     @return: labeled description
     """
     return '<label for="%s">%s:</label>' % (esc_label, esc_description)
+
+def _get_label_line(esc_label, esc_description):
+    """
+    @param esc_label: escaped label
+    @param esc_description: escaped description
+    @return: labeled description
+    """
+    return '<label for="%s">%s</label>' % (esc_label, esc_description)
 
 def _get_textbox_line(esc_label, esc_default_line, width):
     """
@@ -325,7 +333,7 @@ class SingleLine:
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(self.default_line)
         # add the label line followed by a line break
-        lines.append(_get_label_line(esc_label, esc_description))
+        lines.append(_get_colon_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textbox line
         lines.append(_get_textbox_line(esc_label, esc_default_line, width))
@@ -394,10 +402,10 @@ class Float:
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(default_line)
         # add the label line followed by a line break
-        lines.append(_get_label_line(esc_label, esc_description))
+        lines.append(_get_colon_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textbox line
-        lines.append(_get_textbox_line(esc_label, esc_default_line, width)
+        lines.append(_get_textbox_line(esc_label, esc_default_line, width))
         # return the list of lines
         return lines
 
@@ -433,25 +441,25 @@ class Float:
         if self.low_exclusive is not None:
             if value <= self.low_exclusive:
                 lines = (
-                        '%s must be' % identifier
+                        '%s must be' % identifier,
                         'greater than %f' % self.low_exclusive)
                 raise FormError(' '.join(lines))
         if self.low_inclusive is not None:
             if value < self.low_inclusive:
                 lines = (
-                        '%s must be' % identifier
+                        '%s must be' % identifier,
                         'greater than or equal to %f' % self.low_inclusive)
                 raise FormError(' '.join(lines))
         if self.high_exclusive is not None:
             if value >= self.high_exclusive:
                 lines = (
-                        '%s must be' % identifier
+                        '%s must be' % identifier,
                         'less than %f' % self.high_exclusive)
                 raise FormError(' '.join(lines))
         if self.high_inclusive is not None:
             if value > self.high_inclusive:
                 lines = (
-                        '%s must be' % identifier
+                        '%s must be' % identifier,
                         'less than or equal to %f' % self.high_inclusive)
                 raise FormError(' '.join(lines))
         # set the value for the attribute in the fieldstorage object
@@ -492,7 +500,7 @@ class Integer:
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(default_line)
         # add the label line followed by a line break
-        lines.append(_get_label_line(esc_label, esc_description))
+        lines.append(_get_colon_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textbox line
         lines.append(_get_textbox_line(esc_label, esc_default_line, width))
@@ -574,7 +582,7 @@ class Matrix:
         esc_description = cgi.escape(self.description)
         esc_default_string = cgi.escape(default_string)
         # add the label line followed by a line break
-        lines.append(_get_label_line(esc_label, esc_description))
+        lines.append(_get_colon_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textarea header
         lines.append(_get_textarea_header(esc_label, nrows))
@@ -644,7 +652,7 @@ class MultiLine:
         esc_description = cgi.escape(self.description)
         esc_default_string = cgi.escape(self.default_string)
         # add the label line followed by a line break
-        lines.append(_get_label_line(esc_label, esc_description))
+        lines.append(_get_colon_label_line(esc_label, esc_description))
         lines.append('<br/>')
         # add the textarea header
         lines.append(_get_textarea_header(esc_label, nrows))
