@@ -11,8 +11,8 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
-from Form import RadioItem
 import Util
+import Carbone
 import iterutils
 
 g_default_rows = [
@@ -55,22 +55,23 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('table', 'R table', g_default_string),
+            Form.SingleLine('axes',
+                'numerical variables defining axes of the 3D plot',
+                ' '.join('pc1', 'pc2', 'pc3')),
+            Form.SingleLine('shape',
+                'categorical variable defining the shape of a dot',
+                'species'),
+            Form.SingleLine('color',
+                'numerical variable defining the color of a dot',
+                'temperature'),
             Form.Float('size', 'size of a plotted point', '1.5'),
             Form.SingleLine('legend_pos', 'position of the symbol legend',
                 '0 0 0'),
-            Form.RadioGroup('shape',
-                'the variable that defines the shape of a plotted point', [
-                    RadioItem('species', 'species', True),
-                    RadioItem('location', 'location')]),
-            Form.RadioGroup('color',
-                'the variable that defines the color of a plotted point', [
-                    RadioItem('temperature', 'temperature', True),
-                    RadioItem('precipitation', 'precipitation')]),
             Form.RadioGroup('imageformat', 'output image format', [
-                RadioItem('png', 'png', True),
-                RadioItem('pdf', 'pdf'),
-                RadioItem('postscript', 'postscript'),
-                RadioItem('svg', 'svg')]),
+                Form.RadioItem('png', 'png', True),
+                Form.RadioItem('pdf', 'pdf'),
+                Form.RadioItem('postscript', 'postscript'),
+                Form.RadioItem('svg', 'svg')]),
             Form.ContentDisposition()]
     return form_objects
 
@@ -105,40 +106,6 @@ def get_response(fs):
     response_headers.append(('Content-Disposition', disposition)) 
     return response_headers, contents
 
-def get_unique_species(table_lines):
-    """
-    @param table_lines: sequence of stripped lines of the R table
-    @return: a list of unique species names
-    """
-    header, data_lines = table_lines[0], table_lines[1:]
-    columns = zip(*[line.split() for line in data_lines])
-    return list(iterutils.unique_everseen(columns[2]))
-
-def get_unique_locations(table_lines):
-    """
-    @param table_lines: sequence of stripped lines of the R table
-    @return: a list of unique location names
-    """
-    header, data_lines = table_lines[0], table_lines[1:]
-    columns = zip(*[line.split() for line in data_lines])
-    return list(iterutils.unique_everseen(columns[3]))
-
-def get_augmented_table_lines(table_lines):
-    header, data_lines = table_lines[0], table_lines[1:]
-    n = len(data_lines)
-    rows = [line.split() for line in data_lines]
-    unique_species = get_unique_species(table_lines)
-    unique_locations = get_unique_locations(table_lines)
-    aug_header = '\t'.join([header, 'species.symbol', 'location.symbol'])
-    aug_data_lines = []
-    for row in rows:
-        species = row[2]
-        location = row[3]
-        species_s = str(unique_species.index(species) + 1)
-        location_s = str(unique_locations.index(location) + 1)
-        aug_line = '\t'.join(row + [species_s, location_s])
-        aug_data_lines.append(aug_line)
-    return [aug_header] + aug_data_lines
 
 
 def get_script(args, table_lines, temp_plot_filename, temp_table_filename):
@@ -209,6 +176,113 @@ def get_script(args, table_lines, temp_plot_filename, temp_table_filename):
         "dev.off()"]
     return '\n'.join(rcodes)
 
+class NumericError(Exception): pass
+
+def get_numeric_column(data, index):
+    """
+    @param data: row major list of lists of numbers as strings
+    @param index: column index
+    @return: list of floats
+    """
+    strings = zip(*data)[index]
+    try:
+        floats = [float(x) for x in strings]
+    except ValueError, v:
+        raise NumericError
+
+
+class PlotInfo:
+    def __init__(self, args, headers, data):
+        """
+        @param args: user args from web or cmdline
+        @param data: 
+        """
+        # map the column header to the column index
+        self.h_to_i = dict((h, i+1) for i, h in enumerate(headers))
+        # init the info
+        self._init_axes(args, headers, data)
+        self._init_colors(args, headers, data)
+        self._init_shapes(args, headers, data)
+
+    def _init_axes(self, args, headers, data):
+        # read the axes
+        self.axis_headers = args.axes.split()
+        # verify the number of axis headers
+        if len(self.axis_headers) != 3:
+            raise ValueError('expected three axis column headers')
+        # verify the axis header contents
+        bad_axis_headers = set(self.axis_headers) - set(headers)
+        if bad_axis_headers:
+            msg_a = 'bad axis column headers: '
+            msg_b = ', '.join(bad_axis_column_headers)
+            raise ValueError(msg_a + msg_b)
+        self.axis_lists = []
+        for h in self.axis_headers:
+            index = self.h_to_i[h]
+            try:
+                axis_list = get_numeric_column(data, index)
+            except NumericError:
+                msg_a = 'expected the axis column %s ' % h
+                msg_b = 'to be numeric'
+                raise ValueError(msg_a + msg_b)
+
+    def _init_colors(self, args, headers, data):
+        """
+        Colors are numeric, and use whatever gradient is built into R.
+        """
+        self.color_header = args.color
+        if self.color_header not in headers:
+            msg = 'bad color column header: ' + self.color_header
+            raise ValueError(msg)
+        index = self.h_to_i[self.color_header]
+        try:
+            self.color_list = get_numeric_column(data, index)
+        except NumericError:
+            msg_a = 'expected the color column %s ' % self.color_header
+            msg_b = 'to be numeric'
+            raise ValueError(msg_a + msg_b)
+
+    def _init_shapes(self, args, headers, data):
+        """
+        Shapes are categorical.
+        """
+        self.shape_header = args.shape
+        if self.shape_header not in headers:
+            msg = 'bad shape column header: ' + self.shape_header
+            raise ValueError(msg)
+        index = self.h_to_i[self.shape_header]
+        self.shape_list = zip(*data)[index]
+
+    def get_augmented_table_lines(self):
+        """
+        This is given to R.
+        """
+        uniq = self.get_unique_symbol_labels()
+        nrows = len(self.shape_list)
+        header_row = [
+                self.axis_headers[0],
+                self.axis_headers[1],
+                self.axis_headers[2],
+                self.color_header,
+                self.shape_header,
+                'symbol']
+        data_rows = zip(
+                range(1, nrows+1),
+                self.axis_lists[0],
+                self.axis_lists[1],
+                self.axis_lists[2],
+                self.color_list,
+                self.shape_list,
+                [uniq.index(x) for x in self.shape_list])
+        header_line = '\t'.join(str(x) for x in header_row)
+        data_lines = '\n'.join(
+                '\t'.join(str(x) for x in row) for row in data_rows)
+        return [header_line] + data_lines
+
+    def get_unique_symbol_labels(self):
+        return list(iterutils.unique_everseen(self.shape_list))
+
+
 def process(args, table_lines):
     """
     @param args: command line or web input
@@ -216,10 +290,33 @@ def process(args, table_lines):
     @return: the image data as a string
     """
     table_lines = Util.get_stripped_lines(table_lines)
+    # Get table headers and table data.
+    header_line = table_lines[0]
+    data_lines = table_lines[1:]
+    header_row = header_line.split()
+    data_rows = [x.split() for x in data_lines]
+    # Check the headers.
+    for h in header_row:
+        if not Carbone.is_valid_header(h):
+            msg = 'invalid column header: %s' % h
+            raise ValueError(msg)
+    # Verify that all data rows have one more element than the header row.
+    nheaders = len(header_row)
+    for row in data_rows:
+        if len(row) + 1 != nheaders:
+            msg_a = 'all data rows should have one more element '
+            msg_b = 'than the header row'
+            raise ValueError(msg_a + msg_b)
+    # Headers should be unique.
+    if len(set(header_row)) != nheaders:
+        raise ValueError('headers should be unique')
+    # Read the relevant columns and their labels.
+    plot_info = PlotInfo(args, header_row, data_rows)
+    # Get info for the temporary data
+    augmented_lines = plot_info.get_augmented_table_lines()
     # Create a temporary data table file for R.
     f_temp_table = tempfile.NamedTemporaryFile(delete=False)
-    augmented_table_lines = get_augmented_table_lines(table_lines)
-    print >> f_temp_table, '\n'.join(augmented_table_lines)
+    print >> f_temp_table, '\n'.join(augmented_lines)
     f_temp_table.close()
     # Create a temporary pathname for the plot created by R.
     temp_plot_name = my_mktemp()
@@ -259,13 +356,14 @@ if __name__ == '__main__':
             choices=['png', 'pdf', 'postscript', 'svg'],
             help='output image file format')
     parser.add_argument('--shape', required=True,
-            choices=['species', 'location'],
-            help='the variable that defines the shape of a plotted point')
+            help='categorical variable defining the shape of a dot')
     parser.add_argument('--color', required=True,
-            choices=['temperature', 'precipitation'],
-            help='the variable that defines the color of a plotted point')
+            help='categorical variable defining the color of a dot')
     parser.add_argument('--size', default=1.5, type=float,
             help='the size of each plotted point')
     parser.add_argument('--legend_pos', default='0 0 0',
             help='position of the symbol legend')
+    parser.add_argument('--axes', default='pc1 pc2 pc3',
+            help='numerical variables defining axes of the 3D plot')
     main(parser.parse_args())
+

@@ -2,9 +2,17 @@
 Add stuff specific to this PCA fungus project.
 """
 
+import re
+
 import numpy as np
 
 import Util
+
+g_header_pattern = r'^[a-zA-Z][a-zA-Z0-9]*$'
+
+def is_valid_header(h):
+    return re.match(g_header_pattern, h)
+
 
 class WordError(Exception): pass
 
