@@ -203,6 +203,7 @@ class PlotInfo:
         self._init_axes(args, headers, data)
         self._init_colors(args, headers, data)
         self._init_shapes(args, headers, data)
+        self._init_unique_shapes()
 
     def _init_axes(self, args, headers, data):
         # read the axes
@@ -253,11 +254,13 @@ class PlotInfo:
         index = self.h_to_i[self.shape_header]
         self.shape_list = zip(*data)[index]
 
+    def _init_unique_shapes(self):
+        self.unique_shapes = list(iterutils.unique_everseen(self.shape_list))
+
     def get_augmented_table_lines(self):
         """
         This is given to R.
         """
-        uniq = self.get_unique_symbol_labels()
         nrows = len(self.shape_list)
         header_row = [
                 self.axis_headers[0],
@@ -273,14 +276,64 @@ class PlotInfo:
                 self.axis_lists[2],
                 self.color_list,
                 self.shape_list,
-                [uniq.index(x) for x in self.shape_list])
+                [self.unique_shapes.index(x) for x in self.shape_list])
         header_line = '\t'.join(str(x) for x in header_row)
         data_lines = '\n'.join(
                 '\t'.join(str(x) for x in row) for row in data_rows)
         return [header_line] + data_lines
 
-    def get_unique_symbol_labels(self):
-        return list(iterutils.unique_everseen(self.shape_list))
+    def get_script(args, temp_plot_filename, temp_table_filename):
+        """
+        @param args: from cmdline or web
+        @param temp_plot_name: a pathname
+        @param temp_table_name: a pathname
+        """
+        # get the symbol legend location
+        legend_pos = [float(x) for x in args.legend_pos.split()]
+        # get the unique locations and species
+        symbol_legend_string = ', '.join("'%s'" % x for x in self.unique_shapes)
+        color_legend_string = self.color_header
+        rcodes = [
+            "require('scatterplot3d')",
+            "mytable <- read.table('%s')" % temp_table_filename,
+            "%s('%s')" % (args.imageformat, temp_plot_filename),
+            # rename some variables for compatibility with the template
+            "Year <- mytable$pc1",
+            "Latitude <- mytable$pc2",
+            "Risk <- mytable$pc3",
+            "Prec <- mytable$%s" % args.color,
+            # stack two plots vertically
+            "layout(cbind(1:2, 1:2), heights = c(7, 1))",
+            # create the color gradient
+            "prc <- hsv((prc <- 0.7*Prec/diff(range(Prec))) - min(prc) + 0.3)",
+            # create the scatterplot
+            "s3d <- scatterplot3d(Year, Latitude, Risk, mar = c(5, 3, 4, 3),",
+            "xlab = 'PC1', ylab = 'PC2', zlab = 'PC3',",
+            "type = 'p', pch = ' ')",
+            # define symbols colors and sizes
+            "s3d$points(Year, Latitude, Risk,",
+            "pch=mytable$%s.symbol," % args.shape,
+            "bg=prc, col=prc, cex=%s)" % args.size,
+            # define x y and z as Year, Latitude and Risk
+            "s3d.coords <- s3d$xyz.convert(Year, Latitude, Risk)",
+            # symbol legend
+            "legend(s3d$xyz.convert(%s, %s, %s)," % legend_pos,
+            "pch=1:%s, yjust = 0," % len(symbol_legend_string),
+            "legend=c(%s)," % symbol_legend_string,
+            "cex = 1.1)",
+            # set margins
+            "par(mar=c(5, 3, 0, 3))",
+            # draw the plot
+            "plot(seq(min(Prec), max(Prec), length = 100),",
+            "rep(0, 100), pch = 15,",
+            "axes = FALSE,",
+            "xlab = '%s'," % color_legend_string,
+            "ylab = '', col = hsv(seq(0.3, 1, length = 100)))",
+            # draw the color legend
+            "axis(1)",
+            # write the plot
+            "dev.off()"]
+        return '\n'.join(rcodes)
 
 
 def process(args, table_lines):
@@ -322,7 +375,7 @@ def process(args, table_lines):
     temp_plot_name = my_mktemp()
     # Create a temporary R script file.
     f_temp_script = tempfile.NamedTemporaryFile(delete=False)
-    script = get_script(args, table_lines, temp_plot_name, f_temp_table.name)
+    script = plot_info.get_script(args, temp_plot_name, f_temp_table.name)
     print >> f_temp_script, script
     f_temp_script.close()
     # Call R.
