@@ -284,7 +284,7 @@ class CheckItem:
         # add the line that makes the checkbox
         lines.append(_get_checkbox_line(escaped_label, self.default))
         # add the line that makes the label
-        lines.append(_get_label_line(escape_label, escaped_description))
+        lines.append(_get_label_line(escaped_label, escaped_description))
         # return the list of lines
         return lines
 
