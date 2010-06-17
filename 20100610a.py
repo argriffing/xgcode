@@ -57,7 +57,7 @@ def get_form():
             Form.MultiLine('table', 'R table', g_default_string),
             Form.SingleLine('axes',
                 'numerical variables defining axes of the 3D plot',
-                ' '.join('pc1', 'pc2', 'pc3')),
+                ' '.join(('pc1', 'pc2', 'pc3'))),
             Form.SingleLine('shape',
                 'categorical variable defining the shape of a dot',
                 'species'),
@@ -106,76 +106,6 @@ def get_response(fs):
     response_headers.append(('Content-Disposition', disposition)) 
     return response_headers, contents
 
-
-
-def get_script(args, table_lines, temp_plot_filename, temp_table_filename):
-    """
-    @param args: from cmdline or web
-    @param table_lines: sequence of stripped lines of the R table
-    @param temp_plot_name: a pathname
-    @param temp_table_name: a pathname
-    """
-    # get the symbol legend location
-    legend_pos = tuple(float(x) for x in args.legend_pos.split())
-    # get the unique locations and species
-    unique_species = get_unique_species(table_lines)
-    unique_locations = get_unique_locations(table_lines)
-    species_string = ', '.join("'%s'" % x for x in unique_species)
-    locations_string = ', '.join("'%s'" % x for x in unique_locations)
-    if args.shape == 'species':
-        symbol_legend_string = species_string
-    elif args.shape == 'location':
-        symbol_legend_string = locations_string
-    else:
-        raise ValueError('invalid args.shape')
-    if args.color == 'temperature':
-        color_legend_string = 'celsius temperature'
-    elif args.color == 'precipitation':
-        color_legend_string = 'millimeters of precipitation'
-    else:
-        raise ValueError('invalid args.color')
-    rcodes = [
-        "require('scatterplot3d')",
-        "mytable <- read.table('%s')" % temp_table_filename,
-        "%s('%s')" % (args.imageformat, temp_plot_filename),
-        # rename some variables for compatibility with the template
-        "Year <- mytable$pc1",
-        "Latitude <- mytable$pc2",
-        "Risk <- mytable$pc3",
-        "Prec <- mytable$%s" % args.color,
-        # stack two plots vertically
-        "layout(cbind(1:2, 1:2), heights = c(7, 1))",
-        # create the color gradient
-        "prc <- hsv((prc <-0.7 * Prec / diff(range(Prec))) - min(prc) + 0.3)",
-        # create the scatterplot
-        "s3d <- scatterplot3d(Year, Latitude, Risk, mar = c(5, 3, 4, 3),",
-        "xlab = 'PC1', ylab = 'PC2', zlab = 'PC3',",
-        "type = 'p', pch = ' ')",
-        # define symbols colors and sizes
-        "s3d$points(Year, Latitude, Risk,",
-        "pch=mytable$%s.symbol," % args.shape,
-        "bg=prc, col=prc, cex=%s)" % args.size,
-        # define x y and z as Year, Latitude and Risk
-        "s3d.coords <- s3d$xyz.convert(Year, Latitude, Risk)",
-        # symbol legend
-        "legend(s3d$xyz.convert(%s, %s, %s)," % legend_pos,
-        "pch=1:%s, yjust = 0," % len(symbol_legend_string),
-        "legend=c(%s)," % symbol_legend_string,
-        "cex = 1.1)",
-        # set margins
-        "par(mar=c(5, 3, 0, 3))",
-        # draw the plot
-        "plot(seq(min(Prec), max(Prec), length = 100),",
-        "rep(0, 100), pch = 15,",
-        "axes = FALSE,",
-        "xlab = '%s'," % color_legend_string,
-        "ylab = '', col = hsv(seq(0.3, 1, length = 100)))",
-        # draw the color legend
-        "axis(1)",
-        # write the plot
-        "dev.off()"]
-    return '\n'.join(rcodes)
-
 class NumericError(Exception): pass
 
 def get_numeric_column(data, index):
@@ -189,6 +119,7 @@ def get_numeric_column(data, index):
         floats = [float(x) for x in strings]
     except ValueError, v:
         raise NumericError
+    return floats
 
 
 class PlotInfo:
@@ -226,6 +157,7 @@ class PlotInfo:
                 msg_a = 'expected the axis column %s ' % h
                 msg_b = 'to be numeric'
                 raise ValueError(msg_a + msg_b)
+            self.axis_lists.append(axis_list)
 
     def _init_colors(self, args, headers, data):
         """
@@ -278,18 +210,19 @@ class PlotInfo:
                 self.shape_list,
                 [self.unique_shapes.index(x) for x in self.shape_list])
         header_line = '\t'.join(str(x) for x in header_row)
-        data_lines = '\n'.join(
-                '\t'.join(str(x) for x in row) for row in data_rows)
+        data_lines = ['\t'.join(str(x) for x in row) for row in data_rows]
         return [header_line] + data_lines
 
-    def get_script(args, temp_plot_filename, temp_table_filename):
+    def get_script(self, args, temp_plot_filename, temp_table_filename):
         """
         @param args: from cmdline or web
         @param temp_plot_name: a pathname
         @param temp_table_name: a pathname
         """
         # get the symbol legend location
-        legend_pos = [float(x) for x in args.legend_pos.split()]
+        legend_pos = tuple(float(x) for x in args.legend_pos.split())
+        if len(legend_pos) != 3:
+            raise ValueError('invalid legend position: %s' % args.legend_pos)
         # get the unique locations and species
         symbol_legend_string = ', '.join("'%s'" % x for x in self.unique_shapes)
         color_legend_string = self.color_header
@@ -308,17 +241,18 @@ class PlotInfo:
             "prc <- hsv((prc <- 0.7*Prec/diff(range(Prec))) - min(prc) + 0.3)",
             # create the scatterplot
             "s3d <- scatterplot3d(Year, Latitude, Risk, mar = c(5, 3, 4, 3),",
-            "xlab = 'PC1', ylab = 'PC2', zlab = 'PC3',",
+            "xlab = '%s'," % self.axis_headers[0],
+            "ylab = '%s'," % self.axis_headers[1],
+            "zlab = '%s'," % self.axis_headers[2],
             "type = 'p', pch = ' ')",
             # define symbols colors and sizes
             "s3d$points(Year, Latitude, Risk,",
-            "pch=mytable$%s.symbol," % args.shape,
-            "bg=prc, col=prc, cex=%s)" % args.size,
+            "pch=mytable$symbol, bg=prc, col=prc, cex=%s)" % args.size,
             # define x y and z as Year, Latitude and Risk
             "s3d.coords <- s3d$xyz.convert(Year, Latitude, Risk)",
             # symbol legend
             "legend(s3d$xyz.convert(%s, %s, %s)," % legend_pos,
-            "pch=1:%s, yjust = 0," % len(symbol_legend_string),
+            "pch=0:%s, yjust = 0," % (len(symbol_legend_string)-1),
             "legend=c(%s)," % symbol_legend_string,
             "cex = 1.1)",
             # set margins
@@ -356,10 +290,12 @@ def process(args, table_lines):
     # Verify that all data rows have one more element than the header row.
     nheaders = len(header_row)
     for row in data_rows:
-        if len(row) + 1 != nheaders:
-            msg_a = 'all data rows should have one more element '
-            msg_b = 'than the header row'
-            raise ValueError(msg_a + msg_b)
+        if len(row) != nheaders + 1:
+            msg_a = 'the header row has %d elements ' % nheaders
+            msg_b = 'and a data row has %d elements; ' % len(row)
+            msg_c = 'all data rows should have one more element '
+            msg_d = 'than the header row'
+            raise ValueError(msg_a + msg_b + msg_c + msg_d)
     # Headers should be unique.
     if len(set(header_row)) != nheaders:
         raise ValueError('headers should be unique')
