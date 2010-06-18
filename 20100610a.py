@@ -276,29 +276,14 @@ def process(args, table_lines):
     @param table_lines: input lines
     @return: the image data as a string
     """
-    table_lines = Util.get_stripped_lines(table_lines)
-    # Get table headers and table data.
-    header_line = table_lines[0]
-    data_lines = table_lines[1:]
-    header_row = header_line.split()
-    data_rows = [x.split() for x in data_lines]
-    # Check the headers.
+    rtable = Carbone.RTable(table_lines)
+    header_row = rtable.headers
+    data_rows = rtable.data
+    # Do a more stringent check of the column headers.
     for h in header_row:
         if not Carbone.is_valid_header(h):
             msg = 'invalid column header: %s' % h
             raise ValueError(msg)
-    # Verify that all data rows have one more element than the header row.
-    nheaders = len(header_row)
-    for row in data_rows:
-        if len(row) != nheaders + 1:
-            msg_a = 'the header row has %d elements ' % nheaders
-            msg_b = 'and a data row has %d elements; ' % len(row)
-            msg_c = 'all data rows should have one more element '
-            msg_d = 'than the header row'
-            raise ValueError(msg_a + msg_b + msg_c + msg_d)
-    # Headers should be unique.
-    if len(set(header_row)) != nheaders:
-        raise ValueError('headers should be unique')
     # Read the relevant columns and their labels.
     plot_info = PlotInfo(args, header_row, data_rows)
     # Get info for the temporary data

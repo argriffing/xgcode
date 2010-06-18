@@ -57,7 +57,7 @@ def process(hud_lines):
     if len(evecs) < 3:
         raise HandlingError('the matrix has insufficient rank')
     # create the R frame
-    headers = ('name', 'pc1', 'pc2', 'pc3')
+    headers = ('otu', 'pc1', 'pc2', 'pc3')
     print >> out, '\t'.join(headers)
     for i, name in enumerate(names):
         typed_row = (i+1, name, pcs[0][i], pcs[1][i], pcs[2][i])
