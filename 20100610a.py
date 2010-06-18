@@ -146,7 +146,7 @@ class PlotInfo:
         bad_axis_headers = set(self.axis_headers) - set(headers)
         if bad_axis_headers:
             msg_a = 'bad axis column headers: '
-            msg_b = ', '.join(bad_axis_column_headers)
+            msg_b = ', '.join(bad_axis_headers)
             raise ValueError(msg_a + msg_b)
         self.axis_lists = []
         for h in self.axis_headers:
@@ -194,20 +194,13 @@ class PlotInfo:
         This is given to R.
         """
         nrows = len(self.shape_list)
-        header_row = [
-                self.axis_headers[0],
-                self.axis_headers[1],
-                self.axis_headers[2],
-                self.color_header,
-                self.shape_header,
-                'symbol']
+        header_row = ['x', 'y', 'z', 'color', 'symbol']
         data_rows = zip(
                 range(1, nrows+1),
                 self.axis_lists[0],
                 self.axis_lists[1],
                 self.axis_lists[2],
                 self.color_list,
-                self.shape_list,
                 [self.unique_shapes.index(x) for x in self.shape_list])
         header_line = '\t'.join(str(x) for x in header_row)
         data_lines = ['\t'.join(str(x) for x in row) for row in data_rows]
@@ -231,10 +224,10 @@ class PlotInfo:
             "mytable <- read.table('%s')" % temp_table_filename,
             "%s('%s')" % (args.imageformat, temp_plot_filename),
             # rename some variables for compatibility with the template
-            "Year <- mytable$pc1",
-            "Latitude <- mytable$pc2",
-            "Risk <- mytable$pc3",
-            "Prec <- mytable$%s" % args.color,
+            "Year <- mytable$x",
+            "Latitude <- mytable$y",
+            "Risk <- mytable$z",
+            "Prec <- mytable$color",
             # stack two plots vertically
             "layout(cbind(1:2, 1:2), heights = c(7, 1))",
             # create the color gradient
