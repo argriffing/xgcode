@@ -11,6 +11,7 @@ import re
 from SnippetUtil import HandlingError
 import Form
 import Util
+import Carbone
 
 g_info_lines = [
         '"IC","Haplo","Location","Temp (C)","Precip (mm)","Species",'
@@ -29,32 +30,6 @@ g_output_headers = [
 
 g_column_header_pattern = r'^[a-zA-Z][a-zA-Z0-9]*$'
 
-
-def clean_isolate_element(ic):
-    if ic is None:
-        return ic
-    elif ic.startswith('IC'):
-        return ic
-    else:
-        return 'IC' + ic
-
-def clean_isolate_row(row):
-    """
-    Clean the first element of the row.
-    @param row: list whose elements are strings or None
-    @return: a new row
-    """
-    if not row:
-        return []
-    return [clean_isolate_element(row[0])] + row[1:]
-
-def clean_isolate_table(table):
-    """
-    Force elements of the first column to start with 'IC'.
-    @param table: list of lists whose elements are strings or None
-    @return: a new table
-    """
-    return [clean_isolate_row(row) for row in table]
 
 def get_form():
     """
@@ -126,7 +101,7 @@ def process(args, raw_info_lines, raw_input_headers, raw_output_headers):
             raise ValueError(msg)
     # force IC prefix for non-missing elements in the first column if requested
     if args.clean_isolates:
-        data_rows = clean_isolate_table(data_rows)
+        data_rows = Carbone.clean_isolate_table(data_rows)
     # define the ordered output headers
     output_headers = Util.get_stripped_lines(raw_output_headers)
     bad_output_headers = set(output_headers) - set(input_headers)

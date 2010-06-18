@@ -14,6 +14,33 @@ def is_valid_header(h):
     return re.match(g_header_pattern, h)
 
 
+def clean_isolate_element(ic):
+    if ic is None:
+        return ic
+    elif ic.startswith('IC'):
+        return ic
+    else:
+        return 'IC' + ic
+
+def clean_isolate_row(row):
+    """
+    Clean the first element of the row.
+    @param row: list whose elements are strings or None
+    @return: a new row
+    """
+    if not row:
+        return []
+    return [clean_isolate_element(row[0])] + row[1:]
+
+def clean_isolate_table(table):
+    """
+    Force elements of the first column to start with 'IC'.
+    @param table: list of lists whose elements are strings or None
+    @return: a new table
+    """
+    return [clean_isolate_row(row) for row in table]
+
+
 class RTableError(Exception): pass
 
 class RTable(object):

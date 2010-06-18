@@ -16,8 +16,6 @@ from SnippetUtil import HandlingError
 import Carbone
 import EigUtil
 import Form
-from Form import RadioItem
-
 
 
 g_default_hud_string = """
@@ -27,15 +25,19 @@ IC33 1 0 1 1
 IC34 0 0 1 0
 """.strip()
 
-def process(hud_lines):
+def process(args, raw_hud_lines):
     """
-    @param hud_lines: lines of a .hud file
+    @param args: user options from the web or cmdline
+    @param hud_lines: raw lines of a .hud file
     @return: results in convenient text form
     """
     out = StringIO()
     # get the ordered names from the .hud file
-    words = Carbone.get_words(hud_lines)
+    words = Carbone.get_words(raw_hud_lines)
     names = [w.name for w in words]
+    # normalize the names of the isolates
+    if args.clean_isolates:
+        names = [Carbone.clean_isolate_element(x) for x in names]
     # create the floating point count matrix
     C_full = np.vstack([w.v for w in words])
     m_full, n_full = C_full.shape
@@ -60,7 +62,9 @@ def process(hud_lines):
     headers = ('otu', 'pc1', 'pc2', 'pc3')
     print >> out, '\t'.join(headers)
     for i, name in enumerate(names):
-        typed_row = (i+1, name, pcs[0][i], pcs[1][i], pcs[2][i])
+        typed_row = [name, pcs[0][i], pcs[1][i], pcs[2][i]]
+        if args.add_indices:
+            typed_row = [i+1] + typed_row
         row = [str(x) for x in typed_row]
         print >> out, '\t'.join(row)
     return out.getvalue()
@@ -73,9 +77,14 @@ def get_form():
             Form.MultiLine('hud',
                 'contents of a .hud file',
                 g_default_hud_string),
+            Form.CheckGroup('cleangroup', 'more options', [
+                Form.CheckItem('add_indices',
+                    'add row indices for R table compatibility', True),
+                Form.CheckItem('clean_isolates',
+                    'force first-column elements to be IC-prefixed', True)]),
             Form.RadioGroup('contentdisposition', 'delivery options', [ 
-                RadioItem('inline', 'view', True), 
-                RadioItem('attachment', 'download')])] 
+                Form.RadioItem('inline', 'view', True), 
+                Form.RadioItem('attachment', 'download')])] 
     return form_objects
 
 def get_response(fs):
@@ -83,7 +92,7 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    text = process(fs.hud.splitlines())
+    text = process(fs, fs.hud.splitlines())
     response_headers = [('Content-Type', 'text/plain')] 
     disposition = "%s; filename=%s" % (fs.contentdisposition, 'pc.table') 
     response_headers.append(('Content-Disposition', disposition)) 
@@ -97,4 +106,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--hud', required=True,
             help='a .hud file')
+    parser.add_argument('--dont_add_indices',
+            action='store_false', dest='add_indices',
+            help='do not add R compatibile row indices')
+    parser.add_argument('--dont_clean_isolates',
+            action='store_false', dest='clean_isolates',
+            help='do not force isolate names to be IC-prefixed')
     main(parser.parse_args())
