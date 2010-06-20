@@ -43,16 +43,12 @@ def get_form():
             'f : T']
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.MultiLine('column', 'tip data', '\n'.join(default_tip_data_lines)),
-            Form.RadioGroup('imageformat', 'image format options', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.MultiLine('tree', 'newick tree',
+                formatted_tree_string),
+            Form.MultiLine('column', 'tip data',
+                '\n'.join(default_tip_data_lines)),
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -66,7 +62,8 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
     if tree.has_negative_branch_lengths():
-        raise HandlingError('drawing a tree with negative branch lengths is not implemented')
+        msg = 'drawing a tree with negative branch lengths is not implemented'
+        raise HandlingError(msg)
     tree.add_branch_lengths()
     # get the dictionary mapping the branch name to the nucleotide
     name_to_nucleotide = {}
@@ -74,7 +71,8 @@ def get_response(fs):
     for line in iterutils.stripped_lines(StringIO(fs.column)):
         name_string, nucleotide_string = SnippetUtil.get_state_value_pair(line)
         if nucleotide_string not in list('acgtACGT'):
-            raise HandlingError('"%s" is not a valid nucleotide' % nucleotide_string)
+            msg = '"%s" is not a valid nucleotide' % nucleotide_string
+            raise HandlingError(msg)
         nucleotide_string = nucleotide_string.upper()
         if name_string in name_to_nucleotide:
             raise HandlingError('the name "%s" was duplicated' % name_string)
@@ -86,13 +84,16 @@ def get_response(fs):
         except Newick.NewickSearchError, e:
             raise HandlingError(e)
         if node.children:
-            raise HandlingError('constraints on internal nodes are not implemented')
+            msg = 'constraints on internal nodes are not implemented'
+            raise HandlingError(msg)
         node.state = nucleotide
     # get the Jukes-Cantor rate matrix object
     dictionary_rate_matrix = RateMatrix.get_jukes_cantor_rate_matrix()
     ordered_states = list('ACGT')
-    row_major_rate_matrix = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, ordered_states, ordered_states)
-    rate_matrix_object = RateMatrix.RateMatrix(row_major_rate_matrix, ordered_states)
+    row_major_rate_matrix = MatrixUtil.dict_to_row_major(
+            dictionary_rate_matrix, ordered_states, ordered_states)
+    rate_matrix_object = RateMatrix.RateMatrix(
+            row_major_rate_matrix, ordered_states)
     # simulate the ancestral nucleotides
     rate_matrix_object.simulate_ancestral_states(tree)
     # simulate a path on each branch
@@ -101,19 +102,22 @@ def get_response(fs):
         simulate_branch_path(tree, node)
     # do the layout
     EqualArcLayout.do_layout(tree)
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'tree.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), fs.imageformat)
+        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # specify the content type
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[fs.imageformat]))
-    # specify the content disposition
-    image_filename = 'tree.' + fs.imageformat
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, image_filename)))
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     # return the response
     return response_headers, image_string
+
 
 def simulate_branch_path(tree, node):
     """

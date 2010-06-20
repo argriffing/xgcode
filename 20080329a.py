@@ -44,9 +44,7 @@ def get_form():
             Form.RadioGroup('format', 'output format options', [
                 Form.RadioItem('fastaformat', 'fasta'),
                 Form.RadioItem('nexusformat', 'nexus', True)]),
-            Form.RadioGroup('contentdisposition', 'delivery options', [
-                Form.RadioItem('inline', 'view in the browser', True),
-                Form.RadioItem('attachment', 'download')])]
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -117,9 +115,10 @@ def get_response(fs):
         filename_extension = 'nex'
     filename = 'sample.' + filename_extension
     # send the response
-    response_headers = []
-    response_headers.append(('Content-Type', 'text/plain'))
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, filename)))
+    contentdisposition = "%s; filename=%s" % (fs.contentdisposition, filename)
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, output_string
 
 def get_kappa(index):

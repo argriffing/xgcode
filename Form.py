@@ -5,6 +5,17 @@ import numpy as np
 
 import MatrixUtil
 
+g_imageformat_to_contenttype = {
+        'svg':'image/svg+xml',
+        'png':'image/png',
+        'pdf':'application/pdf',
+        'postscript':'application/postscript'}
+
+g_imageformat_to_ext = {
+        'svg' : 'svg',
+        'png' : 'png',
+        'pdf' : 'pdf',
+        'postscript', 'ps'}
 
 def get_html_string(form_objects):
     """
@@ -684,12 +695,10 @@ class MultiLine:
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
-
 class ContentDisposition(RadioGroup):
-
     def __init__(self):
         """
-        The group label is automatically contentdisposition.
+        The group label is contentdisposition.
         The description and radio items are hard coded.
         """
         label = 'contentdisposition'
@@ -697,4 +706,19 @@ class ContentDisposition(RadioGroup):
         radio_items = [
                 RadioItem('inline', 'view', True),
                 RadioItem('attachment', 'download')]
+        RadioGroup.__init__(self, label, description, radio_items)
+
+class ImageFormat(RadioGroup):
+    def __init__(self):
+        """
+        The group label is imageformat.
+        The description and radio items are hard coded.
+        """
+        label = 'imageformat'
+        description = 'output image format'
+        radio_items = [
+            RadioItem('png', 'png', True),
+            RadioItem('pdf', 'pdf'),
+            RadioItem('postscript', 'postscript'),
+            RadioItem('svg', 'svg')]
         RadioGroup.__init__(self, label, description, radio_items)
