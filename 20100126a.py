@@ -150,14 +150,8 @@ def get_form():
                 640, low=1, high=2000),
             Form.Integer('height', 'image height in pixels',
                 480, low=1, high=2000),
-            Form.RadioGroup('imageformat', 'image format', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -169,7 +163,6 @@ def get_response(fs):
     border_info = BorderInfo(fs.border_x, fs.border_y)
     axis_info = AxisInfo(fs.flip_x, fs.flip_y, fs.show_x, fs.show_y)
     w, h = fs.width, fs.height
-    image_info = ImageInfo(w, h, axis_info, border_info, fs.imageformat)
     # Parse the label and point input.
     lines = [x.strip() for x in StringIO(fs.points).readlines()]
     lines = [x for x in lines if x]
@@ -186,20 +179,16 @@ def get_response(fs):
             raise HandlingError('expected x and y coordinates to be numbers')
         parsed_triples.append((label, x, y))
     labels, X, Y = zip(*parsed_triples)
-    # Get the image.
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'plot.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
+    # draw the image
+    image_info = ImageInfo(w, h, axis_info, border_info, ext)
     image_string = get_image_string(X, Y, labels, image_info)
-    # start writing the response type
-    response_headers = []
-    # specify the content type
-    format_to_content_type = {
-            'svg':'image/svg+xml', 'png':'image/png',
-            'pdf':'application/pdf', 'ps':'application/postscript'}
-    content_type = format_to_content_type[fs.imageformat]
-    response_headers.append(('Content-Type', content_type))
-    # specify the content disposition
-    image_filename = 'plot.' + fs.imageformat
-    content_disp = '%s; filename=%s' % (fs.contentdisposition, image_filename)
-    header = ('Content-Disposition', content_disp)
-    response_headers.append(header)
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string

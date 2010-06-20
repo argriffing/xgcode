@@ -46,14 +46,8 @@ def get_form():
                 480, low=3, high=2000),
             Form.Integer('border', 'image border size',
                 10, low=0, high=2000),
-            Form.RadioGroup('imageformat', 'image format options', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_image_string(points, edges, t_width, t_height, border, image_format):
@@ -186,24 +180,19 @@ def get_response(fs):
     if width < 1 or height < 1:
         msg = 'the image dimensions do not allow for enough drawable area'
         raise HandlingError(msg)
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'plot.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
         image_string = get_image_string(points, edges,
-                fs.total_width, fs.total_height, fs.border, fs.imageformat)
+                fs.total_width, fs.total_height, fs.border, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # begin the response
-    response_headers = []
-    # specify the content type
-    format_to_content_type = {
-            'svg':'image/svg+xml', 'png':'image/png',
-            'pdf':'application/pdf', 'ps':'application/postscript'}
-    content_type = format_to_content_type[fs.imageformat]
-    response_headers.append(('Content-Type', content_type))
-    # specify the content disposition
-    image_filename = 'plot.' + fs.imageformat
-    content_disp = '%s; filename=%s' % (fs.contentdisposition, image_filename)
-    header = ('Content-Disposition', content_disp)
-    response_headers.append(header)
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string

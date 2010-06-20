@@ -81,9 +81,7 @@ def get_form():
             Form.MultiLine('info',
                 'amdS_PCA_Info.csv lines',
                 g_default_info_string),
-            Form.RadioGroup('contentdisposition', 'delivery options', [ 
-                RadioItem('inline', 'view', True), 
-                RadioItem('attachment', 'download')])] 
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -92,9 +90,10 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     text = process(fs.hud.splitlines(), fs.info.splitlines())
-    response_headers = [('Content-Type', 'text/plain')] 
     disposition = "%s; filename=%s" % (fs.contentdisposition, 'data.table') 
-    response_headers.append(('Content-Disposition', disposition)) 
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
     return response_headers, text
 
 def row_to_temperature(row):

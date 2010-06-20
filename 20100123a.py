@@ -110,14 +110,8 @@ def get_form():
                 480, low=3, high=2000),
             Form.Integer('border', 'image border size',
                 10, low=0, high=2000),
-            Form.RadioGroup('imageformat', 'image format options', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_image_string(points, edges, point_colors, image_info):
@@ -323,8 +317,6 @@ def get_response(fs):
         show_labels = 0
     elif fs.label_from_1:
         show_labels = 1
-    info = ImageInfo(fs.total_width, fs.total_height,
-            fs.black, show_labels, fs.border, fs.imageformat)
     # define the valuations which will define the node colors
     if fs.color_x:
         valuations = [p[0] for p in points]
@@ -341,23 +333,20 @@ def get_response(fs):
         valuations = [0 for p in points]
     valuations = [-v if fs.flip else v for v in valuations]
     colors = valuations_to_colors(valuations)
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'plot.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
+    info = ImageInfo(fs.total_width, fs.total_height,
+            fs.black, show_labels, fs.border, ext)
     try:
         image_string = get_image_string(points, edges, colors, info)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # begin the response
-    response_headers = []
-    # specify the content type
-    format_to_content_type = {
-            'svg':'image/svg+xml', 'png':'image/png',
-            'pdf':'application/pdf', 'ps':'application/postscript'}
-    content_type = format_to_content_type[fs.imageformat]
-    response_headers.append(('Content-Type', content_type))
-    # specify the content disposition
-    image_filename = 'plot.' + fs.imageformat
-    content_disp = '%s; filename=%s' % (fs.contentdisposition, image_filename)
-    header = ('Content-Disposition', content_disp)
-    response_headers.append(header)
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string

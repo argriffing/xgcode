@@ -29,13 +29,9 @@ def get_form():
     form_objects = [
             Form.Matrix('matrix', 'distance matrix',
                 D, MatrixUtil.assert_predistance),
-            Form.MultiLine('labels', 'ordered labels',
-                ordered_label_string),
-            Form.Integer('iteration', 'the iteration to visualize',
-                1),
-            Form.RadioGroup('contentdisposition', 'image display options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.MultiLine('labels', 'ordered labels', ordered_label_string),
+            Form.Integer('iteration', 'the iteration to visualize', 1),
+            Form.ContentDisposition()]
     # return the objects
     return form_objects
 
@@ -108,11 +104,10 @@ def get_response(fs):
         raise HandlingError(msg_a + msg_b)
     # get the image string
     image_string = get_image_string(D, ordered_labels, iteration)
-    # specify the content type (hard coded to png)
-    response_headers = []
-    response_headers.append(('Content-Type', 'image/png'))
-    # specify the content disposition (specified by the user)
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, 'graph.png')))
     # return the response
+    disposition = '%s; filename=%s' % (fs.contentdisposition, 'graph.png')
+    response_headers = [
+            ('Content-Type', 'image/png'),
+            ('Content-Disposition', disposition)]
     return response_headers, image_string
 

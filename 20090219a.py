@@ -44,17 +44,12 @@ def get_form():
                 480, low=3, high=2000),
             Form.Integer('border', 'image border size',
                 10, low=0, high=2000),
-            Form.RadioGroup('imageformat', 'image format options', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
-def get_image_string(labels, points, total_width, total_height, border, image_format):
+def get_image_string(labels, points, total_width, total_height,
+        border, image_format):
     """
     @param labels: an ordered list of point labels
     @param points: an ordered list of (x, y) points
@@ -70,7 +65,8 @@ def get_image_string(labels, points, total_width, total_height, border, image_fo
     assert height >= 1
     # get the x and y coordinates of the points
     x_coords, y_coords_raw = zip(*points)
-    # flip the y coordinates so that greater values of y are shown near the top of the image
+    # Flip the y coordinates so that greater values of y are shown
+    # near the top of the image.
     y_coords = [-y for y in y_coords_raw]
     unscaled_width = max(x_coords) - min(x_coords)
     unscaled_height = max(y_coords) - min(y_coords)
@@ -126,32 +122,36 @@ def get_response(fs):
     for line in labeled_point_lines:
         labeled_point = line.split()
         if len(labeled_point) != 3:
-            raise HandlingError('each line should have three whitespace separated elements')
+            msg = 'each line should have three whitespace separated elements'
+            raise HandlingError(msg)
         label, x_string, y_string = labeled_point
         try:
             x = float(x_string)
             y = float(y_string)
         except ValueError, e:
-            raise HandlingError('expected the coordinates to be floating point numbers')
+            msg = 'expected the coordinates to be floating point numbers'
+            raise HandlingError(msg)
         labels.append(label)
         points.append((x, y))
     # get the width and height of the drawable area of the image
     width = fs.total_width - 2*fs.border
     height = fs.total_height - 2*fs.border
     if width < 1 or height < 1:
-        raise HandlingError('the image dimensions do not allow for enough drawable area')
+        msg = 'the image dimensions do not allow for enough drawable area'
+        raise HandlingError(msg)
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'plot.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = get_image_string(labels, points, fs.total_width, fs.total_height, fs.border, fs.imageformat)
+        image_string = get_image_string(labels, points,
+                fs.total_width, fs.total_height, fs.border, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # begin the response
-    response_headers = []
-    # specify the content type
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[fs.imageformat]))
-    # specify the content disposition
-    image_filename = 'plot.' + fs.imageformat
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, image_filename)))
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string

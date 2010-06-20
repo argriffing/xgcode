@@ -67,44 +67,26 @@ def get_form():
             Form.Float('size', 'size of a plotted point', '1.5'),
             Form.SingleLine('legend_pos', 'position of the symbol legend',
                 '0 0 0'),
-            Form.RadioGroup('imageformat', 'output image format', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('postscript', 'postscript'),
-                Form.RadioItem('svg', 'svg')]),
+            Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
-
-def create_filename(args):
-    """
-    @param args: user specified arguments from the web interface
-    """
-    fmt_to_ext = {
-            'svg' : 'svg',
-            'png' : 'png',
-            'pdf' : 'pdf',
-            'postscript' : 'ps'}
-    ext = fmt_to_ext[args.imageformat]
-    row = [args.shape, args.color, 'pca', '3d', ext]
-    return '.'.join(row)
 
 def get_response(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    contents = process(fs, fs.table.splitlines())
-    filename = create_filename(fs)
-    format_to_content_type = {
-            'svg':'image/svg+xml',
-            'png':'image/png',
-            'pdf':'application/pdf',
-            'postscript':'application/postscript'}
-    content_type = format_to_content_type[fs.imageformat]
-    response_headers = [('Content-Type', content_type)]
-    disposition = "%s; filename=%s" % (fs.contentdisposition, filename) 
-    response_headers.append(('Content-Disposition', disposition)) 
-    return response_headers, contents
+    image_string = process(fs, fs.table.splitlines())
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = '.'.join((args.shape, args.color, 'pca', '3d', ext))
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
+    # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
+    return response_headers, image_string
 
 class NumericError(Exception): pass
 

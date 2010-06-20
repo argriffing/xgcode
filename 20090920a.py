@@ -38,14 +38,8 @@ def get_form():
     # define the list of form objects
     form_objects = [
             Form.MultiLine('tree', 'tree', formatted_default_tree_string),
-            Form.RadioGroup('imageformat', 'image format', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_rescaled_vector(v):
@@ -238,24 +232,25 @@ def get_response(fs):
     D_full = np.array(tree.get_full_distance_matrix(ordered_ids))
     # get the number of leaves in the tree
     nleaves = len(list(tree.gen_tips()))
-    # compute the projection of all points onto the 2D plane defined by MDS of the leaves
+    # Compute the projection of all points
+    # onto the 2D plane defined by MDS of the leaves.
     projected_points = do_projection(D_full, nleaves)
-    # get the image format
-    image_format = fs.imageformat
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'plot.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
         image_size = (640, 480)
-        image_string = get_image(projected_points, nleaves, incidence_matrix, ordered_names, image_size, image_format)
+        image_string = get_image(projected_points, nleaves,
+                incidence_matrix, ordered_names, image_size, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # specify the content type
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[image_format]))
-    # specify the content disposition
-    image_extension = image_format
-    image_filename = 'scatterplot.' + image_extension
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, image_filename)))
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string
 
 def examine_projected_distance_matrix():

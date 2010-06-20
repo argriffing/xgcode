@@ -224,14 +224,8 @@ def get_form():
                 '\n'.join(data_lines)),
             Form.SingleLine('wild', 'wild type amino acids', wild_string),
             Form.SingleLine('mutant', 'mutant amino acids', mutant_string),
-            Form.RadioGroup('imageformat', 'image format options', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -295,17 +289,19 @@ def get_response(fs):
                 raise invalid_pvalue_error
             pvalue_list.append(pvalue)
         pvalue_lists.append(pvalue_list)
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'mapp.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
         image_string = get_image_string(
-                pvalue_lists, headers, wild_list, mutant_list, fs.imageformat)
+                pvalue_lists, headers, wild_list, mutant_list, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # specify the content type
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[fs.imageformat]))
-    # specify the content disposition
-    image_filename = 'mapp.' + fs.imageformat
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, image_filename)))
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string

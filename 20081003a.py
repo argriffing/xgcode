@@ -25,14 +25,8 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.Matrix('points', 'points', M),
-            Form.RadioGroup('imageformat', 'image format', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_eigenvectors(row_major_matrix):
@@ -193,26 +187,22 @@ def get_response(fs):
     #stddev = 1.0 # this gives something that looks like the original matrix
     stddev = 0.3
     laplacian_matrix = make_laplacian(D, stddev)
-    # create the file name
-    image_format = fs.imageformat
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'plot.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
         image_size = (640, 480)
         draw_axes = True
-        image_string = get_image(laplacian_matrix, image_size,
-                image_format, draw_axes)
+        image_string = get_image(laplacian_matrix, image_size, ext, draw_axes)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # start writing the response type
-    response_headers = []
-    # specify the content type
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[image_format]))
-    # specify the content disposition
-    image_extension = image_format
-    image_filename = 'scatterplot' + '.' + image_extension
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, image_filename)))
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string
 
 def main():

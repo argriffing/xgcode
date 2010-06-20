@@ -54,14 +54,8 @@ def get_form():
                 200.0, low_exclusive=0.0),
             Form.Float('progress', 'animation progress between 0.0 and 1.0',
                 0.5, low_inclusive=0.0, high_inclusive=1.0),
-            Form.RadioGroup('imageformat', 'image format', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def create_test_image(image_format, width, height):
@@ -94,23 +88,28 @@ def get_response(fs):
     tree = NewickIO.parse(fs.tree_string, FelTree.NewickTree)
     nvertices = len(list(tree.preorder()))
     nleaves = len(list(tree.gen_tips()))
-    # get ordered ids with the leaves first, and get the corresponding distance matrix
+    # Get ordered ids with the leaves first,
+    # and get the corresponding distance matrix.
     ordered_ids = get_ordered_ids(tree)
     D = np.array(tree.get_partial_distance_matrix(ordered_ids))
     index_edges = get_index_edges(tree, ordered_ids)
-    # create the reference points so that the video frames are not reflected arbitrarily
+    # Create the reference points so that the video frames
+    # are not reflected arbitrarily.
     reference_points = Euclid.edm_to_points(D).T[:2].T
-    # create the image string
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'mds.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
+    # draw the image
     mass_vector = get_mass_vector(nvertices, nleaves, fs.progress)
     points = get_canonical_2d_mds(D, mass_vector, reference_points)
-    image_string = get_animation_frame(fs.imageformat, physical_size, fs.scale, mass_vector, index_edges, points)
-    # create the response headers
-    image_basename = 'mds'
-    response_headers = []
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[fs.imageformat]))
-    response_headers.append(('Content-Disposition', "%s; filename=%s.%s" % (fs.contentdisposition, image_basename, fs.imageformat)))
+    image_string = get_animation_frame(ext, physical_size, fs.scale,
+            mass_vector, index_edges, points)
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string
 
 def reflect_to_reference(points, reference_points):

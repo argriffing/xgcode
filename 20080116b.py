@@ -29,14 +29,8 @@ def get_form():
                 Form.RadioItem('daylight', 'equal daylight layout', True),
                 Form.RadioItem('arc', 'equal arc layout'),
                 Form.RadioItem('curved', 'curved branch layout')]),
-            Form.RadioGroup('imageformat', 'image format options', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -50,7 +44,8 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
     if tree.has_negative_branch_lengths():
-        raise HandlingError('drawing a tree with negative branch lengths is not implemented')
+        msg = 'drawing a tree with negative branch lengths is not implemented'
+        raise HandlingError(msg)
     tree.add_branch_lengths()
     # do the layout
     if fs.daylight:
@@ -68,16 +63,18 @@ def get_response(fs):
             pass
     elif fs.arc:
         EqualArcLayout.do_layout(tree)
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'tree.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), fs.imageformat)
+        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # specify the content type
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[fs.imageformat]))
-    # specify the content disposition
-    image_filename = 'tree.' + fs.imageformat
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, image_filename)))
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string

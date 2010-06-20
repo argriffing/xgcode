@@ -330,13 +330,11 @@ def get_form():
                 RadioItem('pruned_trees_only', 'pruned trees only', False),
                 RadioItem('all_trees', 'all trees', True)]),
             Form.RadioGroup('output_options', 'output format options', [
-                RadioItem('show_tikz', 'show TikZ code only', True),
-                RadioItem('show_standalone', 'show contents of a LaTeX file'),
-                RadioItem('download_standalone', 'download a LaTeX file'),
-                RadioItem('show_pdf', 'view the pdf file'),
-                RadioItem('download_pdf', 'download the pdf file'),
-                RadioItem('show_png', 'view the png file'),
-                RadioItem('download_png', 'download the png file')])]
+                RadioItem('tikz', 'TikZ code', True),
+                RadioItem('latex', 'full LaTeX code'),
+                RadioItem('pdf', 'pdf'),
+                RadioItem('png', 'png')],
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -360,51 +358,33 @@ def get_response(fs):
         show_full_tree = True
         show_pruned_trees = True
     # get the texts
-    tikz_text = layout.get_tikz_text(fs.scaling_factor, show_full_tree, show_pruned_trees)
-    latex_text = layout.get_latex_text(fs.scaling_factor, show_full_tree, show_pruned_trees)
+    tikz_text = layout.get_tikz_text(
+        fs.scaling_factor, show_full_tree, show_pruned_trees)
+    latex_text = layout.get_latex_text(
+        fs.scaling_factor, show_full_tree, show_pruned_trees)
     # decide the output format
-    if fs.show_tikz:
+    if fs.tikz:
+        filename = 'tikz-tree.tikz'
+        contenttype = 'text/plain'
         response_text = tikz_text
-        response_headers = [('Content-Type', 'text/plain')]
-        return response_headers, response_text
-    elif fs.show_standalone:
-        response_text = latex_text
-        response_headers = [('Content-Type', 'text/plain')]
-        return response_headers, response_text
-    elif fs.download_standalone:
-        response_text = latex_text
+    elif fs.latex:
         filename = 'tikz-tree.tex'
-        contentdisposition = 'attachment'
-        response_headers = []
-        response_headers.append(('Content-Type', 'text/plain'))
-        response_headers.append(('Content-Disposition', "%s; filename=%s" % (contentdisposition, filename)))
-        return response_headers, response_text
-    elif fs.show_pdf:
-        response_text = get_pdf_contents(latex_text)
-        response_headers = [('Content-Type', 'application/pdf')]
-        return response_headers, response_text
-    elif fs.download_pdf:
-        response_text = get_pdf_contents(latex_text)
+        contenttype = 'text/plain'
+        response_text = latex_text
+    elif fs.pdf:
         filename = 'tikz-tree.pdf'
-        contentdisposition = 'attachment'
-        response_headers = []
-        response_headers.append(('Content-Type', 'application/pdf'))
-        response_headers.append(('Content-Disposition', "%s; filename=%s" % (contentdisposition, filename)))
-        return response_headers, response_text
-    elif fs.show_png:
-        response_text = get_png_contents(latex_text)
-        response_headers = [('Content-Type', 'image/png')]
-        return response_headers, response_text
-    elif fs.download_png:
-        response_text = get_png_contents(latex_text)
+        contenttype = 'application/pdf'
+        response_text = get_pdf_contents(latex_text)
+    elif fs.png:
         filename = 'tikz-tree.png'
-        contentdisposition = 'attachment'
-        response_headers = []
-        response_headers.append(('Content-Type', 'image/png'))
-        response_headers.append(('Content-Disposition', "%s; filename=%s" % (contentdisposition, filename)))
-        return response_headers, response_text
-    else:
-        raise HandlingError('invalid output format')
+        contenttype = 'image/png'
+        response_text = get_png_contents(latex_text)
+    # return the response
+    disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', disposition)]
+    return response_headers, response_text
 
 def create_temp_pdf_file(latex_text):
     """

@@ -34,14 +34,8 @@ def get_form():
                 Form.CheckItem('axes', 'draw axes', True),
                 Form.CheckItem('connections', 'draw connections', True),
                 Form.CheckItem('vertices', 'draw vertices', True)]),
-            Form.RadioGroup('imageformat', 'image format options', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_eigenvectors(row_major_matrix):
@@ -158,17 +152,19 @@ def get_response(fs):
     M = fs.matrix
     if M.shape[0] < 3 or M.shape[1] < 3:
         raise HandlingError('expected at least a 3x3 matrix')
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'plot.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = get_image(M.tolist(), (640, 480), fs.imageformat, fs.axes, fs.connections, fs.vertices)
+        image_string = get_image(M.tolist(), (640, 480), ext,
+                fs.axes, fs.connections, fs.vertices)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # specify the content type
-    response_headers = []
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[fs.imageformat]))
-    # specify the content disposition
-    image_filename = 'plot.' + fs.imageformat
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, image_filename)))
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string

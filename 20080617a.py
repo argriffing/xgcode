@@ -26,14 +26,8 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.MultiLine('selection', 'selected taxa', '\n'.join('ABFG')),
-            Form.RadioGroup('imageformat', 'image format options', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery options', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def split_branches(tree):
@@ -134,17 +128,18 @@ def get_response(fs):
         layout.do_layout(tree)
     except RuntimeError, e:
         pass
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'tree.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(
-                tree, (640, 480), fs.imageformat)
+        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # specify the content type
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[fs.imageformat]))
-    # specify the content disposition
-    image_filename = 'tree.' + fs.imageformat
-    response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.contentdisposition, image_filename)))
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string

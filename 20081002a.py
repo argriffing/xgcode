@@ -11,8 +11,6 @@ import math
 from SnippetUtil import HandlingError
 import RUtil
 import SpiralSampler
-from Form import CheckItem
-from Form import RadioItem
 import Form
 
 def get_form():
@@ -25,13 +23,12 @@ def get_form():
             Form.Float('stddev', 'standard deviation of the noise',
                 0.1, low_exclusive=0),
             Form.CheckGroup('label_options', 'label options', [
-                CheckItem('add_labels', 'add group label to each row', True)]),
+                Form.CheckItem('add_labels',
+                    'add group label to each row', True)]),
             Form.RadioGroup('format', 'format options', [
-                RadioItem('raw', 'rows of tab separated values', True),
-                RadioItem('table', 'R table format')]),
-            Form.RadioGroup('contentdisposition', 'delivery options', [
-                RadioItem('inline', 'view', True),
-                RadioItem('attachment', 'download')])]
+                Form.RadioItem('raw', 'rows of tab separated values', True),
+                Form.RadioItem('table', 'R table format')]),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -59,8 +56,9 @@ def get_response(fs):
     elif fs.table:
         response_text = RUtil.get_table_string(data_rows, headers)
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
     disposition = "%s; filename=%s" % (fs.contentdisposition, 'spiral.table')
-    response_headers.append(('Content-Disposition', disposition))
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
     return response_headers, response_text
 

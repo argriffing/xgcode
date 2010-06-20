@@ -33,14 +33,8 @@ def get_form():
                     'x axis is the path distance', True),
                 Form.RadioItem('xaxis_firstvector',
                     'x axis is the first MDS vector')]),
-            Form.RadioGroup('imageformat', 'image format', [
-                Form.RadioItem('png', 'png', True),
-                Form.RadioItem('svg', 'svg'),
-                Form.RadioItem('pdf', 'pdf'),
-                Form.RadioItem('ps', 'ps')]),
-            Form.RadioGroup('contentdisposition', 'image delivery', [
-                Form.RadioItem('inline', 'view the image', True),
-                Form.RadioItem('attachment', 'download the image')])]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def create_laplacian_matrix(nvertices):
@@ -80,17 +74,22 @@ def get_response(fs):
     for i in range(g_naxes):
         if F[i][0] < 0:
             F[i] *= -1
-    # create the image string
-    image_string = create_image_string(fs.imageformat, physical_size, F, fs.xaxis_length)
-    # create the response headers
-    image_basename = 'mds'
-    response_headers = []
-    format_to_content_type = {'svg':'image/svg+xml', 'png':'image/png', 'pdf':'application/pdf', 'ps':'application/postscript'}
-    response_headers.append(('Content-Type', format_to_content_type[fs.imageformat]))
-    response_headers.append(('Content-Disposition', "%s; filename=%s.%s" % (fs.contentdisposition, image_basename, fs.imageformat)))
+    # get some options
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
+    filename = 'mds.' + ext
+    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
+    # draw the image
+    try:
+        image_string = create_image_string(
+                ext, physical_size, F, fs.xaxis_length)
+    except CairoUtil.CairoUtilError, e:
+        raise HandlingError(e)
     # return the response
+    response_headers = [
+            ('Content-Type', contenttype),
+            ('Content-Disposition', contentdisposition)]
     return response_headers, image_string
-
 
 def create_image_string(image_format, physical_size, F, xaxis_length):
     """

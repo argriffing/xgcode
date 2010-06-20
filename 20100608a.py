@@ -82,9 +82,7 @@ def get_form():
                     'add row indices for R table compatibility', True),
                 Form.CheckItem('clean_isolates',
                     'force first-column elements to be IC-prefixed', True)]),
-            Form.RadioGroup('contentdisposition', 'delivery options', [ 
-                Form.RadioItem('inline', 'view', True), 
-                Form.RadioItem('attachment', 'download')])] 
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -93,9 +91,10 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     text = process(fs, fs.hud.splitlines())
-    response_headers = [('Content-Type', 'text/plain')] 
     disposition = "%s; filename=%s" % (fs.contentdisposition, 'pc.table') 
-    response_headers.append(('Content-Disposition', disposition)) 
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
     return response_headers, text
 
 def main(args):
