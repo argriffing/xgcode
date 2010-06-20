@@ -6,16 +6,16 @@ import numpy as np
 import MatrixUtil
 
 g_imageformat_to_contenttype = {
-        'svg':'image/svg+xml',
-        'png':'image/png',
-        'pdf':'application/pdf',
-        'postscript':'application/postscript'}
+        'svg' : 'image/svg+xml',
+        'png' : 'image/png',
+        'pdf' : 'application/pdf',
+        'postscript' : 'application/postscript'}
 
 g_imageformat_to_ext = {
         'svg' : 'svg',
         'png' : 'png',
         'pdf' : 'pdf',
-        'postscript', 'ps'}
+        'postscript' : 'ps'}
 
 def get_html_string(form_objects):
     """

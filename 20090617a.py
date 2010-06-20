@@ -333,7 +333,7 @@ def get_form():
                 RadioItem('tikz', 'TikZ code', True),
                 RadioItem('latex', 'full LaTeX code'),
                 RadioItem('pdf', 'pdf'),
-                RadioItem('png', 'png')],
+                RadioItem('png', 'png')]),
             Form.ContentDisposition()]
     return form_objects
 
