@@ -100,7 +100,7 @@ def do_analysis_helper(labels, element_lists, w):
         header += Monospace.get_ruler_line(i*w + 1, i*w + len(page_row[0]))
         yield header
         for label, element_list in zip(labels, page_row):
-            justified_label = Monospace.left_justify(label, label_width, ' ')
+            justified_label = label.ljust(label_width)
             yield ''.join([justified_label] + list(element_list))
         if i < len(page_rows) - 1:
             yield ''
