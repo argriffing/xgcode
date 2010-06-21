@@ -79,7 +79,7 @@ def get_response(fs):
     image_string = process(fs, fs.table.splitlines())
     # get some options
     ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = '.'.join((args.shape, args.color, 'pca', '3d', ext))
+    filename = '.'.join((fs.shape, fs.color, 'pca', '3d', ext))
     contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
     contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # return the response
