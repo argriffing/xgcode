@@ -32,7 +32,7 @@ def get_stripped_lines(raw_lines):
     """
     @return: a list of nonempty stripped lines
     """
-    return list(iterutils.stripped_lines(lines))
+    return list(iterutils.stripped_lines(raw_lines))
 
 def choose(n, k):
     """
