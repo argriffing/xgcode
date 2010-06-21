@@ -7,7 +7,28 @@ def get_first(elements):
     for element in elements:
         return element
 
-def get_stripped_lines(lines):
+def get_paragraphs(raw_lines):
+    """
+    Leading and trailing whitespace of each line is removed.
+    Paragraphs are lists of lines that are separated by blank lines.
+    @param raw_lines: raw lines of input
+    @return: a list of stripped line lists
+    """
+    paragraphs = []
+    paragraph = []
+    for line in raw_lines:
+        stripped_line = line.strip()
+        if stripped_line:
+            paragraph.append(stripped_line)
+        else:
+            if paragraph:
+                paragraphs.append(paragraph)
+            paragraph = []
+    if paragraph:
+        paragraphs.append(paragraph)
+    return paragraphs
+
+def get_stripped_lines(raw_lines):
     """
     @return: a list of nonempty stripped lines
     """

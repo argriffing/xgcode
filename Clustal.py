@@ -6,31 +6,12 @@ This module assumes that the clustalw file fits easily in memory.
 import unittest
 from StringIO import StringIO
 
+import Util
+
 
 class ClustalError(Exception):
     pass
 
-
-def _get_list_of_paragraphs(raw_lines):
-    """
-    Leading and trailing whitespace of each line is removed.
-    Paragraphs are lists of lines that are separated by blank lines.
-    @param raw_lines: raw lines of a clustalw multiple sequence alignment
-    @return: a list of stripped line lists
-    """
-    paragraphs = []
-    paragraph = []
-    for line in raw_lines:
-        stripped_line = line.strip()
-        if stripped_line:
-            paragraph.append(stripped_line)
-        else:
-            if paragraph:
-                paragraphs.append(paragraph)
-            paragraph = []
-    if paragraph:
-        paragraphs.append(paragraph)
-    return paragraphs
 
 def get_headers_and_sequences(raw_lines):
     """
@@ -39,7 +20,7 @@ def get_headers_and_sequences(raw_lines):
     """
     taxa = None
     sequences_of_chunks = None
-    paragraphs = _get_list_of_paragraphs(raw_lines)
+    paragraphs = Util.get_paragraphs(raw_lines)
     for paragraph in paragraphs:
         # identify and skip the header paragraph
         first_line = paragraph[0]
@@ -49,16 +30,23 @@ def get_headers_and_sequences(raw_lines):
         taxon_chunk_pairs = [line.split() for line in paragraph]
         for taxon_chunk_pair in taxon_chunk_pairs:
             if len(taxon_chunk_pair) != 2:
-                raise ClustalError('each sequence line should be two whitespace separated strings')
+                msg_a = 'each sequence line '
+                msg_b = 'should be two whitespace separated strings'
+                raise ClustalError(msg_a + msg_b)
         # validate the paragraph (taxon, chunk) pairs
         paragraph_taxa, chunks = zip(*taxon_chunk_pairs)
         if len(set(len(chunk) for chunk in chunks)) > 1:
-            raise ClustalError('within each paragraph each sequence chunk should be the same length')
+            msg_a = 'within each paragraph each sequence chunk '
+            msg_b = 'should be the same length'
+            raise ClustalError(msg_a + msg_b)
         if taxa:
             if len(taxa) != len(paragraph_taxa):
-                raise ClustalError('each paragraph should have the same number of taxa')
+                msg = 'each paragraph should have the same number of taxa'
+                raise ClustalError(msg)
             if taxa != paragraph_taxa:
-                raise ClustalError('each paragraph should have the same taxa in the same order')
+                msg_a = 'each paragraph should have the same taxa '
+                msg_b = 'in the same order'
+                raise ClustalError(msg_a + msg_b)
         else:
             taxa = paragraph_taxa
         # append the chunks to the sequences of chunks
@@ -67,11 +55,12 @@ def get_headers_and_sequences(raw_lines):
         for sequence_of_chunks, chunk in zip(sequences_of_chunks, chunks):
             sequence_of_chunks.append(chunk)
     # for each taxon merge the sequence of chunks into a single string
-    sequences = [''.join(sequence_of_chunks) for sequence_of_chunks in sequences_of_chunks]
+    sequences = [''.join(x) for x in sequences_of_chunks]
     return taxa, sequences
 
 # This is how someone decided that the sample taxa are supposed to be grouped
-g_sample_cluster_labels = (1,1,1,1,2,3,3,3,3,3,3,3,4,1,1,1,1,1,1,1,1,3,3,3,3,5,5,5,3)
+g_sample_cluster_labels = (
+        1,1,1,1,2,3,3,3,3,3,3,3,4,1,1,1,1,1,1,1,1,3,3,3,3,5,5,5,3)
 
 # Sample data from http://pbil.univ-lyon1.fr/mva/pco.php
 g_sample_data = """
@@ -433,31 +422,23 @@ class TestClustal(unittest.TestCase):
         # check for basic inconsistencies
         self.assertEqual(len(headers), len(sequences))
         self.assertEqual(len(headers), len(g_sample_cluster_labels))
-        # compare the header and sequence of the third item to the expected values
+        # Compare the header and sequence of the third item
+        # to the expected values.
         expected_taxon = 'E.coli'
-        expected_chunks = [
-                '-------------------------------------------------------MTNYR',
-                'VESSSG-----RAARKMRLALMGPAFIAAIGYIDPGNFATNIQAGASFGYQLLWVVVWAN',
-                'LMAMLIQILSAKLGIATGKNLAEQIRDHYPRPVVWFYWVQAEIIAMATDLAEFIGAAIGF',
-                'KLILGVSLLQGAVLTGIATFLILMLQ-RRGQ------KPLEKVIGGLLLFVAAAYIVELI',
-                'FSQPN--LAQLGKGMVIP------SLPTS---EAVFLAAGVLGATIMPHVIYLHSSLTQ-',
-                '-----------------------------------HLHGGSRQQR---YSATKWDVAIAM',
-                'T-IAGFVNLAMMATAAAAFHFSGHTG-VADLDEAYLTLQPLLSHAAAT------VFGLSL',
-                'VAAGLSSTVVGTLAGQVVMQGFIRFHIPLWVRRTVT----MLP-SFIVILMG---LDPTR',
-                'ILVMSQVLLSFGIALALVPLLIFTSDSKLMGDLVN-------------------------',
-                '---------------------------SKRVKQTGWVIVVLVVALNIWLLVGTALGL---',
-                '---']
-        expected_sequence = ''.join(expected_chunks)
+        expected_sequence = (
+                '-------------------------------------------------------MTNYR'
+                'VESSSG-----RAARKMRLALMGPAFIAAIGYIDPGNFATNIQAGASFGYQLLWVVVWAN'
+                'LMAMLIQILSAKLGIATGKNLAEQIRDHYPRPVVWFYWVQAEIIAMATDLAEFIGAAIGF'
+                'KLILGVSLLQGAVLTGIATFLILMLQ-RRGQ------KPLEKVIGGLLLFVAAAYIVELI'
+                'FSQPN--LAQLGKGMVIP------SLPTS---EAVFLAAGVLGATIMPHVIYLHSSLTQ-'
+                '-----------------------------------HLHGGSRQQR---YSATKWDVAIAM'
+                'T-IAGFVNLAMMATAAAAFHFSGHTG-VADLDEAYLTLQPLLSHAAAT------VFGLSL'
+                'VAAGLSSTVVGTLAGQVVMQGFIRFHIPLWVRRTVT----MLP-SFIVILMG---LDPTR'
+                'ILVMSQVLLSFGIALALVPLLIFTSDSKLMGDLVN-------------------------'
+                '---------------------------SKRVKQTGWVIVVLVVALNIWLLVGTALGL---'
+                '---')
         self.assertEqual(expected_taxon, headers[2])
         self.assertEqual(expected_sequence, sequences[2])
 
-
-def main():
-    """
-    Run tests by default.
-    """
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestClustal)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
 if __name__ == '__main__':
-    main()
+    unittest.main()
