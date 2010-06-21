@@ -6,7 +6,6 @@ http://www.molecularevolution.org/resources/fileformats/phylip_dna
 import unittest
 from StringIO import StringIO
 
-import Monospace
 import Fasta
 import iterutils
 import Util
@@ -77,10 +76,11 @@ def get_alignment_string_interleaved(alignment):
             iterutils.chopped(seq, 60) for seq in alignment.sequences]
     bands = zip(*chopped_sequences)
     out = StringIO()
-    lengths = [9] + [len(header) for header in alignment.headers]
     print >> out, len(alignment.headers), len(alignment.sequences[0])
+    lengths = [9] + [len(header) for header in alignment.headers]
+    n = max(lengths)
     for header, segment in zip(alignment.headers, bands[0]):
-        aligned_header = Monospace.left_justify(header, max(lengths), ' ')
+        aligned_header = header.ljust(n)
         print >> out, '%s  %s' % (aligned_header, segment)
     print >> out, ''
     for band in bands[1:]:
