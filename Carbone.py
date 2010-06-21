@@ -3,6 +3,7 @@ Add stuff specific to this PCA fungus project.
 """
 
 import re
+from collections import defaultdict
 
 import numpy as np
 
@@ -90,11 +91,19 @@ class RTable(object):
     def header_to_primary_column(self, header):
         column_index = self.header_to_column_index(header)
         column = [row[column_index] for row in self.data]
-        if len(column) != len(set(column)):
-            msg = 'expected the column to have unique elements'
-            raise RTableError(msg)
+        d = defaultdict(int)
+        for x in column:
+            d[x] += 1
+        repeated_keys = [k for k, v in d.items() if v > 1]
+        if len(repeated_keys) > 5:
+            msg_a = '%d repeated keys ' % len(repeated_keys)
+            msg_b = 'found in the primary column'
+            raise RTableError(msg_a + msg_b)
+        elif repeated_keys:
+            msg_a = 'repeated keys in the primary column: '
+            msg_b = ', '.join(repeated_keys)
+            raise RTableError(msg_a + msg_b)
         return column
-
 
 
 class WordError(Exception): pass
