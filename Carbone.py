@@ -4,10 +4,13 @@ Add stuff specific to this PCA fungus project.
 
 import re
 from collections import defaultdict
+import itertools
 
 import numpy as np
 
 import Util
+import iterutils
+
 
 g_header_pattern = r'^[a-zA-Z][a-zA-Z0-9]*$'
 
@@ -140,3 +143,45 @@ def get_words(lines):
     words = [Word(line) for line in lines]
     validate_words(words)
     return words
+
+def _get_compound_column(column):
+    """
+    This is a step in converting a multivalued matrix to a binary matrix.
+    @param column: a list
+    @return: a list of binary lists
+    """
+    uniq = list(iterutils.unique_everseen(column))
+    n = len(uniq)
+    element_to_index = dict((x, i) for i, x in enumerate(uniq))
+    index_column = [element_to_index[x] for x in column]
+    compound_column = []
+    for index in index_column:
+        sublist = [(1 if i == index else 0) for i in range(n)]
+        compound_column.append(sublist)
+    return compound_column
+
+def get_binary_rows(multivalued_rows):
+    """
+    Convert multivalued data to binary data.
+    @param multivalued_rows: elements of each rows can be anything
+    @return: longer rows of binary elements
+    """
+    # get the columns
+    columns = zip(*multivalued_rows)
+    # convert to compound binary columns
+    compound_columns = [_get_compound_column(x) for x in columns]
+    # convert to compound binary rows
+    compound_rows = zip(*compound_columns)
+    # convert to simple binary rows
+    return [list(itertools.chain(*x)) for x in compound_rows]
+
+def get_hud_content(headers, rows):
+    """
+    @param headers: strings
+    @param rows: a row major binary matrix
+    @return: the content of a .hud file
+    """
+    n = max(len(x) for x in headers)
+    ljust_headers = (x.ljust(n+1) for x in headers)
+    data_lines = [' '.join(str(x) for x in row) for row in rows]
+    return '\n'.join(h + str(x) for h, x in zip(ljust_headers, data_lines))
