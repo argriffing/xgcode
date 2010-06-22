@@ -45,6 +45,8 @@ def get_form():
             Form.RadioGroup('mdefgroup', 'missing input data', [
                 Form.RadioItem('star_missing_in',
                     '* is interpreted as missing data', True),
+                Form.RadioItem('NULL_missing_in',
+                    'NULL is interpreted as missing data'),
                 Form.RadioItem('no_missing_in',
                     'no data is missing')]),
             Form.RadioGroup('mhandlegroup', 'missing output data', [
@@ -87,6 +89,8 @@ def process(args, raw_info_lines, raw_input_headers, raw_output_headers):
     # account for missing input data
     if args.star_missing_in:
         data_rows = [[None if v=='*' else v for v in r] for r in data_rows]
+    elif args.NULL_missing_in:
+        data_rows = [[None if v=='NULL' else v for v in r] for r in data_rows]
     # define the renamed input headers
     input_headers = Util.get_stripped_lines(raw_input_headers)
     if len(input_headers) < len(header):
