@@ -144,21 +144,36 @@ def get_words(lines):
     validate_words(words)
     return words
 
-def _get_compound_column(column):
+def get_compound_column(column, uniques):
     """
     This is a step in converting a multivalued matrix to a binary matrix.
+    Note that 'uniques' may have elements not in 'column'.
     @param column: a list
+    @param uniques: a list of ordered unique elements at this position
     @return: a list of binary lists
     """
-    uniq = list(iterutils.unique_everseen(column))
-    n = len(uniq)
-    element_to_index = dict((x, i) for i, x in enumerate(uniq))
+    n = len(uniques)
+    element_to_index = dict((x, i) for i, x in enumerate(uniques))
     index_column = [element_to_index[x] for x in column]
     compound_column = []
     for index in index_column:
         sublist = [(1 if i == index else 0) for i in range(n)]
         compound_column.append(sublist)
     return compound_column
+
+def get_binary_rows_helper(columns, uniques):
+    """
+    Convert multivalued data to binary data.
+    @param multivalued_columns: list of lists whose elements are anything
+    @param uniques: list of unique element lists
+    @return: longer rows of binary elements
+    """
+    compound_columns = [
+            get_compound_column(x, u) for x, u in zip(columns, uniques)]
+    # convert to compound binary rows
+    compound_rows = zip(*compound_columns)
+    # convert to simple binary rows
+    return [list(itertools.chain(*x)) for x in compound_rows]
 
 def get_binary_rows(multivalued_rows):
     """
@@ -169,11 +184,9 @@ def get_binary_rows(multivalued_rows):
     # get the columns
     columns = zip(*multivalued_rows)
     # convert to compound binary columns
-    compound_columns = [_get_compound_column(x) for x in columns]
-    # convert to compound binary rows
-    compound_rows = zip(*compound_columns)
+    uniques = [list(iterutils.unique_everseen(x)) for x in columns]
     # convert to simple binary rows
-    return [list(itertools.chain(*x)) for x in compound_rows]
+    return get_binary_rows_helper(columns, uniques)
 
 def get_hud_content(headers, rows):
     """
