@@ -1,28 +1,27 @@
-"""Fungus csv janitor.
+"""Fungus tsv janitor.
 
-Clean the fungus csv file using ad hoc codes.
+Clean the fungus tsv file using ad hoc codes.
 The output is an R table.
 """
 
 from StringIO import StringIO
-import csv
 
 from SnippetUtil import HandlingError
 import Form
 import Util
 import Carbone
 
-g_info_lines = [
-        '"IC","Haplo","Location","Temp (C)","Precip (mm)","Species",'
-            '"B1","B2","G1","G2","OMST"',
-        '"1","H42","GA","15","600","Ap","+","+","+","+","-"',
-        '"2","H42","GA","30","700","Ap","+","+","+","+","-"',
-        '"3","*","GA","45","800","Ap","+","+","+","+","-"']
+g_info_rows = [
+        ['IC', 'Location', 'Temp_C', 'Precip_mm', 'Species'],
+        ['IC13', 'GA', '15', '600', 'Ap'],
+        ['IC14', 'GA', '15', '600', 'Ap'],
+        ['IC1493', 'LA', '15', '600', 'Ano'],
+        ['IC1494', 'LA', '15', '600', 'Ano']]
+
+g_info_lines = ['\t'.join(row) for row in g_info_rows]
 
 g_input_headers = [
-        'otu', 'haplotype', 'location', 'temperature',
-        'precipitation', 'species',
-        'b1', 'b2', 'g1', 'g2', 'omst']
+        'otu', 'location', 'temperature', 'precipitation', 'species']
 
 g_output_headers = [
         'temperature', 'precipitation', 'otu']
@@ -33,7 +32,7 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.MultiLine('info', 'amdS_PCA_Info.csv lines',
+            Form.MultiLine('info', 'a table with column but not row headers',
                 '\n'.join(g_info_lines)),
             Form.MultiLine('input_headers', 'renamed column headers',
                 '\n'.join(g_input_headers)),
@@ -75,8 +74,7 @@ def get_response(fs):
 
 def process(args, raw_info_lines, raw_input_headers, raw_output_headers):
     info_lines = Util.get_stripped_lines(raw_info_lines)
-    # extract info from the .csv file
-    rows = list(csv.reader(info_lines))
+    rows = [line.split() for line in info_lines]
     # the number of columns should be consistent among rows
     if len(set(len(row) for row in rows)) != 1:
         msg = 'the number of columns should be consistent among rows'
