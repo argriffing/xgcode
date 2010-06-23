@@ -9,7 +9,7 @@ import os
 from SnippetUtil import HandlingError
 import Form
 import Util
-import Carbone
+import hud
 import iterutils
 
 g_a_lines = [
@@ -49,8 +49,8 @@ def get_response(fs):
     return response_headers, text
 
 def process(args, raw_a_lines, raw_b_lines):
-    a_headers, a_data = Carbone.read_hud(raw_a_lines)
-    b_headers, b_data = Carbone.read_hud(raw_b_lines)
+    a_headers, a_data = hud.parse(raw_a_lines)
+    b_headers, b_data = hud.parse(raw_b_lines)
     a_h_to_i = dict((h, i) for i, h in enumerate(a_headers))
     b_h_to_i = dict((h, i) for i, h in enumerate(b_headers))
     b_set = set(b_headers)
@@ -63,4 +63,4 @@ def process(args, raw_a_lines, raw_b_lines):
         if h in b_h_to_i:
             row.extend(b_data[b_h_to_i[h]])
         out_data.append(row)
-    return Carbone.get_hud_content(out_headers, out_data)
+    return hud.to_blob(out_headers, out_data)

@@ -7,6 +7,7 @@ from SnippetUtil import HandlingError
 import Form
 import Phylip
 import Carbone
+import hud
 
 
 g_default_lines = [
@@ -41,4 +42,4 @@ def get_response(fs):
 def process(raw_lines):
     headers, sequences = Phylip.read_non_interleaved(raw_lines)
     binary_rows = Carbone.get_binary_rows(sequences)
-    return Carbone.get_hud_content(headers, binary_rows)
+    return hud.to_blob(headers, binary_rows)

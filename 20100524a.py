@@ -20,7 +20,7 @@ from SnippetUtil import HandlingError
 import Form
 import iterutils
 import Util
-import Carbone
+import hud
 
 g_default_string = """
 foo 1 1 1
@@ -33,7 +33,7 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.MultiLine('words',
+            Form.MultiLine('hud',
                 'a list of OTUs names and binary character vectors',
                 g_default_string),
             Form.Integer('nwords',
@@ -47,11 +47,9 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    lines = Util.get_stripped_lines(StringIO(fs.words))
-    words = [Carbone.Word(line) for line in lines]
-    Carbone.validate_words(words)
-    text = process(words, fs.nwords, fs.nchars)
-    return [('Content-Type', 'text/plain')], text
+    text = process(fs, fs.hud.splitlines())
+    response_headers = [('Content-Type', 'text/plain')]
+    return response_headers, text
 
 def words_to_matrix(words):
     """
@@ -107,23 +105,19 @@ def get_selections(M, nrows, ncols, nseconds):
             best_selections = (row_indices, col_indices)
     return best_selections
 
-def process(words, nwords, nchars, nseconds=2.0):
-    """
-    @param words: a sequence of word objects
-    @param nwords: find a subset of this many word objects
-    @param nchars: find a subset of this many binary characters
-    @param nseconds: a time limit
-    @return: multiline string
-    """
+def process(args, raw_hud_lines, nseconds=2):
+    nwords = args.nwords
+    nchars = args.nchars
+    names, data = hud.parse(raw_hud_lines)
     out = StringIO()
-    if len(words) < nwords:
+    if len(data) < nwords:
         msg = 'the number of OTUs is smaller than the desired sample'
         raise HandlingError(msg)
-    if len(words[0].v) < nchars:
+    if len(data[0]) < nchars:
         msg = 'the number of characters is smaller than the desired sample'
         raise HandlingError(msg)
     # create the matrix
-    M = words_to_matrix(words)
+    M = np.array(data)
     # select row and column indices
     row_indices, col_indices = get_selections(M, nwords, nchars, nseconds)
     sorted_row_indices = list(sorted(row_indices))
@@ -136,16 +130,12 @@ def process(words, nwords, nchars, nseconds=2.0):
     print >> out, 'selected column indices:', sorted_col_indices
     # print some selected values
     for i in sorted_row_indices:
-        w = words[i]
         s = ' '.join(str(M[i,j]) for j in sorted_col_indices)
-        print >> out, w.name + '\t' + s
+        print >> out, names[i] + '\t' + s
     return out.getvalue().rstrip()
 
 def main(args):
-    lines = Util.get_stripped_lines(sys.stdin)
-    words = [Carbone.Word(line) for line in lines]
-    Carbone.validate_words(words)
-    print process(words, args.nwords, args.nchars)
+    print process(args, sys.stdin)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

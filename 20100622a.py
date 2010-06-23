@@ -8,6 +8,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import Form
 import Carbone
+import hud
 import Util
 import iterutils
 
@@ -94,4 +95,4 @@ def read_satellite_lines(raw_lines):
 
 def process(raw_lines):
     headers, binary_rows = read_satellite_lines(raw_lines)
-    return Carbone.get_hud_content(headers, binary_rows)
+    return hud.to_blob(headers, binary_rows)

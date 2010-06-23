@@ -13,26 +13,13 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
-import Carbone
+import hud
 
-g_default_hud_string = """
+g_hud_string = """
 IC1 1 1 1 0
 IC2 1 1 1 0
 IC3 1 0 1 0
 """.strip()
-
-def process(hud_lines):
-    out = StringIO()
-    words = Carbone.get_words(hud_lines)
-    # for each individual get the genotype of each SNP
-    array_per_individual = []
-    for word in words:
-        array_per_individual.append(word.v.tolist())
-    # for each SNP get the genotype for each individual
-    array_per_position = zip(*array_per_individual)
-    for arr in array_per_position:
-        print >> out, ''.join(str(x) for x in arr)
-    return out.getvalue().rstrip()
 
 def get_form():
     """
@@ -41,7 +28,8 @@ def get_form():
     form_objects = [
             Form.MultiLine('hud',
                 'a list of OTUs names and binary character vectors',
-                g_default_hud_string)]
+                g_hud_string),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -50,7 +38,16 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     text = process(fs.hud.splitlines())
-    return [('Content-Type', 'text/plain')], text
+    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.geno') 
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
+    return response_headers, text
+
+def process(raw_hud_lines):
+    names, data = hud.parse(raw_hud_lines)
+    columns = zip(*data)
+    return '\n'.join(''.join(str(x) for x in c) for c in columns)
 
 def main(args):
     with open(os.path.expanduser(args.hud)) as fin_hud:

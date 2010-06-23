@@ -14,7 +14,7 @@ import argparse
 from SnippetUtil import HandlingError
 import Form
 import iterutils
-import Carbone
+import hud
 
 
 g_default_hud_string = """
@@ -39,8 +39,7 @@ def process(hud_lines, matpheno_lines):
     @return: contents of an .ind file
     """
     # get the ordered names from the .hud file
-    words = Carbone.get_words(hud_lines)
-    names = [w.name for w in words]
+    names, hud_data = hud.parse(hud_lines)
     # get case and control status from the matpheno file
     cases = set()
     controls = set()
@@ -79,7 +78,8 @@ def get_form():
                 g_default_hud_string),
             Form.MultiLine('matpheno',
                 'contents of a MAT_pheno.txt file',
-                g_default_matpheno_string)]
+                g_default_matpheno_string),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -88,7 +88,11 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     text = process(fs.hud.splitlines(), fs.matpheno.splitlines())
-    return [('Content-Type', 'text/plain')], text
+    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.ind') 
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
+    return response_headers, text
 
 def main(args):
     with open(os.path.expanduser(args.hud)) as fin_hud:

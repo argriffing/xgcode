@@ -13,7 +13,7 @@ import argparse
 from SnippetUtil import HandlingError
 import Form
 import Util
-import Carbone
+import hud
 
 g_default_string = """
 foo 1 1 1
@@ -25,9 +25,9 @@ def process(lines):
     """
     @param lines: lines of a .hud file
     """
-    word = Carbone.get_words(lines)[0]
+    names, data = hud.parse(lines)
     out = StringIO()
-    for i, genotype in enumerate(word.v):
+    for i, genotype in enumerate(data[0]):
         name = 'SNP_%d' % i
         chromosome = '1'
         morgans = '0.0'
@@ -43,7 +43,8 @@ def get_form():
     form_objects = [
             Form.MultiLine('data',
                 'a list of OTUs names and binary character vectors',
-                g_default_string)]
+                g_default_string),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -52,7 +53,11 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     text = process(fs.data.splitlines())
-    return [('Content-Type', 'text/plain')], text
+    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.snp') 
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
+    return response_headers, text
 
 def main(args):
     print process(sys.stdin)

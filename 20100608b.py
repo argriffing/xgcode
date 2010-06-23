@@ -18,7 +18,7 @@ import Form
 from Form import RadioItem
 import Util
 import EigUtil
-import Carbone
+import hud
 
 g_default_hud_string = """
 IC1 1 1 1 1
@@ -49,10 +49,9 @@ def do_pca(hud_lines):
     @return: names, scaled vectors
     """
     # get the ordered names from the .hud file
-    words = Carbone.get_words(hud_lines)
-    names = [w.name for w in words]
+    names, data = hud.parse(hud_lines)
     # create the floating point count matrix
-    C_full = np.vstack([w.v for w in words])
+    C_full = np.array(data)
     m_full, n_full = C_full.shape
     # remove invariant columns
     C = np.vstack([v for v in C_full.T if len(set(v))>1]).T

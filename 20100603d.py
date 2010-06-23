@@ -46,7 +46,8 @@ def get_form():
     form_objects = [
             Form.MultiLine('ind',
                 'contents of an .ind file',
-                g_default_ind_string)]
+                g_default_ind_string),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -55,7 +56,11 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     text = process(fs.ind.splitlines())
-    return [('Content-Type', 'text/plain')], text
+    disposition = "%s; filename=%s" % (fs.contentdisposition, 'fungus.pheno') 
+    content_type = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
+    return content_type, text
 
 def main(args):
     with open(os.path.expanduser(args.hud)) as fin:

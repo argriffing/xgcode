@@ -14,6 +14,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Carbone
+import hud
 import EigUtil
 import Form
 
@@ -32,14 +33,12 @@ def process(args, raw_hud_lines):
     @return: results in convenient text form
     """
     out = StringIO()
-    # get the ordered names from the .hud file
-    words = Carbone.get_words(raw_hud_lines)
-    names = [w.name for w in words]
+    names, data = hud.parse(raw_hud_lines)
     # normalize the names of the isolates
     if args.clean_isolates:
         names = [Carbone.clean_isolate_element(x) for x in names]
     # create the floating point count matrix
-    C_full = np.vstack([w.v for w in words])
+    C_full = np.array(data)
     m_full, n_full = C_full.shape
     # remove invariant columns
     C = np.vstack([v for v in C_full.T if len(set(v))>1]).T

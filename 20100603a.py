@@ -17,7 +17,7 @@ import argparse
 from SnippetUtil import HandlingError
 import Form
 import Util
-import Carbone
+import hud
 
 g_default_hud_string = """
 IC1 1 1 1 0
@@ -53,7 +53,8 @@ def get_form():
                 g_default_info_string),
             Form.Float('threshold',
                     'temperature threshold (C)',
-                    '22.0')]
+                    '22.0'),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_response(fs):
@@ -62,7 +63,11 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     text = process(fs.hud.splitlines(), fs.info.splitlines(), fs.threshold)
-    return [('Content-Type', 'text/plain')], text
+    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.ind') 
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
+    return response_headers, text
 
 def get_temperature_info(data_rows, threshold):
     """
@@ -89,9 +94,8 @@ def get_temperature_info(data_rows, threshold):
 
 def process(hud_lines, info_lines, threshold):
     out = StringIO()
-    # extract names from the .hud file
-    words = Carbone.get_words(hud_lines)
-    names = [word.name for word in words]
+    # extract name order from the .hud file
+    names, hud_data = hud.parse(hud_lines)
     # read the csv file
     rows = list(csv.reader(info_lines))
     header, data_rows = rows[0], rows[1:]
