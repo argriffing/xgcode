@@ -108,80 +108,6 @@ class RTable(object):
             raise RTableError(msg_a + msg_b)
         return column
 
-
-class WordError(Exception): pass
-
-class Word(object):
-    def __init__(self, line):
-        # store the original line
-        self.line = line
-        # extract the name and the binary vector
-        elements = line.split()
-        self.name = elements[0]
-        for x in elements[1:]:
-            if x not in ('0', '1'):
-                msg = 'expected 0 or 1 but got ' + x
-                raise WordError(msg)
-        self.v = np.array([int(x) for x in elements[1:]])
-
-def validate_words(words):
-    """
-    Make sure the binary vectors are the same lengths.
-    @param words: word objects
-    """
-    lengths = set(len(w.v) for w in words)
-    if len(lengths) != 1:
-        msg = 'each binary vector should be the same length'
-        raise WordError(msg)
-
-def get_words(lines):
-    """
-    @param lines: lines of a .hud file
-    @return: a list of validated words
-    """
-    lines = Util.get_stripped_lines(lines)
-    words = [Word(line) for line in lines]
-    validate_words(words)
-    return words
-
-class HudError(Exception): pass
-
-def read_hud(raw_lines):
-    """
-    @param raw_lines: raw lines of a hud file
-    @return: headers, data
-    """
-    lines = Util.get_stripped_lines(raw_lines)
-    if not lines:
-        return [], []
-    rows = [line.split() for line in lines]
-    ncols = len(rows[0])
-    for row in rows:
-        if len(row) != ncols:
-            msg_a = 'all rows of a .hud table '
-            msg_b = 'should have the same number of elements'
-            raise HudError(msg_a + msg_b)
-    headers = [row[0] for row in rows]
-    header_counts = defaultdict(int)
-    for h in headers:
-        header_counts[h] += 1
-    repeats = [k for k, v in header_counts.items() if v > 1]
-    if len(repeats) > 5:
-        msg = '%d repeated OTUs within a table' % len(repeats)
-        raise HudError(msg)
-    elif repeats:
-        msg = 'repeated OTUs within a table: ' + ', '.join(repeats)
-        raise HudError(msg)
-    data = [row[1:] for row in rows]
-    for row in data:
-        for element in row:
-            if element not in list('012'):
-                msg = 'invalid diploid or haploid element: ' + element
-                raise HudError(msg)
-    data = [[int(x) for x in row] for row in data]
-    return headers, data
-
-
 def get_compound_column(column, uniques):
     """
     This is a step in converting a multivalued matrix to a binary matrix.
@@ -225,14 +151,3 @@ def get_binary_rows(multivalued_rows):
     uniques = [list(iterutils.unique_everseen(x)) for x in columns]
     # convert to simple binary rows
     return get_binary_rows_helper(columns, uniques)
-
-def get_hud_content(headers, rows):
-    """
-    @param headers: strings
-    @param rows: a row major binary matrix
-    @return: the content of a .hud file
-    """
-    n = max(len(x) for x in headers)
-    ljust_headers = (x.ljust(n+1) for x in headers)
-    data_lines = [' '.join(str(x) for x in row) for row in rows]
-    return '\n'.join(h + str(x) for h, x in zip(ljust_headers, data_lines))
