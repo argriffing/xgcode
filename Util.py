@@ -3,6 +3,15 @@ import unittest
 
 import iterutils
 
+def inverse_map(xs):
+    """
+    Get a map from element to index.
+    Be careful when elements are repeated.
+    @param xs: an iterable
+    @return: a map from element to index
+    """
+    return dict((x, i) for i, x in enumerate(xs))
+
 def get_first(elements):
     for element in elements:
         return element

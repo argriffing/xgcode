@@ -5,6 +5,9 @@ A .hud table is an alignment of binary (haploid) or ternary (diploid) traits.
 
 from StringIO import StringIO
 import os
+import itertools
+
+import argparse
 
 from SnippetUtil import HandlingError
 import Form
@@ -41,26 +44,44 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    text = process(fs, fs.table_a.splitlines(), fs.table_b.splitlines())
+    text = process([fs.table_a.splitlines(), fs.table_b.splitlines()])
     disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.hud') 
     response_headers = [
             ('Content-Type', 'text/plain'),
             ('Content-Disposition', disposition)]
     return response_headers, text
 
-def process(args, raw_a_lines, raw_b_lines):
-    a_headers, a_data = hud.parse(raw_a_lines)
-    b_headers, b_data = hud.parse(raw_b_lines)
-    a_h_to_i = dict((h, i) for i, h in enumerate(a_headers))
-    b_h_to_i = dict((h, i) for i, h in enumerate(b_headers))
-    b_set = set(b_headers)
-    out_headers = [h for h in a_headers if h in b_set]
+def process(line_sources):
+    """
+    @param line_sources: sources of line iterables
+    """
+    # get the headers and data from all of the input sources
+    header_data_pairs = [hud.parse(lines) for lines in line_sources]
+    header_list, data_list = zip(*header_data_pairs)
+    # get the header to index map for each input source
+    h_to_i_list = [Util.inverse_map(x) for x in header_list]
+    # get the intersection of headers in all lists
+    header_sets = [set(x) for x in header_list]
+    header_intersection = set.intersection(*header_sets)
+    # get the ordered list of all headers
+    unique_headers = list(iterutils.unique_everseen(
+            itertools.chain.from_iterable(header_list)))
+    # get the ordered list of headers present in every input source
+    out_headers = [h for h in unique_headers if h in header_intersection]
     out_data = []
     for h in out_headers:
         row = []
-        if h in a_h_to_i:
-            row.extend(a_data[a_h_to_i[h]])
-        if h in b_h_to_i:
-            row.extend(b_data[b_h_to_i[h]])
+        for data, h_to_i in zip(data_list, h_to_i_list):
+            if h in h_to_i:
+                row.extend(data[h_to_i[h]])
         out_data.append(row)
     return hud.to_blob(out_headers, out_data)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('infiles', type=argparse.FileType('r'), nargs='+',
+            help='.hud files to be combined')
+    args = parser.parse_args()
+    main(args)
+    for f in args.infiles:
+        f.close()
