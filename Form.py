@@ -259,16 +259,12 @@ class RadioItem:
         @param group_label: the label of the radio button group
         @return: the list of lines of html text
         """
-        lines = []
-        # get the escaped label and description
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
         esc_group_label = cgi.escape(group_label)
-        # add the line that makes the radiobox
-        lines.append(_get_radio_line(esc_group_label, esc_label, self.default))
-        # add the line that makes the label
-        lines.append(_get_label_line(esc_label, esc_description))
-        # return the list of lines
+        lines = [
+                _get_radio_line(esc_group_label, esc_label, self.default),
+                _get_label_line(esc_label, esc_description)]
         return lines
 
 
@@ -288,15 +284,11 @@ class CheckItem:
         """
         @return: the list of lines of html text
         """
-        lines = []
-        # get the escaped label and description
         escaped_label = cgi.escape(self.label)
         escaped_description = cgi.escape(self.description)
-        # add the line that makes the checkbox
-        lines.append(_get_checkbox_line(escaped_label, self.default))
-        # add the line that makes the label
-        lines.append(_get_label_line(escaped_label, escaped_description))
-        # return the list of lines
+        lines = [
+                _get_checkbox_line(escaped_label, self.default),
+                _get_label_line(escaped_label, escaped_description)]
         return lines
 
     def process_fieldstorage(self, fs):
@@ -336,18 +328,18 @@ class SingleLine:
         """
         @return: the list of lines of html text
         """
-        lines = []
         # calculate a multiple of ten that will hold the string
         width = ((len(self.default_line) / 10) + 1) * 10
         # get escaped values
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(self.default_line)
-        # add the label line followed by a line break
-        lines.append(_get_colon_label_line(esc_label, esc_description))
-        lines.append('<br/>')
-        # add the textbox line
-        lines.append(_get_textbox_line(esc_label, esc_default_line, width))
+        lines = [
+                # add the label line followed by a line break
+                _get_colon_label_line(esc_label, esc_description),
+                '<br/>',
+                # add the textbox line
+                _get_textbox_line(esc_label, esc_default_line, width)]
         # return the list of lines
         return lines
 
@@ -403,7 +395,6 @@ class Float:
         """
         @return: the list of lines of html text
         """
-        lines = []
         # get the default line of text
         default_line = str(self.default_float)
         # calculate a multiple of ten that will hold the string
@@ -412,11 +403,12 @@ class Float:
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(default_line)
-        # add the label line followed by a line break
-        lines.append(_get_colon_label_line(esc_label, esc_description))
-        lines.append('<br/>')
-        # add the textbox line
-        lines.append(_get_textbox_line(esc_label, esc_default_line, width))
+        lines = [
+                # add the label line followed by a line break
+                _get_colon_label_line(esc_label, esc_description),
+                '<br/>',
+                # add the textbox line
+                _get_textbox_line(esc_label, esc_default_line, width)]
         # return the list of lines
         return lines
 
@@ -501,7 +493,6 @@ class Integer:
         """
         @return: the list of lines of html text
         """
-        lines = []
         # get the default line of text
         default_line = str(self.default_integer)
         # calculate a multiple of ten that will hold the string
@@ -510,11 +501,12 @@ class Integer:
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
         esc_default_line = cgi.escape(default_line)
-        # add the label line followed by a line break
-        lines.append(_get_colon_label_line(esc_label, esc_description))
-        lines.append('<br/>')
-        # add the textbox line
-        lines.append(_get_textbox_line(esc_label, esc_default_line, width))
+        lines = [
+                # add the label line followed by a line break
+                _get_colon_label_line(esc_label, esc_description),
+                '<br/>',
+                # add the textbox line
+                _get_textbox_line(esc_label, esc_default_line, width)]
         # return the list of lines
         return lines
 
@@ -581,7 +573,6 @@ class Matrix:
         """
         @return: the list of lines of html text
         """
-        lines = []
         # get the number of rows to use for the textarea
         sio = StringIO(MatrixUtil.m_to_string(self.default_matrix))
         nrows = len(list(sio.readlines())) + 1
@@ -592,16 +583,14 @@ class Matrix:
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
         esc_default_string = cgi.escape(default_string)
-        # add the label line followed by a line break
-        lines.append(_get_colon_label_line(esc_label, esc_description))
-        lines.append('<br/>')
-        # add the textarea header
-        lines.append(_get_textarea_header(esc_label, nrows))
-        # add the multiple lines of default text
-        lines.append(esc_default_string)
-        # add the textarea footer
-        textarea_footer = '</textarea>'
-        lines.append(textarea_footer)
+        lines = [
+                # add the label line followed by a line break
+                _get_colon_label_line(esc_label, esc_description),
+                '<br/>',
+                # add the textarea
+                _get_textarea_header(esc_label, nrows),
+                esc_default_string,
+                '</textarea>']
         # return the list of lines
         return lines
 
@@ -653,7 +642,6 @@ class MultiLine:
         """
         @return: the list of lines of html text
         """
-        lines = []
         # get the number of rows to use for the textarea
         sio = StringIO(self.default_string)
         nrows = len(list(sio.readlines())) + 1
@@ -662,16 +650,14 @@ class MultiLine:
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
         esc_default_string = cgi.escape(self.default_string)
-        # add the label line followed by a line break
-        lines.append(_get_colon_label_line(esc_label, esc_description))
-        lines.append('<br/>')
-        # add the textarea header
-        lines.append(_get_textarea_header(esc_label, nrows))
-        # add the multiple lines of default text
-        lines.append(esc_default_string)
-        # add the textarea footer
-        textarea_footer = '</textarea>'
-        lines.append(textarea_footer)
+        lines = [
+                # add the label line followed by a line break
+                _get_colon_label_line(esc_label, esc_description),
+                '<br/>',
+                # add the textarea
+                _get_textarea_header(esc_label, nrows),
+                esc_default_string,
+                '</textarea>']
         # return the list of lines
         return lines
 
