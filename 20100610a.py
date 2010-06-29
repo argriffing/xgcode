@@ -67,7 +67,14 @@ def get_form():
             Form.Float('size', 'size of a plotted point', '1.5'),
             Form.SingleLine('legend_pos', 'position of the symbol legend',
                 '0 0 0'),
+            Form.CheckGroup('pixel_options', 'more plotting details', [
+                Form.CheckItem('endpoint_ticks',
+                    'add ticks to the endpoints of the colorbar', True)]),
             Form.ImageFormat(),
+            Form.RadioGroup('out_type', 'output type', [
+                Form.RadioItem('show_image', 'image', True),
+                Form.RadioItem('show_table', 'R table'),
+                Form.RadioItem('show_script', 'R script')]),
             Form.ContentDisposition()]
     return form_objects
 
@@ -76,17 +83,40 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    image_string = process(fs, fs.table.splitlines())
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = '.'.join((fs.shape, fs.color, 'pca', '3d', ext))
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
+    # create a response that depends on the requested output type
+    if fs.show_image:
+        content = process(fs, fs.table.splitlines())
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
+        filename = '.'.join((fs.shape, fs.color, 'pca', '3d', ext))
+        contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    else:
+        # read the table
+        rtable = Carbone.RTable(fs.table.splitlines())
+        header_row = rtable.headers
+        data_rows = rtable.data
+        # Do a more stringent check of the column headers.
+        for h in header_row:
+            if not Carbone.is_valid_header(h):
+                msg = 'invalid column header: %s' % h
+                raise ValueError(msg)
+        plot_info = PlotInfo(fs, header_row, data_rows)
+        if fs.show_table:
+            content = '\n'.join(plot_info.get_augmented_table_lines()) + '\n'
+            contenttype = 'text/plain'
+            filename = 'out.table'
+        elif fs.show_script:
+            stub_image_name = 'stub-image-filename.' + fs.imageformat
+            stub_table_name = 'stub-table-filename.table'
+            content = plot_info.get_script(
+                    fs, stub_image_name, stub_table_name) + '\n'
+            contenttype = 'text/plain'
+            filename = 'script.R'
     # return the response
+    disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     response_headers = [
             ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string
+            ('Content-Disposition', disposition)]
+    return response_headers, content
 
 class NumericError(Exception): pass
 
@@ -201,6 +231,12 @@ class PlotInfo:
         # get the unique locations and species
         symbol_legend_string = ', '.join("'%s'" % x for x in self.unique_shapes)
         color_legend_string = self.color_header
+        # add color legend endpoint axis
+        if args.endpoint_ticks:
+            s = 'mytable$color'
+            color_axis = 'axis(1, c(axTicks(1), min(%s), max(%s)))' % (s, s)
+        else:
+            color_axis = 'axis(1)'
         rcodes = [
             "require('scatterplot3d')",
             "mytable <- read.table('%s')" % temp_table_filename,
@@ -238,8 +274,8 @@ class PlotInfo:
             "axes = FALSE,",
             "xlab = '%s'," % color_legend_string,
             "ylab = '', col = hsv(seq(0.3, 1, length = 100)))",
-            # draw the color legend
-            "axis(1)",
+            # draw the axis onto the color legend
+            color_axis,
             # write the plot
             "dev.off()"]
         return '\n'.join(rcodes)

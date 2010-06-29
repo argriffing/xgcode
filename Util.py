@@ -3,6 +3,14 @@ import unittest
 
 import iterutils
 
+def nunique_lengths(seq_of_seq):
+    """
+    Given a sequence of sequences, return the number of unique lengths.
+    @param: a sequence of sequences
+    @return: the number of unique sequence lengths
+    """
+    return len(set(len(seq) for seq in seq_of_seq))
+
 def inverse_map(xs):
     """
     Get a map from element to index.

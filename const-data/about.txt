@@ -92,3 +92,5 @@ ftp://hgdownload.cse.ucsc.edu/goldenPath/hg18/multiz44way/44way.nh
 See also
 ftp://hgdownload.cse.ucsc.edu/goldenPath/hg18/multiz44way/README.txt
 
+20100525a.dat
+A small phylip file.

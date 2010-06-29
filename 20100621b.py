@@ -1,7 +1,11 @@
 """Convert a phylip alignment to a binary character alignment.
+
+In cmdline mode the phylip is read from stdin.
 """
 
-from StringIO import StringIO
+import sys
+
+import argparse
 
 from SnippetUtil import HandlingError
 import Form
@@ -40,6 +44,13 @@ def get_response(fs):
     return response_headers, text
 
 def process(raw_lines):
-    headers, sequences = Phylip.read_non_interleaved(raw_lines)
+    headers, sequences = Phylip.decode(raw_lines)
     binary_rows = Carbone.get_binary_rows(sequences)
     return hud.to_blob(headers, binary_rows)
+
+def main(args):
+    print process(sys.stdin)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    main(parser.parse_args())
