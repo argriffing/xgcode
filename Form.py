@@ -169,6 +169,10 @@ def _get_textarea_header(esc_label, nrows):
             'rows="%d" cols="70" wrap="off">' % nrows)
     return ' '.join(lines)
 
+def _set_unique(d_out, label, value):
+    if label in d_out:
+        raise FormError(label + ' is duplicated')
+    d_out[label] = value
 
 class RadioGroup:
     """
@@ -213,6 +217,33 @@ class RadioGroup:
                 lines.append('<br/>')
         # return the list of lines
         return lines
+
+    def process_cmdline_dict(self, d_in, d_out):
+        selected_item = None
+        for item in self.radio_items:
+            if item.label in d_in:
+                if d_in[item_label]:
+                    msg_a = 'to select the %s option ' % item.label
+                    msg_b = 'use --%s' % item.label
+                    raise FormError(msg_a + msg_b)
+                if selected_item:
+                    msg_a = 'incompatible selections: '
+                    msg_b = '%s and %s' % (selected_item.label, item.label)
+                    raise FormError(msg_a + msg_b)
+                selected_item = item
+        if selected_item is None:
+            for item in self.radio_items:
+                if item.default:
+                    if selected_item:
+                        msg = 'multiple radio button default selections'
+                        raise FormError(msg)
+                    selected_item = item
+        if selected_item is None:
+            msg = 'no default radio button selection'
+            raise FormError(msg)
+        for item in self.radio_items:
+            _set_unique(d_out, item.label, item is selected_item)
+        _set_unique(d_out, self.label, selected_item.label)
 
     def process_fieldstorage(self, fs):
         """
@@ -293,6 +324,14 @@ class CheckGroup:
                 lines.append('<br/>')
         # return the list of lines
         return lines
+
+    def process_cmdline_dict(self, d_in, d_out):
+        if self.label in d_out:
+            raise FormError(self.label + ' is duplicated')
+        for item in self.check_items:
+            item.process_cmdline_dict(d_in, d_out)
+        checked = set(x.label for x in self.check_items if x.label in d_out)
+        d_out[self.label] = checked
 
     def process_fieldstorage(self, fs):
         """
@@ -376,6 +415,20 @@ class CheckItem:
                 _get_label_line(escaped_label, escaped_description)]
         return lines
 
+    def process_cmdline_dict(self, d_in, d_out):
+        if self.label in d_out:
+            raise FormError(self.label + ' is duplicated')
+        value_in = d_in.get(self.label, None)
+        if value_in is None:
+            value_out = self.default
+        elif value_in in (True, 'Y'):
+            value_out = True
+        elif value_in == 'N':
+            value_out = False
+        else:
+            raise FormError('bad checkbox value: ' + value_in)
+        d_out[self.label] = value_out
+
     def process_fieldstorage(self, fs):
         """
         @param fs: a FieldStorage object to be decorated with extra attributes
@@ -387,10 +440,7 @@ class CheckItem:
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         # set the value for the attribute in the fieldstorage object
-        if values:
-            is_checked = True
-        else:
-            is_checked = False
+        is_checked = True if values else False
         setattr(fs, self.label, is_checked)
 
 
@@ -436,6 +486,11 @@ class SingleLine:
                 _get_textbox_line(esc_label, esc_default_line, width)]
         # return the list of lines
         return lines
+
+    def process_cmdline_dict(self, d_in, d_out):
+        if self.label in d_out:
+            raise FormError(self.label + ' is duplicated')
+        d_out[self.label] = d_in.get(self.label, self.default_line)
 
     def process_fieldstorage(self, fs):
         """
@@ -511,6 +566,47 @@ class Float:
         # return the list of lines
         return lines
 
+    def validate(self, value):
+        identifier = 'the floating point number in the field "%s"' % self.label
+        if self.low_exclusive is not None:
+            if value <= self.low_exclusive:
+                lines = (
+                        '%s must be' % identifier,
+                        'greater than %f' % self.low_exclusive)
+                raise FormError(' '.join(lines))
+        if self.low_inclusive is not None:
+            if value < self.low_inclusive:
+                lines = (
+                        '%s must be' % identifier,
+                        'greater than or equal to %f' % self.low_inclusive)
+                raise FormError(' '.join(lines))
+        if self.high_exclusive is not None:
+            if value >= self.high_exclusive:
+                lines = (
+                        '%s must be' % identifier,
+                        'less than %f' % self.high_exclusive)
+                raise FormError(' '.join(lines))
+        if self.high_inclusive is not None:
+            if value > self.high_inclusive:
+                lines = (
+                        '%s must be' % identifier,
+                        'less than or equal to %f' % self.high_inclusive)
+                raise FormError(' '.join(lines))
+
+    def process_cmdline_dict(self, d_in, d_out):
+        if self.label in d_out:
+            raise FormError(self.label + ' is duplicated')
+        value_s = d_in.get(self.label, None)
+        if value_s is None:
+            value = float(self.default_float)
+        else:
+            try:
+                value = float(value_s)
+            except ValueError as e:
+                raise FormError(value_s + ' is not a floating point value')
+        self.validate(value)
+        d_out[self.label] = value
+
     def process_fieldstorage(self, fs):
         """
         @param fs: a FieldStorage object to be decorated with extra attributes
@@ -538,32 +634,7 @@ class Float:
         elif len(values) > 2:
             msg = 'the value for the field "%s" is ambiguous' % self.label
             raise FormError(msg)
-        # assert that the floating point number is not out of bounds
-        identifier = 'the floating point number in the field "%s"' % self.label
-        if self.low_exclusive is not None:
-            if value <= self.low_exclusive:
-                lines = (
-                        '%s must be' % identifier,
-                        'greater than %f' % self.low_exclusive)
-                raise FormError(' '.join(lines))
-        if self.low_inclusive is not None:
-            if value < self.low_inclusive:
-                lines = (
-                        '%s must be' % identifier,
-                        'greater than or equal to %f' % self.low_inclusive)
-                raise FormError(' '.join(lines))
-        if self.high_exclusive is not None:
-            if value >= self.high_exclusive:
-                lines = (
-                        '%s must be' % identifier,
-                        'less than %f' % self.high_exclusive)
-                raise FormError(' '.join(lines))
-        if self.high_inclusive is not None:
-            if value > self.high_inclusive:
-                lines = (
-                        '%s must be' % identifier,
-                        'less than or equal to %f' % self.high_inclusive)
-                raise FormError(' '.join(lines))
+        self.validate(value)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -614,6 +685,32 @@ class Integer:
         # return the list of lines
         return lines
 
+    def validate(self, value):
+        if self.low is not None:
+            if value < self.low:
+                msg_a = 'the integer in the field "%s" ' % self.label
+                msg_b = 'must be at least %d' % self.low
+                raise FormError(msg_a + msg_b)
+        if self.high is not None:
+            if value > self.high:
+                msg_a = 'the integer in the field "%s" ' % self.label
+                msg_b = 'must be at most %d' % self.high
+                raise FormError(msg_a + msg_b)
+
+    def process_cmdline_dict(self, d_in, d_out):
+        if self.label in d_out:
+            raise FormError(self.label + ' is duplicated')
+        value_s = d_in.get(self.label, None)
+        if value_s is None:
+            value = int(self.default_integer)
+        else:
+            try:
+                value = int(value_s)
+            except ValueError as e:
+                raise FormError(value_s + ' is not an integer')
+        self.validate(value)
+        d_out[self.label] = value
+
     def process_fieldstorage(self, fs):
         """
         @param fs: a FieldStorage object to be decorated with extra attributes
@@ -636,17 +733,7 @@ class Integer:
         elif len(values) > 2:
             msg = 'the value for the field "%s" is ambiguous' % self.label
             raise FormError(msg)
-        # make sure that the value is in bounds
-        if self.low is not None:
-            if value < self.low:
-                msg_a = 'the integer in the field "%s" ' % self.label
-                msg_b = 'must be at least %d' % self.low
-                raise FormError(msg_a + msg_b)
-        if self.high is not None:
-            if value > self.high:
-                msg_a = 'the integer in the field "%s" ' % self.label
-                msg_b = 'must be at most %d' % self.high
-                raise FormError(msg_a + msg_b)
+        self.validate(value)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -702,6 +789,20 @@ class Matrix:
                 '</textarea>']
         # return the list of lines
         return lines
+
+    def process_cmdline_dict(self, d_in, args_out):
+        filename = d_in.get(self.label, None)
+        if filename is None:
+            value = self.default_matrix
+        else:
+            with open(filename) as fin:
+                try:
+                    value = np.array(MatrixUtil.read_matrix(fin))
+                    if self.matrix_assertion:
+                        self.matrix_assertion(value)
+                except MatrixUtil.MatrixError, e:
+                    raise FormError(e)
+        _set_unique(d_out, self.label, value)
 
     def process_fieldstorage(self, fs):
         """
@@ -774,6 +875,15 @@ class MultiLine:
                 '</textarea>']
         # return the list of lines
         return lines
+
+    def process_cmdline_dict(self, d_in, d_out):
+        filename = d_in.get(self.label, None)
+        if filename is None:
+            value = self.default_string.splitlines()
+        else:
+            with open(filename) as fin:
+                value = fin.readlines()
+        _set_unique(d_out, self.label, value)
 
     def process_fieldstorage(self, fs):
         """
