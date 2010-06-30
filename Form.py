@@ -326,12 +326,10 @@ class CheckGroup:
         return lines
 
     def process_cmdline_dict(self, d_in, d_out):
-        if self.label in d_out:
-            raise FormError(self.label + ' is duplicated')
         for item in self.check_items:
             item.process_cmdline_dict(d_in, d_out)
         checked = set(x.label for x in self.check_items if x.label in d_out)
-        d_out[self.label] = checked
+        _set_unique(d_out, self.label, checked)
 
     def process_fieldstorage(self, fs):
         """
@@ -416,8 +414,6 @@ class CheckItem:
         return lines
 
     def process_cmdline_dict(self, d_in, d_out):
-        if self.label in d_out:
-            raise FormError(self.label + ' is duplicated')
         value_in = d_in.get(self.label, None)
         if value_in is None:
             value_out = self.default
@@ -427,7 +423,7 @@ class CheckItem:
             value_out = False
         else:
             raise FormError('bad checkbox value: ' + value_in)
-        d_out[self.label] = value_out
+        _set_unique(d_out, self.label, value_out)
 
     def process_fieldstorage(self, fs):
         """
@@ -488,9 +484,8 @@ class SingleLine:
         return lines
 
     def process_cmdline_dict(self, d_in, d_out):
-        if self.label in d_out:
-            raise FormError(self.label + ' is duplicated')
-        d_out[self.label] = d_in.get(self.label, self.default_line)
+        value = d_in.get(self.label, self.default_line)
+        _set_unique(d_out, self.label, value)
 
     def process_fieldstorage(self, fs):
         """
@@ -594,8 +589,6 @@ class Float:
                 raise FormError(' '.join(lines))
 
     def process_cmdline_dict(self, d_in, d_out):
-        if self.label in d_out:
-            raise FormError(self.label + ' is duplicated')
         value_s = d_in.get(self.label, None)
         if value_s is None:
             value = float(self.default_float)
@@ -605,7 +598,7 @@ class Float:
             except ValueError as e:
                 raise FormError(value_s + ' is not a floating point value')
         self.validate(value)
-        d_out[self.label] = value
+        _set_unique(d_out, self.label, value)
 
     def process_fieldstorage(self, fs):
         """
@@ -698,8 +691,6 @@ class Integer:
                 raise FormError(msg_a + msg_b)
 
     def process_cmdline_dict(self, d_in, d_out):
-        if self.label in d_out:
-            raise FormError(self.label + ' is duplicated')
         value_s = d_in.get(self.label, None)
         if value_s is None:
             value = int(self.default_integer)
@@ -709,7 +700,7 @@ class Integer:
             except ValueError as e:
                 raise FormError(value_s + ' is not an integer')
         self.validate(value)
-        d_out[self.label] = value
+        _set_unique(d_out, self.label, value)
 
     def process_fieldstorage(self, fs):
         """
