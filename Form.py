@@ -870,10 +870,10 @@ class MultiLine:
     def process_cmdline_dict(self, d_in, d_out):
         filename = d_in.get(self.label, None)
         if filename is None:
-            value = self.default_string.splitlines()
+            value = self.default_string
         else:
             with open(filename) as fin:
-                value = fin.readlines()
+                value = fin.read()
         _set_unique(d_out, self.label, value)
 
     def process_fieldstorage(self, fs):
