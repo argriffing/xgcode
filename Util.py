@@ -3,6 +3,9 @@ import unittest
 
 import iterutils
 
+def max_length(seq_of_seq):
+    return max(len(seq) for seq in seq_of_seq)
+
 def nunique_lengths(seq_of_seq):
     """
     Given a sequence of sequences, return the number of unique lengths.

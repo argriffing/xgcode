@@ -1,10 +1,15 @@
 import cgi
 from StringIO import StringIO
+import itertools
+import string
 
 import numpy as np
 
 import MatrixUtil
 import iterutils
+import Util
+
+g_safe_letters = string.letters + string.digits + '_.-'
 
 g_imageformat_to_contenttype = {
         'svg' : 'image/svg+xml',
@@ -24,12 +29,13 @@ class HelpItem(object):
         self.description = description
     def is_isolated(self):
         return False
-    def get_max_command_length(self):
-        return len(self.command)
-    def to_lines(self, max_command_length):
+    def _get_partial_line(self, depth):
+        return (' ' * 2*depth) + self.command
+    def get_partial_lines(self, depth):
+        return [self._get_partial_line(depth)]
+    def get_full_lines(self, depth, max_partial_length):
         elements = [
-                '  ',
-                self.command.ljust(max_command_length),
+                self._get_partial_line(depth).ljust(max_partial_length),
                 '  : ',
                 self.description]
         return [''.join(elements)]
@@ -41,12 +47,15 @@ class HelpGroup(object):
         self.subitems = []
     def is_isolated(self):
         return True
-    def get_max_command_length(self):
-        return max(x.get_max_command_length() for x in self.subitems)
-    def to_lines(self, max_command_length):
-        lines = [self.description + ':']
+    def get_partial_lines(self, depth):
+        lines = []
         for item in self.subitems:
-            lines.extend(item.to_lines(max_command_length))
+            lines.extend(item.get_partial_lines(depth+1))
+        return lines
+    def get_full_lines(self, depth, max_partial_length):
+        lines = [(' ' * 2*depth) + self.description + ':']
+        for item in self.subitems:
+            lines.extend(item.get_full_lines(depth+1, max_partial_length))
         return lines
 
 def any_isolated(seq):
@@ -56,9 +65,11 @@ def get_help_string(form_objects):
     """
     @param form_objects: a list of form objects
     """
+    # Get the length of the longest partial line.
     help_objects = [x.get_help_object() for x in form_objects]
-    # Get the max command length.
-    max_command_length = max(x.get_max_command_length() for x in help_objects)
+    pline_lists = [x.get_partial_lines(0) for x in help_objects]
+    plines = list(itertools.chain.from_iterable(pline_lists))
+    max_len = Util.max_length(plines)
     # True if a blank line should be added after the corresponding help object.
     bsep = [any_isolated(p) for p in iterutils.pairwise(help_objects)] + [0]
     # Add these lines after the corresponding help object.
@@ -66,7 +77,7 @@ def get_help_string(form_objects):
     # Build the list of output lines.
     lines = []
     for obj, sep in zip(help_objects, lsep):
-        lines.extend(obj.to_lines(max_command_length))
+        lines.extend(obj.get_full_lines(0, max_len))
         lines.extend(sep)
     return '\n'.join(lines)
 
@@ -399,8 +410,12 @@ class SingleLine:
         self.default_line = default_line
 
     def get_help_object(self):
+        if set(self.default_line) - set(g_safe_letters):
+            s = '"%s"' % self.default_line
+        else:
+            s = self.default_line
         return HelpItem(
-                '--%s="%s"' % (self.label, self.default_line),
+                '--%s=%s' % (self.label, s),
                 self.description)
 
     def get_html_lines(self):
