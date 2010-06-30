@@ -4,6 +4,7 @@ from StringIO import StringIO
 import numpy as np
 
 import MatrixUtil
+import iterutils
 
 g_imageformat_to_contenttype = {
         'svg' : 'image/svg+xml',
@@ -16,6 +17,58 @@ g_imageformat_to_ext = {
         'png' : 'png',
         'pdf' : 'pdf',
         'postscript' : 'ps'}
+
+class HelpItem(object):
+    def __init__(self, command, description):
+        self.command = command
+        self.description = description
+    def is_isolated(self):
+        return False
+    def get_max_command_length(self):
+        return len(self.command)
+    def to_lines(self, max_command_length):
+        elements = [
+                '  ',
+                self.command.ljust(max_command_length),
+                '  : ',
+                self.description]
+        return [''.join(elements)]
+
+class HelpGroup(object):
+    def __init__(self, description):
+        self.isolated = True
+        self.description = description
+        self.subitems = []
+    def is_isolated(self):
+        return True
+    def get_max_command_length(self):
+        return max(x.get_max_command_length() for x in self.subitems)
+    def to_lines(self, max_command_length):
+        lines = [self.description + ':']
+        for item in self.subitems:
+            lines.extend(item.to_lines(max_command_length))
+        return lines
+
+def any_isolated(seq):
+    return any(x.is_isolated() for x in seq)
+
+def get_help_string(form_objects):
+    """
+    @param form_objects: a list of form objects
+    """
+    help_objects = [x.get_help_object() for x in form_objects]
+    # Get the max command length.
+    max_command_length = max(x.get_max_command_length() for x in help_objects)
+    # True if a blank line should be added after the corresponding help object.
+    bsep = [any_isolated(p) for p in iterutils.pairwise(help_objects)] + [0]
+    # Add these lines after the corresponding help object.
+    lsep = [[''] if x else [] for x in bsep]
+    # Build the list of output lines.
+    lines = []
+    for obj, sep in zip(help_objects, lsep):
+        lines.extend(obj.to_lines(max_command_length))
+        lines.extend(sep)
+    return '\n'.join(lines)
 
 def get_html_string(form_objects):
     """
@@ -127,6 +180,11 @@ class RadioGroup:
         self.description = description
         self.radio_items = radio_items
 
+    def get_help_object(self):
+        obj = HelpGroup(self.description)
+        obj.subitems = [x.get_help_object() for x in self.radio_items]
+        return obj
+
     def get_html_lines(self):
         """
         @return: the list of lines of html text
@@ -202,6 +260,11 @@ class CheckGroup:
         self.description = description
         self.check_items = check_items
 
+    def get_help_object(self):
+        obj = HelpGroup(self.description)
+        obj.subitems = [x.get_help_object() for x in self.check_items]
+        return obj
+
     def get_html_lines(self):
         """
         @return: the list of lines of html text
@@ -254,6 +317,11 @@ class RadioItem:
         self.description = description
         self.default = default
 
+    def get_help_object(self):
+        return HelpItem(
+                '--%s' % self.label,
+                self.description)
+
     def get_html_lines(self, group_label):
         """
         @param group_label: the label of the radio button group
@@ -279,6 +347,12 @@ class CheckItem:
         self.label = label
         self.description = description
         self.default = default
+
+    def get_help_object(self):
+        s = 'Y' if self.default else 'N'
+        return HelpItem(
+                '--%s=%s' % (self.label, s),
+                self.description)
 
     def get_html_lines(self):
         """
@@ -323,6 +397,11 @@ class SingleLine:
         self.label = label
         self.description = description
         self.default_line = default_line
+
+    def get_help_object(self):
+        return HelpItem(
+                '--%s="%s"' % (self.label, self.default_line),
+                self.description)
 
     def get_html_lines(self):
         """
@@ -390,6 +469,11 @@ class Float:
         self.low_inclusive = low_inclusive
         self.high_exclusive = high_exclusive
         self.high_inclusive = high_inclusive
+
+    def get_help_object(self):
+        return HelpItem(
+                '--' + self.label + '=' + str(self.default_float),
+                self.description)
 
     def get_html_lines(self):
         """
@@ -489,6 +573,11 @@ class Integer:
         self.low = low
         self.high = high
 
+    def get_help_object(self):
+        return HelpItem(
+                '--' + self.label + '=' + str(self.default_integer),
+                self.description)
+
     def get_html_lines(self):
         """
         @return: the list of lines of html text
@@ -569,6 +658,11 @@ class Matrix:
         self.default_matrix = default_matrix
         self.matrix_assertion = matrix_assertion
 
+    def get_help_object(self):
+        return HelpItem(
+                '--' + self.label + '=FILENAME',
+                self.description)
+
     def get_html_lines(self):
         """
         @return: the list of lines of html text
@@ -637,6 +731,11 @@ class MultiLine:
         self.label = label
         self.description = description
         self.default_string = default_string
+
+    def get_help_object(self):
+        return HelpItem(
+                '--' + self.label + '=FILENAME',
+                self.description)
 
     def get_html_lines(self):
         """
