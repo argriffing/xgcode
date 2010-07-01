@@ -20,7 +20,8 @@ class MetaError(Exception): pass
 
 g_common_t1 = set([
         'sys', 'os',
-        'unittest', 'math',
+        'collections',
+        'unittest', 'math', 'random',
         'itertools', 'csv', 'StringIO'])
 
 g_common_t2 = set([
@@ -29,7 +30,7 @@ g_common_t2 = set([
         'numpy', 'scipy', 'matplotlib'])
 
 g_common_t3 = set([
-        'Form', 'Util', 'NewickIO', 'SnippetUtil'])
+        'iterutils', 'Form', 'Util', 'NewickIO', 'SnippetUtil'])
 
 def get_tier(names):
     """

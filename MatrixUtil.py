@@ -1,3 +1,7 @@
+"""
+Matrix formatting tools.
+"""
+
 import unittest
 from StringIO import StringIO
 

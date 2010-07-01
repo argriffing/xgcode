@@ -1,3 +1,7 @@
+"""
+Read and write FASTA files.
+"""
+
 from StringIO import StringIO
 import unittest
 

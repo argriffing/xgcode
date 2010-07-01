@@ -1,3 +1,7 @@
+"""
+Mediate between the interface and the scripts.
+"""
+
 import cgi
 from StringIO import StringIO
 import itertools

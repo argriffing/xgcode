@@ -1,3 +1,7 @@
+"""
+Misc functions.
+"""
+
 import random
 import unittest
 
