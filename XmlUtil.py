@@ -1,3 +1,6 @@
+"""
+Parse XML files.
+"""
 
 import unittest
 
