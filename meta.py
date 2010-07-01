@@ -29,7 +29,7 @@ g_common_t2 = set([
         'numpy', 'scipy', 'matplotlib'])
 
 g_common_t3 = set([
-        'Util', 'NewickIO', 'SnippetUtil'])
+        'Form', 'Util', 'NewickIO', 'SnippetUtil'])
 
 def get_tier(names):
     """
@@ -60,7 +60,7 @@ def perm_is_compatible(perm, tiers):
                 return False
     return True
 
-def get_import_tiers(paragraphs):
+def _get_import_tiers(paragraphs):
     """
     @param paragraphs: each paragraph has module names
     @return: a tier for each paragraph
@@ -84,7 +84,7 @@ def get_import_tiers(paragraphs):
         raise MetaError(msg)
     return valid_perms[0]
 
-def get_import_paragraphs(raw_lines):
+def _get_import_paragraphs(raw_lines):
     """
     @param raw_lines: raw lines of a python file
     @return: up to three import paragraphs
@@ -133,3 +133,16 @@ def get_import_paragraphs(raw_lines):
     if len(paragraphs) > 3:
         raise MetaError('expected at most three import paragraphs')
     return paragraphs
+
+def get_tiered_names(raw_lines):
+    """
+    @param raw_lines: raw lines of a python file
+    @return: three ordered module name sets
+    """
+    paragraphs = _get_import_paragraphs(raw_lines)
+    tiers = _get_import_tiers(paragraphs)
+    tiered_names = [set(), set(), set()]
+    for t, p in zip(tiers, paragraphs):
+        tiered_names[t] = set(p)
+    return tiered_names
+

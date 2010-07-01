@@ -8,16 +8,54 @@ import argparse
 
 import meta
 
+class Dep(object):
+
+    def __init__(self):
+        self.d_local_deps = {}
+        self.d_external_deps = {}
+
+    def get_immediate_local_deps(self, module_name):
+        """
+        @param module_name: the name of a module
+        @return: a set of module names
+        """
+        filename = module_name + '.py'
+        with open(filename) as fin:
+            paragraphs = meta.get_import_paragraphs(fin)
+        tiers = meta.get_import_tiers(paragraphs)
+
+    def get_immediate_external_deps(self, module_name):
+        """
+        @param module_name: the name of a module
+        @return: a set of module names
+        """
+        filename = module_name + '.py'
+        pass
+
+    def get_transitive_local_deps(self, module_name):
+        """
+        @param module_name: the name of a module
+        @return: a set of module names
+        """
+        filename = module_name + '.py'
+        pass
+
+    def get_transitive_external_deps(self, module_name):
+        """
+        @param module_name: the name of a module
+        @return: a set of module names
+        """
+        filename = module_name + '.py'
+        pass
+
+
+
 def process_module(module_filename):
     with open(module_filename) as fin:
-        paragraphs = meta.get_import_paragraphs(fin)
-    tiers = meta.get_import_tiers(paragraphs)
+        tiered_names = meta.get_tiered_names(fin)
     print module_filename
-    print 'paragraphs:'
-    print paragraphs
-    print 'tiers:'
-    print tiers
-    print 
+    print tiered_names
+    print
 
 def main(args):
     if args.module:
