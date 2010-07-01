@@ -1,3 +1,7 @@
+"""
+A base class for tree structures.
+"""
+
 
 class Tree:
     def __init__(self, root=None):

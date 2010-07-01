@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+"""
+This module draws an ascii tree.
+"""
 
 class DrawTreeError(Exception): pass
 
@@ -8,14 +10,20 @@ class DrawTree:
         self.vertical_spacing = 3
         self.horizontal_spacing = 6
         self.force_ultrametric = False
-        # if branch lengths are used then when the branch length tuning factor is 1.0 the drawing should have reasonable width
+        # If branch lengths are used then
+        # when the branch length tuning factor is 1.0
+        # the drawing should have reasonable width.
         self.use_branch_lengths = False
         self.branch_length_tuning_factor = 1.0
 
     def _get_branch_length(self, node):
         """
+        Get the length of a branch.
+        The returned integer represents the number of characters
+        in the ascii representation of the branch
+        associated with the node.
         @param node: a node in the tree
-        @return: an integer representing the number of characters in the ascii representation of the branch associated with the node
+        @return: an integer length
         """
         if self.use_branch_lengths:
             return int(node.blen * self.branch_length_scaling_factor)
@@ -27,7 +35,8 @@ class DrawTree:
             # temporarily add max tip distances postorder
             for node in postorder:
                 if node.children:
-                    node.max_tip_distance = max(child.blen + child.max_tip_distance for child in node.children)
+                    node.max_tip_distance = max(
+                            x.blen + x.max_tip_distance for x in node.children)
                 else:
                     node.max_tip_distance = 0
             # the max tip distance is the max tip distance of the root
@@ -35,15 +44,19 @@ class DrawTree:
             # remove the max tip distances postorder
             for node in postorder:
                 del node.max_tip_distance
-            # define a branch length scaling factor that depends on the max tip distance
-            self.branch_length_scaling_factor = (80.0 / max_tip_distance) * self.branch_length_tuning_factor
+            # Define a branch length scaling factor
+            # that depends on the max tip distance.
+            sf = (80.0 / max_tip_distance) * self.branch_length_tuning_factor
+            self.branch_length_scaling_factor = sf
         # add heights and widths postorder
         for node in postorder:
-            if node.children:
-                gap_height = (len(node.children) - 1)*self.vertical_spacing 
-                child_height = sum(child.height for child in node.children)
+            children = node.children
+            if children:
+                gap_height = (len(children) - 1)*self.vertical_spacing 
+                child_height = sum(x.height for x in children)
                 node.height = gap_height + child_height
-                node.width = 1 + max(self._get_branch_length(child) + child.width for child in node.children)
+                node.width = 1 + max(
+                        self._get_branch_length(x) + x.width for x in children)
             else:
                 node.height = 1
                 node.width = 1 + len(str(self))
@@ -53,12 +66,14 @@ class DrawTree:
             row, col = node.offset
             drow = 0
             for child in node.children:
-                child.offset = (row + drow, col + 1 + self._get_branch_length(child))
+                child.offset = (
+                        row + drow, col + 1 + self._get_branch_length(child))
                 drow += child.height + self.vertical_spacing
         # add vtargets postorder
         for node in postorder:
             if node.children:
-                node.vtarget = (node.children[0].vtarget + node.children[-1].vtarget)/2
+                node.vtarget = (
+                        node.children[0].vtarget + node.children[-1].vtarget)/2
             else:
                 row, col = node.offset
                 node.vtarget = row
