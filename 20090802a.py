@@ -30,8 +30,12 @@ from Form import CheckItem
 from Form import RadioGroup
 from Form import RadioItem
 import Form
+import const
 
-g_const_data = 'const-data'
+g_archaea_data = const.read('20090802a')
+g_bacteria_data = const.read('20090802b')
+g_eukaryota_data = const.read('20090802c')
+g_full_data = const.read('20090802d')
 
 g_valid_domains = set(['archaea', 'bacteria', 'eukaryota'])
 
@@ -457,18 +461,6 @@ def get_standard_response(fs):
     response_text = out.getvalue().strip()
     return [('Content-Type', 'text/plain')], response_text
 
-def get_itol_tree_string(filename):
-    """
-    Get a tree from the interactive tree of life.
-    @param filename: the name of the data file
-    @return: a newick tree string
-    """
-    pathname = os.path.join(g_const_data, filename)
-    fin = open(pathname)
-    tree_string = fin.read()
-    fin.close()
-    return tree_string
-
 def newick_string_to_tip_names(newick_string):
     """
     Get a set of names from a newick string.
@@ -484,24 +476,23 @@ def get_supplementary_object(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a object with all of the information for the supplementary data
     """
-    # read the four tree strings
-    archaea_tree_string = get_itol_tree_string('20090802a.dat')
-    bacteria_tree_string = get_itol_tree_string('20090802b.dat')
-    eukaryota_tree_string = get_itol_tree_string('20090802c.dat')
-    full_tree_string = get_itol_tree_string('20090802d.dat')
     # extract the name sets from the newick tree strings
-    archaea_names = newick_string_to_tip_names(archaea_tree_string)
-    bacteria_names = newick_string_to_tip_names(bacteria_tree_string)
-    eukaryota_names = newick_string_to_tip_names(eukaryota_tree_string)
-    all_names = newick_string_to_tip_names(full_tree_string)
+    archaea_names = newick_string_to_tip_names(g_archaea_data)
+    bacteria_names = newick_string_to_tip_names(g_bacteria_data)
+    eukaryota_names = newick_string_to_tip_names(g_eukaryota_data)
+    all_names = newick_string_to_tip_names(g_full_data)
     # validate the sets of names
     nfull = len(all_names)
     ndisjoint = len(archaea_names) + len(bacteria_names) + len(eukaryota_names)
     if ndisjoint != nfull:
-        raise HandlingError('there are %d taxa in the full tree but %d taxa in its subtrees' % (nfull, ndisjoint))
+        msg_a = 'there are %d taxa in the full tree ' % nfull
+        msg_b = 'but %d taxa in its subtrees' % ndisjoint
+        raise HandlingError(msg_a + msg_b)
     disjoint_union = archaea_names | bacteria_names | eukaryota_names
     if disjoint_union != all_names:
-        raise HandlingError('the set of taxa in the full tree is not the union of taxa in its subtrees')
+        msg_a = 'the set of taxa in the full tree '
+        msg_b = 'is not the union of taxa in its subtrees'
+        raise HandlingError(msg_a + msg_b)
     # create the map from taxon name to taxonomic category
     taxon_to_domain = {}
     for name in archaea_names:
@@ -513,7 +504,8 @@ def get_supplementary_object(fs):
     taxon_to_domain['all-bacteria'] = 'bacteria'
     # create the supplementary object
     use_generalized_nj = fs.like_nj
-    supplementary_object = SupplementaryObject(taxon_to_domain, full_tree_string, use_generalized_nj)
+    supplementary_object = SupplementaryObject(
+            taxon_to_domain, g_full_data, use_generalized_nj)
     # return the supplementary object
     return supplementary_object
 

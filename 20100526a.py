@@ -17,6 +17,10 @@ import HtmlTable
 import MAPP
 import Codon
 import LeafWeights
+import const
+
+g_annotation_data = const.read('20100526a')
+g_tree_data = const.read('20100526b')
 
 g_ordered_taxon_names = [
         'hg18',
@@ -211,20 +215,14 @@ def get_form():
     """
     @return: the body of a form
     """
-    # define the default tree
-    with open('const-data/20100526b.dat') as fin:
-        tree_string = fin.read()
-    default_tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    default_tree = NewickIO.parse(g_tree_data, FelTree.NewickTree)
     default_tree_string = NewickIO.get_narrow_newick_string(default_tree, 60)
-    # define the default annotation string
-    with open('const-data/20100526a.dat') as fin:
-        default_annotation_string = fin.read()
     # define the list of form objects
     form_objects = [
             Form.MultiLine('tree', 'tree',
                 default_tree_string),
             Form.MultiLine('annotation', 'SNP annotations',
-                default_annotation_string)]
+                g_annotation_data)]
     return form_objects
 
 def aa_letter_to_aa_index(aa_letter):

@@ -5,6 +5,7 @@ import math
 
 import numpy as np
 import scipy
+from scipy import stats
 
 g_property_names = (
         'hydropathy',

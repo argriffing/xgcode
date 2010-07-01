@@ -10,8 +10,9 @@ import NewickIO
 import FelTree
 import Newick
 import BuildTreeTopology
+import const
 
-g_const_data = 'const-data'
+g_tree_data = const.read('20090802d')
 
 
 def get_form():
@@ -19,7 +20,7 @@ def get_form():
     @return: the body of a form
     """
     # define the formatted tree string
-    tree = get_itol_tree('20090802d.dat')
+    tree = NewickIO.parse(g_tree_data, Newick.NewickTree) 
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60) 
     # return the form objects
     form_objects = [
@@ -46,21 +47,6 @@ def remove_redundant_nodes(tree):
             # remove intersection nodes that have a single child
             if intersection.get_child_count() == 1:
                 tree.remove_node(intersection)
-
-def get_itol_tree(filename):
-    """
-    Get a tree from the interactive tree of life.
-    @param filename: the name of the data file
-    @return: a FelTree newick tree
-    """
-    # get the newick string with extraneous bootstrap values
-    pathname = os.path.join(g_const_data, filename)
-    fin = open(pathname)
-    tree_string = fin.read()
-    fin.close()
-    # get the tree in convenient object form with bootstrap values removed
-    tree = NewickIO.parse(tree_string, Newick.NewickTree) 
-    return tree
 
 def get_response(fs):
     """

@@ -18,18 +18,14 @@ import CairoUtil
 import Euclid
 import BuildTreeTopology
 import SchurAlgebra
+import Util
+import const
 
-
-g_const_data = 'const-data'
+g_data = const.read('20100125a')
 
 def get_default_data():
-    filename = os.path.join(g_const_data, '20100125a.dat')
-    with open(filename) as fin:
-        lines = fin.readlines()
-    lines = [x.strip() for x in lines]
-    lines = [x for x in lines if x]
+    lines = Util.get_stripped_lines(g_data.splitlines())
     return '\n'.join(lines)
-
 
 class BorderInfo:
     def __init__(self, border_x, border_y):

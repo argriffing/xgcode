@@ -1,7 +1,6 @@
 """Look at MDS projections of two inter-city distances.
 """
 
-
 from StringIO import StringIO
 import os
 import math
@@ -13,14 +12,9 @@ import SnippetUtil
 import Form
 import GPS
 import Euclid
+import const
 
-g_const_data = 'const-data'
-
-def get_default_lines():
-    data_filename = os.path.join(g_const_data, '20100119b.dat')
-    with open(data_filename) as fin:
-        lines = [line.strip() for line in fin.readlines()]
-    return lines
+g_mds_data = const.read('20100119b')
 
 def parse_lines(lines):
     """
@@ -59,7 +53,7 @@ def get_form():
     @return: a list of form objects
     """
     # define the list of form objects
-    lines = get_default_lines()
+    lines = [line.strip() for line in g_mds_data.splitlines()]
     form_objects = [
             Form.MultiLine('datalines', 'locations', '\n'.join(lines))]
     return form_objects

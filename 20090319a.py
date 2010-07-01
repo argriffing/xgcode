@@ -15,8 +15,9 @@ import SnippetUtil
 import Form
 import Util
 import MatrixUtil
+import const
 
-g_const_data = 'const-data'
+g_karate_data = const.read('20090406a')
 
 
 def get_form():
@@ -331,10 +332,7 @@ def main():
     """
     n = 34
     # create the adjacency matrix
-    data_filename = os.path.join(g_const_data, '20090406a.dat')
-    fin = open(data_filename)
-    stripped_lines = [line.strip() for line in fin]
-    fin.close()
+    stripped_lines = Util.get_stripped_lines(g_karate_data.splitlines())
     string_rows = [line.split() for line in stripped_lines if line]
     assert len(string_rows) == n
     for row in string_rows:
