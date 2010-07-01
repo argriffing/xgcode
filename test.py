@@ -1,9 +1,11 @@
 """
 Test all of the python library files.
-"""
 
-# TODO
-# maybe use something like nose
+Nose will not work directly,
+because it requires modules with tests to be named appropriately,
+for example by having 'test' in their name or by being in a directory
+called 'test'.
+"""
 
 import unittest
 import os
