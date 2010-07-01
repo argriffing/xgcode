@@ -105,7 +105,7 @@ def get_directory_html(script_directory, doc_directory):
             expected_function_names = ['get_form', 'get_response']
             module = __import__(prefix, globals(), locals(), ['__doc__'] + expected_function_names)
             # define the cgi link
-            cgi_link = '<a href="%s/meta.py?scriptid=%s&getform=1">cgi</a>' % (web_path_to_scripts, prefix)
+            cgi_link = '<a href="%s/wsgi.py?scriptid=%s&getform=1">cgi</a>' % (web_path_to_scripts, prefix)
             for attr in expected_function_names:
                 if not hasattr(module, attr):
                     cgi_link = '<span style="color:gray;">cgi</span>'
