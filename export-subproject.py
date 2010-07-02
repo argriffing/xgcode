@@ -27,12 +27,13 @@ def copy_default_modules(target):
         shutil.copyfile(source_filename, target_filename)
 
 def copy_const_data(const_deps, target):
-    const_data_dir = os.path.join(target, 'const-data')
-    os.mkdir(const_data_dir)
-    for name in const_deps:
-        source_filename = os.path.join('const-data', name + '.dat')
-        target_filename = os.path.join(const_data_dir, name + '.dat')
-        shutil.copyfile(source_filename, target_filename)
+    if const_deps:
+        const_data_dir = os.path.join(target, 'const-data')
+        os.mkdir(const_data_dir)
+        for name in const_deps:
+            source_filename = os.path.join('const-data', name + '.dat')
+            target_filename = os.path.join(const_data_dir, name + '.dat')
+            shutil.copyfile(source_filename, target_filename)
 
 def main(args):
     with open(args.manifest) as fin:
