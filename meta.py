@@ -13,6 +13,10 @@ an upstream source.
 """
 
 import itertools
+import string
+
+import pyparsing
+from pyparsing import Word, Literal
 
 import iterutils
 
@@ -146,4 +150,30 @@ def get_tiered_names(raw_lines):
     for t, p in zip(tiers, paragraphs):
         tiered_names[t] = set(p)
     return tiered_names
+
+def get_const_deps(raw_lines):
+    """
+    @param raw_lines: raw lines of a python file
+    @return: a set of const-data names
+    """
+    # look for lines like
+    # g_foo = const.read('20100101a')
+    deps = set()
+    parser = (
+            Word(string.letters + '_') +
+            Literal('=') +
+            Literal('const.read') +
+            Literal('(') +
+            Literal("'") +
+            Word(string.digits + string.lowercase)('dep') +
+            Literal("'") +
+            Literal(')'))
+    for line in raw_lines:
+        try:
+            result = parser.parseString(line)
+            if result:
+                deps.add(result['dep'])
+        except pyparsing.ParseException as e:
+            pass
+    return deps
 
