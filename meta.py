@@ -178,3 +178,59 @@ def get_const_deps(raw_lines):
             pass
     return deps
 
+
+class Dep(object):
+
+    def __init__(self):
+        self.d_deps = {}
+
+    def get_immediate_deps(self, module_name):
+        """
+        @param module_name: the name of a module
+        @return: three sets of module names
+        """
+        deps = self.d_deps.get(module_name, None)
+        if deps is not None:
+            return deps
+        filename = module_name + '.py'
+        with open(filename) as fin:
+            try:
+                deps = get_tiered_names(fin)
+            except MetaError as e:
+                msg = 'dependency format error in %s: %s' % (filename, e)
+                raise MetaError(msg)
+        self.d_deps[module_name] = deps
+        return deps
+
+    def get_transitive_deps(self, module_name):
+        deps = [set(), set(), set()]
+        visited = set()
+        unexpanded = set([module_name])
+        while unexpanded:
+            name = unexpanded.pop()
+            visited.add(name)
+            next_deps = self.get_immediate_deps(name)
+            deps[0].update(next_deps[0])
+            deps[1].update(next_deps[1])
+            next_local_deps = next_deps[2] - visited
+            deps[2].update(next_local_deps)
+            unexpanded.update(next_local_deps)
+        return deps
+
+def get_module_and_const_deps(module_names):
+    # get transitive module dependencies
+    depstate = Dep()
+    transitive_deps = [set(), set(), set()]
+    for name in module_names:
+        filename = name + '.py'
+        deps = depstate.get_transitive_deps(name)
+        for a, b in zip(transitive_deps, deps):
+            a.update(b)
+    # get const-data dependencies for all transitive module dependencies
+    const_deps = set()
+    for name in set(module_names) | transitive_deps[2]:
+        filename = name + '.py'
+        with open(filename) as fin:
+            const_deps.update(get_const_deps(fin))
+    # return module and const data deps
+    return transitive_deps, const_deps
