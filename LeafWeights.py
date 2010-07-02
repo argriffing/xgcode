@@ -1,3 +1,7 @@
+"""
+Given a phylogenetic tree, weight the leaves.
+"""
+
 from optparse import OptionParser
 import copy
 import unittest

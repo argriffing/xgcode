@@ -1,3 +1,6 @@
+"""
+Represent newick trees.
+"""
 
 from optparse import OptionParser
 import unittest

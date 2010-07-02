@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+"""
+Tools for pycairo.
+"""
 
 from StringIO import StringIO
 import unittest

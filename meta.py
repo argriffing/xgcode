@@ -30,11 +30,12 @@ g_common_t1 = set([
 
 g_common_t2 = set([
         'argparse',
-        'pygraphviz', 'pycairo',
+        'pygraphviz', 'cairo',
         'numpy', 'scipy', 'matplotlib'])
 
 g_common_t3 = set([
-        'iterutils', 'Form', 'Util', 'NewickIO', 'SnippetUtil'])
+        'MatrixUtil', 'iterutils', 'Form', 'Util',
+        'Newick', 'FelTree', 'NewickIO', 'SnippetUtil'])
 
 def get_tier(names):
     """
