@@ -35,8 +35,10 @@ class HelpItem(object):
         return False
     def _get_partial_line(self, depth):
         return (' ' * 2*depth) + self.command
-    def get_partial_lines(self, depth):
+    def _get_partial_lines(self, depth):
         return [self._get_partial_line(depth)]
+    def get_partial_lines(self):
+        return self._get_partial_lines(0)
     def get_full_lines(self, depth, max_partial_length):
         elements = [
                 self._get_partial_line(depth).ljust(max_partial_length),
@@ -51,11 +53,13 @@ class HelpGroup(object):
         self.subitems = []
     def is_isolated(self):
         return True
-    def get_partial_lines(self, depth):
+    def _get_partial_lines(self, depth):
         lines = []
         for item in self.subitems:
-            lines.extend(item.get_partial_lines(depth+1))
+            lines.extend(item._get_partial_lines(depth+1))
         return lines
+    def get_partial_lines(self):
+        return self._get_partial_lines(0)
     def get_full_lines(self, depth, max_partial_length):
         lines = [(' ' * 2*depth) + self.description + ':']
         for item in self.subitems:
@@ -69,9 +73,11 @@ def get_help_string(form_objects):
     """
     @param form_objects: a list of form objects
     """
+    # Get the help objects
+    help_objects = [
+            x.get_help_object() for x in form_objects if not x.web_only()]
     # Get the length of the longest partial line.
-    help_objects = [x.get_help_object() for x in form_objects]
-    pline_lists = [x.get_partial_lines(0) for x in help_objects]
+    pline_lists = [x.get_partial_lines() for x in help_objects]
     plines = list(itertools.chain.from_iterable(pline_lists))
     max_len = Util.max_length(plines)
     # True if a blank line should be added after the corresponding help object.
@@ -199,6 +205,9 @@ class RadioGroup:
         self.description = description
         self.radio_items = radio_items
 
+    def web_only(self):
+        return False
+
     def get_help_object(self):
         obj = HelpGroup(self.description)
         obj.subitems = [x.get_help_object() for x in self.radio_items]
@@ -306,6 +315,9 @@ class CheckGroup:
         self.description = description
         self.check_items = check_items
 
+    def web_only(self):
+        return False
+
     def get_help_object(self):
         obj = HelpGroup(self.description)
         obj.subitems = [x.get_help_object() for x in self.check_items]
@@ -369,6 +381,9 @@ class RadioItem:
         self.description = description
         self.default = default
 
+    def web_only(self):
+        return False
+
     def get_help_object(self):
         return HelpItem(
                 '--%s' % self.label,
@@ -399,6 +414,9 @@ class CheckItem:
         self.label = label
         self.description = description
         self.default = default
+
+    def web_only(self):
+        return False
 
     def get_help_object(self):
         s = 'Y' if self.default else 'N'
@@ -458,6 +476,9 @@ class SingleLine:
         self.label = label
         self.description = description
         self.default_line = default_line
+
+    def web_only(self):
+        return False
 
     def get_help_object(self):
         if set(self.default_line) - set(g_safe_letters):
@@ -538,6 +559,9 @@ class Float:
         self.low_inclusive = low_inclusive
         self.high_exclusive = high_exclusive
         self.high_inclusive = high_inclusive
+
+    def web_only(self):
+        return False
 
     def get_help_object(self):
         return HelpItem(
@@ -656,6 +680,9 @@ class Integer:
         self.low = low
         self.high = high
 
+    def web_only(self):
+        return False
+
     def get_help_object(self):
         return HelpItem(
                 '--' + self.label + '=' + str(self.default_integer),
@@ -755,6 +782,9 @@ class Matrix:
         self.default_matrix = default_matrix
         self.matrix_assertion = matrix_assertion
 
+    def web_only(self):
+        return False
+
     def get_help_object(self):
         return HelpItem(
                 '--' + self.label + '=FILENAME',
@@ -843,6 +873,9 @@ class MultiLine:
         self.description = description
         self.default_string = default_string
 
+    def web_only(self):
+        return False
+
     def get_help_object(self):
         return HelpItem(
                 '--' + self.label + '=FILENAME',
@@ -900,6 +933,7 @@ class MultiLine:
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
+
 class ContentDisposition(RadioGroup):
     def __init__(self):
         """
@@ -912,6 +946,10 @@ class ContentDisposition(RadioGroup):
                 RadioItem('inline', 'view', True),
                 RadioItem('attachment', 'download')]
         RadioGroup.__init__(self, label, description, radio_items)
+
+    def web_only(self):
+        return True
+
 
 class ImageFormat(RadioGroup):
     def __init__(self):

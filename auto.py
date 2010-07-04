@@ -51,8 +51,10 @@ def main():
         d_in = argv_to_dict(sys.argv)
         d_out = {}
         for obj in form_objects:
-            obj.process_cmdline_dict(d_in, d_out)
+            if not obj.web_only():
+                obj.process_cmdline_dict(d_in, d_out)
         args = dict_to_args(d_out)
+        args.contentdisposition = 'attachment'
         header_pairs, content = usermod.get_response(args)
         sys.stdout.write(content)
 
