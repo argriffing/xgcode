@@ -195,21 +195,28 @@ class RadioGroup:
         @param description: single line description of the group
         @param radio_items: a sequence of RadioItem objects
         """
-        # assert that exactly one radio_item is checked
-        checked_list = [item for item in radio_items if item.default]
-        if len(checked_list) != 1:
-            msg = 'exactly one radio button should be checked by default'
-            raise FormError(msg)
         # initialize the member variables
         self.label = label
         self.description = description
         self.radio_items = radio_items
+        # assert that exactly one radio_item is checked
+        self._get_checked_list()
 
     def web_only(self):
         return False
 
+    def _get_checked_list(self):
+        checked_list = [item for item in self.radio_items if item.default]
+        if len(checked_list) != 1:
+            msg = 'exactly one radio button should be checked by default'
+            raise FormError(msg)
+        return checked_list
+
     def get_help_object(self):
-        obj = HelpGroup(self.description)
+        checked_list = self._get_checked_list()
+        default_string = checked_list[0].label
+        description = '%s (default: %s)' % (self.description, default_string)
+        obj = HelpGroup(description)
         obj.subitems = [x.get_help_object() for x in self.radio_items]
         return obj
 
