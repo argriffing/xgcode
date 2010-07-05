@@ -25,7 +25,7 @@ def process(lines):
     """
     @param lines: lines of a .hud file
     """
-    names, data = hud.parse(lines)
+    names, data = hud.decode(lines)
     out = StringIO()
     for i, genotype in enumerate(data[0]):
         name = 'SNP_%d' % i

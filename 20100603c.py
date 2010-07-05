@@ -45,7 +45,7 @@ def get_response(fs):
     return response_headers, text
 
 def process(raw_hud_lines):
-    names, data = hud.parse(raw_hud_lines)
+    names, data = hud.decode(raw_hud_lines)
     columns = zip(*data)
     return '\n'.join(''.join(str(x) for x in c) for c in columns)
 

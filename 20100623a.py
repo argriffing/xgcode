@@ -56,7 +56,7 @@ def process(line_sources):
     @param line_sources: sources of line iterables
     """
     # get the headers and data from all of the input sources
-    header_data_pairs = [hud.parse(lines) for lines in line_sources]
+    header_data_pairs = [hud.decode(lines) for lines in line_sources]
     header_list, data_list = zip(*header_data_pairs)
     # get the header to index map for each input source
     h_to_i_list = [Util.inverse_map(x) for x in header_list]
@@ -75,7 +75,7 @@ def process(line_sources):
             if h in h_to_i:
                 row.extend(data[h_to_i[h]])
         out_data.append(row)
-    return hud.to_blob(out_headers, out_data)
+    return hud.encode(out_headers, out_data) + '\n'
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

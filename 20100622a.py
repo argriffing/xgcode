@@ -95,4 +95,4 @@ def read_satellite_lines(raw_lines):
 
 def process(raw_lines):
     headers, binary_rows = read_satellite_lines(raw_lines)
-    return hud.to_blob(headers, binary_rows)
+    return hud.encode(headers, binary_rows) + '\n'

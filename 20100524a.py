@@ -108,7 +108,7 @@ def get_selections(M, nrows, ncols, nseconds):
 def process(args, raw_hud_lines, nseconds=2):
     nwords = args.nwords
     nchars = args.nchars
-    names, data = hud.parse(raw_hud_lines)
+    names, data = hud.decode(raw_hud_lines)
     out = StringIO()
     if len(data) < nwords:
         msg = 'the number of OTUs is smaller than the desired sample'

@@ -33,7 +33,7 @@ def process(args, raw_hud_lines):
     @return: results in convenient text form
     """
     out = StringIO()
-    names, data = hud.parse(raw_hud_lines)
+    names, data = hud.decode(raw_hud_lines)
     # normalize the names of the isolates
     if args.clean_isolates:
         names = [Carbone.clean_isolate_element(x) for x in names]

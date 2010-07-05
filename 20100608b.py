@@ -49,7 +49,7 @@ def do_pca(hud_lines):
     @return: names, scaled vectors
     """
     # get the ordered names from the .hud file
-    names, data = hud.parse(hud_lines)
+    names, data = hud.decode(hud_lines)
     # create the floating point count matrix
     C_full = np.array(data)
     m_full, n_full = C_full.shape

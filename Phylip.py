@@ -71,7 +71,9 @@ def decode(raw_lines):
 
 def encode(headers, sequences):
     """
-    This creates the contents of a non-interleaved phylip sequence file.
+    Create a phylip sequence file.
+    This creates the contents of a non-interleaved phylip sequence file
+    except for the trailing newline.
     @param headers: some header strings
     @param sequences: some sequence strings
     """

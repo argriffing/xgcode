@@ -39,7 +39,7 @@ def process(hud_lines, matpheno_lines):
     @return: contents of an .ind file
     """
     # get the ordered names from the .hud file
-    names, hud_data = hud.parse(hud_lines)
+    names, hud_data = hud.decode(hud_lines)
     # get case and control status from the matpheno file
     cases = set()
     controls = set()

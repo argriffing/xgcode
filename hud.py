@@ -9,7 +9,7 @@ import Util
 
 class HudError(Exception): pass
 
-def parse(raw_lines):
+def decode(raw_lines):
     """
     @param raw_lines: raw lines of a hud file
     @return: headers, data
@@ -44,11 +44,11 @@ def parse(raw_lines):
     data = [[int(x) for x in row] for row in data]
     return headers, data
 
-def to_blob(headers, rows):
+def encode(headers, rows):
     """
     @param headers: strings
     @param rows: a row major binary matrix
-    @return: the content of a .hud file
+    @return: the contents of a .hud file except for trailing newline
     """
     if not headers:
         return ''

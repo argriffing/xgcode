@@ -53,10 +53,10 @@ def process(fs, raw_lines):
     headers, sequences = Phylip.decode(raw_lines)
     binary_rows = Carbone.get_binary_rows(sequences)
     if fs.hud_out:
-        return hud.to_blob(headers, binary_rows)
+        return hud.encode(headers, binary_rows) + '\n'
     elif fs.phylip_out:
         binary_seqs = [''.join(str(x) for x in row) for row in binary_rows]
-        return Phylip.encode(headers, binary_seqs)
+        return Phylip.encode(headers, binary_seqs) + '\n'
 
 def main(args):
     print process(args, sys.stdin)

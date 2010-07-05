@@ -96,7 +96,7 @@ def get_precipitation_info(data_rows, threshold):
 def process(hud_lines, info_lines, threshold):
     out = StringIO()
     # extract names from the .hud file
-    names, hud_data = hud.parse(hud_lines)
+    names, hud_data = hud.decode(hud_lines)
     # read the csv file
     rows = list(csv.reader(info_lines))
     header, data_rows = rows[0], rows[1:]
