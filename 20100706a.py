@@ -190,6 +190,11 @@ class ColorInfo:
         Return a string to write into an R script.
         """
         return 'hsv(c(%s))' % ','.join(str(x) for x in self.unique_hues)
+    def get_dot_col(self):
+        """
+        Return a string to write into an R script.
+        """
+        return 'hsv(c(%s))' % ','.join(str(x) for x in self.hues)
 
 class ShapeInfo:
     def __init__(self, header, column):
@@ -331,8 +336,8 @@ class PlotInfo:
             # define symbols colors and sizes
             "s3d$points(Year, Latitude, Risk,",
             "pch=mytable$symbol,"
-            'bg=' + self.color_info.get_legend_col() + ',',
-            'col=' + self.color_info.get_legend_col() + ',',
+            'bg=' + self.color_info.get_dot_col() + ',',
+            'col=' + self.color_info.get_dot_col() + ',',
             "cex=%s)" % args.size,
             # define x y and z as Year, Latitude and Risk
             "s3d.coords <- s3d$xyz.convert(Year, Latitude, Risk)",
