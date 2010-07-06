@@ -1,4 +1,4 @@
-"""Plot some fungus info given an R table.
+"""Scatter plot 3D given an R table with one categorical and one numerical var.
 """
 
 from StringIO import StringIO
