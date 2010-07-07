@@ -17,6 +17,10 @@ g_header_pattern = r'^[a-zA-Z][a-zA-Z0-9]*$'
 def is_valid_header(h):
     return re.match(g_header_pattern, h)
 
+def validate_headers(headers):
+    for h in headers:
+        if not is_valid_header(h):
+            raise ValueError('invalid column header: %s' % h)
 
 def clean_isolate_element(ic):
     if ic is None:

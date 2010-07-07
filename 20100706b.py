@@ -1,10 +1,12 @@
-"""Cluster using k-means. [UNFINISHED]
+"""Cluster using k-means.
 """
 
 from StringIO import StringIO
 import os
+import random
 
 import argparse
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
@@ -31,6 +33,111 @@ g_default_rows = [
 g_default_lines = ['\t'.join(str(x) for x in row) for row in g_default_rows]
 g_default_string = '\n'.join(g_default_lines)
 
+def get_point_center_sqdists(points, centers):
+    """
+    Inputs and outputs are numpy arrays.
+    @param points: the points to be reclustered
+    @param centers: cluster centers
+    @return: for each point, the squared distance to each center
+    """
+    if len(points.shape) != 2:
+        raise ValueError('expected a point matrix')
+    if len(centers.shape) != 2:
+        raise ValueError('expected a matrix of cluster centers')
+    npoints = len(points)
+    ncenters = len(centers)
+    # get the dot products of points with themselves
+    pself = np.array([np.dot(p,p) for p in points])
+    # get the dot products of centers with themselves
+    cself = np.array([np.dot(c,c) for c in centers])
+    # get the matrix product of points and centers
+    prod = np.dot(points, centers.T)
+    # get the matrix of squared distances
+    sqdists = (
+        np.outer(pself, np.ones(ncenters)) +
+        np.outer(np.ones(npoints), cself) -
+        2*prod)
+    return sqdists
+
+def get_centers(points, labels):
+    """
+    Inputs and outputs are numpy arrays.
+    @param points: euclidean points
+    @param labels: conformant cluster indices
+    """
+    ncoords = len(points[0])
+    nlabels = len(set(labels))
+    sums = [np.zeros(ncoords) for i in range(nlabels)]
+    counts = [0]*nlabels
+    for point, label in zip(points, labels):
+        sums[label] += point
+        counts[label] += 1
+    M = np.array([s/c for s, c in zip(sums, counts)])
+    return M
+
+def get_labels(sqdists):
+    """
+    Inputs and outputs are numpy arrays.
+    @param sqdists: for each point, the squared distance to each center
+    @return: for each point, the label of the nearest cluster
+    """
+    return np.argmin(sqdists, axis=1)
+
+def get_wcss(sqdists, labels):
+    """
+    Get the within-cluster sum of squares.
+    @param sqdists: for each point, the squared distance to each center
+    @param labels: cluster labels
+    @return: within-cluster sum of squares
+    """
+    return sum(row[label] for row, label in zip(sqdists, labels))
+
+def get_random_labels(npoints, nclusters):
+    """
+    Get random labels with each label appearing at least once.
+    """
+    labels = np.random.randint(0, nclusters, npoints)
+    indices = random.sample(range(npoints), nclusters)
+    for index, label in zip(indices, range(nclusters)):
+        labels[index] = label
+    return labels
+
+def lloyd(points, labels):
+    """
+    This is the standard algorithm for kmeans clustering.
+    @param points: points in euclidean space
+    @param labels: initial cluster labels
+    @return: within cluster sum of squares, and labels
+    """
+    while True:
+        centers = get_centers(points, labels)
+        sqdists = get_point_center_sqdists(points, centers)
+        next_labels = get_labels(sqdists)
+        if np.array_equal(next_labels, labels):
+            wcss = get_wcss(sqdists, labels)
+            return wcss, labels
+        labels = next_labels
+
+def lloyd_with_restarts(points, nclusters, nrestarts):
+    """
+    This is the standard algorithm for kmeans clustering with restarts.
+    @param points: points in euclidean space
+    @param nclusters: the number of clusters
+    @param nrestarts: the number of random restarts
+    @return: labels
+    """
+    npoints = len(points)
+    best_wcss = None
+    best_labels = None
+    for i in range(nrestarts):
+        labels = get_random_labels(npoints, nclusters)
+        wcss, labels = lloyd(points, labels)
+        if (best_wcss is None) or (wcss < best_wcss):
+            best_wcss = wcss
+            best_labels = labels
+    return best_labels
+
+
 def get_form():
     """
     @return: the body of a form
@@ -51,38 +158,51 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    # create a response that depends on the requested output type
-    if fs.show_image:
-        content = process(fs, fs.table.splitlines())
-        ext = Form.g_imageformat_to_ext[fs.imageformat]
-        filename = '.'.join((fs.shape, fs.color, 'pca', '3d', ext))
-        contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    else:
-        # read the table
-        rtable = Carbone.RTable(fs.table.splitlines())
-        header_row = rtable.headers
-        data_rows = rtable.data
-        # Do a more stringent check of the column headers.
-        for h in header_row:
-            if not Carbone.is_valid_header(h):
-                msg = 'invalid column header: %s' % h
-                raise ValueError(msg)
-        plot_info = PlotInfo(fs, header_row, data_rows)
-        if fs.show_table:
-            content = '\n'.join(plot_info.get_augmented_table_lines()) + '\n'
-            contenttype = 'text/plain'
-            filename = 'out.table'
-        elif fs.show_script:
-            stub_image_name = 'stub-image-filename.' + fs.imageformat
-            stub_table_name = 'stub-table-filename.table'
-            content = plot_info.get_script(
-                    fs, stub_image_name, stub_table_name) + '\n'
-            contenttype = 'text/plain'
-            filename = 'script.R'
+    # read the table
+    rtable = Carbone.RTable(fs.table.splitlines())
+    header_row = rtable.headers
+    data_rows = rtable.data
+    # do header validation
+    Carbone.validate_headers(header_row)
+    if not Carbone.is_valid_header(fs.annotation):
+        raise ValueError('invalid column header: %s' % fs.annotation)
+    if fs.annotation in header_row:
+        msg = 'the column header %s is already in the table' % fs.annotation
+        raise ValueError(msg)
+    # get the numpy array of conformant points
+    h_to_i = dict((h, i+1) for i, h in enumerate(header_row))
+    axis_headers = fs.axes.split()
+    if not axis_headers:
+        raise ValueError('no Euclidean axes were provided')
+    axis_set = set(axis_headers)
+    header_set = set(header_row)
+    bad_axes = axis_set - header_set
+    if bad_axes:
+        raise ValueError('invalid axes: ' + ', '.join(bad_axes))
+    axis_lists = []
+    for h in axis_headers:
+        index = h_to_i[h]
+        try:
+            axis_list = get_numeric_column(data_rows, index)
+        except NumericError:
+            msg_a = 'expected the axis column %s ' % h
+            msg_b = 'to be numeric'
+            raise ValueError(msg_a + msg_b)
+        axis_lists.append(axis_list)
+    points = np.array(zip(*axis_lists))
+    # do the clustering
+    nrestarts = 10
+    labels = lloyd_with_restarts(points, fs.k, nrestarts)
+    # get the response
+    lines = ['\t'.join(header_row + [fs.annotation])]
+    for i, (label, data_row) in enumerate(zip(labels, data_rows)):
+        row = data_row + [str(label)]
+        lines.append('\t'.join(row))
+    content = '\n'.join(lines) + '\n'
     # return the response
-    disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
+    disposition = '%s; filename=%s' % (fs.contentdisposition, 'out.table')
     response_headers = [
-            ('Content-Type', contenttype),
+            ('Content-Type', 'text/plain'),
             ('Content-Disposition', disposition)]
     return response_headers, content
 
@@ -100,76 +220,3 @@ def get_numeric_column(data, index):
     except ValueError, v:
         raise NumericError
     return floats
-
-class PlotInfo:
-    def __init__(self, args, headers, data):
-        """
-        @param args: user args from web or cmdline
-        @param data: 
-        """
-        # map the column header to the column index
-        self.h_to_i = dict((h, i+1) for i, h in enumerate(headers))
-        # init the info about how to make the plot
-        self._init_axes(args, headers, data)
-
-    def _init_axes(self, args, headers, data):
-        # read the axes
-        self.axis_headers = args.axes.split()
-        # verify the number of axis headers
-        if len(self.axis_headers) != 3:
-            raise ValueError('expected three axis column headers')
-        # verify the axis header contents
-        bad_axis_headers = set(self.axis_headers) - set(headers)
-        if bad_axis_headers:
-            msg_a = 'bad axis column headers: '
-            msg_b = ', '.join(bad_axis_headers)
-            raise ValueError(msg_a + msg_b)
-        self.axis_lists = []
-        for h in self.axis_headers:
-            index = self.h_to_i[h]
-            try:
-                axis_list = get_numeric_column(data, index)
-            except NumericError:
-                msg_a = 'expected the axis column %s ' % h
-                msg_b = 'to be numeric'
-                raise ValueError(msg_a + msg_b)
-            self.axis_lists.append(axis_list)
-
-    def get_augmented_table_lines(self):
-        """
-        This is given to R.
-        """
-        nrows = len(self.color_info.hues)
-        header_row = ['x', 'y', 'z', 'color', 'symbol']
-        data_rows = zip(
-                range(1, nrows+1),
-                self.axis_lists[0],
-                self.axis_lists[1],
-                self.axis_lists[2],
-                self.color_info.hues,
-                self.shape_info.pchs)
-        header_line = '\t'.join(str(x) for x in header_row)
-        data_lines = ['\t'.join(str(x) for x in row) for row in data_rows]
-        return [header_line] + data_lines
-
-
-def process(args, table_lines):
-    """
-    @param args: command line or web input
-    @param table_lines: input lines
-    @return: the image data as a string
-    """
-    rtable = Carbone.RTable(table_lines)
-    header_row = rtable.headers
-    data_rows = rtable.data
-    # Do a more stringent check of the column headers.
-    for h in header_row:
-        if not Carbone.is_valid_header(h):
-            msg = 'invalid column header: %s' % h
-            raise ValueError(msg)
-    # Read the relevant columns and their labels.
-    plot_info = PlotInfo(args, header_row, data_rows)
-    # Get info for the temporary data
-    augmented_lines = plot_info.get_augmented_table_lines()
-    # Return the image data as a string.
-    return image_data
