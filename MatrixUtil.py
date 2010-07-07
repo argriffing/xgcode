@@ -33,6 +33,13 @@ g_example_rotated_matrix = np.array([
 class MatrixError(Exception):
     pass
 
+def assert_1d(M):
+    """
+    @param M: a numpy array
+    """
+    if len(M.shape) != 1:
+        raise MatrixError('the array is not 1d')
+
 def assert_2d(M):
     """
     @param M: a numpy array
