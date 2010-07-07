@@ -66,14 +66,26 @@ def get_centers(points, labels):
     @param labels: conformant cluster indices
     """
     ncoords = len(points[0])
-    nlabels = len(set(labels))
-    sums = [np.zeros(ncoords) for i in range(nlabels)]
-    counts = [0]*nlabels
+    nclusters = max(labels) + 1
+    sums = [np.zeros(ncoords) for i in range(nclusters)]
+    counts = [0]*nclusters
     for point, label in zip(points, labels):
         sums[label] += point
         counts[label] += 1
     M = np.array([s/c for s, c in zip(sums, counts)])
     return M
+
+def get_normalized_labels(labels):
+    """
+    Account for the fact that sometimes a cluster will go away.
+    That is, if no point is in the voronoi region of a centroid,
+    then in the next iteration this cluster should disappear.
+    @param labels: cluster labels
+    @return: cluster labels
+    """
+    new_to_old = list(iterutils.unique_everseen(labels))
+    old_to_new = dict((old, new) for new, old in enumerate(new_to_old))
+    return np.array([old_to_new[old] for old in labels])
 
 def get_labels(sqdists):
     """
@@ -81,7 +93,7 @@ def get_labels(sqdists):
     @param sqdists: for each point, the squared distance to each center
     @return: for each point, the label of the nearest cluster
     """
-    return np.argmin(sqdists, axis=1)
+    return get_normalized_labels(np.argmin(sqdists, axis=1))
 
 def get_wcss(sqdists, labels):
     """
@@ -146,7 +158,7 @@ def get_form():
             Form.MultiLine('table', 'R table', g_default_string),
             Form.SingleLine('axes', 'column labels of Euclidean axes',
                 ' '.join(('pc1', 'pc2', 'pc3'))),
-            Form.Integer('k', 'number of clusters',
+            Form.Integer('k', 'maximum number of clusters',
                 2, low=2),
             Form.SingleLine('annotation', 'header of added column',
                 'cluster'),

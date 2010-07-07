@@ -34,6 +34,7 @@ def get_first_line(multi_line_string):
     if lines:
         return lines[0]
 
+class ExecutionError(Exception): pass
 
 class GadgetError(Exception): pass
 
@@ -105,6 +106,9 @@ class GadgetForm(object):
 
     @cherrypy.expose
     def process(self, **param_dict):
+        if not self.form_objects:
+            msg = 'the server has restarted'
+            raise ExecutionError(msg)
         fs = FieldStorage(param_dict)
         for form_item in self.form_objects:
             form_item.process_fieldstorage(fs)
