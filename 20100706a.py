@@ -6,6 +6,7 @@ import os
 import subprocess
 from subprocess import PIPE
 import tempfile
+import colorsys
 
 import argparse
 
@@ -14,6 +15,11 @@ import Form
 import Util
 import Carbone
 import iterutils
+
+g_colorbrewer_set1 = [
+    "#E41A1C", "#377EB8", "#4DAF4A",
+    "#984EA3", "#FF7F00", "#FFFF33",
+    "#A65628", "#F781BF", "#999999"]
 
 g_default_rows = [
         ['otu', 'species', 'location', 'temperature', 'precipitation',
@@ -33,6 +39,26 @@ g_default_rows = [
 
 g_default_lines = ['\t'.join(str(x) for x in row) for row in g_default_rows]
 g_default_string = '\n'.join(g_default_lines)
+
+def rgb_floats_to_ints(rgb_floats):
+    return tuple(int(round(x*255)) for x in rgb_floats)
+
+def create_R_palette(n):
+    """
+    @param n: make a list of this many colors
+    @return: a list of R colors like #E41A1C
+    """
+    if n < 10:
+        return g_colorbrewer_set1[:n]
+    increment = 1.0 / (1 + n)
+    hues = [i*increment for i in range(n)]
+    # get rgb values as triples of floats between 0 and 1
+    rgbs = [colorsys.hsv_to_rgb(h, 1.0, 1.0) for h in hues]
+    # get rgb values as triples of ints between 0 and 255
+    rgbs = [rgb_floats_to_ints(rgb) for rgb in rgbs]
+    # get rgb values as strings
+    rgbs = ['#%02X%02X%02X' % rgb for rgb in rgbs]
+    return rgbs
 
 def my_mktemp():
     """
@@ -135,10 +161,6 @@ def get_numeric_column(data, index):
         raise NumericError
     return floats
 
-def get_hues(n):
-    increment = 1.0 / (1 + n)
-    return [i*increment for i in range(n)]
-
 def get_legend_position(legend_position_string):
     """
     @param legend_position_string: something like '10 20 -3.2'
@@ -169,9 +191,9 @@ class ColorInfo:
         self.header = header
         self.values = column[:]
         self.unique_values = list(iterutils.unique_everseen(column))
-        self.unique_hues = get_hues(len(self.unique_values))
-        value_to_hue = dict(zip(self.unique_values, self.unique_hues))
-        self.hues = [value_to_hue[v] for v in column]
+        self.unique_colors = create_R_palette(len(self.unique_values))
+        value_to_color = dict(zip(self.unique_values, self.unique_colors))
+        self.colors = [value_to_color[v] for v in column]
         # pch fifteen is a solid block
         self.pch = 15
     def get_legend_pch(self):
@@ -189,12 +211,7 @@ class ColorInfo:
         """
         Return a string to write into an R script.
         """
-        return 'hsv(c(%s))' % ','.join(str(x) for x in self.unique_hues)
-    def get_dot_col(self):
-        """
-        Return a string to write into an R script.
-        """
-        return 'hsv(c(%s))' % ','.join(str(x) for x in self.hues)
+        return 'c(' + ','.join('"%s"' % x for x in self.unique_colors) + ')'
 
 class ShapeInfo:
     def __init__(self, header, column):
@@ -284,14 +301,14 @@ class PlotInfo:
         """
         This is given to R.
         """
-        nrows = len(self.color_info.hues)
+        nrows = len(self.color_info.colors)
         header_row = ['x', 'y', 'z', 'color', 'symbol']
         data_rows = zip(
                 range(1, nrows+1),
                 self.axis_lists[0],
                 self.axis_lists[1],
                 self.axis_lists[2],
-                self.color_info.hues,
+                ['"%s"' % x for x in self.color_info.colors],
                 self.shape_info.pchs)
         header_line = '\t'.join(str(x) for x in header_row)
         data_lines = ['\t'.join(str(x) for x in row) for row in data_rows]
@@ -336,8 +353,8 @@ class PlotInfo:
             # define symbols colors and sizes
             "s3d$points(Year, Latitude, Risk,",
             "pch=mytable$symbol,"
-            'bg=' + self.color_info.get_dot_col() + ',',
-            'col=' + self.color_info.get_dot_col() + ',',
+            'bg=as.vector(mytable$color),',
+            'col=as.vector(mytable$color),',
             "cex=%s)" % args.size,
             # define x y and z as Year, Latitude and Risk
             "s3d.coords <- s3d$xyz.convert(Year, Latitude, Risk)",
