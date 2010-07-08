@@ -119,11 +119,9 @@ def get_point_center_sqdists(points, centers):
     npoints = len(points)
     ncenters = len(centers)
     # get the dot products of points with themselves
-    #pself = np.sum(points*points, axis=1)
-    pself = np.array([np.dot(p, p) for p in points])
+    pself = np.sum(points*points, axis=1)
     # get the dot products of centers with themselves
-    #cself = np.sum(centers*centers, axis=1)
-    cself = np.array([np.dot(c, c) for c in centers])
+    cself = np.sum(centers*centers, axis=1)
     # get the matrix product of points and centers
     prod = np.dot(points, centers.T)
     # get the matrix of squared distances
