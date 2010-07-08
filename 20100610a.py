@@ -247,7 +247,7 @@ class PlotInfo:
             "Risk <- mytable$z",
             "Prec <- mytable$color",
             # stack two plots vertically
-            "layout(cbind(1:2, 1:2), heights = c(7, 1))",
+            "layout(cbind(1:2, 1:2), heights = c(7, 1.5))",
             # create the color gradient
             "prc <- hsv((prc <- 0.7*Prec/diff(range(Prec))) - min(prc) + 0.3)",
             # create the scatterplot
@@ -267,10 +267,10 @@ class PlotInfo:
             "legend=c(%s)," % symbol_legend_string,
             "cex = 1.1)",
             # set margins
-            "par(mar=c(5, 3, 0, 3))",
+            "par(mar=c(5, 3, 0.5, 3))",
             # draw the plot
             "plot(seq(min(Prec), max(Prec), length = 100),",
-            "rep(0, 100), pch = 15,",
+            "rep(0, 100), pch = 15, cex = 2,",
             "axes = FALSE,",
             "xlab = '%s'," % color_legend_string,
             "ylab = '', col = hsv(seq(0.3, 1, length = 100)))",
