@@ -190,8 +190,15 @@ class ClusterState(object):
         return next_state
 
 
-def get_next_state(state):
-    return state.get_next()
+def gen_states(gs):
+    """
+    @param gs: state that is unchanged between iterations
+    """
+    state = ClusterState(gs)
+    while True:
+        state = state.get_next()
+        yield state
+
 
 def main(args):
     """
@@ -204,7 +211,7 @@ def main(args):
     gs = GlobalState(rtable, points, args.annotation, args.k)
     # go until iteration is stopped for some reason
     run_info = combobreaker.combo_breaker(
-            ClusterState(gs), get_next_state, args.nseconds, args.nrestarts)
+            gen_states(gs), args.nseconds, args.nrestarts)
     print run_info.get_response()
 
 if __name__ == '__main__':
