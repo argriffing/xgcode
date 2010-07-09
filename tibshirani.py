@@ -19,7 +19,16 @@ def get_sum_of_distances_fast(X):
     colsums = X.sum(axis=0)
     alpha = nrows * np.sum(X**2)
     beta = np.dot(colsums, colsums)
-    return 2 * (alpha - beta)
+    return 2*(alpha - beta)
+
+def get_sum_of_distances_centered(X):
+    """
+    @param X: each row of numpy array X is a point
+    @return: sum of euclidean distances between all ordered pairs
+    """
+    nrows, ncols = X.shape
+    center = X.mean(axis=0)
+    return 2*nrows*np.sum((X-center)**2)
 
 def get_sum_of_distances_naive(X):
     """
@@ -38,9 +47,14 @@ class TestTibshirani(unittest.TestCase):
             [1, 1, 1, 1],
             [8, 2, 3, 6]], dtype=float)
     
-    def test_sum_of_distances(self):
+    def test_sum_of_distances_fast(self):
         expected = get_sum_of_distances_naive(self.M)
         observed = get_sum_of_distances_fast(self.M)
+        self.assertTrue(np.allclose(expected, observed))
+    
+    def test_sum_of_distances_centered(self):
+        expected = get_sum_of_distances_naive(self.M)
+        observed = get_sum_of_distances_centered(self.M)
         self.assertTrue(np.allclose(expected, observed))
 
 if __name__ == '__main__':
