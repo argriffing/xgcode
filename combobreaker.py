@@ -6,9 +6,7 @@ Third, the loop could hit a limit on the number of iterations.
 """
 
 import time
-
-
-class ComboBreaker(Exception): pass
+import unittest
 
 
 class RunInfo(object):
@@ -36,29 +34,44 @@ class RunInfo(object):
         return '\n'.join(chunks)
 
 
-def combo_breaker(state, fn, nseconds=None, niterations=None):
+def combo_breaker(states, nseconds=None, niterations=None):
     """
     Raise a ComboBreaker exception containing the final state.
-    @param state: a state
-    @param fn: functionally update state using this function
+    @param states: a state iterator, probably a generator object
     @param nseconds: a time limit
     @param niterations: a limit on the number of iterations
     """
     tm = time.time()
-    count = 0
+    count_m1 = -1
+    state = None
+    stop_msg = 'finished'
     try:
-        try:
-            while True:
-                if nseconds is not None:
-                    if time.time() - tm >= nseconds:
-                        raise ComboBreaker('time limit')
-                if niterations is not None:
-                    if count >= niterations:
-                        raise ComboBreaker('iteration limit')
-                state = fn(state)
-                count += 1
-        except KeyboardInterrupt:
-            raise ComboBreaker('ctrl-c')
-    except ComboBreaker as e:
-        return RunInfo(state, count, time.time() - tm, str(e))
+        for count_m1, state in enumerate(states):
+            if nseconds is not None:
+                if time.time() - tm >= nseconds:
+                    stop_msg = 'time limit'
+                    break
+            if niterations is not None:
+                if count_m1 + 1 >= niterations:
+                    stop_msg = 'iteration limit'
+                    break
+    except KeyboardInterrupt:
+        stop_msg = 'ctrl-c'
+    return RunInfo(state, count_m1 + 1, time.time() - tm, stop_msg)
 
+
+class TestComboBreaker(unittest.TestCase):
+
+    def test_combo_breaker_finish(self):
+        info = combo_breaker(xrange(3))
+        self.assertEqual(info.iterations, 3)
+        self.assertEqual(info.stop_msg, 'finished')
+
+    def test_combo_breaker_niterations(self):
+        info = combo_breaker(xrange(3), niterations=2)
+        self.assertEqual(info.iterations, 2)
+        self.assertEqual(info.stop_msg, 'iteration limit')
+
+
+if __name__ == '__main__':
+    unittest.main()
