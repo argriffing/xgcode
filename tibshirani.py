@@ -30,13 +30,18 @@ def get_sum_of_distances_naive(X):
 
 
 class TestTibshirani(unittest.TestCase):
-    
-    def test_sum_of_distances(self):
-        M = np.array([
+
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        self.M = np.array([
             [1, 2, 3, 4],
             [1, 1, 1, 1],
-            [8, 2, 3, 6]])
-        expected = get_sum_of_distances_naive(M)
-        observed = get_sum_of_distances_fast(M)
-        self.assertTrue(np.array_equal(expected, observed))
+            [8, 2, 3, 6]], dtype=float)
+    
+    def test_sum_of_distances(self):
+        expected = get_sum_of_distances_naive(self.M)
+        observed = get_sum_of_distances_fast(self.M)
+        self.assertTrue(np.allclose(expected, observed))
 
+if __name__ == '__main__':
+    unittest.main()
