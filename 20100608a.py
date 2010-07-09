@@ -1,4 +1,4 @@
-"""Compute three principal components given a .hud file.
+"""Compute principal components given a .hud file.
 
 The output is an R frame.
 The principal components are computed according to Patterson et al.
@@ -55,13 +55,15 @@ def process(args, raw_hud_lines):
     # scale the eigenvectos by the eigenvalues
     pcs = [w*v for w, v in zip(evals, evecs)]
     # check for sufficient number of eigenvectors
-    if len(evecs) < 3:
-        raise HandlingError('the matrix has insufficient rank')
+    if len(evecs) < args.npcs:
+        msg_a = 'the number of requested principal components '
+        msg_b = 'must be no more than the number of OTUs'
+        raise ValueError(msg_a + msg_b)
     # create the R frame
-    headers = ('otu', 'pc1', 'pc2', 'pc3')
+    headers = ['otu'] + ['pc%d' % (i+1) for i in range(args.npcs)]
     print >> out, '\t'.join(headers)
     for i, name in enumerate(names):
-        typed_row = [name, pcs[0][i], pcs[1][i], pcs[2][i]]
+        typed_row = [name] + [pcs[j][i] for j in range(args.npcs)]
         if args.add_indices:
             typed_row = [i+1] + typed_row
         row = [str(x) for x in typed_row]
@@ -76,6 +78,8 @@ def get_form():
             Form.MultiLine('hud',
                 'contents of a .hud file',
                 g_default_hud_string),
+            Form.Integer('npcs',
+                'find this many principal components', 3),
             Form.CheckGroup('cleangroup', 'more options', [
                 Form.CheckItem('add_indices',
                     'add row indices for R table compatibility', True),
@@ -89,25 +93,9 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    text = process(fs, fs.hud.splitlines())
+    text = process(fs, fs.hud.splitlines()) + '\n'
     disposition = "%s; filename=%s" % (fs.contentdisposition, 'pc.table') 
     response_headers = [
             ('Content-Type', 'text/plain'),
             ('Content-Disposition', disposition)]
     return response_headers, text
-
-def main(args):
-    with open(os.path.expanduser(args.hud)) as fin_hud:
-        print process(fin_hud)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--hud', required=True,
-            help='a .hud file')
-    parser.add_argument('--dont_add_indices',
-            action='store_false', dest='add_indices',
-            help='do not add R compatibile row indices')
-    parser.add_argument('--dont_clean_isolates',
-            action='store_false', dest='clean_isolates',
-            help='do not force isolate names to be IC-prefixed')
-    main(parser.parse_args())
