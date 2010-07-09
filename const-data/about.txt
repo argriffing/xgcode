@@ -92,5 +92,9 @@ ftp://hgdownload.cse.ucsc.edu/goldenPath/hg18/multiz44way/44way.nh
 See also
 ftp://hgdownload.cse.ucsc.edu/goldenPath/hg18/multiz44way/README.txt
 
-20100525a.dat
+20100625a.dat
 A small phylip file.
+
+20100709a.dat
+An R table with a subset of fungus data from Dr. Ignazio Carbone.
+Three of the columns define principal component eigenvectors.
