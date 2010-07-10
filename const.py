@@ -3,7 +3,6 @@ Deal with constant data.
 """
 
 import unittest
-
 import os
 
 def read(name):

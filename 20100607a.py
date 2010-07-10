@@ -65,7 +65,7 @@ def get_tracy_widom_statistic(m, n, L):
     sigma = (alpha / n) * (1/math.sqrt(n-1) + 1/math.sqrt(m))**(1./3.)
     return (L - mu) / sigma
 
-def process(hud_lines):
+def process(args, hud_lines):
     """
     @param hud_lines: lines of a .hud file
     @return: results in convenient text form
@@ -97,11 +97,14 @@ def process(hud_lines):
     x = get_tracy_widom_statistic(m, n, L)
     # do linkage correction
     n_prime = ((m+1)*L1*L1) / ((m-1)*L2 - L1*L1)
-    L_prime = (m-1)*proportion
-    x_prime = get_tracy_widom_statistic(m, n_prime, L_prime)
     # detect additional structure using alpha level of 0.05
     crit = 0.9794
-    sigs, insig = get_corrected_structure(crit, evals, m, n_prime)
+    if n_prime < n:
+        L_prime = (m-1)*proportion
+        x_prime = get_tracy_widom_statistic(m, n_prime, L_prime)
+        sigs, insig = get_corrected_structure(crit, evals, m, n_prime)
+    else:
+        sigs, insig = get_corrected_structure(crit, evals, m, n)
     # print some infos
     print >> out, 'number of isolates:'
     print >> out, m_full
@@ -113,13 +116,19 @@ def process(hud_lines):
     print >> out, n
     print >> out
     print >> out, 'effective number of linkage-corrected SNPs:'
-    print >> out, n_prime
+    if n_prime < n:
+        print >> out, n_prime
+    else:
+        print >> out, '[sample is too degenerate for estimation]'
     print >> out
     print >> out, 'Tracy-Widom statistic (linkage-naive):'
     print >> out, x
     print >> out
     print >> out, 'Tracy-Widom statistic (linkage-corrected):'
-    print >> out, x_prime
+    if n_prime < n:
+        print >> out, x_prime
+    else:
+        print >> out, '[sample is too degenerate for estimation]'
     print >> out
     print >> out, 'proportion of variance explained by principal axis:'
     print >> out, proportion
@@ -134,13 +143,20 @@ def process(hud_lines):
     print >> out, 'first insignificant Tracy-Widom statistic:'
     print >> out, insig
     print >> out
-    print >> out, 'eigenvalues:'
-    for w in evals:
-        print >> out, w
-    print >> out
     print >> out, 'principal axis projection:'
     for loading, name in sorted(zip(evecs[0] * evals[0], names)):
         print >> out, '\t'.join([name, str(loading)])
+    print >> out
+    # evals should sum to the number of OTUs
+    evals_sum = sum(evals)
+    if args.sum_to_n:
+        print >> out, 'eigenvalues normalized to sum to the number of OTUs:'
+        for w in evals:
+            print >> out, m_full * w / float(evals_sum)
+    elif args.sum_to_1:
+        print >> out, 'eigenvalues normalized to sum to 1.0:'
+        for w in evals:
+            print >> out, w / float(evals_sum)
     return out.getvalue().rstrip()
 
 def get_form():
@@ -150,7 +166,10 @@ def get_form():
     form_objects = [
             Form.MultiLine('hud',
                 'contents of a .hud file',
-                g_default_hud_string)]
+                g_default_hud_string),
+            Form.RadioGroup('normalization', 'eigenvalue normalization', [
+                Form.RadioItem('sum_to_1', 'sum to 1.0', True),
+                Form.RadioItem('sum_to_n', 'sum to the number of OTUs')])]
     return form_objects
 
 def get_response(fs):
@@ -158,15 +177,5 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    text = process(fs.hud.splitlines())
+    text = process(fs, fs.hud.splitlines())
     return [('Content-Type', 'text/plain')], text
-
-def main(args):
-    with open(os.path.expanduser(args.hud)) as fin_hud:
-        print process(fin_hud)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--hud', required=True,
-            help='a .hud file')
-    main(parser.parse_args())
