@@ -12,13 +12,9 @@ import Form
 import Phylip
 import Carbone
 import hud
+import const
 
-
-g_default_lines = [
-        '3 20',
-        'Cow       ATGGCATATCCCATACAACT',
-        'Carp      ATGGCACACCCAACGCAACT',
-        'Chicken   ATGGCCAACCACTCCCAACT']
+g_default_data = const.read('20100625a')
 
 def get_form():
     """
@@ -26,7 +22,7 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('phylip', 'non-interleaved Phylip alignment',
-                '\n'.join(g_default_lines)),
+                g_default_data),
             Form.RadioGroup('format_out', 'output format', [
                 Form.RadioItem('hud_out', 'hud', True),
                 Form.RadioItem('phylip_out', 'non-interleaved phylip')]),

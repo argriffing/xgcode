@@ -14,33 +14,16 @@ import Util
 import Carbone
 import kmeans
 import combobreaker
+import const
 
-g_default_rows = [
-        ['otu', 'species', 'location', 'temperature', 'precipitation',
-            'pc1', 'pc2', 'pc3'],
-        [1, 'IC100', 'Ap', 'GA', 15.0, 600.0,
-            -2.8053476259, 0.556532380058, -6.17891756957],
-        [2, 'IC101', 'Ap', 'GA', 15.0, 600.0,
-            -2.8053476259, 0.556532380058, -6.17891756956],
-        [3, 'IC102', 'Ap', 'GA', 15.0, 600.0,
-            -2.80534762591, 0.556532380059, -6.17891756957],
-        [455, 'IC577', 'Ac', 'AR', 25.0, 400.0,
-            -13.7544736082, -7.16259232881, 7.0902951321],
-        [456, 'IC580', 'Ac', 'AR', 25.0, 400.0,
-            3.56768959361, 0.385873934264, 1.23981735331],
-        [457, 'IC591', 'Ac', 'AR', 25.0, 400.0,
-            -11.6455270418, -5.710582374, 5.60835091179]]
-
-g_default_lines = ['\t'.join(str(x) for x in row) for row in g_default_rows]
-g_default_string = '\n'.join(g_default_lines)
-
+g_default = const.read('20100709a')
 
 def get_form():
     """
     @return: the body of a form
     """
     form_objects = [
-            Form.MultiLine('table', 'R table', g_default_string),
+            Form.MultiLine('table', 'R table', g_default),
             Form.SingleLine('axes', 'column labels of Euclidean axes',
                 ' '.join(('pc1', 'pc2', 'pc3'))),
             Form.Integer('k', 'maximum number of clusters',

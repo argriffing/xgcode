@@ -14,25 +14,9 @@ import Form
 import Util
 import Carbone
 import iterutils
+import const
 
-g_default_rows = [
-        ['otu', 'species', 'location', 'temperature', 'precipitation',
-            'pc1', 'pc2', 'pc3'],
-        [1, 'IC100', 'Ap', 'GA', 15.0, 600.0,
-            -2.8053476259, 0.556532380058, -6.17891756957],
-        [2, 'IC101', 'Ap', 'GA', 15.0, 600.0,
-            -2.8053476259, 0.556532380058, -6.17891756956],
-        [3, 'IC102', 'Ap', 'GA', 15.0, 600.0,
-            -2.80534762591, 0.556532380059, -6.17891756957],
-        [455, 'IC577', 'Ac', 'AR', 25.0, 400.0,
-            -13.7544736082, -7.16259232881, 7.0902951321],
-        [456, 'IC580', 'Ac', 'AR', 25.0, 400.0,
-            3.56768959361, 0.385873934264, 1.23981735331],
-        [457, 'IC591', 'Ac', 'AR', 25.0, 400.0,
-            -11.6455270418, -5.710582374, 5.60835091179]]
-
-g_default_lines = ['\t'.join(str(x) for x in row) for row in g_default_rows]
-g_default_string = '\n'.join(g_default_lines)
+g_default = const.read('20100709a')
 
 def my_mktemp():
     """
@@ -54,7 +38,7 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.MultiLine('table', 'R table', g_default_string),
+            Form.MultiLine('table', 'R table', g_default),
             Form.SingleLine('axes',
                 'numerical variables defining axes of the 3D plot',
                 ' '.join(('pc1', 'pc2', 'pc3'))),
@@ -334,27 +318,3 @@ def process(args, table_lines):
     os.unlink(temp_plot_name)
     # Return the image data as a string.
     return image_data
-
-def main(args):
-    with open(os.path.expanduser(args.table)) as fin:
-        sys.stdout.write(process(args, fin))
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--table', required=True,
-            help='an R table with a specific format')
-    parser.add_argument('--imageformat', default='png',
-            choices=['png', 'pdf', 'postscript', 'svg'],
-            help='output image file format')
-    parser.add_argument('--shape', required=True,
-            help='categorical variable defining the shape of a dot')
-    parser.add_argument('--color', required=True,
-            help='categorical variable defining the color of a dot')
-    parser.add_argument('--size', default=1.5, type=float,
-            help='the size of each plotted point')
-    parser.add_argument('--legend_pos', default='0 0 0',
-            help='position of the symbol legend')
-    parser.add_argument('--axes', default='pc1 pc2 pc3',
-            help='numerical variables defining axes of the 3D plot')
-    main(parser.parse_args())
-
