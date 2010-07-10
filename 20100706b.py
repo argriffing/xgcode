@@ -155,7 +155,7 @@ class ClusterState(object):
         """
         Do an iteration of the Lloyd algorithm.
         """
-        npoints = len(gs.points)
+        npoints = len(self.gs.points)
         labels = kmeans.get_random_labels(npoints, self.gs.nclusters)
         wcss, labels = kmeans.lloyd(self.gs.points, labels)
         if (self.best_wcss is None) or (wcss < self.best_wcss):
@@ -197,22 +197,6 @@ def main(args):
             gen_states(gs), args.nseconds, args.nrestarts)
     print run_info.get_response()
 
-if __name__ == '__main__':
-    parser = arparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--table_filename', required=True,
-            help='R table filename')
-    parser.add_argument('--axes', required=True,
-            help='column labels of Euclidean axes')
-    parser.add_argument('--k', type=int_ge_2, required=True,
-            help='target number of clusters')
-    parser.add_argument('--annotation', default='cluster',
-            help='header of added column')
-    parser.add_argument('--nrestarts', type=whole_number,
-            help='restart the k-means iterative refinement this many times')
-    parser.add_argument('--nseconds', type=positive_float,
-            help='run for this many seconds')
-    main(parser.parse_args())
-
 def whole_number(x):
     try:
         x = int(x)
@@ -237,3 +221,18 @@ def int_ge_2(x):
         raise TypeError
     return x
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--table_filename', required=True,
+            help='R table filename')
+    parser.add_argument('--axes', required=True,
+            help='column labels of Euclidean axes')
+    parser.add_argument('--k', type=int_ge_2, required=True,
+            help='target number of clusters')
+    parser.add_argument('--annotation', default='cluster',
+            help='header of added column')
+    parser.add_argument('--nrestarts', type=whole_number,
+            help='restart the k-means iterative refinement this many times')
+    parser.add_argument('--nseconds', type=positive_float,
+            help='run for this many seconds')
+    main(parser.parse_args())
