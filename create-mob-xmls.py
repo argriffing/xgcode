@@ -19,8 +19,8 @@ def main(args):
             xml_content = None
             print e
         if xml_content:
-            xml_filename = os.path.join(target, 'z' + name + '.xml')
-            with open(xml_filename) as fout:
+            xml_filename = os.path.join(args.target, 'z' + name + '.xml')
+            with open(xml_filename, 'w') as fout:
                 fout.write(xml_content)
 
 if __name__ == '__main__':

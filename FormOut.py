@@ -18,7 +18,7 @@ class FormOut(object):
 
     def get_filename_code(self):
         """
-        This is ugly metaprogramming for Mobyle compatibility.
+        This is ugly but necessary metaprogramming for Mobyle compatibility.
         @return: a string that is a python expression
         """
         if len(self.filename_interpolants) == 1:
@@ -39,10 +39,24 @@ class FormOut(object):
         rhs = tuple(getattr(fs, x) for x in self.filename_interpolants)
         return self.filename_format_string % rhs
 
-    def get_content_type(self, fs):
+    def get_contenttype(self, fs):
         return 'text/plain'
+
+    def get_response_headers(self, fs):
+        response_headers = []
+        response_headers.append(('Content-Type', self.get_contenttype()))
+        if hasattr(fs, 'contentdisposition'):
+            filename = self.get_filename(fs)
+            disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
+            response_headers.append(('Content-Disposition', disposition))
+        return response_headers
 
 
 class Image(FormOut):
 
-    def get_content_type(self, fs):
+    def get_contenttype(self, fs):
+        return Form.g_imageformat_to_contenttype[fs.imageformat]
+
+
+class Report(FormOut):
+    pass

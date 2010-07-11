@@ -10,6 +10,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import Carbone
 import kmeans
@@ -29,6 +30,12 @@ def get_form():
                 Form.CheckItem('verbose',
                     'show calinski index values', True)])]
     return form_objects
+
+def get_form_out():
+    """
+    @return: the format of the output
+    """
+    return FormOut.Report('report.txt', [])
 
 def get_response(fs):
     """
