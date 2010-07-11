@@ -263,7 +263,7 @@ if __name__ == '__main__':
             dst = os.path.abspath(os.path.join(g_live_code, filename))
             shutil.copyfile(src, dst)
     const_data_src = os.path.join(g_script_directory, 'const-data')
-    const_data_dst = 'const-data'
+    const_data_dst = 'code/const-data'
     if os.path.isdir(const_data_dst):
         shutil.rmtree(const_data_dst)
     shutil.copytree(const_data_src, const_data_dst)

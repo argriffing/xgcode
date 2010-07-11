@@ -11,7 +11,7 @@ def read(name):
     @return: all of the raw data
     """
     a, b = os.path.split(os.path.abspath(__file__))
-    pathname = os.path.join('const-data', name + '.dat')
+    pathname = os.path.join(a, 'const-data', name + '.dat')
     with open(pathname) as fin:
         return fin.read()
 
