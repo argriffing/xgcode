@@ -221,10 +221,12 @@ class PlotInfo:
             color_axis = 'axis(1, c(axTicks(1), min(%s), max(%s)))' % (s, s)
         else:
             color_axis = 'axis(1)'
+        # get the image function
+        image_function = Form.g_imageformat_to_r_function[args.imageformat]
         rcodes = [
             "require('scatterplot3d')",
             "mytable <- read.table('%s')" % temp_table_filename,
-            "%s('%s')" % (args.imageformat, temp_plot_filename),
+            "%s('%s')" % (image_function, temp_plot_filename),
             # rename some variables for compatibility with the template
             "Year <- mytable$x",
             "Latitude <- mytable$y",

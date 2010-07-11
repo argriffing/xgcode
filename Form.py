@@ -19,13 +19,19 @@ g_imageformat_to_contenttype = {
         'svg' : 'image/svg+xml',
         'png' : 'image/png',
         'pdf' : 'application/pdf',
-        'postscript' : 'application/postscript'}
+        'ps' : 'application/postscript'}
 
 g_imageformat_to_ext = {
         'svg' : 'svg',
         'png' : 'png',
         'pdf' : 'pdf',
-        'postscript' : 'ps'}
+        'ps' : 'ps'}
+
+g_imageformat_to_r_function = {
+        'svg' : 'svg',
+        'png' : 'png',
+        'pdf' : 'pdf',
+        'ps' : 'postscript'}
 
 class HelpItem(object):
     def __init__(self, command, description):
@@ -969,6 +975,6 @@ class ImageFormat(RadioGroup):
         radio_items = [
             RadioItem('png', 'png', True),
             RadioItem('pdf', 'pdf'),
-            RadioItem('postscript', 'postscript'),
+            RadioItem('ps', 'postscript'),
             RadioItem('svg', 'svg')]
         RadioGroup.__init__(self, label, description, radio_items)
