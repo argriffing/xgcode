@@ -46,8 +46,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--manifest',
+    parser.add_argument('--manifest', required=True,
             help='a module manifest filename')
-    parser.add_argument('--target',
+    parser.add_argument('--target', required=True,
             help='files will be created in this existing directory')
     main(parser.parse_args())
