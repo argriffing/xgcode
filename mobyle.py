@@ -6,7 +6,7 @@ http://infohost.nmt.edu/tcc/help/pubs/pylxml/creating.html
 """
 
 from StringIO import StringIO
-imoprt os
+import os
 
 from lxml import etree
 
