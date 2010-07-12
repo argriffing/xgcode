@@ -15,10 +15,13 @@ import mobyle
 def main(args):
     with open(args.manifest) as fin:
         module_names = [x.strip() for x in fin]
+    # create the python subtree
     meta.add_python_files(module_names, args.target)
-    xml_target = os.path.join(mobyle_core, 'Local', 'Programs')
-    path_to_auto = os.path.join(python_project, 'auto.py')
+    # create the mobyle xml interface files
+    xml_target = os.path.join(args.mobyle_core, 'Local', 'Programs')
+    path_to_auto = os.path.join(args.target, 'auto.py')
     mobyle.add_xml_files(module_names, path_to_auto, xml_target)
+    # deploy the xml interface files
     path_to_mobdeploy = os.path.join(args.mobyle_core, 'Tools', 'mobdeploy')
     cmd = (path_to_mobdeploy, 'deploy')
     proc = subprocess.Popen(
