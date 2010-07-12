@@ -47,7 +47,7 @@ def add_python_files(module_names, python_project):
 
 def add_xml_files(module_names, python_project, mobyle_core):
     xml_target = os.path.join(mobyle_core, 'Local', 'Programs')
-    path_to_auto = path.join(python_project, 'auto.py')
+    path_to_auto = os.path.join(python_project, 'auto.py')
     for name in module_names:
         try:
             xml_content = mobyle.get_xml(path_to_auto, name)
