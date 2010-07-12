@@ -281,12 +281,12 @@ class RadioGroup:
         selected_item = None
         for item in self.radio_items:
             if item.label in d_in:
-                if d_in[item.label]:
+                if d_in[item.label] != True:
                     msg_a = 'to select the %s option ' % item.label
                     msg_b = 'use --%s' % item.label
                     raise FormError(msg_a + msg_b)
                 if selected_item:
-                    msg_a = 'incompatible selections: '
+                    msg_a = 'multiple radio button selections: '
                     msg_b = '%s and %s' % (selected_item.label, item.label)
                     raise FormError(msg_a + msg_b)
                 selected_item = item
