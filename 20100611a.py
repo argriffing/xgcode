@@ -9,6 +9,7 @@ import csv
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import Carbone
 
@@ -58,6 +59,9 @@ def get_form():
                     'force first-column elements to be IC-prefixed', True)]),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.RTable('out.table', [])
 
 def get_response(fs):
     """

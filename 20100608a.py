@@ -17,6 +17,7 @@ import Carbone
 import hud
 import EigUtil
 import Form
+import FormOut
 
 
 g_default_hud_string = """
@@ -25,6 +26,39 @@ IC32 1 1 1 0
 IC33 1 0 1 1
 IC34 0 0 1 0
 """.strip()
+
+def get_form():
+    """
+    @return: the body of a form
+    """
+    form_objects = [
+            Form.MultiLine('hud',
+                'contents of a .hud file',
+                g_default_hud_string),
+            Form.Integer('npcs',
+                'find this many principal components', 3),
+            Form.CheckGroup('cleangroup', 'more options', [
+                Form.CheckItem('add_indices',
+                    'add row indices for R table compatibility', True),
+                Form.CheckItem('clean_isolates',
+                    'force first-column elements to be IC-prefixed', True)]),
+            Form.ContentDisposition()]
+    return form_objects
+
+def get_form_out():
+    return FormOut.RTable('out.table', [])
+
+def get_response(fs):
+    """
+    @param fs: a FieldStorage object containing the cgi arguments
+    @return: a (response_headers, response_text) pair
+    """
+    text = process(fs, fs.hud.splitlines()) + '\n'
+    disposition = "%s; filename=%s" % (fs.contentdisposition, 'pc.table') 
+    response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Disposition', disposition)]
+    return response_headers, text
 
 def process(args, raw_hud_lines):
     """
@@ -69,33 +103,3 @@ def process(args, raw_hud_lines):
         row = [str(x) for x in typed_row]
         print >> out, '\t'.join(row)
     return out.getvalue()
-
-def get_form():
-    """
-    @return: the body of a form
-    """
-    form_objects = [
-            Form.MultiLine('hud',
-                'contents of a .hud file',
-                g_default_hud_string),
-            Form.Integer('npcs',
-                'find this many principal components', 3),
-            Form.CheckGroup('cleangroup', 'more options', [
-                Form.CheckItem('add_indices',
-                    'add row indices for R table compatibility', True),
-                Form.CheckItem('clean_isolates',
-                    'force first-column elements to be IC-prefixed', True)]),
-            Form.ContentDisposition()]
-    return form_objects
-
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs, fs.hud.splitlines()) + '\n'
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'pc.table') 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text

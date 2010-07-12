@@ -218,10 +218,41 @@ class RadioGroup:
             msg = 'exactly one radio button should be checked by default'
             raise FormError(msg)
         return checked_list
+    
+    def _get_default_string(self):
+        return self._get_checked_list()[0].label
+
+    def add_mob_xml(self, parent, next_argpos):
+        """
+        Add a mobyle parameter to the xml tree.
+        @param parent: parent etree element
+        @param next_argpos: a 1-based integer for cmdline arg ordering
+        @return: the number of args added on the command line
+        """
+        mobyle_class = 'Choice'
+        meta_code = '" --" + str(value)'
+        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        etree.SubElement(parameter, 'name').text = self.label
+        prompt = etree.SubElement(parameter, 'prompt', lang='en')
+        prompt.text = self.description
+        mytype = etree.SubElement(parameter, 'type')
+        datatype = etree.SubElement(mytype, 'datatype')
+        etree.SubElement(datatype, 'class').text = mobyle_class
+        fmt = etree.SubElement(parameter, 'format')
+        code = etree.SubElement(fmt, 'code', proglang='python')
+        code.text = meta_code
+        vdef = etree.SubElement(parameter, 'vdef')
+        etree.SubElement(vdef, 'value').text = self._get_default_string()
+        vlist = etree.SubElement(parameter, 'vlist')
+        for item in self.radio_items:
+            velem = etree.SubElement(vlist, 'velem')
+            etree.SubElement(velem, 'value').text = item.label
+            etree.SubElement(velem, 'label').text = item.description
+        etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
+        return 1
 
     def get_help_object(self):
-        checked_list = self._get_checked_list()
-        default_string = checked_list[0].label
+        default_string = self._get_default_string()
         description = '%s (default: %s)' % (self.description, default_string)
         obj = HelpGroup(description)
         obj.subitems = [x.get_help_object() for x in self.radio_items]
@@ -640,6 +671,28 @@ class Float:
     def web_only(self):
         return False
 
+    def add_mob_xml(self, parent, next_argpos):
+        """
+        Add a mobyle parameter to the xml tree.
+        @param parent: parent etree element
+        @param next_argpos: a 1-based integer for cmdline arg ordering
+        @return: the number of args added on the command line
+        """
+        mobyle_class = 'Float'
+        meta_code = '" --%s=" + str(value)' % self.label
+        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        etree.SubElement(parameter, 'name').text = self.label
+        prompt = etree.SubElement(parameter, 'prompt', lang='en')
+        prompt.text = self.description
+        mytype = etree.SubElement(parameter, 'type')
+        datatype = etree.SubElement(mytype, 'datatype')
+        etree.SubElement(datatype, 'class').text = mobyle_class
+        fmt = etree.SubElement(parameter, 'format')
+        code = etree.SubElement(fmt, 'code', proglang='python')
+        code.text = meta_code
+        etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
+        return 1
+
     def get_help_object(self):
         return HelpItem(
                 '--' + self.label + '=' + str(self.default_float),
@@ -759,6 +812,28 @@ class Integer:
 
     def web_only(self):
         return False
+
+    def add_mob_xml(self, parent, next_argpos):
+        """
+        Add a mobyle parameter to the xml tree.
+        @param parent: parent etree element
+        @param next_argpos: a 1-based integer for cmdline arg ordering
+        @return: the number of args added on the command line
+        """
+        mobyle_class = 'Integer'
+        meta_code = '" --%s=" + str(value)' % self.label
+        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        etree.SubElement(parameter, 'name').text = self.label
+        prompt = etree.SubElement(parameter, 'prompt', lang='en')
+        prompt.text = self.description
+        mytype = etree.SubElement(parameter, 'type')
+        datatype = etree.SubElement(mytype, 'datatype')
+        etree.SubElement(datatype, 'class').text = mobyle_class
+        fmt = etree.SubElement(parameter, 'format')
+        code = etree.SubElement(fmt, 'code', proglang='python')
+        code.text = meta_code
+        etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
+        return 1
 
     def get_help_object(self):
         return HelpItem(

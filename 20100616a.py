@@ -6,6 +6,7 @@ import os
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import Carbone
 import iterutils
@@ -41,6 +42,9 @@ def get_form():
             Form.SingleLine('join_header', 'combine using this column', 'otu'),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.RTable('out.table', [])
 
 def get_response(fs):
     """

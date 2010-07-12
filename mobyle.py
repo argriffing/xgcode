@@ -62,6 +62,7 @@ def get_xml(auto_path, module_name):
     next_argpos = 1
     for obj in form_objects:
         next_argpos += obj.add_mob_xml(parameters, next_argpos)
+    form_out.add_mob_xml(parameters, module_name)
     # serialize the xml
     return etree.tostring(
             doc,

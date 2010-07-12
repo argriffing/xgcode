@@ -11,6 +11,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import hud
 import iterutils
@@ -38,6 +39,9 @@ def get_form():
                 '\n'.join(g_b_lines)),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report('out.hud', [])
 
 def get_response(fs):
     """

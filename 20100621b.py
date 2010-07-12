@@ -9,6 +9,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Phylip
 import Carbone
 import hud
@@ -24,10 +25,13 @@ def get_form():
             Form.MultiLine('phylip', 'non-interleaved Phylip alignment',
                 g_default_data),
             Form.RadioGroup('format_out', 'output format', [
-                Form.RadioItem('hud_out', 'hud', True),
-                Form.RadioItem('phylip_out', 'non-interleaved phylip')]),
+                Form.RadioItem('hud', 'hud', True),
+                Form.RadioItem('phy', 'non-interleaved phylip')]),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report('out.%s', ['format_out'])
 
 def get_response(fs):
     """
@@ -35,9 +39,9 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     text = process(fs, fs.phylip.splitlines())
-    if fs.hud_out:
+    if fs.hud:
         filename = 'out.hud'
-    elif fs.phylip_out:
+    elif fs.phy:
         filename = 'out.phy'
     disposition = "%s; filename=%s" % (fs.contentdisposition, filename) 
     response_headers = [

@@ -1,4 +1,7 @@
 """Cluster using k-means.
+
+Input is an R table.
+Output is an R table with an extra column.
 """
 
 from StringIO import StringIO
@@ -10,6 +13,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import Carbone
 import kmeans
@@ -32,6 +36,9 @@ def get_form():
                 'cluster'),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.RTable('out.table', [])
 
 def get_rtable_info(rtable, cluster_header, axes_string):
     """

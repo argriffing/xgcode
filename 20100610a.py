@@ -11,6 +11,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import Carbone
 import iterutils
@@ -55,12 +56,15 @@ def get_form():
                 Form.CheckItem('endpoint_ticks',
                     'add ticks to the endpoints of the colorbar', True)]),
             Form.ImageFormat(),
-            Form.RadioGroup('out_type', 'output type', [
-                Form.RadioItem('show_image', 'image', True),
-                Form.RadioItem('show_table', 'R table'),
-                Form.RadioItem('show_script', 'R script')]),
+            #Form.RadioGroup('out_type', 'output type', [
+                #Form.RadioItem('show_image', 'image', True),
+                #Form.RadioItem('show_table', 'R table'),
+                #Form.RadioItem('show_script', 'R script')]),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('%s.%s.pca.3d', ['shape', 'color'])
 
 def get_response(fs):
     """
@@ -68,11 +72,13 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # create a response that depends on the requested output type
-    if fs.show_image:
+    #if fs.show_image:
+    if 1:
         content = process(fs, fs.table.splitlines())
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         filename = '.'.join((fs.shape, fs.color, 'pca', '3d', ext))
         contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
+    """
     else:
         # read the table
         rtable = Carbone.RTable(fs.table.splitlines())
@@ -95,6 +101,7 @@ def get_response(fs):
                     fs, stub_image_name, stub_table_name) + '\n'
             contenttype = 'text/plain'
             filename = 'script.R'
+    """
     # return the response
     disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     response_headers = [
