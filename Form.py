@@ -8,6 +8,7 @@ import itertools
 import string
 
 import numpy as np
+from lxml import etree
 
 import MatrixUtil
 import iterutils
@@ -330,6 +331,22 @@ class CheckGroup:
     def web_only(self):
         return False
 
+    def add_mob_xml(self, parent, next_argpos):
+        """
+        Add a mobyle parameter to the xml tree.
+        @param parent: parent etree element
+        @param next_argpos: a 1-based integer for cmdline arg ordering
+        @return: the number of args added on the command line
+        """
+        paragraph = etree.SubElement(parent, 'paragraph')
+        etree.SubElement(paragraph, 'name').text = self.label
+        etree.SubElement(paragraph, 'prompt').text = self.description
+        parameters = etree.SubElement(paragraph, 'parameters')
+        for item in self.check_items:
+            item.add_mob_xml(parameters, next_argpos)
+            next_argpos += 1
+        return len(self.check_items)
+
     def get_help_object(self):
         obj = HelpGroup(self.description)
         obj.subitems = [x.get_help_object() for x in self.check_items]
@@ -429,6 +446,31 @@ class CheckItem:
 
     def web_only(self):
         return False
+
+    def add_mob_xml(self, parent, next_argpos):
+        """
+        Add a mobyle parameter to the xml tree.
+        @param parent: parent etree element
+        @param next_argpos: a 1-based integer for cmdline arg ordering
+        @return: the number of args added on the command line
+        """
+        vdef_text = '1' if self.default else '0'
+        mobyle_class = 'Boolean'
+        meta_code = '" --%s=" + ("Y" if value else "N")' % self.label
+        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        etree.SubElement(parameter, 'name').text = self.label
+        prompt = etree.SubElement(parameter, 'prompt', lang='en')
+        prompt.text = self.description
+        mytype = etree.SubElement(parameter, 'type')
+        datatype = etree.SubElement(mytype, 'datatype')
+        etree.SubElement(datatype, 'class').text = mobyle_class
+        vdef = etree.SubElement(parameter, 'vdef')
+        etree.SubElement(vdef, 'value').text = vdef_text
+        fmt = etree.SubElement(parameter, 'format')
+        code = etree.SubElement(fmt, 'code', proglang='python')
+        code.text = meta_code
+        etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
+        return 1
 
     def get_help_object(self):
         s = 'Y' if self.default else 'N'

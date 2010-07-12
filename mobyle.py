@@ -16,31 +16,6 @@ class MobyleError(Exception): pass
 
 class FormOutError(MobyleError): pass
 
-
-"""
-        <?xml version="1.0" encoding="ISO-8859-1"?>
-"""
-
-"""
-<head>
-<name>z20100707a</name>
-<version>6.2.0</version>
-<doc>
-    <title>testtitle</title>
-    <description>
-        <text lang="en">test description</text>
-    </description>
-    <authors>EMBOSS</authors>
-    <reference>EMBOSS: The European Molecular Biology Open Software Suite (2000)  Rice,P. Longden,I. and Bleasby, A. Trends in Genetics 16, (6) pp276--277</reference>
-    <doclink>http://bioweb2.pasteur.fr/docs/EMBOSS/wordcount.html</doclink>
-    <doclink>http://emboss.sourceforge.net/docs/themes</doclink>
-</doc>
-<category>ztools</category>
-<category>protein:composition</category>
-<command>python /home/mobyleuser/misctools/auto.py 20100707a</command>
-</head>
-"""
-
 def _add_head(auto_path, module_name, doc_lines, parent):
     """
     @param auto_path: path to auto.py
@@ -65,24 +40,6 @@ def _add_head(auto_path, module_name, doc_lines, parent):
     text = etree.SubElement(description, 'text', lang='en')
     text.text = doc_lines[0]
 
-
-"""
-<parameter issimple="1">
-    <name>wat</name>
-    <prompt lang="en">test param</prompt>
-    <type>
-        <datatype>
-            <class>Integer</class>
-        </datatype>
-    </type>
-    <format>
-        <code proglang="python">" --value=" + str(value)</code>
-    </format>
-    <argpos>6</argpos>
-</parameter>
-"""
-
-
 def get_xml(auto_path, module_name):
     """
     @param auto_path: path to auto.py
@@ -101,6 +58,10 @@ def get_xml(auto_path, module_name):
     program = etree.Element('program')
     doc = etree.ElementTree(program)
     _add_head(auto_path, module_name, doc_lines, program)
+    parameters = etree.SubElement(program, 'parameters')
+    next_argpos = 1
+    for obj in form_objects:
+        next_argpos += obj.add_mob_xml(parameters, next_argpos)
     # serialize the xml
     return etree.tostring(
             doc,
