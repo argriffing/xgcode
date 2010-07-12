@@ -93,3 +93,15 @@ def get_xml(auto_path, module_name):
             xml_declaration=True,
             encoding="ISO-8859-1",
             pretty_print=True)
+
+def add_xml_files(module_names, path_to_auto, xml_target):
+    for name in module_names:
+        try:
+            xml_content = get_xml(path_to_auto, name)
+        except MobyleError as e:
+            xml_content = None
+            print e
+        if xml_content:
+            xml_filename = os.path.join(xml_target, 'z' + name + '.xml')
+            with open(xml_filename, 'w') as fout:
+                fout.write(xml_content)

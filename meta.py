@@ -14,6 +14,7 @@ an upstream source.
 
 import itertools
 import string
+import shutil
 
 import pyparsing
 from pyparsing import Word, Literal
@@ -37,6 +38,9 @@ g_common_t2 = set([
 g_common_t3 = set([
         'MatrixUtil', 'iterutils', 'Form', 'Util',
         'Newick', 'FelTree', 'NewickIO', 'SnippetUtil'])
+
+g_default_modules = [
+        'auto']
 
 def get_tier(names):
     """
@@ -235,3 +239,34 @@ def get_module_and_const_deps(module_names):
             const_deps.update(get_const_deps(fin))
     # return module and const data deps
     return transitive_deps, const_deps
+
+def _copy_custom_modules(selected_module_names, target):
+    selected_filenames = [x + '.py' for x in selected_module_names]
+    for name in selected_module_names:
+        source_filename = name + '.py'
+        target_filename = os.path.join(target, name + '.py')
+        shutil.copyfile(source_filename, target_filename)
+
+def _copy_default_modules(target):
+    for name in g_default_modules:
+        source_filename = name + '.py'
+        target_filename = os.path.join(target, name + '.py')
+        shutil.copyfile(source_filename, target_filename)
+
+def _copy_const_data(const_deps, target):
+    if const_deps:
+        const_data_dir = os.path.join(target, 'const-data')
+        if not os.path.isdir(const_data_dir):
+            os.mkdir(const_data_dir)
+        for name in const_deps:
+            source_filename = os.path.join('const-data', name + '.dat')
+            target_filename = os.path.join(const_data_dir, name + '.dat')
+            shutil.copyfile(source_filename, target_filename)
+
+def add_python_files(module_names, python_project):
+    module_deps, const_deps = get_module_and_const_deps(module_names)
+    selected_module_names = set(module_names) | module_deps[2]
+    _copy_custom_modules(selected_module_names, python_project)
+    _copy_default_modules(python_project)
+    _copy_const_data(const_deps, python_project)
+
