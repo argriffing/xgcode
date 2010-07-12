@@ -281,7 +281,7 @@ class RadioGroup:
         selected_item = None
         for item in self.radio_items:
             if item.label in d_in:
-                if d_in[item_label]:
+                if d_in[item.label]:
                     msg_a = 'to select the %s option ' % item.label
                     msg_b = 'use --%s' % item.label
                     raise FormError(msg_a + msg_b)
