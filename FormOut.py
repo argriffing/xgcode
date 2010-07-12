@@ -72,7 +72,7 @@ class FormOut(object):
         @param module_name: the name of the snippet module
         """
         desc = 'z' + module_name + '_out'
-        parameter = etree.SubElement(parent, 'parameter', isstdout='1')
+        parameter = etree.SubElement(parent, 'parameter', isout='1')
         etree.SubElement(parameter, 'name').text = desc
         prompt = etree.SubElement(parameter, 'prompt', lang='en')
         prompt.text = desc

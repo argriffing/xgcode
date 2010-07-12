@@ -16,6 +16,28 @@ class MobyleError(Exception): pass
 
 class FormOutError(MobyleError): pass
 
+def _add_redirection_parameter(parent, next_argpos):
+    """
+    Add a mobyle parameter to the xml tree.
+    @param parent: parent etree element
+    @param next_argpos: a 1-based integer for cmdline arg ordering
+    @return: the number of args added on the command line
+    """
+    mobyle_class = 'Boolean'
+    meta_code = '" --write_to_file_for_mobyle"'
+    parameter = etree.SubElement(parent, 'parameter', ishidden='1')
+    etree.SubElement(parameter, 'name').text = 'write_to_file_for_mobyle'
+    prompt = etree.SubElement(parameter, 'prompt', lang='en')
+    prompt.text = 'write to file for mobyle'
+    mytype = etree.SubElement(parameter, 'type')
+    datatype = etree.SubElement(mytype, 'datatype')
+    etree.SubElement(datatype, 'class').text = mobyle_class
+    fmt = etree.SubElement(parameter, 'format')
+    code = etree.SubElement(fmt, 'code', proglang='python')
+    code.text = meta_code
+    etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
+    return 1
+
 def _add_head(auto_path, module_name, doc_lines, parent):
     """
     @param auto_path: path to auto.py
@@ -63,6 +85,7 @@ def get_xml(auto_path, module_name):
     for obj in form_objects:
         if not obj.web_only():
             next_argpos += obj.add_mob_xml(parameters, next_argpos)
+    next_argpos += _add_redirection_parameter(parameters, next_argpos)
     form_out.add_mob_xml(parameters, module_name)
     # serialize the xml
     return etree.tostring(
@@ -70,4 +93,3 @@ def get_xml(auto_path, module_name):
             xml_declaration=True,
             encoding="ISO-8859-1",
             pretty_print=True)
-

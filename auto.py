@@ -56,11 +56,21 @@ def main():
         args = dict_to_args(d_out)
         args.contentdisposition = 'attachment'
         header_pairs, content = usermod.get_response(args)
-        sys.stdout.write(content)
+        if '--write_to_file_for_mobyle' in sys.argv:
+            if hasattr(usermod, get_form_out):
+                form_out = usermod.get_form_out()
+                filename = form_out.get_filename(args)
+                with open(filename, 'w') as fout:
+                    fout.write(content)
+            else:
+                msg = 'this module provides no output metadata'
+                raise Exception(msg)
+        else:
+            sys.stdout.write(content)
 
 if __name__ == '__main__':
     usage = textwrap.dedent("""
-    example usages:
+    example usages of auto.py:
       $ python auto.py 20100623a --help
       $ python auto.py 20100623a --table_a=foo.txt --table_b=bar.txt
     """).strip()
