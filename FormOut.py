@@ -7,10 +7,10 @@ Also stdout is treated as a file.
 In my more constrained system, script output is only to stdout.
 """
 
+from lxml import etree
+
 import Form
 import FormOut
-
-from lxml import etree
 
 def _get_filename_metaprogram(fmt, interpolants):
     if len(interpolants) == 1:
