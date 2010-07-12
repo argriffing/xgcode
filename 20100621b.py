@@ -52,9 +52,9 @@ def get_response(fs):
 def process(fs, raw_lines):
     headers, sequences = Phylip.decode(raw_lines)
     binary_rows = Carbone.get_binary_rows(sequences)
-    if fs.hud_out:
+    if fs.hud:
         return hud.encode(headers, binary_rows) + '\n'
-    elif fs.phylip_out:
+    elif fs.phy:
         binary_seqs = [''.join(str(x) for x in row) for row in binary_rows]
         return Phylip.encode(headers, binary_seqs) + '\n'
 
