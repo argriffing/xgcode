@@ -16,6 +16,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import hud
 
@@ -56,6 +57,9 @@ def get_form():
                     '22.0'),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.EigenstratInd('temperature.ind', [])
 
 def get_response(fs):
     """

@@ -11,6 +11,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 
 g_default_ind_string = """
 IC1 U   Case
@@ -49,6 +50,9 @@ def get_form():
                 g_default_ind_string),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.EigenstratPheno('out.pheno', [])
 
 def get_response(fs):
     """

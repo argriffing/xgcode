@@ -15,6 +15,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 from Form import RadioItem
 import Util
 import EigUtil
@@ -82,6 +83,9 @@ def get_form():
                 g_default_info_string),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.RTable('out.table', [])
 
 def get_response(fs):
     """

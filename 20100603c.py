@@ -13,6 +13,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import hud
 
 g_hud_string = """
@@ -31,6 +32,9 @@ def get_form():
                 g_hud_string),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.EigenstratGeno('out.geno', [])
 
 def get_response(fs):
     """

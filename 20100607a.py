@@ -13,6 +13,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import hud
 import EigUtil
 
@@ -171,6 +172,9 @@ def get_form():
                 Form.RadioItem('sum_to_1', 'sum to 1.0', True),
                 Form.RadioItem('sum_to_n', 'sum to the number of OTUs')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report('out.txt', [])
 
 def get_response(fs):
     """

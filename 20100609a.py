@@ -11,6 +11,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 from Form import RadioItem
 import Util
 
@@ -40,6 +41,9 @@ def get_form():
                 'amdS_PCA_Info.csv lines',
                 g_default_info_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report('out.txt', [])
 
 def get_response(fs):
     """

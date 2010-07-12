@@ -7,6 +7,7 @@ from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 
 
@@ -28,6 +29,9 @@ def get_form():
                 '\n'.join(g_default_lines)),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.RTable('out.table', [])
 
 def get_response(fs):
     """

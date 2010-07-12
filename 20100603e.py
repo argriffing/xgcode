@@ -13,6 +13,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import iterutils
 import hud
 
@@ -81,6 +82,9 @@ def get_form():
                 g_default_matpheno_string),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.EigenstratInd('out.ind', [])
 
 def get_response(fs):
     """

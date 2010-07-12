@@ -65,13 +65,13 @@ class FormOut(object):
         if superclass:
             etree.SubElement(parent, 'superclass').text = superclass
 
-    def add_mob_xml(self, parent, module_name):
+    def add_mob_xml(self, parent, short_name):
         """
         Add a mobyle parameter to the xml tree.
         @param parent: parent etree element
-        @param module_name: the name of the snippet module
+        @param short_name: the short name of the snippet module
         """
-        desc = 'z' + module_name + '_out'
+        desc = short_name + '_out'
         parameter = etree.SubElement(parent, 'parameter', isout='1')
         etree.SubElement(parameter, 'name').text = desc
         prompt = etree.SubElement(parameter, 'prompt', lang='en')
@@ -109,10 +109,22 @@ class Report(FormOut):
         return 'Text'
 
 
-class RTable(FormOut):
-
+class RTable(Report):
     def get_mobyle_class(self):
         return 'RTable'
 
-    def get_mobyle_superclass(self):
-        return 'Text'
+class EigenstratInd(Report):
+    def get_mobyle_class(self):
+        return 'EigenstratInd'
+
+class EigenstratPheno(Report):
+    def get_mobyle_class(self):
+        return 'EigenstratPheno'
+
+class EigenstratGeno(Report):
+    def get_mobyle_class(self):
+        return 'EigenstratGeno'
+
+class EigenstratSnp(Report):
+    def get_mobyle_class(self):
+        return 'EigenstratSnp'

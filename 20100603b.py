@@ -16,6 +16,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import hud
 
@@ -57,6 +58,9 @@ def get_form():
                 'GA'),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.EigenstratInd('location.ind', [])
 
 def get_response(fs):
     """
