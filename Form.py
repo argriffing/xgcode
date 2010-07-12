@@ -231,7 +231,8 @@ class RadioGroup:
         """
         mobyle_class = 'Choice'
         meta_code = '" --" + str(value)'
-        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        parameter = etree.SubElement(
+                parent, 'parameter', ismandatory='1', issimple='1')
         etree.SubElement(parameter, 'name').text = self.label
         prompt = etree.SubElement(parameter, 'prompt', lang='en')
         prompt.text = self.description
@@ -488,7 +489,8 @@ class CheckItem:
         vdef_text = '1' if self.default else '0'
         mobyle_class = 'Boolean'
         meta_code = '" --%s=" + ("Y" if value else "N")' % self.label
-        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        parameter = etree.SubElement(
+                parent, 'parameter', ismandatory='1', issimple='1')
         etree.SubElement(parameter, 'name').text = self.label
         prompt = etree.SubElement(parameter, 'prompt', lang='en')
         prompt.text = self.description
@@ -573,9 +575,10 @@ class SingleLine:
         @return: the number of args added on the command line
         """
         mobyle_class = 'String'
-        #TODO quote the line more
+        vdef_text = cgi.escape(self.default_line)
         meta_code = '" --%s=" + str(value)' % self.label
-        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        parameter = etree.SubElement(
+                parent, 'parameter', ismandatory='1', issimple='1')
         etree.SubElement(parameter, 'name').text = self.label
         prompt = etree.SubElement(parameter, 'prompt', lang='en')
         prompt.text = self.description
@@ -585,6 +588,8 @@ class SingleLine:
         fmt = etree.SubElement(parameter, 'format')
         code = etree.SubElement(fmt, 'code', proglang='python')
         code.text = meta_code
+        vdef = etree.SubElement(parameter, 'vdef')
+        etree.SubElement(vdef, 'value').text = vdef_text
         etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
         return 1
 
@@ -679,8 +684,10 @@ class Float:
         @return: the number of args added on the command line
         """
         mobyle_class = 'Float'
+        vdef_text = str(self.default_float)
         meta_code = '" --%s=" + str(value)' % self.label
-        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        parameter = etree.SubElement(
+                parent, 'parameter', ismandatory='1', issimple='1')
         etree.SubElement(parameter, 'name').text = self.label
         prompt = etree.SubElement(parameter, 'prompt', lang='en')
         prompt.text = self.description
@@ -690,6 +697,8 @@ class Float:
         fmt = etree.SubElement(parameter, 'format')
         code = etree.SubElement(fmt, 'code', proglang='python')
         code.text = meta_code
+        vdef = etree.SubElement(parameter, 'vdef')
+        etree.SubElement(vdef, 'value').text = vdef_text
         etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
         return 1
 
@@ -821,8 +830,10 @@ class Integer:
         @return: the number of args added on the command line
         """
         mobyle_class = 'Integer'
+        vdef_text = str(self.default_integer)
         meta_code = '" --%s=" + str(value)' % self.label
-        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        parameter = etree.SubElement(
+                parent, 'parameter', ismandatory='1', issimple='1')
         etree.SubElement(parameter, 'name').text = self.label
         prompt = etree.SubElement(parameter, 'prompt', lang='en')
         prompt.text = self.description
@@ -832,6 +843,8 @@ class Integer:
         fmt = etree.SubElement(parameter, 'format')
         code = etree.SubElement(fmt, 'code', proglang='python')
         code.text = meta_code
+        vdef = etree.SubElement(parameter, 'vdef')
+        etree.SubElement(vdef, 'value').text = vdef_text
         etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
         return 1
 
@@ -1036,8 +1049,10 @@ class MultiLine:
         @return: the number of args added on the command line
         """
         mobyle_class = 'Text'
+        example_text = cgi.escape(self.default_string)
         meta_code = '" --%s=" + str(value)' % self.label
-        parameter = etree.SubElement(parent, 'parameter', issimple='1')
+        parameter = etree.SubElement(
+                parent, 'parameter', ismandatory='1', issimple='1')
         etree.SubElement(parameter, 'name').text = self.label
         prompt = etree.SubElement(parameter, 'prompt', lang='en')
         prompt.text = self.description
@@ -1047,6 +1062,7 @@ class MultiLine:
         fmt = etree.SubElement(parameter, 'format')
         code = etree.SubElement(fmt, 'code', proglang='python')
         code.text = meta_code
+        example = etree.SubElement(parameter, 'example').text = example_text
         etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
         return 1
 

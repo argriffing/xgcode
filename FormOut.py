@@ -18,7 +18,7 @@ def _get_filename_metaprogram(fmt, interpolants):
     elif len(interpolants) > 1:
         return '"%s" %% (%s)' % (fmt, ', '.join(interpolants))
     else:
-        return fmt
+        return '"%s"' % fmt
 
 class FormOut(object):
 
