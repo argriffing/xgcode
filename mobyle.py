@@ -146,11 +146,12 @@ def get_xml(usermod, auto_path, module_name, short_name):
             encoding="ISO-8859-1",
             pretty_print=True)
 
-def add_xml_files(module_names, path_to_auto, xml_target):
+def add_xml_files(module_names, path_to_auto, xml_target, short_name_length):
     """
     @param module_names: generally uninformative names of modules
     @param path_to_auto: a path that will go into the xml
     @param xml_target: the xml files will go into this path
+    @param short_name_length: max length of unique short module names
     """
     # The modules need to be imported to get the unique short names.
     usermods = []
@@ -163,7 +164,7 @@ def add_xml_files(module_names, path_to_auto, xml_target):
         doc_lines = Util.get_stripped_lines(usermod.__doc__.splitlines())
         titles.append(doc_lines[0])
     # Get corresponding unique short names.
-    short_names = get_short_titles(titles, 20)
+    short_names = get_short_titles(titles, short_name_length)
     for usermod, name, short_name in zip(usermods, module_names, short_names):
         try:
             xml_content = get_xml(usermod, path_to_auto, name, short_name)

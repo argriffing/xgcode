@@ -20,7 +20,8 @@ def main(args):
     # create the mobyle xml interface files
     xml_target = os.path.join(args.mobyle_core, 'Local', 'Programs')
     path_to_auto = os.path.join(args.target, 'auto.py')
-    mobyle.add_xml_files(module_names, path_to_auto, xml_target)
+    mobyle.add_xml_files(
+            module_names, path_to_auto, xml_target, args.short_length)
     # deploy the xml interface files
     path_to_mobdeploy = os.path.join(args.mobyle_core, 'Tools', 'mobdeploy')
     cmd = (path_to_mobdeploy, 'deploy')
@@ -40,4 +41,6 @@ if __name__ == '__main__':
             help='path to the Mobyle core directory')
     parser.add_argument('--deploy', action='store_true',
             help='deploy the xml files via mobdeploy')
+    parser.add_argument('--short_length', type=int, default=20,
+            help='max length of shortened snippet names')
     main(parser.parse_args())
