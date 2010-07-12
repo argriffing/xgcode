@@ -30,6 +30,7 @@ g_common_t1 = set([
 
 g_common_t2 = set([
         'argparse',
+        'lxml',
         'pygraphviz', 'cairo',
         'numpy', 'scipy', 'matplotlib'])
 
