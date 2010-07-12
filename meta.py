@@ -15,6 +15,7 @@ an upstream source.
 import itertools
 import string
 import shutil
+import os
 
 import pyparsing
 from pyparsing import Word, Literal
