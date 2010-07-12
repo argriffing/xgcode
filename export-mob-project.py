@@ -80,6 +80,6 @@ if __name__ == '__main__':
             help='python files will be created in this existing directory')
     parser.add_argument('--mobyle_core', required=True,
             help='path to the Mobyle core directory')
-    parser.add_argument('--deploy',
+    parser.add_argument('--deploy', action='store_true',
             help='deploy the xml files via mobdeploy')
     main(parser.parse_args())
