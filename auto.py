@@ -57,7 +57,7 @@ def main():
         args.contentdisposition = 'attachment'
         header_pairs, content = usermod.get_response(args)
         if '--write_to_file_for_mobyle' in sys.argv:
-            if hasattr(usermod, get_form_out):
+            if hasattr(usermod, 'get_form_out'):
                 form_out = usermod.get_form_out()
                 filename = form_out.get_filename(args)
                 with open(filename, 'w') as fout:
