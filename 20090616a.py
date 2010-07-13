@@ -20,6 +20,7 @@ import Xtree
 from Form import RadioItem
 from Form import CheckItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -48,6 +49,9 @@ def get_form():
                     'allow reciprocal single digit integer branch lengths',
                     False)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 
 class TreeSearch:

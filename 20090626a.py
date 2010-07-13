@@ -14,6 +14,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 import NewickIO
 
 def get_form():
@@ -41,6 +42,9 @@ def get_form():
     print >> out, VT
     print >> out
 """
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_bilinear_form(M, v):
     """

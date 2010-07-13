@@ -27,6 +27,7 @@ import MatrixUtil
 import TreeSampler
 import iterutils
 import Form
+import FormOut
 
 def get_form():
     """
@@ -44,6 +45,9 @@ def get_form():
             Form.MultiLine('trees', 'one newick tree per line',
                 '\n'.join(default_tree_lines))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def partition_to_string(part):
     """

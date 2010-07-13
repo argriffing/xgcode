@@ -9,6 +9,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import MatrixUtil
 
 def get_form():
@@ -22,6 +23,9 @@ def get_form():
                 Form.RadioItem('adjacency', 'adjacency matrix'),
                 Form.RadioItem('laplacian', 'laplacian matrix', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def add_sierpinski(M, offset, iterations):
     if iterations > 0:

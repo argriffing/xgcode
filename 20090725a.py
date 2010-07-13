@@ -12,6 +12,8 @@ import Util
 import Form
 import Progress
 
+#FIXME use const data
+
 g_matrix = [
         [0,0,1,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],
         [0,0,1,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
@@ -76,6 +78,9 @@ def get_form():
                 Form.RadioItem('hamming', 'hamming distance')]),
             Form.MultiLine('bstrings', 'binary strings', bstrings)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_centers(arrs, ncenters, metric, deadline):
     """

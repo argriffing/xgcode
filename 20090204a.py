@@ -15,9 +15,12 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Clustering
+
+#FIXME use const data
 
 def get_form():
     """
@@ -48,6 +51,9 @@ def get_form():
                     'show the branch length implied by the split')])]
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
+
 def get_response(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
@@ -60,7 +66,8 @@ def get_response(fs):
     user_name_set = set([fs.lhs_a, fs.lhs_b, fs.rhs_a, fs.rhs_b])
     bad_names = user_name_set - tip_name_set
     if bad_names:
-        raise HandlingError('these labels are not valid tips: %s' % ', '.join(bad_names))
+        msg = 'these labels are not valid tips: %s' % ', '.join(bad_names)
+        raise HandlingError(msg)
     # get the submatrix of the distance matrix
     ordered_names = list(sorted(node.get_name() for node in tree.gen_tips()))
     D = np.array(tree.get_distance_matrix(ordered_names))

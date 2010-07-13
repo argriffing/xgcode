@@ -10,6 +10,7 @@ import random
 from SnippetUtil import HandlingError
 import Util
 import Form
+import FormOut
 import Progress
 
 def get_hamming_distance(a, b):
@@ -35,6 +36,9 @@ def get_form():
     @return: the body of a form
     """
     return []
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_centers(arrs, ncenters, metric, deadline):
     """

@@ -26,6 +26,7 @@ import TreeSampler
 import BuildTreeTopology
 import BranchLengthSampler
 import Form
+import FormOut
 
 class InfiniteDistanceError(Exception): pass
 class ZeroDistanceError(Exception): pass
@@ -57,6 +58,9 @@ def get_form():
                 Form.RadioItem('second_modnj', 'modified neighbor joining'),
                 Form.RadioItem('second_specnj', 'spectral', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def sample_distance_matrix(xtree_root, sequence_length):
     sequences = JC69.sample_xtree_sequences(xtree_root, sequence_length)

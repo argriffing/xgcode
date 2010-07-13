@@ -12,7 +12,7 @@ import MatrixUtil
 import Euclid
 import SchurAlgebra
 import Form
-
+import FormOut
 
 def get_form():
     """
@@ -54,6 +54,9 @@ def get_form():
                 selected_label_string)]
     # return the sequence of form objects
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

@@ -20,6 +20,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import MatrixUtil
 import NewickIO
 import FelTree
@@ -38,6 +39,9 @@ def get_form():
     # define the list of form objects
     form_objects = []
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def do_internal_projection(D_full):
     """

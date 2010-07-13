@@ -8,9 +8,12 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import MatrixUtil
 import FelTree
 import NewickIO
+
+#FIXME use const data
 
 def get_form():
     """
@@ -23,6 +26,9 @@ def get_form():
             Form.Matrix('matrix', 'matrix', M),
             Form.Float('epsilon', 'show smaller elements as zero', '1e-10')]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def get_response(fs):
     """

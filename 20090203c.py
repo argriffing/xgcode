@@ -16,6 +16,7 @@ from SnippetUtil import HandlingError
 import MatrixUtil
 import Euclid
 import Form
+import FormOut
 
 def get_form():
     """
@@ -33,6 +34,9 @@ def get_form():
             Form.Matrix('matrix', 'Euclidean distance matrix',
                 D, MatrixUtil.assert_predistance)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

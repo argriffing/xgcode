@@ -17,6 +17,7 @@ import BuildTreeTopology
 import Xtree
 import Euclid
 import Form
+import FormOut
 import Progress
 import NewickIO
 import FelTree
@@ -42,6 +43,9 @@ def get_form():
                 Form.RadioItem('uniform_length_b',
                     str(BranchLengthSampler.UniformB()))])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

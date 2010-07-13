@@ -38,11 +38,13 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Progress
 import ReadCoverage
 import MissingHMM
 import iterutils
 
+#FIXME use const data
 
 class TimeoutError(Exception): pass
 
@@ -145,6 +147,9 @@ def get_form():
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as a csv file')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Csv()
 
 def get_response(fs):
     """

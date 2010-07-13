@@ -14,6 +14,10 @@ import FelTree
 import MatrixUtil
 import Contrasts
 import Form
+import FormOut
+
+#FIXME use const data
+#FIXME matrix output formats
 
 def get_form():
     """
@@ -37,6 +41,9 @@ def get_form():
                 Form.RadioItem('r_format', 'R'),
                 Form.RadioItem('matlab_format', 'MATLAB')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

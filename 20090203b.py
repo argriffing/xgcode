@@ -8,10 +8,12 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import MatrixUtil
 import NewickIO
 import FelTree
-import HtmlTable
+
+#FIXME use const data
 
 def get_form():
     """
@@ -28,6 +30,10 @@ def get_form():
                 formatted_tree_string),
             Form.Integer('precision', 'precision', 4, low=2, high=17)]
 
+def get_form_out():
+    return FormOut.Report()
+
+#FIXME replace with np.diag and test
 def list_to_diagonal_matrix(arr):
     """
     @param arr: a one dimensional array of numbers
@@ -47,8 +53,10 @@ def get_response(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # define the ordering of the nodes
-    ordered_tip_names, ordered_tip_ids = zip(*list(sorted((node.get_name(), id(node)) for node in tree.gen_tips())))
-    ordered_internal_names, ordered_internal_ids = zip(*list(sorted((node.get_name(), id(node)) for node in tree.gen_internal_nodes())))
+    ordered_tip_names, ordered_tip_ids = zip(*list(
+        (node.get_name(), id(node)) for node in tree.gen_tips()))
+    ordered_internal_names, ordered_internal_ids = zip(*list(
+        (node.get_name(), id(node)) for node in tree.gen_internal_nodes()))
     ordered_names = ordered_tip_names + ordered_internal_names
     ordered_ids = ordered_tip_ids + ordered_internal_ids
     # get the affinity matrix

@@ -6,6 +6,7 @@ from StringIO import StringIO
 from SnippetUtil import HandlingError
 import Codon
 import Form
+import FormOut
 import Util
 
 def get_form():
@@ -21,6 +22,9 @@ def get_form():
             Form.MultiLine('codons', 'one codon on each line',
                 '\n'.join(default_codons))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

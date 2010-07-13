@@ -16,9 +16,12 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Clustering
+
+#FIXME use const data
 
 def get_form():
     """
@@ -49,6 +52,9 @@ def get_form():
                     'show the branch length implied by the split')])]
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
+
 def get_response(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
@@ -61,7 +67,8 @@ def get_response(fs):
     user_name_set = set([fs.lhs_a, fs.lhs_b, fs.rhs_a, fs.rhs_b])
     bad_names = user_name_set - available_name_set
     if bad_names:
-        raise HandlingError('these labels are not valid: %s' % ', '.join(bad_names))
+        msg = 'these labels are not valid: %s' % ', '.join(bad_names)
+        raise HandlingError(msg)
     # get the ordered names and ordered ids
     ordered_names = list(sorted(node.get_name() for node in tree.preorder()))
     name_to_id = dict((node.get_name(), id(node)) for node in tree.preorder())
@@ -91,6 +98,7 @@ def get_response(fs):
     L_reduced[0][1] = L[la][rb]
     L_reduced[1][0] = L[lb][ra]
     L_reduced[1][1] = L[lb][rb]
+    epsilon = 1e-13
     epsilon = 0.0000000000001
     criterion = np.linalg.det(L_reduced)
     if abs(criterion) < epsilon:

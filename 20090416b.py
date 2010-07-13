@@ -19,6 +19,7 @@ import MatrixUtil
 import SchurAlgebra
 import Euclid
 import Form
+import FormOut
 
 def get_form():
     """
@@ -28,6 +29,9 @@ def get_form():
             Form.Integer('npoints', 'use this many points per matrix',
                 8, low=3, high=20)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def sample_points(npoints):
     """

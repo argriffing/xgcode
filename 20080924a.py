@@ -18,6 +18,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import RUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -29,6 +30,9 @@ def get_form():
             Form.Integer('sequence_length', 'sequence length',
                 1000, low=1)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

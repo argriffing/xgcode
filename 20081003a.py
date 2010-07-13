@@ -11,6 +11,7 @@ import cairo
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import CairoUtil
 import MatrixUtil
 import Clustering
@@ -28,6 +29,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('pca', [])
 
 def get_eigenvectors(row_major_matrix):
     """

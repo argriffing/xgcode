@@ -11,9 +11,12 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import MatrixUtil
 import NewickIO
 import FelTree
+
+#FIXME use const data
 
 def get_form():
     """
@@ -28,6 +31,9 @@ def get_form():
             Form.MultiLine('tree', 'newick tree with branch lengths',
                 formatted_tree_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_matrix_square_root(M, epsilon=1e-14):
     """

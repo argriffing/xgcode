@@ -12,6 +12,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 
 def todec(degrees, minutes):
     """
@@ -46,6 +47,9 @@ def get_form():
             Form.Matrix('reference_points', 'reference points',
                 reference_points)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

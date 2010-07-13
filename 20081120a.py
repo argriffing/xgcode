@@ -11,6 +11,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import MatrixUtil
 import Clustering
 import NewickIO
@@ -24,6 +25,9 @@ def get_form():
     tree = NewickIO.parse(tree_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     return [Form.MultiLine('tree', 'tree', formatted_tree_string)]
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_eigenvectors(row_major_matrix):
     """

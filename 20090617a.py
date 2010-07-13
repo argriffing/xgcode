@@ -3,9 +3,6 @@
 This is probably useful only as an example.
 """
 
-# Do it like this.
-# python 20090617a.py > x.tex; latex x.tex; dvips x; ps2pdf x.ps; evince x.pdf
-
 from StringIO import StringIO
 import optparse
 import tempfile
@@ -15,7 +12,12 @@ import os
 from SnippetUtil import HandlingError
 from Form import RadioItem
 import Form
+import FormOut
 
+#FIXME multiple output types
+
+# Do it like this.
+# python 20090617a.py > x.tex; latex x.tex; dvips x; ps2pdf x.ps; evince x.pdf
 
 class Layout:
     """
@@ -336,6 +338,9 @@ def get_form():
                 RadioItem('png', 'png')]),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

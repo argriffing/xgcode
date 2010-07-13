@@ -25,6 +25,7 @@ import BranchLengthSampler
 import TreeSampler
 import Xtree
 import Form
+import FormOut
 
 def get_form():
     """
@@ -42,6 +43,9 @@ def get_form():
                 Form.RadioItem('uniform_length_b',
                     str(BranchLengthSampler.UniformB()))])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def sample_atteson_distance_matrix(xtree_root):
     """

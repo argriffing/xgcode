@@ -18,6 +18,7 @@ import NeighborJoining
 import NeighborhoodJoining
 from Form import RadioItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -39,6 +40,9 @@ def get_form():
                 RadioItem('sign', 'spectral sign approximation', True),
                 RadioItem('random', 'random bipartition')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

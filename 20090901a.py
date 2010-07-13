@@ -15,6 +15,7 @@ import BranchLengthSampler
 import TreeSampler
 import Xtree
 import Form
+import FormOut
 
 def get_form():
     """
@@ -26,6 +27,9 @@ def get_form():
                 Form.RadioItem('download', 'download as an R table', True),
                 Form.RadioItem('view', 'view as text')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.RTable()
 
 
 class BranchLengthComboPack:

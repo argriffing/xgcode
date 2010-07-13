@@ -11,6 +11,7 @@ from SnippetUtil import HandlingError
 import Util
 import MatrixUtil
 import Form
+import FormOut
 import Progress
 
 class Edge:
@@ -44,6 +45,9 @@ def get_form():
             Form.Integer('nsamples',
                 'accepted joint samples for variance estimation', '100')]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 class RejectionError(Exception):
     pass

@@ -11,6 +11,7 @@ import random
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 
 def get_form():
     """
@@ -20,6 +21,9 @@ def get_form():
             Form.Integer('n', 'sequence length',
                 100, low=3, high=1000)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_pairs(seq, lag):
     """

@@ -15,6 +15,7 @@ import KGEA
 import Progress
 from Form import RadioItem
 import Form
+import FormOut
 
 # define some web locations that should probably be moved to a config file
 g_base_dir = '/var/www/python_scripts/data/exon-alignments'
@@ -36,6 +37,9 @@ def get_form():
                 RadioItem('show_column', 'show the aligned column')])]
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
+
 def get_response(fs):
     """
     @param fs: a FieldStorage object decorated with field values
@@ -43,7 +47,8 @@ def get_response(fs):
     """
     out = StringIO()
     try:
-        finder = KGEA.Finder(g_index_dir, g_valid_chromosome_strings_pathname, g_fasta_dir)
+        finder = KGEA.Finder(
+                g_index_dir, g_valid_chromosome_strings_pathname, g_fasta_dir)
         if fs.show_alignment:
             lines = finder.get_alignment_lines(fs.chromosome, fs.position)
         elif fs.show_column:
@@ -51,7 +56,8 @@ def get_response(fs):
         if lines:
             print >> out, '\n'.join(lines)
         else:
-            raise KGEA.KGEAError('this position has no corresponding amino acid')
+            msg = 'this position has no corresponding amino acid'
+            raise KGEA.KGEAError(msg)
     except KGEA.KGEAError, e:
         raise HandlingError(e)
     response_headers = [('Content-Type', 'text/plain')]

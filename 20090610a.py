@@ -12,6 +12,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import SchurAlgebra
 
 def get_form():
@@ -22,6 +23,9 @@ def get_form():
             Form.Integer('block_size', 'block size',
                 2, low=1, high=6)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def sample_matrix(block_size):
     """

@@ -30,6 +30,7 @@ from Form import CheckItem
 from Form import RadioGroup
 from Form import RadioItem
 import Form
+import FormOut
 import const
 
 g_archaea_data = const.read('20090802a')
@@ -38,6 +39,8 @@ g_eukaryota_data = const.read('20090802c')
 g_full_data = const.read('20090802d')
 
 g_valid_domains = set(['archaea', 'bacteria', 'eukaryota'])
+
+#FIXME multiple output types
 
 def get_form():
     """
@@ -54,6 +57,9 @@ def get_form():
                 CheckItem('supplementary',
                     'download the supplementary data', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def remove_redundant_nodes(tree):
     """

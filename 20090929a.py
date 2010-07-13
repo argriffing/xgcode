@@ -18,6 +18,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Euclid
@@ -34,6 +35,9 @@ def get_form():
             Form.Integer('ntaxa', 'number of taxa',
                 5, low=3, high=20)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def process(ntaxa):
     np.set_printoptions(linewidth=200)

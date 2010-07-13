@@ -14,6 +14,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -34,6 +35,9 @@ def get_form():
                 Form.RadioItem('incorrect', 'use the method from the paper'),
                 Form.RadioItem('correct', 'use the corrected method', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def get_deleted_matrix(M, row_indices, column_indices):
     """

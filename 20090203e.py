@@ -13,6 +13,7 @@ from SnippetUtil import HandlingError
 import MatrixUtil
 from Form import RadioItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -29,9 +30,14 @@ def get_form():
     form_objects = [
             Form.Matrix('points', 'one point on each row', M),
             Form.RadioGroup('options', 'distance options', [
-                RadioItem('squared', 'get squared euclidean distances', True),
-                RadioItem('not_squared', 'get euclidean distances')])]
+                Form.RadioItem('squared',
+                    'get squared euclidean distances', True),
+                Form.RadioItem('not_squared',
+                    'get euclidean distances')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def get_response(fs):
     """

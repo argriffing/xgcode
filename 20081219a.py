@@ -6,6 +6,7 @@ from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import FelTree
 import Newick
@@ -15,6 +16,8 @@ import HtmlTable
 import MAPP
 import Codon
 import LeafWeights
+
+#FIXME use const data
 
 def get_form():
     """
@@ -62,19 +65,34 @@ def get_form():
     # define the list of form objects
     form_objects = [
             Form.MultiLine('tree', 'tree', default_tree_string),
-            Form.MultiLine('column', 'amino acid of each taxon', default_alignment_string),
-            Form.CheckGroup('options', 'show these intermediate values', [
-                Form.CheckItem('show_raw_pc_table', 'the raw physicochemical property table', True),
-                Form.CheckItem('show_standardized_pc_table', 'the standardized physicochemical property table', True),
-                Form.CheckItem('show_pc_correlation_matrix', 'the physicochemical property correlation matrix', True),
-                Form.CheckItem('show_tree', 'the pruned phylogenetic tree', True),
-                Form.CheckItem('show_weights', 'the taxon weights', True),
-                Form.CheckItem('show_aa_distribution', 'the estimated amino acid distribution', True),
-                Form.CheckItem('show_pc_distribution', 'the estimated physicochemical property distribution', True),
-                Form.CheckItem('show_deviations', 'the amino acid physicochemical property deviations', True),
-                Form.CheckItem('show_impact_scores', 'the impact score for each amino acid', True),
-                Form.CheckItem('show_p_values', 'the p-value for each amino acid', True)])]
+            Form.MultiLine('column',
+                'amino acid of each taxon', default_alignment_string),
+            Form.CheckGroup('options',
+                'show these intermediate values', [
+                Form.CheckItem('show_raw_pc_table',
+                    'the raw physicochemical property table', True),
+                Form.CheckItem('show_standardized_pc_table',
+                    'the standardized physicochemical property table', True),
+                Form.CheckItem('show_pc_correlation_matrix',
+                    'the physicochemical property correlation matrix', True),
+                Form.CheckItem('show_tree',
+                    'the pruned phylogenetic tree', True),
+                Form.CheckItem('show_weights',
+                    'the taxon weights', True),
+                Form.CheckItem('show_aa_distribution',
+                    'the estimated amino acid distribution', True),
+                Form.CheckItem('show_pc_distribution',
+                    'the estimated physicochemical property distn', True),
+                Form.CheckItem('show_deviations',
+                    'the aa physicochemical property deviations', True),
+                Form.CheckItem('show_impact_scores',
+                    'the impact score for each amino acid', True),
+                Form.CheckItem('show_p_values',
+                    'the p-value for each amino acid', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Html()
 
 def aa_letter_to_aa_index(aa_letter):
     """
@@ -150,10 +168,12 @@ def get_response(fs):
         col_labels = MAPP.g_property_names
         row_labels = Codon.g_aa_letters
         table = MAPP.g_property_array
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
     # calculate the standardized physicochemical property table
-    standardized_property_array = MAPP.get_standardized_property_array(MAPP.g_property_array)
+    standardized_property_array = MAPP.get_standardized_property_array(
+            MAPP.g_property_array)
     # show the standardized physicochemical property table
     if fs.show_standardized_pc_table:
         print >> out, 'standardized physicochemical property table:'
@@ -161,10 +181,12 @@ def get_response(fs):
         col_labels = MAPP.g_property_names
         row_labels = Codon.g_aa_letters
         table = standardized_property_array
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
     # calculate the physicochemical property correlation matrix
-    correlation_matrix = MAPP.get_property_correlation_matrix(standardized_property_array)
+    correlation_matrix = MAPP.get_property_correlation_matrix(
+            standardized_property_array)
     # show the physicochemical property correlation matrix
     if fs.show_pc_correlation_matrix:
         print >> out, 'physicochemical property correlation matrix:'
@@ -172,7 +194,8 @@ def get_response(fs):
         col_labels = MAPP.g_property_names
         row_labels = MAPP.g_property_names
         table = correlation_matrix
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
     # show the pruned tree
     if fs.show_tree:
@@ -193,7 +216,8 @@ def get_response(fs):
         col_labels = taxa
         print >> out, 'taxon weights:'
         print >> out, '<br/>'
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
     # estimate the amino acid distribution for the column,
     # taking into account the tree and a uniform prior.
@@ -210,11 +234,14 @@ def get_response(fs):
         col_labels = Codon.g_aa_letters
         print >> out, 'estimated amino acid distribution:'
         print >> out, '<br/>'
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
     # estimate the mean and variance of each physicochemical property
-    est_pc_means = MAPP.estimate_property_means(standardized_property_array, aa_distribution)
-    est_pc_variances = MAPP.estimate_property_variances(standardized_property_array, aa_distribution)
+    est_pc_means = MAPP.estimate_property_means(
+            standardized_property_array, aa_distribution)
+    est_pc_variances = MAPP.estimate_property_variances(
+            standardized_property_array, aa_distribution)
     # show the estimated mean and variance of each physicochemical property
     if fs.show_pc_distribution:
         table = [est_pc_means, est_pc_variances]
@@ -222,18 +249,23 @@ def get_response(fs):
         col_labels = MAPP.g_property_names
         print >> out, 'estimated physicochemical property moments:'
         print >> out, '<br/>'
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
-    # calculate the deviation from each property mean for each possible amino acid
-    deviations = MAPP.get_deviations(est_pc_means, est_pc_variances, standardized_property_array)
+    # calculate the deviation from each property mean
+    # for each possible amino acid
+    deviations = MAPP.get_deviations(
+            est_pc_means, est_pc_variances, standardized_property_array)
     # show the deviation from each property mean for each possible amino acid
     if fs.show_deviations:
-        print >> out, 'deviations of amino acids from the normal distribution estimated for each property:'
+        print >> out, 'deviations of amino acids from the normal distribution'
+        print >> out, 'estimated for each property:'
         print >> out, '<br/>'
         col_labels = MAPP.g_property_names
         row_labels = Codon.g_aa_letters
         table = deviations
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
     # calculate the impact scores
     impact_scores = MAPP.get_impact_scores(correlation_matrix, deviations)
@@ -244,7 +276,8 @@ def get_response(fs):
         col_labels = Codon.g_aa_letters
         print >> out, 'impact scores:'
         print >> out, '<br/>'
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
     # calculate the p-values
     p_values = []
@@ -258,7 +291,8 @@ def get_response(fs):
         col_labels = Codon.g_aa_letters
         print >> out, 'p-values:'
         print >> out, '<br/>'
-        print >> out, HtmlTable.get_labeled_table_string(col_labels, row_labels, table)
+        print >> out, HtmlTable.get_labeled_table_string(
+                col_labels, row_labels, table)
         print >> out, '<br/><br/>'
     # write the html footer
     print >> out, '</body>'

@@ -8,12 +8,16 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 
 def get_form():
     """
     @return: the body of a form
     """
     return []
+
+def get_form_out():
+    return FormOut.Report()
 
 def sample_stuff():
     """

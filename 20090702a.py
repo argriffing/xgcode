@@ -11,6 +11,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 import NewickIO
 
 def get_form():
@@ -19,6 +20,9 @@ def get_form():
     """
     form_objects = []
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_matrix(n, p):
     """
@@ -72,7 +76,6 @@ def get_response(fs):
     report = do_analysis(n, 10000)
     print >> out, report
     print >> out
-
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()

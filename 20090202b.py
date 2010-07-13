@@ -11,10 +11,13 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import MatrixUtil
 import NewickIO
 import FelTree
 import HtmlTable
+
+#FIXME use const data
 
 def get_form():
     """
@@ -29,6 +32,9 @@ def get_form():
             Form.MultiLine('tree', 'newick tree with branch lengths',
                 formatted_tree_string),
             Form.Integer('precision', 'precision', 4, low=2, high=17)]
+
+def get_form_out():
+    return FormOut.Html()
 
 def get_response(fs):
     """

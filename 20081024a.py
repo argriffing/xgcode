@@ -10,6 +10,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Util
@@ -29,6 +30,9 @@ def get_form():
             Form.MultiLine('selection', 'selected taxa',
                 '\n'.join(default_selection))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

@@ -10,6 +10,9 @@ import Util
 import BuildTreeTopology
 import MatrixUtil
 import Form
+import FormOut
+
+#FIXME use const data
 
 def get_form():
     """
@@ -42,6 +45,9 @@ def get_form():
                 Form.RadioItem('option_d',
                     'spectral with partial fallback and laplace update')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def set_to_string(my_set):
     """

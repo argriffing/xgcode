@@ -11,6 +11,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import MatrixUtil
 import NewickIO
 import FelTree
@@ -26,6 +27,9 @@ def get_form():
             Form.MultiLine('tree', 'newick tree with branch lengths',
                 tree_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def transform_a(L, D_partial):
     """

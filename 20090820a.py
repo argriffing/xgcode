@@ -41,6 +41,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Progress
 import ReadCoverage
 import FastHMM
@@ -63,6 +64,9 @@ def get_form():
     @return: the body of a form
     """
     return []
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

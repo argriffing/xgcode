@@ -18,6 +18,9 @@ import FelTree
 from Form import RadioItem
 from Form import CheckItem
 import Form
+import FormOut
+
+#FIXME use const data
 
 g_sample_tree_string = """(
     ((a:0.05, b:0.05)AB:0.15, c:0.2)ABC:0.8,
@@ -53,6 +56,9 @@ def get_form():
                 CheckItem('show_distance_matrix', 'distance matrix', True),
                 CheckItem('show_M_matrix', 'M matrix', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_eigenvector_of_interest(row_major_matrix):
     """

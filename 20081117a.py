@@ -8,7 +8,6 @@ The output graph has the same interpretation.
 The effective resistance between two vertices in the output graph
 should be the same as the effective resistance between the same two
 vertices in the input graph.
-
 If edges are like conductances,
 then the input and output edges are like reciprocal ohms.
 """
@@ -23,6 +22,9 @@ import MatrixUtil
 import iterutils
 from Form import RadioItem
 import Form
+import FormOut
+
+#FIXME use const data
 
 def get_form():
     """
@@ -59,6 +61,9 @@ def get_form():
                 RadioItem('ohm', 'edges are ohms'),
                 RadioItem('conductance', 'edges are conductances', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_funky_transformation(edge_triples, name_to_index, reduced_ordered_vertex_names):
     """

@@ -12,6 +12,9 @@ from SnippetUtil import HandlingError
 import RUtil
 import SpiralSampler
 import Form
+import FormOut
+
+#FIXME clarify output format
 
 def get_form():
     """
@@ -30,6 +33,9 @@ def get_form():
                 Form.RadioItem('table', 'R table format')]),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

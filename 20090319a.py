@@ -13,6 +13,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import Util
 import MatrixUtil
 import const
@@ -52,6 +53,9 @@ def get_form():
                 Form.RadioItem('other_b', 'using the formula from the paper'),
                 Form.RadioItem('other_c', 'using the formula on wikipedia')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def parse_comma_separated_line(line):
     """

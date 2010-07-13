@@ -19,6 +19,7 @@ from SnippetUtil import HandlingError
 import Util
 import MatrixUtil
 import Form
+import FormOut
 import SchurAlgebra
 import BuildTreeTopology
 
@@ -46,6 +47,9 @@ def get_form():
             Form.MultiLine('selection', 'selected labels',
                 '\n'.join(selected_labels))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def set_to_string(my_set):
     """

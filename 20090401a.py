@@ -8,6 +8,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import MatrixUtil
 
 def get_form():
@@ -27,6 +28,9 @@ def get_form():
                 '1e-10', low_inclusive=0)]
     return form_objects
 
+def get_form_out():
+    return FormOut.CorrelationMatrix()
+
 def get_response(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
@@ -34,7 +38,8 @@ def get_response(fs):
     """
     # get the matrix of correlation coefficients
     cmat = np.corrcoef(fs.matrix)
-    # set values smaller than user-defined epsilon to zero so the output is easy to read
+    # set values smaller than user-defined epsilon to zero
+    # so the output is easy to read
     cmat[abs(cmat) < fs.epsilon] = 0
     # begin the response
     out = StringIO()

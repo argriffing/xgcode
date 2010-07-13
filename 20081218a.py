@@ -16,6 +16,9 @@ import Codon
 import Fasta
 import iterutils
 import Form
+import FormOut
+
+#FIXME use const data
 
 # TODO de-hardcode this path to the jar file
 g_mapp_jar_path = '/home/argriffi/mapp-analysis/MAPP.jar'
@@ -69,6 +72,9 @@ def get_form():
                 Form.RadioItem('attachment', 'download as a tab separated data file')])]
     """
     return form_objects
+
+def get_form_out():
+    return FormOut.Fasta()
 
 def get_amino_acid_alignment(table):
     """

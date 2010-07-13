@@ -11,6 +11,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import Util
 import MatrixUtil
 import GraphNHJ
@@ -34,6 +35,9 @@ def get_form():
             Form.ContentDisposition()]
     # return the objects
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('state', [])
 
 def get_image_string(D, ordered_labels, iteration):
     """

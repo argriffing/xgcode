@@ -11,6 +11,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import Util
 import NewickIO
 import FelTree
@@ -45,6 +46,9 @@ def get_form():
             Form.Float('blen', 'branch length between subtree roots',
                 10)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

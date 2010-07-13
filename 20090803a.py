@@ -1,4 +1,4 @@
-"""Remove the root branch length and internal labels from a tree, and unroot it.
+"""Remove root branch length and internal labels from a tree, and unroot it.
 """
 
 from StringIO import StringIO
@@ -6,6 +6,7 @@ import os
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Newick
@@ -26,6 +27,9 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Newick()
 
 def remove_redundant_nodes(tree):
     """

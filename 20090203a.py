@@ -12,6 +12,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -35,6 +36,9 @@ def get_form():
             Form.Integer('index_b',
                 'index of the second vertex in the northwest block', 2, low=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_deleted_matrix(M, row_indices, column_indices):
     """

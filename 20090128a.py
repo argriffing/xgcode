@@ -10,8 +10,8 @@ import Newick
 import DrawTree
 import FelTree
 import Clustering
-from Form import CheckItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -30,11 +30,14 @@ def get_form():
             Form.MultiLine('names', 'remove these leaves',
                 '\n'.join(('c2', 'c3', 'c4'))),
             Form.CheckGroup('options', 'output options', [
-                CheckItem('show_newick',
+                Form.CheckItem('show_newick',
                     'show the newick string for each tree', True),
-                CheckItem('show_art',
+                Form.CheckItem('show_art',
                     'show the ascii art representation of each tree', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_pruned_tree(tree, names_to_remove):
     """

@@ -14,6 +14,7 @@ import sys
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Progress
 import ReadCoverage
 
@@ -58,6 +59,9 @@ def get_form():
                 'comma separated values',
                 '\n'.join(g_example_lines))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

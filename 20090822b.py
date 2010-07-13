@@ -12,12 +12,14 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Progress
 import ReadCoverageGap
 import FastHMM
 import TransitionMatrix
 import iterutils
 
+#FIXME use const data
 
 class TimeoutError(Exception): pass
 
@@ -54,6 +56,9 @@ def get_form():
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as an R table')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.RTable()
 
 def get_response(fs):
     """

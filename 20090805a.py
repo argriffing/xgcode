@@ -22,6 +22,7 @@ import Xtree
 import JC69
 import Euclid
 import Form
+import FormOut
 import Progress
 
 # define the headers of the R table
@@ -65,6 +66,9 @@ def get_form():
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as an R table')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.RTable()
 
 def sample_distance_matrix(xtree_root, sequence_length):
     sequences = JC69.sample_xtree_sequences(xtree_root, sequence_length)

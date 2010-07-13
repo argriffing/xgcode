@@ -1,4 +1,4 @@
-"""For each of a set of trees, compare spectral sign splits with and without internal nodes.
+"""Compare spectral sign splits with and without internal nodes.
 
 For each of a set of trees, compare spectral sign splits with and without internal nodes.
 """
@@ -10,6 +10,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import Util
 import FelTree
 import NewickIO
@@ -31,6 +32,9 @@ def get_form():
             Form.MultiLine('trees', 'newick trees (one tree per line)',
                 '\n'.join(default_tree_strings))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_vector(distance_matrix):
     """

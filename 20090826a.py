@@ -25,7 +25,9 @@ import sys
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 
+#FIXME use const data
 
 class LineLimitError(Exception): pass
 
@@ -49,6 +51,9 @@ def get_form():
             Form.MultiLine('multiline_input',
                 'input file lines', '\n'.join(sample_lines))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

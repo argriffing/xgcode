@@ -8,6 +8,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Euclid
@@ -33,6 +34,9 @@ def get_form():
                 Form.RadioItem('plain_matrix', 'plain', True),
                 Form.RadioItem('latex_matrix', 'LaTeX')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_reciprocal_matrix(M):
     """

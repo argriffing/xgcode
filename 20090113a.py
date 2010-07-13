@@ -8,12 +8,15 @@ import os
 from SnippetUtil import HandlingError
 import KGEA
 import Form
+import FormOut
 import Codon
 import MAPP
 import LeafWeights
 import NewickIO
 import Newick
 import FelTree
+
+#FIXME use const data
 
 # Define some web locations which should probably be moved to a config file.
 g_base_dir = '/var/www/python_scripts/data/exon-alignments'
@@ -49,6 +52,8 @@ def get_form():
             Form.SingleLine('aminoacid', 'the amino acid of interest', 'P')]
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
 
 def modify_tree(tree, selected_taxa):
     """
@@ -97,16 +102,19 @@ def get_response(fs):
     # get the alignment
     out = StringIO()
     try:
-        finder = KGEA.Finder(g_index_dir, g_valid_chromosome_strings_pathname, g_fasta_dir)
+        finder = KGEA.Finder(
+                g_index_dir, g_valid_chromosome_strings_pathname, g_fasta_dir)
         # note that some of these amino acids can be gaps
-        taxon_aa_pairs = list(finder.gen_taxon_aa_pairs(fs.chromosome, fs.position))
+        taxon_aa_pairs = list(
+                finder.gen_taxon_aa_pairs(fs.chromosome, fs.position))
         lines = [taxon + '\t' + aa for taxon, aa in taxon_aa_pairs]
         if taxon_aa_pairs:
             # get the map from the taxon to the amino acid
             taxon_to_aa_letter = dict((taxon, aa) for taxon, aa in taxon_aa_pairs if aa in Codon.g_aa_letters)
             selected_taxa = set(taxon_to_aa_letter)
             ntaxa = len(selected_taxa)
-            # assert that we have enough taxa to calculate the p-value from the MAPP statistic
+            # assert that we have enough taxa
+            # to calculate the p-value from the MAPP statistic
             mintaxa = 7
             if ntaxa < mintaxa:
                 raise HandlingError('this column has only %d aligned amino acids but we want at least %d' % (ntaxa, mintaxa))

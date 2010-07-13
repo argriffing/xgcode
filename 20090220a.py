@@ -18,6 +18,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -38,6 +39,11 @@ def get_form():
                 Form.RadioItem('treelike', 'distances are tree-like', True),
                 Form.RadioItem('planelike', 'distances are plane-like')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
+
+#FIXME use eigutil
 
 def get_response(fs):
     """
@@ -64,7 +70,8 @@ def get_response(fs):
     top_eigenvectors = sorted_eigenvectors[:2]
     for eigenvalue in top_eigenvalues:
         if eigenvalue <= 0:
-            raise HandlingError('one of the top two eigenvalues was non-positive')
+            msg = 'one of the top two eigenvalues was non-positive'
+            raise HandlingError(msg)
     axes = []
     for eigenvalue, eigenvector in zip(top_eigenvalues, top_eigenvectors):
         axis = [v * math.sqrt(eigenvalue) for v in eigenvector]

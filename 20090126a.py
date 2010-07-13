@@ -17,8 +17,8 @@ from SnippetUtil import HandlingError
 import Euclid
 import MatrixUtil
 import BuildTreeTopology
-from Form import RadioItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -33,9 +33,12 @@ def get_form():
             Form.Float('pedge', 'the probability of a vertex pair edge',
                 '0.9', low_exclusive=0, high_inclusive=1),
             Form.RadioGroup('cut', 'reduced graph cut criterion', [
-                RadioItem('fiedler_cut', 'fiedler cut', True),
-                RadioItem('random_cut', 'random cut')])]
+                Form.RadioItem('fiedler_cut', 'fiedler cut', True),
+                Form.RadioItem('random_cut', 'random cut')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

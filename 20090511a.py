@@ -21,8 +21,11 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
+
+#FIXME use const data
 
 def get_form():
     """
@@ -45,6 +48,8 @@ def get_form():
                     'show whether or not distance matrices are close', True)])]
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

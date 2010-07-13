@@ -18,6 +18,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 import Progress
 import FelTree
 
@@ -74,6 +75,9 @@ def get_form():
             Form.Integer('seed',
                 'prng seed (or a negative for no specified seed)', -1)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

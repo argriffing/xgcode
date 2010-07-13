@@ -8,6 +8,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import BuildTreeTopology
@@ -28,6 +29,9 @@ def get_form():
             Form.MultiLine('tree', 'newick tree with branch lengths',
                 formatted_tree_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def label_set_to_string(label_set, label_to_name):
     """

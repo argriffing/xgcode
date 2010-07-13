@@ -13,11 +13,14 @@ import cairo
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import CairoUtil
 import MatrixUtil
 import Clustering
 import NewickIO
 import FelTree
+
+#FIXME use const data
 
 def get_form():
     """
@@ -38,6 +41,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('tree', [])
 
 def get_eigenvectors(row_major_matrix):
     """

@@ -4,7 +4,7 @@ Given a Laplacian matrix, find points that define a Euclidean distance matrix.
 Each row in the output defines a point in Euclidean space.
 Contrasts are available for both normalized and combinatorial Laplacians,
 while Euclidean coordinates are with respect to
-    the combinatorial Laplacian matrix.
+the combinatorial Laplacian matrix.
 """
 
 from StringIO import StringIO
@@ -17,6 +17,7 @@ import MatrixUtil
 from Form import RadioItem
 from Form import CheckItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -43,6 +44,9 @@ def get_form():
                     'show the contrast loading matrix')])]
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
+
 def get_eigendecomposition(M):
     """
     @param M: a numpy array
@@ -61,7 +65,8 @@ def gen_euclidean_points_from_eigendecomposition(w, v):
     """
     epsilon = 1e-10
     if sum(1 for eigenvalue in w if abs(eigenvalue) < epsilon) != 1:
-        raise ValueError('expected a single eigenvalue to be near zero: ' + str(w))
+        msg = 'expected a single eigenvalue to be near zero: ' + str(w)
+        raise ValueError(msg)
     n = len(w)
     for i in range(n):
         p = []

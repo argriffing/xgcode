@@ -15,6 +15,7 @@ import MatrixUtil
 import iterutils
 from Form import CheckItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -42,6 +43,9 @@ def get_form():
                     'trees with potentially informative but small loadings',
                     True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 
 class NegligibleError(Exception):
@@ -97,34 +101,40 @@ class AnalysisResult:
             output_tree = Newick.NewickTree(root)
             # convert the tree to the FelTree format
             newick_string = NewickIO.get_newick_string(output_tree)
-            self.reconstructed_tree = NewickIO.parse(newick_string, FelTree.NewickTree)
+            self.reconstructed_tree = NewickIO.parse(
+                    newick_string, FelTree.NewickTree)
         except NegligibleError:
             self.is_negligible = True
         except IncompleteError:
             self.is_incomplete = True
         else:
-            # compare the splits defined by the reconstructed tree to splits in the original tree
-            expected_partitions = TreeComparison.get_nontrivial_partitions(self.tree)
-            observed_partitions = TreeComparison.get_nontrivial_partitions(self.reconstructed_tree)
+            # compare the splits defined by the reconstructed tree
+            # to splits in the original tree
+            expected_partitions = TreeComparison.get_nontrivial_partitions(
+                    self.tree)
+            observed_partitions = TreeComparison.get_nontrivial_partitions(
+                    self.reconstructed_tree)
             invalid_partitions = observed_partitions - expected_partitions
             if invalid_partitions:
                 self.is_conflicting = True
 
     def _build_tree(self, indices, depth):
         """
-        @param indices: a set of indices representing taxa in the current subtree
+        @param indices: a set of indices of taxa in the current subtree
         @param depth: the depth of the current subtree
         @return: the node representing the subtree
         """
         root = Newick.NewickNode()
         if not indices:
-            raise ValueError('trying to build a tree from an empty set of indices')
+            msg = 'trying to build a tree from an empty set of indices'
+            raise ValueError(msg)
         elif len(indices) == 1:
             index = list(indices)[0]
             root.set_name(self.ordered_names[index])
         else:
             if depth >= len(self.sorted_eigensystem):
-                # the ordered eigenvector loading signs were unable to distinguish each taxon
+                # the ordered eigenvector loading signs
+                # were unable to distinguish each taxon
                 raise IncompleteError()
             negative_indices = set()
             positive_indices = set()
@@ -176,11 +186,13 @@ def get_response(fs):
     # get the newick trees.
     trees = []
     for tree_string in iterutils.stripped_lines(StringIO(fs.trees)):
-        # parse each tree and make sure that it conforms to various requirements
+        # parse each tree
+        # and make sure that it conforms to various requirements
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]
         if len(tip_names) < 4:
-            raise HandlingError('expected at least four tips but found ' + str(len(tip_names)))
+            msg = 'expected at least 4 tips but found ' + str(len(tip_names))
+            raise HandlingError(msg)
         if any(name is None for name in tip_names):
             raise HandlingError('each terminal node must be labeled')
         if len(set(tip_names)) != len(tip_names):

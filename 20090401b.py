@@ -13,6 +13,7 @@ import SnippetUtil
 import MatrixUtil
 import iterutils
 import Form
+import FormOut
 
 def get_form():
     """
@@ -30,6 +31,9 @@ def get_form():
             Form.Float('epsilon', 'small values will be shown as zero',
                 '1e-10', low_inclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def get_vectors(n):
     """
