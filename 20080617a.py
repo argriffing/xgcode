@@ -13,6 +13,7 @@ import HeatMap
 import FelTree
 import NewickIO
 import Form
+import FormOut
 
 def get_form():
     """
@@ -29,6 +30,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('tree', [])
 
 def split_branches(tree):
     """

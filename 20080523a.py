@@ -14,6 +14,7 @@ import PhyLikelihood
 import Stockholm
 import Discretizer
 import Form
+import FormOut
 
 def get_stockholm_string(tree, alignment, mle_rates):
     """
@@ -144,6 +145,9 @@ def get_form():
             Form.Float('kappa', 'transition transversion rate ratio',
                 2, low_inclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Stockholm()
 
 def get_response(fs):
     """

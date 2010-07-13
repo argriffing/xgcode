@@ -11,6 +11,7 @@ import Util
 import FelTree
 import NewickIO
 import Form
+import FormOut
 
 def get_form():
     """
@@ -29,6 +30,9 @@ def get_form():
             Form.MultiLine('selection', 'selected taxa',
                 '\n'.join(selection))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

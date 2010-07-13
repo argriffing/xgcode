@@ -19,6 +19,7 @@ import MatrixUtil
 import StoerWagner
 import Euclid
 import Form
+import FormOut
 
 def get_form():
     """
@@ -37,6 +38,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image()
 
 def get_eigenvectors(row_major_matrix):
     """

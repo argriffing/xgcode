@@ -15,6 +15,7 @@ import PathSampler
 import EnglishModel
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -33,6 +34,9 @@ def get_form():
             Form.SingleLine('last', 'last letter', 'b'),
             Form.Integer('count', 'character count', 10, low=1, high=80)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

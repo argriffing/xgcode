@@ -17,6 +17,7 @@ import Newick
 import PhyLikelihood
 import Nexus
 import Form
+import FormOut
 
 def get_form():
     """
@@ -38,6 +39,9 @@ def get_form():
                 Form.RadioItem('fastaformat', 'fasta alignment'),
                 Form.RadioItem('nexusformat', 'nexus alignment', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Nexus()
 
 def get_response(fs):
     """

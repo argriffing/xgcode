@@ -8,6 +8,7 @@ import SnippetUtil
 import MatrixUtil
 import Euclid
 import Form
+import FormOut
 
 def get_form():
     """
@@ -21,6 +22,9 @@ def get_form():
             Form.Matrix('matrix', 'path resistance matrix',
                 D, MatrixUtil.assert_predistance)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def get_response(fs):
     """

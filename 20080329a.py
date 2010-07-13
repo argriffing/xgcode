@@ -15,6 +15,7 @@ import MatrixUtil
 import SubModel
 import Nexus
 import Form
+import FormOut
 
 def get_form():
     """
@@ -41,11 +42,14 @@ def get_form():
                 get_kappa(1), low_inclusive=0),
             Form.Float('weight_b', 'second component weight',
                 get_weight(1), low_inclusive=0),
-            Form.RadioGroup('format', 'output format options', [
-                Form.RadioItem('fastaformat', 'fasta'),
-                Form.RadioItem('nexusformat', 'nexus', True)]),
+            Form.RadioGroup('fmt', 'output format options', [
+                Form.RadioItem('fasta', 'fasta'),
+                Form.RadioItem('nex', 'nexus', True)]),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Alignment('out.%s', ['fmt'])
 
 def get_response(fs):
     """
@@ -90,14 +94,14 @@ def get_response(fs):
         raise HandlingError(e)
     # get the output string
     output_string = ''
-    if fs.fastaformat:
+    if fs.fasta:
         # the output is the alignment
         arr = []
         for node in tree.gen_tips():
             arr.append(alignment.get_fasta_sequence(node.name))
         alignment_string = '\n'.join(arr)
         output_string = alignment_string
-    elif fs.nexusformat:
+    elif fs.nex:
         # the output is the alignment and the tree
         nexus = Nexus.Nexus()
         nexus.tree = tree
@@ -109,11 +113,11 @@ def get_response(fs):
             nexus.add_comment('category %d: %s' % (i+1, ', '.join(arr)))
         output_string = str(nexus)
     # define the filename
-    if fs.fastaformat:
+    if fs.fasta:
         filename_extension = 'fasta'
-    elif fs.nexusformat:
+    elif fs.nex:
         filename_extension = 'nex'
-    filename = 'sample.' + filename_extension
+    filename = 'sample.' + fs.fmt
     # send the response
     contentdisposition = "%s; filename=%s" % (fs.contentdisposition, filename)
     response_headers = [
@@ -130,8 +134,7 @@ def get_weight(index):
 def gen_frequency_lines(index):
     category_to_frequencies = [
             [1, 1, 1, 1],
-            [1, 4, 4, 1]
-            ]
+            [1, 4, 4, 1]]
     frequencies = category_to_frequencies[index]
     for nt, frequency in zip('ACGT', frequencies):
         yield '%s : %s' % (nt, frequency)

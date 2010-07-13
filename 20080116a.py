@@ -7,6 +7,7 @@ from SnippetUtil import HandlingError
 import Newick
 import DrawTree
 import Form
+import FormOut
 
 def get_form():
     """
@@ -20,11 +21,18 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.RadioGroup('group1', 'output options', [
-                Form.RadioItem('choice1', 'a simple indented format', True),
-                Form.RadioItem('choice2', 'ascii art with branch lengths'),
-                Form.RadioItem('choice3', 'ascii art with topology only and less whitespace'),
-                Form.RadioItem('choice4', 'ascii art with topology only and more whitespace')])]
+                Form.RadioItem('choice1',
+                    'a simple indented format', True),
+                Form.RadioItem('choice2',
+                    'ascii art with branch lengths'),
+                Form.RadioItem('choice3',
+                    'ascii art with topology only and less whitespace'),
+                Form.RadioItem('choice4',
+                    'ascii art with topology only and more whitespace')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """
@@ -36,7 +44,8 @@ def get_response(fs):
     tree.assert_valid()
     # start writing the output
     out = StringIO()
-    # Draw the tree using a simple indented format if the user chose the first option.
+    # Draw the tree using a simple indented format
+    # if the user chose the first option.
     # Otherwise create a drawing object and draw fancier ascii art.
     if fs.choice1:
         print >> out, tree

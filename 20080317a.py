@@ -9,8 +9,6 @@ The mutation component is the stationary distribution
 of the nucleotide mutation process.
 """
 
-# The selection component is centered amino acid energy vector upon which selection operates.
-
 from StringIO import StringIO
 import math
 import random
@@ -23,10 +21,14 @@ import SnippetUtil
 import Codon
 import DirectProtein
 import Form
+import FormOut
 import iterutils
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
 from Codon import g_sorted_non_stop_codons as codons
+
+# The selection component is centered amino acid energy vector
+# upon which selection operates.
 
 def get_form():
     """
@@ -42,6 +44,9 @@ def get_form():
             Form.MultiLine('aminoacids', 'amino acid stationary distribution',
                 default_aa_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

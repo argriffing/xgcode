@@ -10,6 +10,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import Newick
 import Form
+import FormOut
 
 def gen_ancestors(node):
     """
@@ -67,6 +68,9 @@ def get_form():
     """
     default_tree_string = '(a:1, (b:2, d:5):1, c:4);'
     return [Form.MultiLine('tree', 'newick tree', default_tree_string)]
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

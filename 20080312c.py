@@ -12,6 +12,7 @@ import Newick
 import PhyLikelihood
 import DirectProtein
 import Form
+import FormOut
 
 def get_form():
     """
@@ -30,6 +31,9 @@ def get_form():
             Form.Integer('ncols', 'sample this many codon columns',
                 100, low=1, high=1000)]
     return form_objects
+
+def get_form_out():
+    return FormOut.CodonFasta()
 
 def get_response(fs):
     """

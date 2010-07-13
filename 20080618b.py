@@ -13,6 +13,9 @@ import NewickIO
 import FelTree
 import MST
 import Form
+import FormOut
+
+#FIXME this snippet duplicates library code
 
 def get_form():
     """
@@ -22,6 +25,9 @@ def get_form():
     default_tree_string = '(a:1, (b:2, d:5):1, c:4);'
     # define the form objects
     return [Form.MultiLine('tree', 'newick tree', default_tree_string)]
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_laplacian_pseudo_inverse(distance_matrix):
     """

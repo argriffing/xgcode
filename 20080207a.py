@@ -1,4 +1,6 @@
 """Sample joint nucleotide substitutions on a fixed tree with known tips.
+
+Maybe this is the one that was buggy.
 """
 
 from StringIO import StringIO
@@ -17,6 +19,7 @@ import MatrixUtil
 import Util
 import PathSampler
 import Form
+import FormOut
 
 # This example tree might be useful for debugging.
 # (((a:2, b:2)A:2)X:2, ((c:2)x:2, d:2)B:2);
@@ -55,6 +58,9 @@ def get_form():
             ImageFormat(),
             ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('tree', [])
 
 def get_response(fs):
     """
@@ -116,12 +122,6 @@ def get_response(fs):
     return response_headers, image_string
 
 def simulate_branch_path(tree, node, rate_matrix_object):
-    try:
-        import RateMatrix
-        import PathSampler
-        import SpatialTree
-    except ImportError, e:
-        raise HandlingError(e)
     # purines are red; pyrimidines are blue
     # A and T are brighter, G and C are darker
     nt_to_color = {'A':'ff4444', 'G':'ffaaaa', 'T':'4444ff', 'C':'aaaaff'}
@@ -132,8 +132,8 @@ def simulate_branch_path(tree, node, rate_matrix_object):
     states = 'ACGT'
     events = None
     while events is None:
-        events = PathSampler.get_nielsen_sample(initial_state, terminal_state,
-                states, node.blen, rate_matrix)
+        events = PathSampler.get_nielsen_sample(
+                initial_state, terminal_state, states, node.blen, rate_matrix)
     parent = node.parent
     last_t = 0
     for t, state in events:

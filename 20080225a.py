@@ -11,6 +11,7 @@ import EnglishModel
 import MatrixUtil
 import TransitionMatrix
 import Form
+import FormOut
 
 def get_form():
     """
@@ -25,6 +26,9 @@ def get_form():
             Form.Matrix('matrix', 'transition matrix',
                 T, MatrixUtil.assert_transition_matrix)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

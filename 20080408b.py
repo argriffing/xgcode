@@ -17,6 +17,7 @@ import SubModel
 import PhyLikelihood
 import Nexus
 import Form
+import FormOut
 
 # define the input nexus path
 global hyphy_nexus
@@ -51,6 +52,9 @@ def get_form():
                 Form.CheckItem('outcheck', 'show the likelihood and rates',
                     True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

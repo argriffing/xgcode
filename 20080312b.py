@@ -12,6 +12,7 @@ import PhyLikelihood
 import MatrixUtil
 import DirectRna
 import Form
+import FormOut
 
 def get_form():
     """
@@ -29,6 +30,9 @@ def get_form():
             Form.Integer('ncols', 'sample this many columns',
                 100, low=1, high=10000)]
     return form_objects
+
+def get_form_out():
+    return FormOut.NucleotideFasta()
 
 def get_response(fs):
     """

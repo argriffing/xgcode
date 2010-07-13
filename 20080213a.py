@@ -11,6 +11,7 @@ from SnippetUtil import HandlingError
 import SnippetUtil
 import Codon
 import Form
+import FormOut
 import iterutils
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
@@ -29,6 +30,9 @@ def get_form():
             Form.MultiLine('amino_acids', 'amino acid distribution weights',
                 default_aa_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

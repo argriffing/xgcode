@@ -12,6 +12,7 @@ from SnippetUtil import HandlingError
 import Util
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -35,6 +36,9 @@ def get_form():
             Form.MultiLine('selection', 'selected labels',
                 '\n'.join(selected_labels))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_branch_length_a(D, selection, complement):
     """

@@ -15,6 +15,7 @@ import Newick
 import RateMatrix
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -36,6 +37,9 @@ def get_form():
                 Form.RadioItem('scaled', 'scaled to a rate of one', True),
                 Form.RadioItem('unscaled', 'unscaled')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.NucleotideRateMatrix()
 
 def create_rate_matrix(distribution, kappa, f):
     """

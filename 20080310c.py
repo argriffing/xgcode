@@ -18,6 +18,7 @@ import HeatMap
 import Fasta
 import DirectRna
 import Form
+import FormOut
 import iterutils
 
 # This alignment is unrealistic.
@@ -55,6 +56,9 @@ def get_form():
             Form.MultiLine('model', 'Direct RNA mixture model',
                 DirectRna.get_sample_xml_string().strip())]
     return form_objects
+
+def get_form_out():
+    return FormOut.Html()
 
 def get_response(fs):
     """

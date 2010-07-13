@@ -10,6 +10,7 @@ from SnippetUtil import HandlingError
 import Codon
 import DirectRna
 import Form
+import FormOut
 
 def get_form():
     """
@@ -19,6 +20,9 @@ def get_form():
     default_xml_string = DirectRna.get_sample_xml_string()
     # define the form objects
     return [Form.MultiLine('model', 'mixture model', default_xml_string)]
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

@@ -7,6 +7,7 @@ from SnippetUtil import HandlingError
 import Newick
 import LeafWeights
 import Form
+import FormOut
 
 def get_form():
     """
@@ -20,9 +21,14 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.RadioGroup('method', 'weight calculation method', [
-                Form.RadioItem('stone', 'use the method of Stone and Sidow', True),
-                Form.RadioItem('thompson', 'use the Thompson et al.')])]
+                Form.RadioItem('stone',
+                    'use the method of Stone and Sidow', True),
+                Form.RadioItem('thompson',
+                    'use the Thompson et al.')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

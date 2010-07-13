@@ -10,6 +10,7 @@ import SpatialTree
 import DrawTreeImage
 import FastDaylightLayout
 import Form
+import FormOut
 import iterutils
 
 def get_form():
@@ -33,6 +34,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('tree', [])
 
 def get_response(fs):
     """

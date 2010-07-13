@@ -17,6 +17,7 @@ import Newick
 import SubModel
 import Nexus
 import Form
+import FormOut
 
 def get_form():
     """
@@ -38,6 +39,9 @@ def get_form():
             Form.Float('weight_b', 'second component weight',
                 get_weight(1), low_inclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Html()
 
 def get_response(fs):
     """

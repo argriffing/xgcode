@@ -6,6 +6,7 @@ from StringIO import StringIO
 from SnippetUtil import HandlingError
 import Newick
 import Form
+import FormOut
 
 def get_form():
     """
@@ -18,9 +19,12 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.Integer('segments', 'minimum segment count',
-                200, low=1, high=10000)]
+            Form.Integer('segments',
+                'minimum segment count', 200, low=1, high=10000)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Newick()
 
 def get_response(fs):
     """

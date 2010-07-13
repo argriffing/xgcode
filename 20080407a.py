@@ -13,6 +13,7 @@ import Config
 import Hyphy
 import Nexus
 import Form
+import FormOut
 
 # define the input nexus path
 global hyphy_nexus
@@ -71,11 +72,15 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            Form.MultiLine('nexus', 'nexus data', Nexus.nexus_sample_string.strip()),
+            Form.MultiLine('nexus',
+                'nexus data', Nexus.nexus_sample_string.strip()),
             Form.CheckGroup('options', 'output options', [
                 Form.CheckItem('outdebug', 'show debug info'),
                 Form.CheckItem('outmodel', 'show the model')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

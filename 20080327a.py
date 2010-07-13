@@ -7,6 +7,7 @@ from SnippetUtil import HandlingError
 import SnippetUtil
 import Newick
 import Form
+import FormOut
 
 def get_form():
     """
@@ -21,6 +22,9 @@ def get_form():
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.Float('sf', 'scaling factor', 0.333333, low_exclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Newick()
 
 def get_response(fs):
     """

@@ -12,6 +12,9 @@ import Clustering
 import NeighborhoodJoining
 import NewickIO
 import Form
+import FormOut
+
+#FIXME use a const data file
 
 def get_form():
     """
@@ -39,6 +42,9 @@ def get_form():
                 Form.RadioItem('njrecourse', 'neighbor joining', True),
                 Form.RadioItem('halvingrecourse', 'stem length halving')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Newick()
 
 def get_response(fs):
     """

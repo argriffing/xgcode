@@ -12,6 +12,7 @@ import RateMatrix
 import HeatMap
 import Codon
 import Form
+import FormOut
 
 def get_form():
     """
@@ -29,6 +30,9 @@ def get_form():
             Form.Integer('maxcategories', 'maximum number of categories',
                 5, low=2)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Html()
 
 def get_response(fs):
     """

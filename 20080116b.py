@@ -13,6 +13,7 @@ import EqualArcLayout
 import FastDaylightLayout
 import CairoUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -32,6 +33,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('tree', [])
 
 def get_response(fs):
     """

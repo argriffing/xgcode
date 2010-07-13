@@ -1,4 +1,7 @@
-"""Use the pruning algorithm to calculate the logarithm of the Jukes-Cantor probability of a nucleotide alignment.
+"""Use the pruning algorithm to get JC log likelihood of an nt alignment.
+
+Use the pruning algorithm to calculate the logarithm
+of the Jukes-Cantor likelihood of a nucleotide alignment.
 """
 
 from StringIO import StringIO
@@ -10,6 +13,7 @@ import PhyLikelihood
 import RateMatrix
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -25,6 +29,9 @@ def get_form():
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.MultiLine('fasta', 'fasta alignment', alignment_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """
@@ -43,9 +50,12 @@ def get_response(fs):
     # get the log likelihood
     dictionary_rate_matrix = RateMatrix.get_jukes_cantor_rate_matrix()
     ordered_states = list('ACGT')
-    row_major_rate_matrix = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, ordered_states, ordered_states)
-    rate_matrix_object = RateMatrix.RateMatrix(row_major_rate_matrix, ordered_states)
-    log_likelihood = PhyLikelihood.get_log_likelihood(tree, alignment, rate_matrix_object)
+    row_major_rate_matrix = MatrixUtil.dict_to_row_major(
+            dictionary_rate_matrix, ordered_states, ordered_states)
+    rate_matrix_object = RateMatrix.RateMatrix(
+            row_major_rate_matrix, ordered_states)
+    log_likelihood = PhyLikelihood.get_log_likelihood(
+            tree, alignment, rate_matrix_object)
     # write the response
     out = StringIO()
     print >> out, log_likelihood

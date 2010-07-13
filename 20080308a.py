@@ -25,6 +25,7 @@ import PhyLikelihood
 import MatrixUtil
 import SubModel
 import Form
+import FormOut
 
 # This alignment is unrealistic.
 g_sample_alignment_string = """
@@ -79,6 +80,9 @@ def get_form():
             Form.Float('weight_c', 'third mixture weight',
                 3, low_inclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

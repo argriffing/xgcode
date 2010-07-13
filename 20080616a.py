@@ -12,6 +12,7 @@ import MatrixUtil
 import StoerWagner
 import Clustering
 import Form
+import FormOut
 
 def get_form():
     """
@@ -31,35 +32,8 @@ def get_form():
                 Form.RadioItem('conductance', 'min conductance cut')])]
     return form_objects
 
-def get_conductance(assignment, affinity):
-    """
-    The assignment vector has elements equal to 1 or -1.
-    These elements define the cluster membership.
-    @param assignment: defines the cluster membership
-    @param affinity: an affinity matrix
-    """
-    # if the assignment defines a trivial partition then return None
-    if set(assignment) != set([-1, 1]):
-        return None
-    # count the states
-    n = len(assignment)
-    # get the affinity counts
-    between_clusters = 0.0
-    adjoining_cluster_a = 0.0
-    adjoining_cluster_b = 0.0
-    for i in range(n):
-        for j in range(n):
-            if i < j:
-                weight = affinity[i][j]
-                if assignment[i] != assignment[j]:
-                    between_clusters += weight
-                    adjoining_cluster_a += weight
-                    adjoining_cluster_b += weight
-                elif assignment[i] == 1:
-                    adjoining_cluster_a += weight
-                elif assignment[i] == -1:
-                    adjoining_cluster_b += weight
-    return between_clusters / min(adjoining_cluster_a, adjoining_cluster_b)
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """
@@ -106,3 +80,33 @@ def get_response(fs):
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, out.getvalue().strip()
+
+def get_conductance(assignment, affinity):
+    """
+    The assignment vector has elements equal to 1 or -1.
+    These elements define the cluster membership.
+    @param assignment: defines the cluster membership
+    @param affinity: an affinity matrix
+    """
+    # if the assignment defines a trivial partition then return None
+    if set(assignment) != set([-1, 1]):
+        return None
+    # count the states
+    n = len(assignment)
+    # get the affinity counts
+    between_clusters = 0.0
+    adjoining_cluster_a = 0.0
+    adjoining_cluster_b = 0.0
+    for i in range(n):
+        for j in range(n):
+            if i < j:
+                weight = affinity[i][j]
+                if assignment[i] != assignment[j]:
+                    between_clusters += weight
+                    adjoining_cluster_a += weight
+                    adjoining_cluster_b += weight
+                elif assignment[i] == 1:
+                    adjoining_cluster_a += weight
+                elif assignment[i] == -1:
+                    adjoining_cluster_b += weight
+    return between_clusters / min(adjoining_cluster_a, adjoining_cluster_b)

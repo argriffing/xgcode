@@ -8,6 +8,7 @@ from SnippetUtil import HandlingError
 import MatrixUtil
 import RateMatrix
 import Form
+import FormOut
 import iterutils
 
 def get_form():
@@ -22,6 +23,9 @@ def get_form():
             Form.MultiLine('energies', 'ordered energies',
                 default_energy_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.RateMatrix()
 
 def get_response(fs):
     """

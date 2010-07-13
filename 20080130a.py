@@ -6,22 +6,22 @@ which I think is Pade approximation of order 7.
 
 from StringIO import StringIO
 
-# the scipy version of linalg is necessary for expm
 from scipy import linalg
-import numpy
+import numpy as np
 
 from SnippetUtil import HandlingError
 import Newick
 import MatrixUtil
 import RateMatrix
 import Form
+import FormOut
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default rate matrix
-    R = numpy.array([
+    R = np.array([
         [-1, 1/3.0, 1/3.0, 1/3.0],
         [1/3.0, -1, 1/3.0, 1/3.0],
         [1/3.0, 1/3.0, -1, 1/3.0],
@@ -32,6 +32,9 @@ def get_form():
                 R, MatrixUtil.assert_rate_matrix),
             Form.Float('time', 'time', 2.0, low_exclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.TransitionMatrix()
 
 def get_response(fs):
     """

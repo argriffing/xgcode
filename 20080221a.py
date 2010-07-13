@@ -15,6 +15,7 @@ import Codon
 import MatrixUtil
 import DirectProtein
 import Form
+import FormOut
 from Codon import g_sorted_nt_letters as nt_ordered
 from Codon import g_sorted_aa_letters as aa_ordered
 from Codon import g_sorted_non_stop_codons as codons_ordered
@@ -42,6 +43,9 @@ def get_form():
                 Form.RadioItem('nstat', 'nucleotide stationary distribution'),
                 Form.RadioItem('sf', 'rate matrix scaling factor')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.CodonRateMatrix()
 
 def get_response(fs):
     """

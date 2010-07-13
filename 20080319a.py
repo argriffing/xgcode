@@ -11,6 +11,7 @@ import SnippetUtil
 import Codon
 import DirectProtein
 import Form
+import FormOut
 import iterutils
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
@@ -33,6 +34,9 @@ def get_form():
                 Form.RadioItem('hb', 'equation (14) in Halpern-Bruno', True),
                 Form.RadioItem('corrected', 'a corrected method')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

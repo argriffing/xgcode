@@ -7,6 +7,7 @@ from SnippetUtil import HandlingError
 from LeafWeights import stone_example_tree
 import Newick
 import Form
+import FormOut
 
 def get_form():
     """
@@ -21,6 +22,9 @@ def get_form():
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.SingleLine('node', 'the name of the node to remove', 'a')]
     return form_objects
+
+def get_form_out():
+    return FormOut.Newick()
 
 def get_response(fs):
     """

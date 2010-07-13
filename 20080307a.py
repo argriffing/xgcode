@@ -18,6 +18,7 @@ import RateMatrix
 import MatrixUtil
 import SubModel
 import Form
+import FormOut
 
 g_nt_matrix_a = np.array([
     [-3, 1, 1, 1], [1, -3, 1, 1], [1, 1, -3, 1], [1, 1, 1, -3]])
@@ -55,6 +56,9 @@ def get_form():
             Form.Float('weight_c', 'third mixture weight',
                 g_weight_c, low_inclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.NucleotideFasta()
 
 def get_response(fs):
     """

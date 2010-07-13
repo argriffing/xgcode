@@ -6,6 +6,7 @@ from StringIO import StringIO
 from SnippetUtil import HandlingError
 import Newick
 import Form
+import FormOut
 
 def get_form():
     """
@@ -17,6 +18,9 @@ def get_form():
     formatted_tree_string = Newick.get_narrow_newick_string(tree, 60)
     # define the form objects
     return [Form.MultiLine('tree', 'newick tree', formatted_tree_string)]
+
+def get_form_out():
+    return FormOut.Newick()
 
 def get_response(fs):
     """
@@ -31,9 +35,11 @@ def get_response(fs):
     for node in old_nodes:
         if node is tree.root:
             if node.blen is not None:
-                raise HandlingError('the root node should not have a branch length')
+                msg = 'the root node should not have a branch length'
+                raise HandlingError(msg)
         elif node.blen is None:
-            raise HandlingError('each non-root node should have a branch length')
+            msg = 'each non-root node should have a branch length'
+            raise HandlingError(msg)
         else:
             # create a new node and set its attributes
             new = Newick.NewickNode()

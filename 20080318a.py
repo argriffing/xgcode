@@ -8,6 +8,7 @@ from SnippetUtil import HandlingError
 import DirectProtein
 import RateMatrix
 import Form
+import FormOut
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
 from Codon import g_sorted_non_stop_codons as codons
@@ -18,6 +19,9 @@ def get_form():
     """
     default_xml_string = DirectProtein.get_sample_xml_string().strip()
     return [Form.MultiLine('model', 'mixture model', default_xml_string)]
+
+def get_form_out():
+    return FormOut.Html()
 
 def get_response(fs):
     """

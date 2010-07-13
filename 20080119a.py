@@ -12,6 +12,7 @@ from SnippetUtil import HandlingError
 import SnippetUtil
 import Newick
 import Form
+import FormOut
 
 def get_form():
     """
@@ -24,8 +25,13 @@ def get_form():
             Form.MultiLine('tree', 'newick tree', tree_string),
             Form.SingleLine('parent', 'parent node', 'x'),
             Form.SingleLine('child', 'child node', 'c'),
-            Form.Float('fraction', 'the new root location on this branch', 0.25, low_inclusive=0, high_inclusive=1)]
+            Form.Float('fraction',
+                'the new root location on this branch', 0.25,
+                low_inclusive=0, high_inclusive=1)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Newick()
 
 def get_response(fs):
     """
@@ -49,7 +55,8 @@ def get_response(fs):
         fraction = 1 - fraction
     # verify the relationship between the parent and child nodes
     if parent is not child.parent:
-        raise HandlingError('the provided parent and child nodes are not topologically adjacent')
+        msg = 'the given parent and child nodes are not adjacent'
+        raise HandlingError(msg)
     # determine the new root node, creating a new one if necessary
     if fraction == 0:
         target = parent

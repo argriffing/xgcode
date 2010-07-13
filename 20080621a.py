@@ -14,6 +14,7 @@ import Util
 import MatrixUtil
 import NeighborhoodJoining
 import Form
+import FormOut
 
 def get_form():
     """
@@ -37,6 +38,9 @@ def get_form():
             Form.MultiLine('selection', 'selected labels',
                 '\n'.join(selection))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

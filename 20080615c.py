@@ -37,6 +37,9 @@ def get_form():
                 Form.CheckItem('labels', 'ordered labels', True)])]
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
+
 def get_response(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments

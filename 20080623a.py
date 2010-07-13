@@ -11,6 +11,7 @@ import MatrixUtil
 import NewickIO
 import NeighborJoining
 import Form
+import FormOut
 
 def get_form():
     """
@@ -35,6 +36,9 @@ def get_form():
             Form.MultiLine('labels', 'ordered labels',
                 '\n'.join(labels))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Newick()
 
 def get_response(fs):
     """

@@ -1,9 +1,10 @@
 """Create an HKY85 nt rate matrix from nt weights and a kappa parameter.
 
 Here nt means nucleotide.
-The rows and columns in the output will be ordered alphabetically by nucleotide (A, C, G, T)
-regardless of the input order.
-For the Jukes-Cantor rate matrix set each nucleotide weight to 1, and set kappa to 1.
+The rows and columns in the output will be ordered alphabetically
+by nucleotide (A, C, G, T) regardless of the input order.
+For the Jukes-Cantor rate matrix set each nucleotide weight to 1,
+and set kappa to 1.
 """
 
 from StringIO import StringIO
@@ -14,6 +15,7 @@ import Newick
 import RateMatrix
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -34,6 +36,9 @@ def get_form():
                 Form.RadioItem('scaled', 'scaled to a rate of one', True),
                 Form.RadioItem('unscaled', 'unscaled')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.NucleotideRateMatrix()
 
 def get_response(fs):
     """

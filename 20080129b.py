@@ -2,6 +2,8 @@
 
 The tree should be in the Newick format.
 JC is Jukes-Cantor.
+This is almost certainly buggy and I think I knew the bug at one point.
+The way it does the conditional probability is not right.
 """
 
 # This example tree might be useful for debugging.
@@ -23,6 +25,7 @@ import EqualArcLayout
 import PhyLikelihood
 import MatrixUtil
 import Form
+import FormOut
 import iterutils
 
 def get_form():
@@ -50,6 +53,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('tree', [])
 
 def get_response(fs):
     """
@@ -128,7 +134,8 @@ def simulate_branch_path(tree, node):
     @param tree: a SpatialTree with simulated nucleotides at each node
     @param node: the node that defines the branch on which to simulate a history
     """
-    nucleotide_to_color = {'A':'FF4444', 'G':'FF8888', 'T':'4444FF', 'C':'8888FF'}
+    nucleotide_to_color = {
+            'A':'FF4444', 'G':'FF8888', 'T':'4444FF', 'C':'8888FF'}
     node.branch_color = nucleotide_to_color[node.state]
     rate_matrix = RateMatrix.get_jukes_cantor_rate_matrix()
     initial_state = node.parent.state
@@ -136,7 +143,8 @@ def simulate_branch_path(tree, node):
     states = 'ACGT'
     events = None
     while events is None:
-        events = PathSampler.get_nielsen_sample(initial_state, terminal_state, states, node.blen, rate_matrix)
+        events = PathSampler.get_nielsen_sample(
+                initial_state, terminal_state, states, node.blen, rate_matrix)
     parent = node.parent
     last_t = 0
     for t, state in events:

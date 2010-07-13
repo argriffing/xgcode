@@ -15,6 +15,7 @@ import SnippetUtil
 import Codon
 import DirectProtein
 import Form
+import FormOut
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
 from Codon import g_sorted_non_stop_codons as codons
@@ -33,6 +34,9 @@ def get_form():
             Form.MultiLine('aminoacids', 'amino acid stationary distribution',
                 default_aa_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

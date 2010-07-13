@@ -13,6 +13,7 @@ from SnippetUtil import HandlingError
 import MatrixUtil
 import Euclid
 import Form
+import FormOut
 
 def get_form():
     """
@@ -30,6 +31,9 @@ def get_form():
             Form.Matrix('matrix', 'weighted adjacency matrix',
                 A, MatrixUtil.assert_weighted_adjacency)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def get_response(fs):
     """

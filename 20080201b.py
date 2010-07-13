@@ -1,6 +1,7 @@
 """Create a GY94 codon rate matrix from codon weights and two other parameters.
 
-The rows and columns in the output will be ordered alphabetically by codon regardless of the input order.
+The rows and columns in the output will be ordered
+alphabetically by codon regardless of the input order.
 Kappa controls the transition / transversion rate.
 Omega controls the non-synonymous / synonymous rate.
 """
@@ -13,6 +14,7 @@ import CodonFrequency
 import Codon
 import RateMatrix
 import Form
+import FormOut
 
 def get_form():
     """
@@ -32,6 +34,9 @@ def get_form():
             Form.Float('kappa', 'kappa', 2),
             Form.Float('omega', 'omega', .01)]
     return form_objects
+
+def get_form_out():
+    return FormOut.CodonRateMatrix()
 
 def get_response(fs):
     """

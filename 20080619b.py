@@ -9,6 +9,7 @@ from SnippetUtil import HandlingError
 import Util
 import MatrixUtil
 import Form
+import FormOut
 
 def get_form():
     """
@@ -34,6 +35,9 @@ def get_form():
                 Form.RadioItem('min', 'min cut', True),
                 Form.RadioItem('conductance', 'min conductance cut')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_conductance(selection, affinity):
     """

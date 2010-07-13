@@ -12,6 +12,7 @@ import MatrixUtil
 import Newick
 import RateMatrix
 import Form
+import FormOut
 
 def get_form():
     """
@@ -49,6 +50,9 @@ def get_form():
             Form.MultiLine('assignments', 'leaf states',
                 '\n'.join(leaf_assignment_lines))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

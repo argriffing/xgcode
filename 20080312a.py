@@ -19,6 +19,7 @@ import HeatMap
 import Fasta
 import DirectProtein
 import Form
+import FormOut
 import iterutils
 
 # This codon alignment is unrealistic.
@@ -61,6 +62,9 @@ def get_form():
             Form.MultiLine('model', 'Direct Protein mixture model',
                 DirectProtein.get_sample_xml_string().strip())]
     return form_objects
+
+def get_form_out():
+    return FormOut.Html()
 
 def get_response(fs):
     """

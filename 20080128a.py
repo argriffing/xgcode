@@ -7,6 +7,7 @@ from SnippetUtil import HandlingError
 import Newick
 import Util
 import Form
+import FormOut
 
 def get_form():
     """
@@ -23,6 +24,9 @@ def get_form():
                 Form.RadioItem('keep', 'keep the selected taxa')])]
     return form_objects
 
+def get_form_out():
+    return FormOut.Newick()
+
 def get_response(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
@@ -37,17 +41,22 @@ def get_response(fs):
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set
     if extra_names:
-        raise HandlingError('the following selected names are not valid tips: %s' % str(tuple(extra_names)))
+        msg_a = 'the following selected names '
+        msg_b = 'are not valid tips: ' + ', '.join(extra_names)
+        raise HandlingError(msg_a + msg_b)
     # get the list of tip nodes to remove
     if fs.remove:
-        nodes_to_remove = [node for node in tree.gen_tips() if node.name in selection]
+        nodes_to_remove = [
+                node for node in tree.gen_tips() if node.name in selection]
     elif fs.keep:
-        nodes_to_remove = [node for node in tree.gen_tips() if node.name not in selection]
+        nodes_to_remove = [
+                node for node in tree.gen_tips() if node.name not in selection]
     # prune the tree
     for node in nodes_to_remove:
         tree.prune(node)
     # merge segmented branches
-    internal_nodes_to_remove = [node for node in tree.preorder() if node.get_child_count() == 1]
+    internal_nodes_to_remove = [
+            node for node in tree.preorder() if node.get_child_count() == 1]
     for node in internal_nodes_to_remove:
         tree.remove_node(node)
     # write the response
