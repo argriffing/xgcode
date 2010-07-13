@@ -88,30 +88,28 @@ def _add_redirection_parameter(parent, next_argpos):
     etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
     return 1
 
-def _add_head(auto_path, module_name, doc_lines, short_name, parent):
+def _add_head(auto_path, module_name, doc_lines, short_name, tags, parent):
     """
     @param auto_path: path to auto.py
     @param module_name: something like 20100707a
     @param doc_lines: documentation lines
     @param short_name: a short descriptive name
+    @param tags: mobyle categories
     @param parent: the parent xml level
     """
     head = etree.SubElement(parent, 'head')
-    name = etree.SubElement(head, 'name')
-    name.text = short_name
-    version = etree.SubElement(head, 'version')
-    version.text = '0.0.1'
-    category = etree.SubElement(head, 'category')
-    category.text = 'ztools'
+    etree.SubElement(head, 'name').text = short_name
+    etree.SubElement(head, 'version').text = '0.0.1'
+    etree.SubElement(head, 'category').text = 'all'
+    for tag in tags:
+        etree.SubElement(head, 'category').text = tag
     command = etree.SubElement(head, 'command')
     command.text = 'python %s %s' % (auto_path, module_name)
     # add the doc subtree
     doc = etree.SubElement(head, 'doc')
-    title = etree.SubElement(doc, 'title')
-    title.text = name.text
+    title = etree.SubElement(doc, 'title').text = short_name
     description = etree.SubElement(doc, 'description')
-    text = etree.SubElement(description, 'text', lang='en')
-    text.text = doc_lines[0]
+    etree.SubElement(description, 'text', lang='en').text = doc_lines[0]
 
 def get_xml(usermod, auto_path, module_name, short_name):
     """
@@ -128,10 +126,14 @@ def get_xml(usermod, auto_path, module_name, short_name):
         msg = 'snippet %s provides no output format information' % module_name
         raise FormOutError(msg)
     doc_lines = Util.get_stripped_lines(usermod.__doc__.splitlines())
+    try:
+        tags = usermod.g_tags
+    except AttributeError:
+        tags = []
     # create the root of the tree and the xml document
     program = etree.Element('program')
     doc = etree.ElementTree(program)
-    _add_head(auto_path, module_name, doc_lines, short_name, program)
+    _add_head(auto_path, module_name, doc_lines, short_name, tags, program)
     parameters = etree.SubElement(program, 'parameters')
     next_argpos = 1
     for obj in form_objects:
