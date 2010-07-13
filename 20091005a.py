@@ -16,10 +16,13 @@ import argparse
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Euclid
 import TreeSampler
+
+#FIXME use const data
 
 g_D_abdi = np.array([
     [0.00, 3.47, 1.79, 3.00, 2.67, 2.58, 2.22, 3.08],
@@ -39,6 +42,9 @@ def get_form():
     # define the list of form objects
     form_objects = []
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def process():
     """

@@ -21,6 +21,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import Codon
 import Form
+import FormOut
 import CairoUtil
 import Euclid
 import BuildTreeTopology
@@ -51,6 +52,8 @@ EDGES
 6   7
 2   4
 """
+
+#FIXME use const data
 
 class ImageInfo:
 
@@ -103,6 +106,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('plot', [])
 
 def get_image_string(points, edges, point_colors, all_black, image_info):
     """

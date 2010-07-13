@@ -23,6 +23,7 @@ import scipy
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Euclid
@@ -95,6 +96,9 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree_string', 'newick tree', g_tree_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_angle(x, y):
     cos_theta = np.dot(x, y) / (np.linalg.norm(x)*np.linalg.norm(y))

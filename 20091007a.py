@@ -27,6 +27,7 @@ import argparse
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Euclid
@@ -41,10 +42,13 @@ def get_form():
     form_objects = []
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
+
 def add_leaflets(D_full, nleaves):
     """
     Create a modified distance matrix by effectively duplicating each leaf.
-    @param D_full: the distance matrix as a numpy array relating all vertices including internal vertices
+    @param D_full: distances relating all, including internal, vertices.
     @param nleaves: the first few indices in D_full represent leaves
     @return: a higher order distance matrix with new leaflet indices
     """

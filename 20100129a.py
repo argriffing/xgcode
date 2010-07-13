@@ -19,10 +19,12 @@ import os
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Progress
 import DGRP
 import iterutils
 
+#FIXME use const data
 
 g_sample_lines = [
         'YHet 3261 T C/C 2 A 0 C 1 G 0 T 1 15 15 50',
@@ -44,6 +46,9 @@ def get_form():
     form_objects = [
             Form.MultiLine('data_in', 'filtered pileup file', sample_data)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

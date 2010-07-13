@@ -14,6 +14,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import CairoUtil
 import Euclid
 import BuildTreeTopology
@@ -192,6 +193,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('plot', [])
 
 def read_points_and_edges(multiline):
     """

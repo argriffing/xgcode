@@ -10,6 +10,7 @@ import MatrixUtil
 import Euclid
 import iterutils
 import Form
+import FormOut
 
 def get_form():
     """
@@ -24,6 +25,9 @@ def get_form():
                 Form.RadioItem('adjacency', 'adjacency matrix'),
                 Form.RadioItem('laplacian', 'laplacian matrix', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def create_adjacency_matrix(affinity, nvertices):
     """

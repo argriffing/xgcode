@@ -26,6 +26,7 @@ import scipy
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import NeighborJoining
 import FelTree
@@ -42,6 +43,9 @@ def get_form():
                 'tetrahedron with an underlying ((1,2),(3,4)) topology',
                 Steiner.g_X)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def do_steiner_analysis(X):
     a, b, c, d = X.tolist()

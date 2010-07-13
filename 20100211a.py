@@ -18,6 +18,7 @@ from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import DGRP
 import ReadCoverageRef
 import Util
@@ -49,6 +50,9 @@ def get_form():
                 '\n'.join('\t'.join(p) for p in default_counts)),
             Form.SingleLine('ref', 'reference nucleotide', 'A')]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

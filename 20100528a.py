@@ -11,6 +11,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Util
 import FelTree
 import Newick
@@ -211,6 +212,9 @@ def get_form():
             Form.MultiLine('annotation', 'SNP annotations',
                 g_annotation_data)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def aa_letter_to_aa_index(aa_letter):
     """

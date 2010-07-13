@@ -21,6 +21,7 @@ import argparse
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Euclid
@@ -35,24 +36,34 @@ def get_form():
     form_objects = []
     return form_objects
 
+def get_form_out():
+    return FormOut.Report()
+
 def do_projection(D_full, nleaves):
     """
-    The resulting points are in the subspace whose basis vectors are the principal axes of the leaf ellipsoid.
-    @param D_full: the distance matrix as a numpy array relating all vertices including internal vertices
+    Project points onto the space of the leaves.
+    The resulting points are in the subspace
+    whose basis vectors are the principal axes of the leaf ellipsoid.
+    @param D_full: distances relating all, including internal, vertices.
     @param nleaves: the first few indices in D_full represent leaves
     @return: a numpy array where each row is a vertex of the tree
     """
-    # Get the points such that the n rows in X are points in n-1 dimensional space.
+    # Get the points
+    # such that the n rows in X are points in n-1 dimensional space.
     X = Euclid.edm_to_points(D_full)
-    # Translate all of the points so that the origin is at the centroid of the leaves.
+    # Translate all of the points
+    # so that the origin is at the centroid of the leaves.
     X -= np.mean(X[:nleaves], 0)
     # Extract the subset of points that define the leaves.
     L = X[:nleaves]
     # Find the orthogonal transformation of the leaves onto their MDS axes.
-    # According to the python svd documentation, singular values are sorted most important to least important.
+    # According to the python svd documentation,
+    # singular values are sorted most important to least important.
     U, s, Vt = np.linalg.svd(L)
-    # Transform all of the points (including the internal vertices) according to this orthogonal transformation.
-    # The axes are now the principal axes of the Steiner circumscribed ellipsoid of the leaf vertices.
+    # Transform all of the points (including the internal vertices)
+    # according to this orthogonal transformation.
+    # The axes are now the principal axes
+    # of the Steiner circumscribed ellipsoid of the leaf vertices.
     # I am using M.T[:k].T to get the first k columns of M.
     points = np.dot(X, Vt.T).T[:(nleaves-1)].T
     return points

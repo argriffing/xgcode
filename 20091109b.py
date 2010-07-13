@@ -9,6 +9,7 @@ import cairo
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import Euclid
 import CairoUtil
 import iterutils
@@ -36,6 +37,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('eigenfunctions', [])
 
 def create_laplacian_matrix(nvertices):
     """

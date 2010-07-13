@@ -4,8 +4,6 @@ Look for a specific counterexample
 to the eigenvector sign sufficiency conjecture.
 """
 
-#TODO allow the user to define the string and the target sign pattern
-
 from StringIO import StringIO
 import random
 import time
@@ -20,6 +18,8 @@ import NewickIO
 import FelTree
 import Euclid
 import TreeSampler
+
+#TODO allow the user to define the string and the target sign pattern
 
 g_epsilon = 1e-10
 
@@ -44,6 +44,9 @@ def get_form():
     # define the list of form objects
     form_objects = []
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def sample_branch_lengths(tree):
     """

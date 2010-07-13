@@ -16,6 +16,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import NeighborJoining
 import FelTree
@@ -35,6 +36,9 @@ def get_form():
     form_objects = [
             Form.Matrix('laplacian', 'laplacian matrix', g_laplacian)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_stress(D_expected, D_observed):
     """

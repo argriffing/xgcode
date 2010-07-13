@@ -31,12 +31,15 @@ import argparse
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import Euclid
 import NeighborJoining
 import FelTree
 import CairoUtil
 import Progress
+
+#FIXME add const data
 
 # this is the tree in our LAA paper
 g_tree_string = '((1:1, 2:0.5)6:1, 5:1, (3:0.33333333333, 4:0.5)7:1)8;'
@@ -57,6 +60,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('frame', [])
 
 def create_test_image(image_format, width, height):
     """

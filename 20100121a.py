@@ -9,6 +9,7 @@ import cairo
 from SnippetUtil import HandlingError
 import Codon
 import Form
+import FormOut
 import CairoUtil
 
 g_default_data = """
@@ -28,6 +29,8 @@ EDGES
 6   7
 2   4
 """
+
+#FIXME use const data
 
 def get_form():
     """
@@ -49,6 +52,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('plot', [])
 
 def get_image_string(points, edges, t_width, t_height, border, image_format):
     """

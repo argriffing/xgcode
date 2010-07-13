@@ -8,6 +8,7 @@ from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import DGRP
 
 def get_form():
@@ -24,6 +25,9 @@ def get_form():
             Form.Float('z', 'distance from the nominal line',
                 '0.0001', low_inclusive=0.0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def distn_to_string(distn):
     names = ('RR', 'RA', 'AA', 'AB')

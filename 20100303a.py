@@ -23,6 +23,7 @@ import hmmus
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import DGRP
 import ReadCoverageRef
 import Util
@@ -30,6 +31,8 @@ import ExternalHMM
 import lineario
 import TransitionMatrix
 import scipy
+
+#FIXME use const data
 
 g_default_params = [
         ('x', '0.1'),
@@ -80,6 +83,9 @@ def get_form():
             Form.MultiLine('data_field', 'data',
                 '\n'.join(data_lines))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('plot', [])
 
 
 def get_response(fs):

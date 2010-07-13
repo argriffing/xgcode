@@ -7,6 +7,7 @@ import argparse
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 
 def get_form():
     """
@@ -22,6 +23,9 @@ def get_form():
                 'number of positions spanned by a feature',
                 10000)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Gff('demo')
 
 
 def get_response(fs):

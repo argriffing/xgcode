@@ -25,6 +25,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import Euclid
 import NeighborJoining
@@ -36,6 +37,9 @@ def get_form():
     """
     form_objects = []
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def do_analysis():
     # initialize estimates of allele frequency angles among 4 populations for 5 alleles

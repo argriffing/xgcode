@@ -25,8 +25,10 @@ from matplotlib.delaunay.triangulate import Triangulation
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import CompGeom
 
+#FIXME clarify output format
 
 def sample_point_on_circle(radius):
     """
@@ -104,6 +106,9 @@ def get_form():
             Form.Integer('ann_npoints', 'number of points in the annulus',
                 150, low=1, high=500)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

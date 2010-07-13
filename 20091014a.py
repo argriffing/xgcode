@@ -12,6 +12,7 @@ import argparse
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import NewickIO
 import FelTree
 import Euclid
@@ -28,6 +29,9 @@ def get_form():
     form_objects = [
             Form.MultiLine('newick_tree', 'newick tree', g_tree_string)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 #def get_weighted_embedding(D, m):
 

@@ -12,6 +12,8 @@ from SnippetUtil import HandlingError
 import Form
 import CairoUtil
 
+#FIXME use const data
+
 g_default_data = """Boston  -905.527460092  666.956097193
 Seattle 1573.80442188   425.46464836
 Phoenix 1030.45352721   -564.133058397
@@ -153,6 +155,9 @@ def get_form():
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
+
+def get_form_out():
+    return FormOut.Image('plot', [])
 
 def get_response(fs):
     """

@@ -10,6 +10,7 @@ import numpy as np
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
+import FormOut
 import GPS
 import Euclid
 import const
@@ -57,6 +58,9 @@ def get_form():
     form_objects = [
             Form.MultiLine('datalines', 'locations', '\n'.join(lines))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

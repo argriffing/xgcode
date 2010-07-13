@@ -11,6 +11,7 @@ import os
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import iterutils
 
 
@@ -19,6 +20,9 @@ def get_form():
     @return: the body of a form
     """
     return []
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

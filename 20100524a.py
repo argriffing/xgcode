@@ -18,6 +18,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import Form
+import FormOut
 import iterutils
 import Util
 import hud
@@ -41,6 +42,9 @@ def get_form():
             Form.Integer('nchars',
                 'find a subset with this many binary characters', 1)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """
