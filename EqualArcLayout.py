@@ -1,11 +1,8 @@
-#!/usr/bin/env python
-
 """
 This module should only be accessed through its do_layout() function.
 """
 
 import math
-
 from optparse import OptionParser
 
 

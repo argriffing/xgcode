@@ -1,3 +1,6 @@
+"""
+Do things with transition matrices.
+"""
 
 import unittest
 

@@ -14,8 +14,9 @@ The output filenames include the chromosome name.
 
 
 from StringIO import StringIO
-import argparse
 import os
+
+import argparse
 
 from SnippetUtil import HandlingError
 import Form

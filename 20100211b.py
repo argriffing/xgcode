@@ -19,6 +19,7 @@ import itertools
 import math
 
 import argparse
+import scipy
 
 from SnippetUtil import HandlingError
 import Form
@@ -29,7 +30,6 @@ import Util
 import ExternalHMM
 import lineario
 import TransitionMatrix
-import scipy
 
 g_default_params = [
         ('x', '0.1'),

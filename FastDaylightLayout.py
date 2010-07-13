@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-
+"""
+Use a C extension module to do fast tree layout.
+"""
 
 from optparse import OptionParser
 import profile

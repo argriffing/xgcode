@@ -8,7 +8,6 @@ import os
 from StringIO import StringIO
 import logging
 import sys
-
 import Config
 
 # a directory readable and writable from the web

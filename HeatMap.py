@@ -1,3 +1,6 @@
+"""
+Do heatmap things, especially using html.
+"""
 
 import unittest
 import sys

@@ -1,3 +1,7 @@
+"""
+Statistics utility functions.
+"""
+
 import unittest
 from math import log
 

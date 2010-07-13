@@ -1,16 +1,15 @@
-#!/usr/bin/env python
-
 """
 This module draws a SpatialTree using the cairo API.
 This module should only be accessed through its draw() function.
 """
 
 import math
-import cairo
 from StringIO import StringIO
-import CairoUtil
-
 from optparse import OptionParser
+
+import cairo
+
+import CairoUtil
 
 
 def get_tree_image(tree, max_size, image_format):

@@ -1,3 +1,6 @@
+"""
+Do things related to likelihoods on phylogenetic trees.
+"""
 
 import unittest
 from StringIO import StringIO

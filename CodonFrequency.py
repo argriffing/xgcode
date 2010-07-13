@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+"""
+Some codon frequency stuff that looks like it should be const data instead.
+"""
 
 from StringIO import StringIO
 import re

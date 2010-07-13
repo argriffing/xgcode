@@ -44,14 +44,14 @@ def main(args):
             module_names, path_to_auto, xml_target, args.short_length)
     for e in import_errors:
         print e
-    # deploy the xml interface files
-    path_to_mobdeploy = os.path.join(args.mobyle_core, 'Tools', 'mobdeploy')
-    cmd = (path_to_mobdeploy, 'deploy')
-    proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    proc_out, proc_err = proc.communicate()
-    sys.stdout.write(proc_out)
-    sys.stderr.write(proc_err)
+    if args.deploy:
+        path_to_mobdeploy = os.path.join(args.mobyle_core, 'Tools', 'mobdeploy')
+        cmd = (path_to_mobdeploy, 'deploy')
+        proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc_out, proc_err = proc.communicate()
+        sys.stdout.write(proc_out)
+        sys.stderr.write(proc_err)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

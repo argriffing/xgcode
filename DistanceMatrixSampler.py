@@ -1,3 +1,6 @@
+"""
+Sample a distance matrix.
+"""
 
 from StringIO import StringIO
 import unittest
@@ -21,6 +24,7 @@ def sample_infinite_sites_distances(tree, order, sequence_length):
     @param sequence_length: the requested length of the sequences
     @return: a list of distances in the requested order
     """
+    pass
 
 
 def sample_infinite_alleles_sequences(tree, order, sequence_length):

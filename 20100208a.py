@@ -6,8 +6,9 @@ The file is split by lines into multiple files.
 
 
 from StringIO import StringIO
-import argparse
 import os
+
+import argparse
 
 from SnippetUtil import HandlingError
 import Form

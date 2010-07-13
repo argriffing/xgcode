@@ -3,6 +3,7 @@
 
 import unittest
 from StringIO import StringIO
+
 import Fasta
 import Newick
 import Monospace

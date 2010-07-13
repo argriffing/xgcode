@@ -11,8 +11,8 @@ but I haven't worked this out yet.
 from StringIO import StringIO
 import random
 import time
-import argparse
 
+import argparse
 import numpy as np
 
 from SnippetUtil import HandlingError

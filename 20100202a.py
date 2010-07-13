@@ -22,9 +22,10 @@ No header line is provided.
 
 
 from StringIO import StringIO
-import argparse
 import os
+
 import profile
+import argparse
 
 from SnippetUtil import HandlingError
 import Form

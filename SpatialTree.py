@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+"""
+Facilitate the 2D layout of a phylogenetic tree.
+"""
 
 import math
 import unittest

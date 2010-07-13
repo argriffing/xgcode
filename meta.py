@@ -24,9 +24,13 @@ import iterutils
 
 class MetaError(Exception): pass
 
+g_custom_extension_modules = set([
+        'Config',
+        'day'])
+
 g_common_t1 = set([
-        'sys', 'os',
-        'collections',
+        'sys', 'os', 'unittest',
+        'collections', 'optparse',
         'unittest', 'math', 'random',
         'itertools', 'csv', 'StringIO'])
 
@@ -37,7 +41,8 @@ g_common_t2 = set([
         'numpy', 'scipy', 'matplotlib'])
 
 g_common_t3 = set([
-        'MatrixUtil', 'iterutils', 'Form', 'Util',
+        'ambignt', 'Progress',
+        'EqualArcLayout', 'MatrixUtil', 'iterutils', 'Form', 'Util',
         'Newick', 'FelTree', 'NewickIO', 'SnippetUtil'])
 
 g_default_modules = [
@@ -211,14 +216,15 @@ class Dep(object):
     def get_transitive_deps(self, module_name):
         deps = [set(), set(), set()]
         visited = set()
-        unexpanded = set([module_name])
+        unexpanded = set([module_name]) - set(g_custom_extension_modules)
         while unexpanded:
             name = unexpanded.pop()
             visited.add(name)
             next_deps = self.get_immediate_deps(name)
             deps[0].update(next_deps[0])
             deps[1].update(next_deps[1])
-            next_local_deps = next_deps[2] - visited
+            next_local_deps = next_deps[2]
+            next_local_deps -= (visited | set(g_custom_extension_modules))
             deps[2].update(next_local_deps)
             unexpanded.update(next_local_deps)
         return deps

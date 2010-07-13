@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-
-"""Implement some computational geometry algorithms.
+"""
+Implement some computational geometry algorithms.
 
 Many of these functions are inspired by Algorithms in C++ by Robert Sedgewick.
 """
