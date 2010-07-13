@@ -13,6 +13,8 @@ from SnippetUtil import HandlingError
 import Form
 import FormOut
 
+g_tags = ['carbone_lab']
+
 g_default_ind_string = """
 IC1 U   Case
 IC2 U   Control

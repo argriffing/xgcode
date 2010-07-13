@@ -13,6 +13,8 @@ import FormOut
 import Util
 import Carbone
 
+g_tags = ['carbone_lab']
+
 g_info_lines = [
         '"IC","Haplo","Location","Temp (C)","Precip (mm)","Species",'
             '"B1","B2","G1","G2","OMST"',

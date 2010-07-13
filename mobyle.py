@@ -152,11 +152,16 @@ def add_xml_files(module_names, path_to_auto, xml_target, short_name_length):
     @param path_to_auto: a path that will go into the xml
     @param xml_target: the xml files will go into this path
     @param short_name_length: max length of unique short module names
+    @return: a list of import errors
     """
+    import_errors = []
     # The modules need to be imported to get the unique short names.
     usermods = []
     for name in module_names:
-        usermod = __import__(name, globals(), locals(), [], -1)
+        try:
+            usermod = __import__(name, globals(), locals(), [], -1)
+        except ImportError as e:
+            import_errors.append(e)
         usermods.append(usermod)
     # Get all long titles.
     titles = []
@@ -175,6 +180,7 @@ def add_xml_files(module_names, path_to_auto, xml_target, short_name_length):
             xml_filename = os.path.join(xml_target, short_name + '.xml')
             with open(xml_filename, 'w') as fout:
                 fout.write(xml_content)
+    return import_errors
 
 class TestMobyle(unittest.TestCase):
 

@@ -20,6 +20,8 @@ import kmeans
 import combobreaker
 import const
 
+g_tags = ['carbone_lab']
+
 g_default = const.read('20100709a')
 
 def get_form():

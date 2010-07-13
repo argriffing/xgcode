@@ -21,6 +21,8 @@ import Util
 import EigUtil
 import hud
 
+g_tags = ['carbone_lab']
+
 g_default_hud_string = """
 IC1 1 1 1 1
 IC2 1 1 1 0

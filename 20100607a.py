@@ -17,6 +17,8 @@ import FormOut
 import hud
 import EigUtil
 
+g_tags = ['carbone_lab']
+
 
 g_default_hud_string = """
 IC31 1 1 0 0

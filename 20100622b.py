@@ -12,6 +12,8 @@ import FormOut
 import Util
 import Carbone
 
+g_tags = ['carbone_lab']
+
 g_info_rows = [
         ['IC', 'Location', 'Temp_C', 'Precip_mm', 'Species'],
         ['IC13', 'GA', '15', '600', 'Ap'],

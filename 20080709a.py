@@ -42,7 +42,7 @@ def get_form():
     # define the default matrix
     # HKY simulation parameters are
     # transition/transversion ratio 2, C:4, G:4, A:1, T:1
-    R = numpy.array([
+    R = np.array([
             [-1.3, 0.4, 0.8, 0.1],
             [0.1, -0.7, 0.4, 0.2],
             [0.2, 0.4, -0.7, 0.1],

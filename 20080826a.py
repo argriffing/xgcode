@@ -16,7 +16,7 @@ import Util
 import Fasta
 import JC69
 import Form
-import Form
+import FormOut
 
 #FIXME use const data
 

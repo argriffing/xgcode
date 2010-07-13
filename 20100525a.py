@@ -16,6 +16,8 @@ import FormOut
 import Util
 import hud
 
+g_tags = ['carbone_lab']
+
 g_default_string = """
 foo 1 1 1
 bar 1 1 1

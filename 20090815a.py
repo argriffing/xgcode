@@ -51,6 +51,8 @@ def get_form():
     """
     @return: the body of a form
     """
+    # FIXME
+    T = []
     # define the default transition matrix
     # define the objects
     form_objects = [

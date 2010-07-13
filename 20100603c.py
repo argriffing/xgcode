@@ -16,6 +16,8 @@ import Form
 import FormOut
 import hud
 
+g_tags = ['carbone_lab']
+
 g_hud_string = """
 IC1 1 1 1 0
 IC2 1 1 1 0

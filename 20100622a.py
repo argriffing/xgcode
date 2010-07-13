@@ -13,6 +13,8 @@ import hud
 import Util
 import iterutils
 
+g_tags = ['carbone_lab']
+
 g_default_rows = [
         ['DOE3-0002Aa', '94', '94', '156', '162', '89', '172'],
         ['DOE3-0002Ab', '94', '94', '156', '182', '89', '172'],

@@ -15,6 +15,8 @@ import FormOut
 from Form import RadioItem
 import Util
 
+g_tags = ['carbone_lab']
+
 g_default_info_lines = [
         '"IC","Haplo","Location","Temp (C)","Precip (mm)","Species",'
             '"B1","B2","G1","G2","OMST"',

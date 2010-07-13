@@ -16,6 +16,8 @@ import Util
 import hud
 import iterutils
 
+g_tags = ['carbone_lab']
+
 g_a_lines = [
         'IC31 2 0 0 2 0 0 2 0 0 0 1 1 0 2 0 0 2 0',
         'IC32 0 2 0 0 2 0 0 2 0 0 1 1 0 2 0 0 2 0',

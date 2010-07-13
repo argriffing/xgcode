@@ -14,6 +14,7 @@ import Util
 import MatrixUtil
 import NeighborhoodJoining
 import Form
+import FormOut
 
 def get_form():
     """
@@ -39,6 +40,9 @@ def get_form():
                 selected_label_string)]
     # return the sequence of form objects
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_split_branch_arbitrary_distances(D, selection, complement):
     """

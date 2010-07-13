@@ -6,6 +6,8 @@ find the optimal bipartition using some objective function.
 
 from StringIO import StringIO
 
+import numpy as np
+
 from SnippetUtil import HandlingError
 import Util
 import MatrixUtil

@@ -55,8 +55,8 @@ def get_form():
                 '\n'.join(default_tip_data_lines)),
             Form.Matrix('matrix', 'rate matrix',
                 R, MatrixUtil.assert_rate_matrix),
-            ImageFormat(),
-            ContentDisposition()]
+            Form.ImageFormat(),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():
