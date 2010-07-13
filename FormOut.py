@@ -3,8 +3,6 @@ This is how the output format of a snippet is specified.
 
 Some metaprogramming is done for compatibility with Mobyle.
 In Mobyle, all script output is to a file or to stdout.
-Also stdout is treated as a file.
-In my more constrained system, script output is only to stdout.
 """
 
 from lxml import etree
@@ -22,7 +20,8 @@ def _get_filename_metaprogram(fmt, interpolants):
 
 class FormOut(object):
 
-    def __init__(self, filename_format_string, filename_interpolants):
+    def __init__(self,
+            filename_format_string='default.out', filename_interpolants=[]):
         self.filename_format_string = filename_format_string
         self.filename_interpolants = filename_interpolants
 
@@ -54,10 +53,16 @@ class FormOut(object):
         return response_headers
 
     def get_mobyle_class(self):
-        return 'Text'
+        """
+        Mobyle does not need to understand this name.
+        """
+        return self.__class__.__name__
 
     def get_mobyle_superclass(self):
-        return None
+        """
+        This must be a name like 'Text' or 'Integer' that Mobyle understands.
+        """
+        return 'Text'
 
     def _add_mob_xml_datatypes(self, parent):
         etree.SubElement(parent, 'class').text = self.get_mobyle_class()
@@ -86,7 +91,7 @@ class FormOut(object):
 
 class Image(FormOut):
 
-    def __init__(self, base_format_string, base_interpolants):
+    def __init__(self, base_format_string='img', base_interpolants=[]):
         self.filename_format_string = base_format_string + '.%s'
         self.filename_interpolants = base_interpolants + ['imageformat']
 
@@ -101,30 +106,109 @@ class Image(FormOut):
 
 
 class Report(FormOut):
+    def __init__(self, fmt='report', interpolants=[]):
+        self.filename_format_string = fmt + '.txt'
+        self.filename_interpolants = interpolants
 
-    def get_mobyle_class(self):
-        return 'Report'
+class RTable(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = fmt + '.table'
+        self.filename_interpolants = interpolants
 
-    def get_mobyle_superclass(self):
-        return 'Text'
+class EigenstratInd(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = fmt + '.ind'
+        self.filename_interpolants = interpolants
 
+class EigenstratPheno(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = fmt + '.pheno'
+        self.filename_interpolants = interpolants
 
-class RTable(Report):
-    def get_mobyle_class(self):
-        return 'RTable'
+class EigenstratGeno(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = fmt + '.geno'
+        self.filename_interpolants = interpolants
 
-class EigenstratInd(Report):
-    def get_mobyle_class(self):
-        return 'EigenstratInd'
+class EigenstratSnp(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = fmt + '.snp'
+        self.filename_interpolants = interpolants
 
-class EigenstratPheno(Report):
-    def get_mobyle_class(self):
-        return 'EigenstratPheno'
+class Fasta(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = fmt + '.fasta'
+        self.filename_interpolants = interpolants
 
-class EigenstratGeno(Report):
-    def get_mobyle_class(self):
-        return 'EigenstratGeno'
+class TransitionMatrix(FormOut):
+    def __init__(self, fmt='transition_matrix', interpolants=[]):
+        self.filename_format_string = fmt + '.txt'
+        self.filename_interpolants = interpolants
 
-class EigenstratSnp(Report):
-    def get_mobyle_class(self):
-        return 'EigenstratSnp'
+class NucleotideRateMatrix(FormOut):
+    def __init__(self, fmt='nt_rate_matrix', interpolants=[]):
+        self.filename_format_string = fmt + '.txt'
+        self.filename_interpolants = interpolants
+
+class CodonRateMatrix(FormOut):
+    def __init__(self, fmt='codon_rate_matrix', interpolants=[]):
+        self.filename_format_string = fmt + '.txt'
+        self.filename_interpolants = interpolants
+
+class Html(FormOut):
+    def __init__(self, fmt='html', interpolants=[]):
+        self.filename_format_string = fmt + '.txt'
+        self.filename_interpolants = interpolants
+    def get_contenttype_type(self, fs):
+        return 'text/html'
+
+class RateMatrix(FormOut):
+    def __init__(self, fmt='rate_matrix', interpolants=[]):
+        self.filename_format_string = fmt + '.txt'
+        self.filename_interpolants = interpolants
+
+class NucleotideFasta(FormOut):
+    def __init__(self, fmt='nucleotide_alignment', interpolants=[]):
+        self.filename_format_string = fmt + '.fasta'
+        self.filename_interpolants = interpolants
+
+class CodonFasta(FormOut):
+    def __init__(self, fmt='codon_alignment', interpolants=[]):
+        self.filename_format_string = fmt + '.fasta'
+        self.filename_interpolants = interpolants
+
+class Nexus(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = fmt + '.nex'
+        self.filename_interpolants = interpolants
+
+class Alignment(FormOut):
+    def __init__(self, fmt='alignment', interpolants=[]):
+        self.filename_format_string = fmt
+        self.filename_interpolants = interpolants
+
+class Stockholm(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = '.stockholm'
+        self.filename_interpolants = interpolants
+
+class Matrix(FormOut):
+    def __init__(self, fmt='matrix', interpolants=[]):
+        self.filename_format_string = '.txt'
+        self.filename_interpolants = interpolants
+
+class CorrelationMatrix(FormOut):
+    def __init__(self, fmt='correlation_matrix', interpolants=[]):
+        self.filename_format_string = '.txt'
+        self.filename_interpolants = interpolants
+
+class Csv(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = '.csv'
+        self.filename_interpolants = interpolants
+
+class Gff(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        self.filename_format_string = '.gff'
+        self.filename_interpolants = interpolants
+
