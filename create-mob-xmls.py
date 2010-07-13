@@ -36,8 +36,6 @@ if __name__ == '__main__':
             help='create xmls for only snippets listed in the manifest')
     parser.add_argument('--create_all', action='store_true',
             help='create xmls for all snippets')
-    parser.add_argument('--set_category',
-            help='set this category for each')
     parser.add_argument('--target', required=True,
             help='xml files will be created in this existing directory')
     parser.add_argument('--auto', required=True,
