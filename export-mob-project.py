@@ -2,6 +2,7 @@
 Put a project onto a Mobyle server.
 """
 
+import re
 import os
 import sys
 import shutil
