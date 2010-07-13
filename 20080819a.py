@@ -1,4 +1,4 @@
-"""Simulate an aligned pair of nucleotide sequences using the F84 model.
+"""Sample an aligned pair of nucleotide sequences using the F84 model.
 
 The evolutionary distance is the expected number of substitutions per site.
 The F84 evolutionary model is defined in the paper
@@ -14,6 +14,7 @@ import F84
 import PairLikelihood
 import Fasta
 import Form
+import FormOut
 
 def get_form():
     """
@@ -31,6 +32,9 @@ def get_form():
             Form.Float('G', 'weight of G', 1.0, low_inclusive=0),
             Form.Float('T', 'weight of T', 1.0, low_inclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.NucleotideFasta()
 
 def get_response(fs):
     """

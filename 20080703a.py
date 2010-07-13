@@ -18,6 +18,7 @@ import NewickIO
 import FelTree
 from Form import CheckItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -41,6 +42,9 @@ def get_form():
                 CheckItem('distance', 'the original distance matrix'),
                 CheckItem('outlabels', 'ordered labels')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def get_response(fs):
     """

@@ -17,6 +17,9 @@ import Fasta
 import F84
 import PairLikelihood
 import Form
+import FormOut
+
+#FIXME use const data
 
 g_sample_fasta_string = """
 >sequence_a
@@ -33,6 +36,9 @@ def get_form():
             Form.MultiLine('fasta', 'nucleotide sequence pair',
                 g_sample_fasta_string.strip())]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

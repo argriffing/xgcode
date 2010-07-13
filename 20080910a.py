@@ -10,9 +10,8 @@ from SnippetUtil import HandlingError
 import NewickIO
 import FelTree
 import TreeComparison
-from Form import CheckItem
-from Form import RadioItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -25,11 +24,15 @@ def get_form():
             Form.MultiLine('query', 'query tree', default_tree_string),
             Form.MultiLine('reference', 'reference tree', default_tree_string),
             Form.RadioGroup('loss', 'loss function', [
-                RadioItem('uniform', 'split distance'),
-                RadioItem('weighted', 'weighted split distance', True)]),
+                Form.RadioItem('uniform', 'split distance'),
+                Form.RadioItem('weighted', 'weighted split distance', True)]),
             Form.CheckGroup('options', 'normalization options', [
-                CheckItem('normalize', 'compute the normalized loss', True)])]
+                Form.CheckItem('normalize',
+                    'compute the normalized loss', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

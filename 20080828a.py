@@ -26,7 +26,10 @@ import RateMatrix
 from Form import RadioItem
 from Form import CheckItem
 import Form
+import FormOut
 
+#FIXME use distance matrix sampler module
+#FIXME use const data
 
 class DistanceMatrixSampler:
     """
@@ -197,6 +200,9 @@ def get_form():
             Form.CheckGroup('output_options', 'extra output option', [
                 CheckItem('showtrees', 'show reconstructed tree topologies')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

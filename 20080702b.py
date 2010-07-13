@@ -12,6 +12,7 @@ import Clustering
 import iterutils
 from Form import RadioItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -33,6 +34,9 @@ def get_form():
                 RadioItem('nj', 'neighbor joining criterion'),
                 RadioItem('random', 'random bipartition')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

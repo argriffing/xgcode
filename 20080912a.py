@@ -18,8 +18,10 @@ from SnippetUtil import HandlingError
 import NewickIO
 import FelTree
 import DistanceMatrixSampler
-from Form import RadioItem
 import Form
+import FormOut
+
+#FIXME use const data
 
 def get_form():
     """
@@ -36,16 +38,21 @@ def get_form():
             Form.Integer('length', 'use sequences that are this long',
                 100, low=1),
             Form.RadioGroup('assumption', 'distance matrix sampling model', [
-                RadioItem('infinite_alleles', 'infinite alleles', True),
-                RadioItem('jukes_cantor', 'Jukes-Cantor model (4 alleles)')]),
+                Form.RadioItem('infinite_alleles', 'infinite alleles', True),
+                Form.RadioItem('jukes_cantor',
+                    'Jukes-Cantor model (4 alleles)')]),
             Form.RadioGroup('infinity', 'infinite distance estimates', [
-                RadioItem('reject_infinity', 'reject these matrices'),
-                RadioItem('replace_infinity', 'replace inf with 20', True)]),
+                Form.RadioItem('reject_infinity', 'reject these matrices'),
+                Form.RadioItem('replace_infinity',
+                    'replace inf with 20', True)]),
             Form.RadioGroup('zero', 'distance estimates of zero', [
                 Form.RadioItem('reject_zero', 'reject these matrices'),
                 Form.RadioItem('replace_zero', 'use .00001 instead of zero'),
                 Form.RadioItem('remain_zero', 'use 0 unmodified', True)])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

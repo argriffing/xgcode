@@ -10,6 +10,7 @@ from SnippetUtil import HandlingError
 import NewickIO
 import TreeSampler
 import Form
+import FormOut
 
 def get_form():
     """
@@ -25,6 +26,9 @@ def get_form():
             Form.Float('branchmean', 'expected length of each branch',
                 1, low_exclusive=0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

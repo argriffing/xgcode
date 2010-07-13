@@ -19,6 +19,9 @@ import RateMatrix
 import Util
 import PairLikelihood
 import Form
+import FormOut
+
+#FIXME use const data
 
 # HKY simulation parameters:
 # transition/transversion ratio 2, C:4, G:4, A:1, T:1, scaled to one
@@ -84,6 +87,9 @@ def get_form():
             Form.MultiLine('states', 'ordered_states',
                 '\n'.join('ACGT'))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

@@ -9,6 +9,9 @@ import LeafWeights
 import Util
 from Form import RadioItem
 import Form
+import FormOut
+
+#FIXME use const data
 
 # This tree is from UCSC.
 g_ucsc_tree_string = """
@@ -46,6 +49,9 @@ def get_form():
                 RadioItem('stone', 'use the method of Stone and Sidow', True),
                 RadioItem('thompson', 'use the method of Thompson et al.')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

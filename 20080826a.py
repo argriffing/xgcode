@@ -16,6 +16,9 @@ import Util
 import Fasta
 import JC69
 import Form
+import Form
+
+#FIXME use const data
 
 # This tree is in an arXiv paper by Lior Pachter.
 g_newick = '(((a:0.05, b:0.05):0.15, c:0.2):0.8, x:1.0, (((m:0.05, n:0.05):0.15, p:0.2):0.8, y:1.0):1.0);'
@@ -35,6 +38,9 @@ def get_form():
             Form.MultiLine('order', 'sequence order', '\n'.join(labels)),
             Form.Integer('length', 'sequence length', 60, low=2)]
     return form_objects
+
+def get_form_out():
+    return FormOut.NucleotideFasta()
 
 def get_response(fs):
     """

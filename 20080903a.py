@@ -31,8 +31,10 @@ import HtmlTable
 import TreeComparison
 import RUtil
 import Form
+import FormOut
 import Progress
 
+#FIXME use const data
 
 class OptionError(Exception):
     pass
@@ -66,6 +68,9 @@ def get_form():
                 Form.RadioItem('nj', 'neighbor joining criterion'),
                 Form.RadioItem('random', 'random bipartition')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

@@ -11,6 +11,9 @@ import Newick
 import Codon
 import Util
 import Form
+import FormOut
+
+#FIXME use const data
 
 # sample MAPP output
 g_mapp_output = """
@@ -77,6 +80,9 @@ def get_form():
             Form.MultiLine('headers', 'alignment column headers',
                 '\n'.join(data_lines))]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

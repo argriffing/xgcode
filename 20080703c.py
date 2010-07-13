@@ -16,6 +16,7 @@ import Clustering
 import NeighborhoodJoining
 from Form import RadioItem
 import Form
+import FormOut
 
 def get_form():
     """
@@ -54,6 +55,9 @@ def get_form():
                 RadioItem('njrecourse', 'neighbor joining', True),
                 RadioItem('halvingrecourse', 'leaf stem length halving')])]
     return form_objects
+
+def get_form_out():
+    return FormOut.Report()
 
 def get_response(fs):
     """

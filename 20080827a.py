@@ -16,6 +16,9 @@ import Fasta
 import MatrixUtil
 import JC69
 import Form
+import FormOut
+
+#FIXME use const data
 
 # HKY simulation parameters:
 # transition/transversion ratio 2, C:4, G:4, A:1, T:1, scaled to one
@@ -45,6 +48,9 @@ def get_form():
             Form.Float('infinity', 'use this value for estimates of infinity',
                 100.0)]
     return form_objects
+
+def get_form_out():
+    return FormOut.Matrix()
 
 def get_response(fs):
     """
