@@ -39,13 +39,13 @@ def main(args):
             args.show_io_types, args.show_tags, args.universal_category)
     # initialize the mobyle environment information
     auto_path = os.path.join(args.target, 'auto.py')
-    env_info = mobyle.EnvironmentInfo(auto_path, args.python_path, args.target)
+    xml_target = os.path.join(args.mobyle_core, 'Local', 'Programs')
+    env_info = mobyle.EnvironmentInfo(auto_path, args.python_path, xml_target)
     # get the module names
     module_names = get_module_names(args.manifest, args.create_all)
     # create the python subtree
     meta.add_python_files(module_names, args.target)
     # create the mobyle xml interface files
-    xml_target = os.path.join(args.mobyle_core, 'Local', 'Programs')
     import_errors = mobyle.add_xml_files(
             cat_info, env_info, module_names, args.short_length)
     for e in import_errors:
