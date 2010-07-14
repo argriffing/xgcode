@@ -115,7 +115,6 @@ def get_xml(usermod, auto_path, module_name, short_name):
     head = etree.SubElement(program, 'head')
     etree.SubElement(head, 'name').text = short_name
     etree.SubElement(head, 'version').text = '0.0.1'
-    etree.SubElement(head, 'category').text = 'all'
     # add categories for input
     input_categories = [obj.__class__.__name__ for obj in form_objects]
     for input_category in iterutils.unique_everseen(input_categories):
