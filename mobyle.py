@@ -106,7 +106,7 @@ class EnvironmentInfo:
         """
         @return: the command to be embedded into an xml file
         """
-        return ' '.join(self.python_path, self.auto_path, module_name)
+        return ' '.join([self.python_path, self.auto_path, module_name])
 
 
 class CategoryInfo:
