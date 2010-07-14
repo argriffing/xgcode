@@ -89,10 +89,63 @@ def _add_redirection_parameter(parent, next_argpos):
     etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
     return 1
 
-def get_xml(usermod, auto_path, module_name, short_name):
+
+class EnvironmentInfo:
+
+    def __init__(self, auto_path, python_path, xml_dir):
+        """
+        @param auto_path: path to auto.py
+        @param python_path: path to the python executable
+        @param xml_dir: path to the directory where xmls will go
+        """
+        self.auto_path = auto_path
+        self.python_path = python_path
+        self.xml_dir = xml_dir
+
+    def get_command(self, module_name):
+        """
+        @return: the command to be embedded into an xml file
+        """
+        return ' '.join(self.python_path, self.auto_path, module_name)
+
+
+class CategoryInfo:
     """
+    Specify how the mobyle xmls should be categorized.
+    """
+    def __init__(self, show_io_types, show_tags, universal):
+        """
+        @param show_io_types: True if we should categorize by io type
+        @param show_tags: True if we should categorize by tag
+        @param universal: None or a category encompassing all xmls
+        """
+        self.show_io_types = show_io_types
+        self.show_tags = show_tags
+        self.universal = universal
+
+    def gen_categories(self, tags, form_objects, form_out):
+        """
+        @return: an iterable of category strings
+        """
+        if self.show_io_types:
+            cats = [obj.__class__.__name__ for obj in form_objects]
+            for cat in iterutils.unique_everseen(cats):
+                yield 'input:' + cat
+            if form_out:
+                yield 'output:' + form_out.__class__.__name__
+        if self.show_tags:
+            for tag in tags:
+                yield tag
+        if self.universal:
+            yield self.universal
+
+
+
+def get_xml(cat_info, env_info, usermod, module_name, short_name):
+    """
+    @param cat_info: how xmls will be categorized
+    @param env_info: relevant places in the filesystem
     @param usermod: module object
-    @param auto_path: path to auto.py
     @param module_name: something like '20100707a'
     @param short_name: something like 'plot_pca_3d'
     """
@@ -115,18 +168,11 @@ def get_xml(usermod, auto_path, module_name, short_name):
     head = etree.SubElement(program, 'head')
     etree.SubElement(head, 'name').text = short_name
     etree.SubElement(head, 'version').text = '0.0.1'
-    # add categories for input
-    input_categories = [obj.__class__.__name__ for obj in form_objects]
-    for input_category in iterutils.unique_everseen(input_categories):
-        etree.SubElement(head, 'category').text = 'input:' + input_category
-    # add categories for output
-    output_category = form_out.__class__.__name__
-    etree.SubElement(head, 'category').text = 'output:' + output_category
-    # add categories for tags
-    for tag in tags:
-        etree.SubElement(head, 'category').text = tag
+    # add categories
+    for cat in cat_info.gen_categories(tags, form_objects, form_out):
+        etree.SubElement(head, 'category').text = cat
     command = etree.SubElement(head, 'command')
-    command.text = 'python %s %s' % (auto_path, module_name)
+    command.text = env_info.get_command(module_name)
     # add the head.doc subtree
     subtree_doc = etree.SubElement(head, 'doc')
     title = etree.SubElement(subtree_doc, 'title').text = short_name
@@ -147,11 +193,11 @@ def get_xml(usermod, auto_path, module_name, short_name):
             encoding="ISO-8859-1",
             pretty_print=True)
 
-def add_xml_files(module_names, path_to_auto, xml_target, short_name_length):
+def add_xml_files(cat_info, env_info, module_names, short_name_length):
     """
+    @param cat_info: how xmls will be categorized
+    @param env_info: relevant places in the filesystem
     @param module_names: generally uninformative names of modules
-    @param path_to_auto: a path that will go into the xml
-    @param xml_target: the xml files will go into this path
     @param short_name_length: max length of unique short module names
     @return: a list of import errors
     """
@@ -173,12 +219,12 @@ def add_xml_files(module_names, path_to_auto, xml_target, short_name_length):
     short_names = get_short_titles(titles, short_name_length)
     for usermod, name, short_name in zip(usermods, module_names, short_names):
         try:
-            xml_content = get_xml(usermod, path_to_auto, name, short_name)
+            xml_content = get_xml(cat_info, env_info, usermod, name, short_name)
         except MobyleError as e:
             xml_content = None
             print e
         if xml_content:
-            xml_filename = os.path.join(xml_target, short_name + '.xml')
+            xml_filename = os.path.join(env_info.xml_dir, short_name + '.xml')
             with open(xml_filename, 'w') as fout:
                 fout.write(xml_content)
     return import_errors

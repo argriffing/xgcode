@@ -34,14 +34,20 @@ def get_module_names(manifest, create_all):
     return module_names
 
 def main(args):
+    # initialize the mobyle category information
+    env_info = mobyle.CategoryInfo(
+            args.show_io_types, args.show_tags, args.universal_category)
+    # initialize the mobyle environment information
+    auto_path = os.path.join(args.target, 'auto.py')
+    cat_info = mobyle.EnvironmentInfo(auto_path, args.python_path, args.target)
+    # get the module names
     module_names = get_module_names(args.manifest, args.create_all)
     # create the python subtree
     meta.add_python_files(module_names, args.target)
     # create the mobyle xml interface files
     xml_target = os.path.join(args.mobyle_core, 'Local', 'Programs')
-    path_to_auto = os.path.join(args.target, 'auto.py')
     import_errors = mobyle.add_xml_files(
-            module_names, path_to_auto, xml_target, args.short_length)
+            cat_info, env_info, module_names, args.short_length)
     for e in import_errors:
         print e
     if args.deploy:
@@ -61,10 +67,18 @@ if __name__ == '__main__':
             help='create xmls for all snippets')
     parser.add_argument('--target', required=True,
             help='python files will be created in this existing directory')
+    parser.add_argument('--python_path', default='python',
+            help='path to the python executable')
     parser.add_argument('--mobyle_core', required=True,
             help='path to the Mobyle core directory')
     parser.add_argument('--deploy', action='store_true',
             help='deploy the xml files via mobdeploy')
     parser.add_argument('--short_length', type=int, default=20,
             help='max length of shortened snippet names')
+    parser.add_argument('--show_io_types', action='store_true',
+            help='add mobyle categories for input and output types')
+    parser.add_argument('--show_tags', action='store_true',
+            help='add mobyle categories for module tags')
+    parser.add_argument('--universal_category',
+            help='add this mobyle category for all modules')
     main(parser.parse_args())
