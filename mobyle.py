@@ -14,6 +14,7 @@ import collections
 from lxml import etree
 
 import Util
+import iterutils
 
 
 class MobyleError(Exception): pass
@@ -88,29 +89,6 @@ def _add_redirection_parameter(parent, next_argpos):
     etree.SubElement(parameter, 'argpos').text = '%d' % next_argpos
     return 1
 
-def _add_head(auto_path, module_name, doc_lines, short_name, tags, parent):
-    """
-    @param auto_path: path to auto.py
-    @param module_name: something like 20100707a
-    @param doc_lines: documentation lines
-    @param short_name: a short descriptive name
-    @param tags: mobyle categories
-    @param parent: the parent xml level
-    """
-    head = etree.SubElement(parent, 'head')
-    etree.SubElement(head, 'name').text = short_name
-    etree.SubElement(head, 'version').text = '0.0.1'
-    etree.SubElement(head, 'category').text = 'all'
-    for tag in tags:
-        etree.SubElement(head, 'category').text = tag
-    command = etree.SubElement(head, 'command')
-    command.text = 'python %s %s' % (auto_path, module_name)
-    # add the doc subtree
-    doc = etree.SubElement(head, 'doc')
-    title = etree.SubElement(doc, 'title').text = short_name
-    description = etree.SubElement(doc, 'description')
-    etree.SubElement(description, 'text', lang='en').text = doc_lines[0]
-
 def get_xml(usermod, auto_path, module_name, short_name):
     """
     @param usermod: module object
@@ -133,7 +111,29 @@ def get_xml(usermod, auto_path, module_name, short_name):
     # create the root of the tree and the xml document
     program = etree.Element('program')
     doc = etree.ElementTree(program)
-    _add_head(auto_path, module_name, doc_lines, short_name, tags, program)
+    # add the head subtree
+    head = etree.SubElement(program, 'head')
+    etree.SubElement(head, 'name').text = short_name
+    etree.SubElement(head, 'version').text = '0.0.1'
+    etree.SubElement(head, 'category').text = 'all'
+    # add categories for input
+    input_categories = [obj.__class__.__name__ for obj in form_objects]
+    for input_category in iterutils.unique_everseen(input_categories):
+        etree.SubElement(head, 'category').text = 'input:' + input_category
+    # add categories for output
+    output_category = form_out.__class__.__name__
+    etree.SubElement(head, 'category').text = 'output:' + output_category
+    # add categories for tags
+    for tag in tags:
+        etree.SubElement(head, 'category').text = tag
+    command = etree.SubElement(head, 'command')
+    command.text = 'python %s %s' % (auto_path, module_name)
+    # add the head.doc subtree
+    subtree_doc = etree.SubElement(head, 'doc')
+    title = etree.SubElement(subtree_doc, 'title').text = short_name
+    description = etree.SubElement(subtree_doc, 'description')
+    etree.SubElement(description, 'text', lang='en').text = doc_lines[0]
+    # add the parameters
     parameters = etree.SubElement(program, 'parameters')
     next_argpos = 1
     for obj in form_objects:
