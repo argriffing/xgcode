@@ -35,11 +35,11 @@ def get_module_names(manifest, create_all):
 
 def main(args):
     # initialize the mobyle category information
-    env_info = mobyle.CategoryInfo(
+    cat_info = mobyle.CategoryInfo(
             args.show_io_types, args.show_tags, args.universal_category)
     # initialize the mobyle environment information
     auto_path = os.path.join(args.target, 'auto.py')
-    cat_info = mobyle.EnvironmentInfo(auto_path, args.python_path, args.target)
+    env_info = mobyle.EnvironmentInfo(auto_path, args.python_path, args.target)
     # get the module names
     module_names = get_module_names(args.manifest, args.create_all)
     # create the python subtree
