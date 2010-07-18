@@ -10,7 +10,6 @@ This is a line in a UCSC variant of the Fasta format.
 import unittest
 import sys
 import os
-import os.path
 
 import Progress
 

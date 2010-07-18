@@ -5,10 +5,13 @@ Some metaprogramming is done for compatibility with Mobyle.
 In Mobyle, all script output is to a file or to stdout.
 """
 
-from lxml import etree
 
 import Form
-import FormOut
+
+try:
+    from lxml import etree
+except ImportError as e:
+    pass
 
 def _get_filename_metaprogram(fmt, interpolants):
     if len(interpolants) == 1:

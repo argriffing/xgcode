@@ -193,12 +193,14 @@ def get_xml(cat_info, env_info, usermod, module_name, short_name):
             encoding="ISO-8859-1",
             pretty_print=True)
 
-def add_xml_files(cat_info, env_info, module_names, short_name_length):
+def add_xml_files(cat_info, env_info,
+        module_names, short_name_length, local_xml_dir):
     """
     @param cat_info: how xmls will be categorized
     @param env_info: relevant places in the filesystem
     @param module_names: generally uninformative names of modules
     @param short_name_length: max length of unique short module names
+    @param local_xml_dir: usually the xml dir in env_info
     @return: a list of import errors
     """
     import_errors = []
@@ -224,7 +226,7 @@ def add_xml_files(cat_info, env_info, module_names, short_name_length):
             xml_content = None
             print e
         if xml_content:
-            xml_filename = os.path.join(env_info.xml_dir, short_name + '.xml')
+            xml_filename = os.path.join(local_xml_dir, short_name + '.xml')
             with open(xml_filename, 'w') as fout:
                 fout.write(xml_content)
     return import_errors

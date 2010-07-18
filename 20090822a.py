@@ -42,7 +42,7 @@ import FastHMM
 import TransitionMatrix
 import iterutils
 
-#FIXME use default data
+#FIXME use const data
 
 class TimeoutError(Exception): pass
 

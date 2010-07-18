@@ -8,11 +8,15 @@ import itertools
 import string
 
 import numpy as np
-from lxml import etree
 
 import MatrixUtil
 import iterutils
 import Util
+
+try:
+    from lxml import etree
+except ImportError as e:
+    pass
 
 g_safe_letters = string.letters + string.digits + '_.-'
 
