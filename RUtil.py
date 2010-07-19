@@ -3,6 +3,28 @@ Utility functions for interfacing with R.
 """
 
 import unittest
+import subprocess
+
+#TODO replace assert with exceptions
+#TODO move RTable into this module, with or without row headers
+
+def run(pathname):
+    """
+    Run the R script.
+    Redirect .Rout to stderr.
+    The return code is 0 for success and 1 for failure.
+    The returned stdout and stderr are strings not files.
+    @param pathname: name of the R script
+    @return: (returncode, r_stdout, r_stderr)
+    """
+    cmd = [
+            'R', 'CMD', 'BATCH',
+            '--vanilla', '--silent', '--slave',
+            pathname, '/dev/stderr']
+    proc = subprocess.Popen(cmd,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc_stdout, proc_stderr = proc.communicate()
+    return proc.returncode, proc_stdout, proc_stderr
 
 def get_table_string(M, column_headers):
     """
@@ -12,12 +34,15 @@ def get_table_string(M, column_headers):
     """
     # assert that the matrix is rectangular
     assert len(set(len(row) for row in M)) == 1
-    # assert that the number of columns is the same as the number of column headers
+    # Assert that the number of columns
+    # is the same as the number of column headers.
     assert len(M[0]) == len(column_headers)
     # assert that the headers are valid
     for header in column_headers:
         if '_' in header:
-            raise ValueError('the header "%s" is invalid because it uses an underscore' % header)
+            msg_a = 'the header "%s" is invalid '
+            msg_b = 'because it uses an underscore' % header
+            raise ValueError(msg_a + msg_b)
     # define each line in the output string
     lines = []
     lines.append('\t'.join([''] + list(column_headers)))

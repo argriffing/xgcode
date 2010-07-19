@@ -14,6 +14,7 @@ import Form
 import FormOut
 import Util
 import Carbone
+import RUtil
 import iterutils
 import const
 
@@ -306,15 +307,9 @@ def process(args, table_lines):
     print >> f_temp_script, script
     f_temp_script.close()
     # Call R.
-    cmd = [
-            'R', 'CMD', 'BATCH',
-            # turn off as much output as possible
-            '--vanilla', '--slave', '--silent',
-            f_temp_script.name,
-            # avoid writing the .Rout file
-            '/dev/null']
-    proc = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-    r_out, r_err = proc.communicate()
+    retcode, r_out, r_err = RUtil.run(f_temp_script.name)
+    if retcode:
+        raise ValueError('R error:\n' + r_err)
     # Delete the temporary data table file.
     os.unlink(f_temp_table.name)
     # Delete the temporary script file.
