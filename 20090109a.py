@@ -12,6 +12,7 @@ import os
 
 from SnippetUtil import HandlingError
 import KGEA
+import Util
 import Progress
 from Form import RadioItem
 import Form
@@ -212,7 +213,7 @@ def main(options, args):
         # summarize by reading each alignment from the file
         approx_nbytes_read = 0
         fin = open(original_fasta_filename)
-        for lines in KGEA.gen_line_lists(fin):
+        for lines in Util.gen_paragraphs(fin):
             # process the lines
             header_line = lines[0]
             p = KGEA.LocationParser(header_line)

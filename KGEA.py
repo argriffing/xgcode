@@ -12,6 +12,7 @@ import sys
 import os
 
 import Progress
+import Util
 
 
 class KGEAError(Exception):
@@ -41,31 +42,13 @@ def get_line_list(fin, chromosome_string, chromosome_position):
     @param chromosome_position: the query position within the chromosome
     @return: None or lines of an alignment that include the requested position
     """
-    for line_list in gen_line_lists(fin):
+    for line_list in Util.gen_paragraphs(fin):
         header_line = line_list[0]
         p = LocationParser(header_line)
         if p.chromosome != chromosome_string:
             continue
         if p.first_index <= chromosome_position <= p.last_index:
             return line_list
-
-def gen_line_lists(fin):
-    """
-    Yield lists of stripped lines separated by blank lines in the input file.
-    This is optimized for a very long file with short runs of non-blank lines.
-    @param fin: an open file for reading
-    """
-    lines = []
-    for line in fin:
-        stripped_line = line.strip()
-        if stripped_line:
-            lines.append(stripped_line)
-        else:
-            if lines:
-                yield lines
-                lines = []
-    if lines:
-        yield lines
 
 def header_line_to_taxon(header_line):
     """
@@ -118,7 +101,7 @@ def gen_elements(piece_pathname):
     """
     # read a bunch of alignments from the piece of the original huge fasta file
     fin = open(piece_pathname)
-    for line_list in gen_line_lists(fin):
+    for line_list in Util.gen_paragraphs(fin):
         # We only care about the first line in each list,
         # and each one looks something like this:
         # >uc009xhd.1_hg18_1_1 342 0 0 chr1:247178160-247179185+
@@ -220,7 +203,7 @@ class Splitter:
         # process the file, possibly updating the progress bar
         fin = open(self.filename)
         piece_index = 0
-        for line_lists in gen_line_list_lists(gen_line_lists(fin),
+        for line_lists in gen_line_list_lists(Util.gen_paragraphs(fin),
                 self.approx_lines_per_piece):
             piece_filename = piece_index_to_filename(piece_index,
                     self.filename)
@@ -247,7 +230,7 @@ class Splitter:
         nchunks = 0
         nlines = 0
         fin = open(self.filename)
-        for lines in gen_line_lists(fin):
+        for lines in Util.gen_paragraphs(fin):
             self.process_header_line(lines[0])
             nlines += len(lines)
             nchunks += 1
