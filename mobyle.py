@@ -90,25 +90,6 @@ def _add_redirection_parameter(parent, next_argpos):
     return 1
 
 
-class EnvironmentInfo:
-
-    def __init__(self, auto_path, python_path, xml_dir):
-        """
-        @param auto_path: path to auto.py
-        @param python_path: path to the python executable
-        @param xml_dir: path to the directory where xmls will go
-        """
-        self.auto_path = auto_path
-        self.python_path = python_path
-        self.xml_dir = xml_dir
-
-    def get_command(self, module_name):
-        """
-        @return: the command to be embedded into an xml file
-        """
-        return ' '.join([self.python_path, self.auto_path, module_name])
-
-
 class CategoryInfo:
     """
     Specify how the mobyle xmls should be categorized.
@@ -172,7 +153,7 @@ def get_xml(cat_info, env_info, usermod, module_name, short_name):
     for cat in cat_info.gen_categories(tags, form_objects, form_out):
         etree.SubElement(head, 'category').text = cat
     command = etree.SubElement(head, 'command')
-    command.text = env_info.get_command(module_name)
+    command.text = env_info.get_xml_command(module_name)
     # add the head.doc subtree
     subtree_doc = etree.SubElement(head, 'doc')
     title = etree.SubElement(subtree_doc, 'title').text = short_name

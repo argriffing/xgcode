@@ -22,6 +22,7 @@ import argparse
 
 import meta
 import mobyle
+import mobenv
 
 def get_module_names(manifest, create_all):
     """
@@ -71,19 +72,18 @@ def create_installer(args, cat_info, env_info, module_names):
     # copy the installer script
     shutil.copy('install-mob-tools.py',
             os.path.join(stage, 'install-mob-tools.py'))
+    # copy the installer script dependency
+    shutil.copy('mobenv.py',
+            os.path.join(stage, 'mobenv.py'))
     # create the installer configuration
     with open(os.path.join(stage, 'install-mob-tools.conf'), 'w') as fout:
         print >> fout, '#', ' '.join(sys.argv)
         print >> fout, '\t'.join(['auto_path', env_info.auto_path])
         print >> fout, '\t'.join(['python_path', env_info.python_path])
-        print >> fout, '\t'.join(['xml_dir', env_info.xml_dir])
+        print >> fout, '\t'.join(['mob_core', env_info.mob_core])
     # use subprocess instead of tarfile to create the tgz
     cmd = ['tar', 'czvf', stage + '.tgz', stage]
-    proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    proc_out, proc_err = proc.communicate()
-    sys.stdout.write(proc_out)
-    sys.stderr.write(proc_err)
+    subprocess.call(cmd)
 
 def main(args):
     # check for flag conflicts
@@ -97,9 +97,8 @@ def main(args):
     module_names = get_module_names(args.manifest, args.create_all)
     # define the environment on the target server
     auto_path = os.path.join(args.target, 'auto.py')
-    xml_target = os.path.join(args.mobyle_core, 'Local', 'Programs')
-    env_info = mobyle.EnvironmentInfo(
-            auto_path, args.python_path, xml_target)
+    env_info = mobenv.EnvironmentInfo(
+            auto_path, args.python_path, args.mobyle_core)
     if args.make_installer:
         create_installer(args, cat_info, env_info, module_names)
     else:
@@ -108,18 +107,12 @@ def main(args):
         # create the mobyle xml interface files
         import_errors = mobyle.add_xml_files(
                 cat_info, env_info,
-                module_names, args.short_length, xml_target)
+                module_names, args.short_length, env_info.get_xml_dir())
         for e in import_errors:
             print e
     if args.deploy:
-        path_to_mobdeploy = os.path.join(
-                args.mobyle_core, 'Tools', 'mobdeploy')
-        cmd = (path_to_mobdeploy, 'deploy')
-        proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        proc_out, proc_err = proc.communicate()
-        sys.stdout.write(proc_out)
-        sys.stderr.write(proc_err)
+        cmd = env_info.get_deploy_command()
+        subprocess.call(cmd)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
