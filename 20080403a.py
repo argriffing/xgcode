@@ -5,12 +5,12 @@ The nexus data should have a tree and an alignment.
 
 import math
 from StringIO import StringIO
+import itertools
 
 from SnippetUtil import HandlingError
 import RateMatrix
 import Monospace
 import HeatMap
-import Util
 import Newick
 import Hyphy
 import SubModel
@@ -165,7 +165,7 @@ def do_analysis(mixture_model, alignment, tree):
     for proportions in zip(*mixture_columns):
         total_mixture.append(sum(proportions) / len(alignment.columns))
     # define the mixture legend
-    flattened_columns = Util.flattened_nonrecursive(mixture_columns)
+    flattened_columns = list(itertools.chain.from_iterable(mixture_columns))
     mixture_legend = HeatMap.Legend(flattened_columns,
             5, 'M', HeatMap.white_blue_gradient)
     # start writing the web page

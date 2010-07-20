@@ -5,8 +5,8 @@ Do heatmap things, especially using html.
 import unittest
 import sys
 from StringIO import StringIO
+import itertools
 
-import Util
 import Discretizer
 import Monospace
 import iterutils
@@ -209,7 +209,7 @@ class HeatMap:
         @param max_categories: defines the granularity of the discretization
         """
         self.row_major_matrix = row_major_matrix
-        values = Util.flattened_nonrecursive(row_major_matrix)
+        values = list(itertools.chain.from_iterable(row_major_matrix))
         self.legend = Legend(values, max_categories, 'c', white_black_gradient)
 
     def _gen_table_style_lines(self):

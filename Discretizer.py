@@ -3,14 +3,16 @@ This module is for ad hoc linear clustering for visualizations.
 """
 
 import unittest
+import itertools
 
 import Util
 
 def gen_transitive_intervals(values, epsilon):
     """
     Create one dimensional clusters.
+    If two values are closer than epsilon they will be grouped together.
     @param values: a set of numeric values
-    @param epsilon: if two values are closer than epsilon then they will be grouped together
+    @param epsilon: spacing for clusters
     @return: an ordered list of disjoint (low, high) inclusive intervals
     """
     if not values:
@@ -31,11 +33,12 @@ def gen_transitive_intervals(values, epsilon):
 
 class Discretizer:
 
-    def __init__(self, values, max_categories, epsilon=.000000001):
+    def __init__(self, values, max_categories, epsilon=1e-9):
         """
+        If two values are closer than epsilon they will be grouped together.
         @param values: a set of numeric values
         @param max_categories: the maximum number of categories
-        @param epsilon: values that differ by less than this amount will be grouped together
+        @param epsilon: spacing for clusters
         """
         if not values:
             raise ValueError('no values were provided')
@@ -46,9 +49,11 @@ class Discretizer:
         if ngroups == 1:
             self.boundaries = [[min(values), max(values)]]
         else:
-            interval_groups = list(Util.chopped_bresenham(intervals, ngroups))
-            value_groups = [Util.flattened_nonrecursive(group) for group in interval_groups]
-            self.boundaries = [(min(group), max(group)) for group in value_groups]
+            # create interval groups and value groups
+            i_groups = list(Util.chopped_bresenham(intervals, ngroups))
+            v_groups = [
+                    list(itertools.chain.from_iterable(g)) for g in i_groups]
+            self.boundaries = [(min(g), max(g)) for g in v_groups]
 
     def get_category_count(self):
         return len(self.boundaries)
@@ -65,8 +70,6 @@ class Discretizer:
             if low <= value <= high:
                 return i
         raise ValueError('the value %s was not found in any category' % value)
-
-
 
 
 class TestDiscretizer(unittest.TestCase):

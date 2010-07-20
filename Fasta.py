@@ -4,11 +4,12 @@ Read and write FASTA files.
 
 from StringIO import StringIO
 import unittest
+import itertools
 
 import Codon
-import Util
 import iterutils
 
+#FIXME use const data
 
 # from wikipedia
 example_fasta_unaligned = """
@@ -278,7 +279,8 @@ class CodonAlignment:
         gappy_codon_sequences = [list(iterutils.chopped(seq, 3)) for seq in nucleotide_sequences]
         if not gappy_codon_sequences:
             raise CodonAlignmentError('no codon sequences were found')
-        observed_gappy_codons = set(Util.flattened_nonrecursive(gappy_codon_sequences))
+        observed_gappy_codons = set(
+                iterools.chain.from_iterable(gappy_codon_sequences))
         valid_gappy_codons = set(list(Codon.g_non_stop_codons) + ['---'])
         invalid_gappy_codons = observed_gappy_codons - valid_gappy_codons
         if invalid_gappy_codons:

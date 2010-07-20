@@ -9,23 +9,21 @@ are ordered alphabetically by nucleotide.
 
 import math
 from StringIO import StringIO
+import itertools
 
 import numpy as np
 
 from SnippetUtil import HandlingError
-import SnippetUtil
 import RateMatrix
 import Newick
-import Discretizer
-import Util
 import Monospace
 import HeatMap
 import Fasta
-import PhyLikelihood
-import MatrixUtil
 import SubModel
 import Form
 import FormOut
+
+#FIXME use const data
 
 # This alignment is unrealistic.
 g_sample_alignment_string = """
@@ -199,7 +197,7 @@ def do_analysis(mixture_model, alignment, tree):
     for proportions in zip(*mixture_columns):
         total_mixture.append(sum(proportions) / len(alignment.columns))
     # define the mixture legend
-    flattened_columns = Util.flattened_nonrecursive(mixture_columns)
+    flattened_columns = list(itertools.chain.from_iterable(mixture_columns))
     mixture_legend = HeatMap.Legend(flattened_columns,
             5, 'M', HeatMap.white_blue_gradient)
     # start writing the web page

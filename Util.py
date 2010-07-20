@@ -89,16 +89,6 @@ def weights_to_distribution(weights):
     assert total > 0
     return [weight / total for weight in weight_list]
 
-def flattened_nonrecursive(lists):
-    """
-    @param lists: a list of lists
-    @return: a list
-    """
-    arr = []
-    for v in lists:
-        arr.extend(v)
-    return arr
-
 def hamming_distance(first, second):
     return sum(1 for a, b in zip(first, second) if a != b)
 
