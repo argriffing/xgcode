@@ -153,3 +153,19 @@ def get_numeric_column(data, index):
     except ValueError, v:
         raise NumericError
     return floats
+
+def main(args):
+    #TODO something
+    pass
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--table_filename', required=True,
+            help='R table filename')
+    parser.add_argument('--axes', required=True,
+            help='column labels of Euclidean axes')
+    parser.add_argument('--k_limit', type=int_ge_2,
+            help='limit the search to at most this many clusters')
+    parser.add_argument('--nseconds', type=positive_float,
+            help='run for this many seconds')
+    main(parser.parse_args())
