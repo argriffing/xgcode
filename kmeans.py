@@ -105,7 +105,35 @@ g_cl = textwrap.dedent("""
 g_expected_calinski = 25.15651
 
 
+def gen_random_centers_via_range(points, nclusters):
+    """
+    Yield guesses for initial clusters.
+    This methods is not so great.
+    """
+    mymin = np.min(points, axis=0)
+    mymax = np.max(points, axis=0)
+    for i in range(nclusters):
+        yield np.array([random.uniform(a, b) for a, b in zip(mymin, mymax)])
 
+def gen_random_centers_via_choice(points, nclusters):
+    """
+    Return a list of guesses for initial clusters.
+    This is the preferred way to get initial guesses.
+    """
+    return random.sample(points, nclusters)
+
+def gen_random_centers_via_clusters(points, nclusters):
+    """
+    Return a list of guesses for initial clusters.
+    This methods is not so great.
+    """
+    # get random labels with each label appearing at least once
+    npoints = len(points)
+    labels = np.random.randint(0, nclusters, npoints)
+    indices = random.sample(range(npoints), nclusters)
+    for index, label in zip(indices, range(nclusters)):
+        labels[index] = label
+    return get_centers(points, labels)
 
 def get_point_center_sqdists(points, centers):
     """
@@ -178,16 +206,6 @@ def get_wcss(sqdists, labels):
         raise ValueError('array incompatibility')
     return sum(row[label] for row, label in zip(sqdists, labels))
 
-def get_random_labels(npoints, nclusters):
-    """
-    Get random labels with each label appearing at least once.
-    """
-    labels = np.random.randint(0, nclusters, npoints)
-    indices = random.sample(range(npoints), nclusters)
-    for index, label in zip(indices, range(nclusters)):
-        labels[index] = label
-    return labels
-
 def lloyd(points, labels):
     """
     This is the standard algorithm for kmeans clustering.
@@ -216,7 +234,10 @@ def lloyd_with_restarts(points, nclusters, nrestarts):
     best_wcss = None
     best_labels = None
     for i in range(nrestarts):
-        labels = get_random_labels(npoints, nclusters)
+        centers = np.array(list(
+            gen_random_centers_via_choice(points, nclusters)))
+        sqdists = get_point_center_sqdists(points, centers)
+        labels = get_labels(sqdists)
         wcss, labels = lloyd(points, labels)
         if (best_wcss is None) or (wcss < best_wcss):
             best_wcss = wcss

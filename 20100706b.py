@@ -164,8 +164,10 @@ class ClusterState(object):
         """
         Do an iteration of the Lloyd algorithm.
         """
-        npoints = len(self.gs.points)
-        labels = kmeans.get_random_labels(npoints, self.gs.nclusters)
+        centers = np.array(list(kmeans.gen_random_centers_via_choice(
+            self.gs.points, self.gs.nclusters)))
+        sqdists = kmeans.get_point_center_sqdists(self.gs.points, centers)
+        labels = kmeans.get_labels(sqdists)
         wcss, labels = kmeans.lloyd(self.gs.points, labels)
         if (self.best_wcss is None) or (wcss < self.best_wcss):
             self.best_wcss = wcss
