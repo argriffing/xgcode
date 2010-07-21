@@ -28,6 +28,7 @@ def get_form():
             Form.MultiLine('table', 'R table', g_default),
             Form.SingleLine('axes', 'column labels of Euclidean axes',
                 ' '.join(('pc1', 'pc2', 'pc3'))),
+            kmeans.InitStrategy(),
             Form.CheckGroup('options', 'more options', [
                 Form.CheckItem('verbose',
                     'show calinski index values', True)])]
@@ -44,6 +45,8 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
+    # get the initialization strategy
+    init_strategy = kmeans.InitStrategy().string_to_function(fs.kmeans_init)
     # read the table
     rtable = Carbone.RTable(fs.table.splitlines())
     header_row = rtable.headers
@@ -82,7 +85,8 @@ def get_response(fs):
     # look for the best calinski index in a small amount of time
     k = 2
     while True:
-        wgss, labels = kmeans.lloyd_with_restarts(points, k, nrestarts)
+        wgss, labels = kmeans.lloyd_with_restarts(
+                points, k, nrestarts, init_strategy)
         bgss = allmeandist - wgss
         calinski = get_calinski_index(bgss, wgss, k, n)
         k_unique = len(set(labels))

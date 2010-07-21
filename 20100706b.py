@@ -19,6 +19,7 @@ import Carbone
 import kmeans
 import combobreaker
 import const
+import moretypes
 
 g_tags = ['carbone_lab']
 
@@ -36,6 +37,7 @@ def get_form():
                 2, low=2),
             Form.SingleLine('annotation', 'header of added column',
                 'cluster'),
+            kmeans.InitStrategy(),
             Form.ContentDisposition()]
     return form_objects
 
@@ -92,7 +94,9 @@ def get_response(fs):
     points = get_rtable_info(rtable, fs.annotation, fs.axes)
     # do the clustering
     nrestarts = 10
-    wcss, labels = kmeans.lloyd_with_restarts(points, fs.k, nrestarts)
+    init_strategy = kmeans.InitStrategy().string_to_function(fs.kmeans_init)
+    wcss, labels = kmeans.lloyd_with_restarts(
+            points, fs.k, nrestarts, init_strategy)
     # get the response
     lines = ['\t'.join(header_row + [fs.annotation])]
     for i, (label, data_row) in enumerate(zip(labels, data_rows)):
@@ -123,17 +127,19 @@ def get_numeric_column(data, index):
 
 
 class GlobalState(object):
-    def __init__(self, rtable, points, annotation, nclusters):
+    def __init__(self, rtable, points, annotation, nclusters, init_strategy):
         """
         @param rtable: a Carbone.RTable object
         @param points: points as rows in a numpy array
         @param annotation: the name of the new column header
         @param nclusters: target this many clusters
+        @param init_strategy: use this strategy to guess initial centers
         """
         self.rtable = rtable
         self.points = points
         self.annotation = annotation
         self.nclusters = nclusters
+        self.init_strategy = init_strategy
 
 class ClusterState(object):
     # TODO this should possibly be a real generator
@@ -164,7 +170,7 @@ class ClusterState(object):
         """
         Do an iteration of the Lloyd algorithm.
         """
-        centers = np.array(list(kmeans.gen_random_centers_via_choice(
+        centers = np.array(list(self.init_strategy(
             self.gs.points, self.gs.nclusters)))
         sqdists = kmeans.get_point_center_sqdists(self.gs.points, centers)
         labels = kmeans.get_labels(sqdists)
@@ -196,41 +202,18 @@ def gen_states(gs):
 
 def main(args):
     """
-    @param args: argparse'd
+    @param args: from argparse
     """
     # get some state that will not change between k-means restarts
     with open(args.table_filename) as fin:
         rtable = Carbone.RTable(fin)
     points = get_rtable_info(rtable, args.annotation, args.axes)
-    gs = GlobalState(rtable, points, args.annotation, args.k)
+    init_strategy = kmeans.InitStrategy().string_to_function(args.kmeans_init)
+    gs = GlobalState(rtable, points, args.annotation, args.k, init_strategy)
     # go until iteration is stopped for some reason
     run_info = combobreaker.combo_breaker(
             gen_states(gs), args.nseconds, args.nrestarts)
     print run_info.get_response()
-
-def whole_number(x):
-    try:
-        x = int(x)
-    except ValueError:
-        raise TypeError
-    if x < 1:
-        raise TypeError
-    return x
-
-def positive_float(x):
-    try:
-        x = float(x)
-    except ValueError:
-        raise TypeError
-    if x < 0:
-        raise TypeError
-    return x
-
-def int_ge_2(x):
-    x = whole_number(x)
-    if x < 2:
-        raise TypeError
-    return x
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
@@ -238,12 +221,13 @@ if __name__ == '__main__':
             help='R table filename')
     parser.add_argument('--axes', required=True,
             help='column labels of Euclidean axes')
-    parser.add_argument('--k', type=int_ge_2, required=True,
+    parser.add_argument('--k', type=moretypes.int_ge_2, required=True,
             help='target number of clusters')
     parser.add_argument('--annotation', default='cluster',
             help='header of added column')
-    parser.add_argument('--nrestarts', type=whole_number,
+    parser.add_argument('--nrestarts', type=moretypes.whole_number,
             help='restart the k-means iterative refinement this many times')
-    parser.add_argument('--nseconds', type=positive_float,
+    parser.add_argument('--nseconds', type=moretypes.positive_float,
             help='run for this many seconds')
+    kmeans.InitStrategy().add_argument(parser)
     main(parser.parse_args())

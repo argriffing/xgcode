@@ -13,6 +13,7 @@ import numpy as np
 import iterutils
 import MatrixUtil
 import Util
+import Form
 
 g_data_ratio = textwrap.dedent("""
          v_1       v_2       v_3       v_4       v_5
@@ -103,6 +104,34 @@ g_cl = textwrap.dedent("""
    """).strip()
 
 g_expected_calinski = 25.15651
+
+
+class InitStrategy(Form.RadioGroup):
+    
+    def __init__(self):
+        Form.RadioGroup.__init__(
+                self, 'kmeans_init', 'cluster center initialization', [
+                    Form.RadioItem('init_choice',
+                        'center on randomly chosen observed points', True),
+                    Form.RadioItem('init_cluster',
+                        'use centroids of a random partition'),
+                    Form.RadioItem('init_range',
+                        'choose centers uniformly in the observed range')])
+
+    def add_argument(self, parser):
+        """
+        Add an argument to the argparse parser.
+        """
+        return parser.add_argument('--kmeans_init', default='init_choice',
+                choices=['init_choice', 'init_cluster', 'init_range'],
+                help='cluster center initialization')
+
+    def string_to_function(self, kmeans_init):
+        d = {
+                'init_cluster' : gen_random_centers_via_clusters,
+                'init_choice' : gen_random_centers_via_choice,
+                'init_range' : gen_random_centers_via_range}
+        return d[kmeans_init]
 
 
 def gen_random_centers_via_range(points, nclusters):
@@ -222,12 +251,13 @@ def lloyd(points, labels):
             return wcss, labels
         labels = next_labels
 
-def lloyd_with_restarts(points, nclusters, nrestarts):
+def lloyd_with_restarts(points, nclusters, nrestarts, init_strategy):
     """
     This is the standard algorithm for kmeans clustering with restarts.
     @param points: points in euclidean space
     @param nclusters: the number of clusters
     @param nrestarts: the number of random restarts
+    @param init_strategy: a function that guesses initial clusters
     @return: within cluster sum of squares, labels
     """
     npoints = len(points)
@@ -235,7 +265,7 @@ def lloyd_with_restarts(points, nclusters, nrestarts):
     best_labels = None
     for i in range(nrestarts):
         centers = np.array(list(
-            gen_random_centers_via_choice(points, nclusters)))
+            init_strategy(points, nclusters)))
         sqdists = get_point_center_sqdists(points, centers)
         labels = get_labels(sqdists)
         wcss, labels = lloyd(points, labels)
