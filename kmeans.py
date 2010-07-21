@@ -208,6 +208,14 @@ def get_centers(points, labels):
     M = np.array([s/c for s, c in zip(sums, counts)])
     return M
 
+def get_labels_without_cluster_removal(sqdists):
+    """
+    Inputs and outputs are numpy arrays.
+    @param sqdists: for each point, the squared distance to each center
+    @return: for each point, the label of the nearest cluster
+    """
+    return np.argmin(sqdists, axis=1)
+
 def get_labels(sqdists):
     """
     Inputs and outputs are numpy arrays.

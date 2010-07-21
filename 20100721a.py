@@ -1,4 +1,4 @@
-"""Find the number of clusters for k-means using the Calinski-Harabasz index.
+"""Use scipy to find the number of k-means clusters using the Calinski index.
 """
 
 from StringIO import StringIO
@@ -7,6 +7,7 @@ import time
 
 import argparse
 import numpy as np
+from scipy import cluster
 
 from SnippetUtil import HandlingError
 import Form
@@ -28,7 +29,6 @@ def get_form():
             Form.MultiLine('table', 'R table', g_default),
             Form.SingleLine('axes', 'column labels of Euclidean axes',
                 ' '.join(('pc1', 'pc2', 'pc3'))),
-            kmeans.InitStrategy(),
             Form.CheckGroup('options', 'more options', [
                 Form.CheckItem('verbose',
                     'show calinski index values', True)])]
@@ -45,8 +45,6 @@ def get_response(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    # get the initialization strategy
-    init_strategy = kmeans.InitStrategy().string_to_function(fs.kmeans_init)
     # read the table
     rtable = Carbone.RTable(fs.table.splitlines())
     header_row = rtable.headers
@@ -85,8 +83,11 @@ def get_response(fs):
     # look for the best calinski index in a small amount of time
     k = 2
     while True:
-        wgss, labels = kmeans.lloyd_with_restarts(
-                points, k, nrestarts, init_strategy)
+        codebook, distortion = cluster.vq.kmeans(
+                points, k, iter=nrestarts, thresh=1e-9)
+        sqdists = kmeans.get_point_center_sqdists(points, codebook)
+        labels = kmeans.get_labels_without_cluster_removal(sqdists)
+        wgss = kmeans.get_wcss(sqdists, labels)
         bgss = allmeandist - wgss
         calinski = kmeans.get_calinski_index(bgss, wgss, k, n)
         k_unique = len(set(labels))
@@ -131,19 +132,3 @@ def get_numeric_column(data, index):
     except ValueError, v:
         raise NumericError
     return floats
-
-def main(args):
-    #TODO something
-    pass
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--table_filename', required=True,
-            help='R table filename')
-    parser.add_argument('--axes', required=True,
-            help='column labels of Euclidean axes')
-    parser.add_argument('--k_limit', type=int_ge_2,
-            help='limit the search to at most this many clusters')
-    parser.add_argument('--nseconds', type=positive_float,
-            help='run for this many seconds')
-    main(parser.parse_args())
