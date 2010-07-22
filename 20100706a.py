@@ -48,19 +48,6 @@ def create_R_palette(n):
     rgbs = ['#%02X%02X%02X' % rgb for rgb in rgbs]
     return rgbs
 
-def my_mktemp():
-    """
-    The old tempfile.mktemp is deprecated.
-    This function will create the name of a file
-    that an external process can create.
-    @return: the name of a nonexistent temporary file
-    """
-    f = tempfile.NamedTemporaryFile(delete=False)
-    name = f.name
-    f.close()
-    os.unlink(name)
-    return name
-
 class MissingError(Exception): pass
 
 def get_form():
@@ -397,7 +384,7 @@ def process(args, table_lines):
     print >> f_temp_table, '\n'.join(augmented_lines)
     f_temp_table.close()
     # Create a temporary pathname for the plot created by R.
-    temp_plot_name = my_mktemp()
+    temp_plot_name = Util.get_tmp_filename()
     # Create a temporary R script file.
     f_temp_script = tempfile.NamedTemporaryFile(delete=False)
     script = plot_info.get_script(args, temp_plot_name, f_temp_table.name)

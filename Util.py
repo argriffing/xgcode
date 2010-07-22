@@ -4,8 +4,24 @@ Misc functions.
 
 import random
 import unittest
+import tmpfile
+import os
 
 import iterutils
+
+def get_tmp_filename():
+    """
+    The old tempfile.mktemp is deprecated.
+    This function will create the name of a file
+    that an external process can create.
+    Also it does not raise annoying deprecation warnings or errors.
+    @return: the name of a nonexistent temporary file
+    """
+    f = tempfile.NamedTemporaryFile(delete=False)
+    name = f.name
+    f.close()
+    os.unlink(name)
+    return name
 
 def max_length(seq_of_seq):
     return max(len(seq) for seq in seq_of_seq)
