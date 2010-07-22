@@ -4,7 +4,7 @@ Misc functions.
 
 import random
 import unittest
-import tmpfile
+import tempfile
 import os
 
 import iterutils
