@@ -76,8 +76,8 @@ def get_rtable_info(rtable, cluster_header, axes_string):
     for h in axis_headers:
         index = h_to_i[h]
         try:
-            axis_list = get_numeric_column(data_rows, index)
-        except NumericError:
+            axis_list = Carbone.get_numeric_column(data_rows, index)
+        except Carbone.NumericError:
             msg_a = 'expected the axis column %s ' % h
             msg_b = 'to be numeric'
             raise ValueError(msg_a + msg_b)
@@ -114,18 +114,3 @@ def get_response(fs):
     response_headers = [
             ('Content-Type', 'text/plain')]
     return response_headers, out.getvalue()
-
-class NumericError(Exception): pass
-
-def get_numeric_column(data, index):
-    """
-    @param data: row major list of lists of numbers as strings
-    @param index: column index
-    @return: list of floats
-    """
-    strings = zip(*data)[index]
-    try:
-        floats = [float(x) for x in strings]
-    except ValueError, v:
-        raise NumericError
-    return floats

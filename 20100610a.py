@@ -3,8 +3,6 @@
 
 from StringIO import StringIO
 import os
-import subprocess
-from subprocess import PIPE
 import tempfile
 
 import argparse
@@ -99,21 +97,6 @@ def get_response(fs):
             ('Content-Disposition', disposition)]
     return response_headers, content
 
-class NumericError(Exception): pass
-
-def get_numeric_column(data, index):
-    """
-    @param data: row major list of lists of numbers as strings
-    @param index: column index
-    @return: list of floats
-    """
-    strings = zip(*data)[index]
-    try:
-        floats = [float(x) for x in strings]
-    except ValueError, v:
-        raise NumericError
-    return floats
-
 
 class PlotInfo:
     def __init__(self, args, headers, data):
@@ -145,8 +128,8 @@ class PlotInfo:
         for h in self.axis_headers:
             index = self.h_to_i[h]
             try:
-                axis_list = get_numeric_column(data, index)
-            except NumericError:
+                axis_list = Carbone.get_numeric_column(data, index)
+            except Carbone.NumericError:
                 msg_a = 'expected the axis column %s ' % h
                 msg_b = 'to be numeric'
                 raise ValueError(msg_a + msg_b)
@@ -162,8 +145,8 @@ class PlotInfo:
             raise ValueError(msg)
         index = self.h_to_i[self.color_header]
         try:
-            self.color_list = get_numeric_column(data, index)
-        except NumericError:
+            self.color_list = Carbone.get_numeric_column(data, index)
+        except Carbone.NumericError:
             msg_a = 'expected the color column %s ' % self.color_header
             msg_b = 'to be numeric'
             raise ValueError(msg_a + msg_b)
@@ -305,7 +288,7 @@ def process(args, table_lines):
     try:
         with open(temp_plot_name, 'rb') as fin:
             image_data = fin.read()
-    except IOError, e:
+    except IOError as e:
         raise HandlingError('the R call seems to not have created the plot')
     # Delete the temporary image file.
     os.unlink(temp_plot_name)

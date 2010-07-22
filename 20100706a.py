@@ -3,8 +3,6 @@
 
 from StringIO import StringIO
 import os
-import subprocess
-from subprocess import PIPE
 import tempfile
 import colorsys
 
@@ -126,21 +124,7 @@ def get_response(fs):
             ('Content-Disposition', disposition)]
     return response_headers, content
 
-class NumericError(Exception): pass
 class LegendPositionError(Exception): pass
-
-def get_numeric_column(data, index):
-    """
-    @param data: row major list of lists of numbers as strings
-    @param index: column index
-    @return: list of floats
-    """
-    strings = zip(*data)[index]
-    try:
-        floats = [float(x) for x in strings]
-    except ValueError, v:
-        raise NumericError
-    return floats
 
 def get_legend_position(legend_position_string):
     """
@@ -251,8 +235,8 @@ class PlotInfo:
         for h in self.axis_headers:
             index = self.h_to_i[h]
             try:
-                axis_list = get_numeric_column(data, index)
-            except NumericError:
+                axis_list = Carbone.get_numeric_column(data, index)
+            except Carbone.NumericError:
                 msg_a = 'expected the axis column %s ' % h
                 msg_b = 'to be numeric'
                 raise ValueError(msg_a + msg_b)

@@ -112,6 +112,21 @@ class RTable(object):
             raise RTableError(msg_a + msg_b)
         return column
 
+class NumericError(Exception): pass
+
+def get_numeric_column(data, index):
+    """
+    @param data: row major list of lists of numbers as strings
+    @param index: column index
+    @return: list of floats
+    """
+    strings = zip(*data)[index]
+    try:
+        floats = [float(x) for x in strings]
+    except ValueError, v:
+        raise NumericError
+    return floats
+
 def get_compound_column(column, uniques):
     """
     This is a step in converting a multivalued matrix to a binary matrix.
