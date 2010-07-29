@@ -20,7 +20,6 @@ import Carbone
 import kmeans
 import combobreaker
 import const
-import moretypes
 
 g_tags = ['carbone_lab']
 

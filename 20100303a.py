@@ -31,8 +31,9 @@ import Util
 import ExternalHMM
 import lineario
 import TransitionMatrix
+import const
 
-#FIXME use const data
+g_default_data = const.read('20100729a')
 
 g_default_params = [
         ('x', '0.1'),
@@ -44,29 +45,6 @@ g_default_params = [
         ('seqerr', '.01'),
         ('nomcoverage', '20'),
         ('kmulticoverages', '4')]
-
-g_default_data = [
-        (20, 0, 0, 0),
-        (22, 2, 2, 1),
-        (20, 1, 0, 5),
-        (6, 14, 0, 0),
-        (21, 0, 2, 1),
-        (28, 1, 2, 1),
-        (21, 2, 0, 1),
-        (20, 0, 0, 0),
-        (12, 12, 0, 1),
-        (20, 1, 0, 5),
-        (6, 14, 0, 0),
-        (9, 0, 11, 1),
-        (28, 1, 2, 1),
-        (21, 2, 0, 1),
-        (20, 0, 0, 0),
-        (12, 12, 5, 1),
-        (20, 30, 0, 5),
-        (6, 14, 0, 0),
-        (9, 0, 0, 1),
-        (4, 1, 2, 1),
-        (21, 2, 0, 1)]
 
 def get_form():
     """
@@ -81,12 +59,11 @@ def get_form():
             Form.MultiLine('param_field', 'parameters',
                 '\n'.join('\t'.join(p) for p in g_default_params)),
             Form.MultiLine('data_field', 'data',
-                '\n'.join(data_lines))]
+                g_default_data.rstrip())]
     return form_objects
 
 def get_form_out():
     return FormOut.Image('plot', [])
-
 
 def get_response(fs):
     """
