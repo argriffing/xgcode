@@ -11,23 +11,17 @@ import BuildTreeTopology
 import MatrixUtil
 import Form
 import FormOut
+import const
 
-#FIXME use const data
+g_data = const.read('20100730o')
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default distance matrix and the ordered labels
-    D = np.array([
-            [0.0, 3.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
-            [3.0, 0.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0],
-            [2.0, 3.0, 0.0, 0.1, 0.4, 3.0, 3.0, 3.0],
-            [2.0, 3.0, 0.1, 0.0, 0.4, 3.0, 3.0, 3.0],
-            [2.0, 3.0, 0.4, 0.4, 0.0, 3.0, 3.0, 3.0],
-            [3.0, 2.0, 3.0, 3.0, 3.0, 0.0, 0.1, 0.4],
-            [3.0, 2.0, 3.0, 3.0, 3.0, 0.1, 0.0, 0.4],
-            [3.0, 2.0, 3.0, 3.0, 3.0, 0.4, 0.4, 0.0]])
+    lines = Util.get_stripped_lines(g_data.splitlines())
+    D = np.array([[float(x) for x in line] for line in lines])
     ordered_labels = list('xyabcmnp')
     # define the form objects
     form_objects = [

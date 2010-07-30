@@ -22,8 +22,10 @@ import MatrixUtil
 import Euclid
 import Form
 import FormOut
+import const
 
-#FIXME use const data
+g_default_string = const.read('20100730n')
+
 #FIXME matrix output formats
 
 def get_form():
@@ -31,8 +33,7 @@ def get_form():
     @return: the body of a form
     """
     # define the default tree string
-    tree_string = '((((a:0.05, b:0.05):0.15, c:0.2):0.8, x:1.0):0.5, (((m:0.05, n:0.05):0.15, p:0.2):0.8, y:1.0):0.5);'
-    tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the ordered labels
     ordered_labels = list('abcxmnpy')
@@ -99,7 +100,8 @@ def get_response(fs):
     # validate the input
     observed_label_set = set(node.get_name() for node in tree.gen_tips())
     if set(ordered_labels) != observed_label_set:
-        raise HandlingError('the ordered labels should match the labels of the leaves of the tree')
+        msg = 'the labels should match the labels of the leaves of the tree'
+        raise HandlingError(msg)
     # get the matrix of pairwise distances among the tips
     D = np.array(tree.get_distance_matrix(ordered_labels))
     L = Euclid.edm_to_laplacian(D)

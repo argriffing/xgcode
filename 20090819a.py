@@ -31,9 +31,9 @@ that the position is bad
 
 from StringIO import StringIO
 import time
-import optparse
 import sys
 
+import argparse
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -43,80 +43,9 @@ import Progress
 import ReadCoverage
 import MissingHMM
 import iterutils
+import const
 
-#FIXME use const data
-
-class TimeoutError(Exception): pass
-
-g_sample_rows = [
-        [
-            'chr', 'ref', 'var', 'pos', 'bp',
-            '208cov', '208sco', '301cov', '301sco', '303cov', '303sco', '304cov', '304sco', '306cov', '306sco', '307cov', '307sco', '313cov',
-            '313sco', '315cov', '315sco', '324cov', '324sco', '335cov', '335sco', '357cov', '357sco', '358cov', '358sco', '360cov', '360sco',
-            '362cov', '362sco', '365cov', '365sco', '375cov', '375sco', '379cov', '379sco', '380cov', '380sco', '391cov', '391sco', '399cov',
-            '399sco', '427cov', '427sco', '437cov', '437sco', '486cov', '486sco', '514cov', '514sco', '555cov', '555sco', '639cov', '639sco',
-            '705cov', '705sco', '707cov', '707sco', '712cov', '712sco', '714cov', '714sco', '730cov', '730sco', '732cov', '732sco', '765cov',
-            '765sco', '774cov', '774sco', '786cov', '786sco', '799cov', '799sco', '820cov', '820sco', '852cov', '852sco', '859cov', '859sco'],
-        ['dmel_mitochondrion_genome', 'C', 'T', 671, 'A',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,11,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '671', 'C',
-            0,0,0,0,0,0,0,0,0,0,2,39,0,0,0,0,0,0,55,1489,0,0,1,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,12,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '671', 'T',
-            0,0,0,0,0,0,0,0,0,0,120,3892,27,888,0,0,0,0,1,33,1,33,51,1630,605,12842,107,3463,
-            54,1742,1,13,72,2289,38,1197,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,96,2950,0,0,0,0,0,0,0,0,0,0,0,0,231,7332,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '671', 'G',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,14,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,9,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '671', '-',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ['dmel_mitochondrion_genome', 'G', 'A', '710', 'A',
-            0,0,0,0,0,0,1,28,0,0,111,3588,24,780,0,0,0,0,1,33,0,0,52,1630,699,14607,108,3393,53,1681,1,22,92,2872,48,1449,0,0,1,
-            26,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,121,3513,0,0,0,0,0,0,0,0,0,0,0,0,281,8855,0,0],
-        ['dmel_mitochondrion_genome', 'G', 'A', '710', 'C',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,9,1,8,1,6,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,24,0,0],
-        ['dmel_mitochondrion_genome', 'G', 'A', '710', 'T',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,11,0,0],
-        ['dmel_mitochondrion_genome', 'G', 'A', '710', 'G',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,6,0,0,87,2155,0,0,0,0,2,29,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,10,0,0],
-        ['dmel_mitochondrion_genome', 'G', 'A', '710', '-',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '735', 'A',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,50,0,0,0,0,0,0,1,10,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '735', 'C',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,8,0,0,72,1547,0,0,1,13,3,44,0,0,0,0,1,11,0,0,1,21,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '735', 'T',
-            0,0,1,33,0,0,0,0,0,0,116,3678,24,693,1,33,0,0,1,5,0,0,66,2093,2391,50882,154,4742,71,2200,0,0,112,3358,74,2190,0,0,1,
-            33,0,0,0,0,0,0,1,33,1,33,0,0,0,0,0,0,0,0,0,0,162,4575,0,0,0,0,0,0,0,0,0,0,0,0,347,10626,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '735', 'G',
-            0,0,0,0,0,0,0,0,0,0,0,0,1,21,0,0,0,0,1,16,0,0,0,0,4,47,0,0,1,8,0,0,1,10,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,17,0,0],
-        ['dmel_mitochondrion_genome', 'C', 'T', '735', '-',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ['dmel_mitochondrion_genome', 'A', 'G', '791', 'A',
-            0,0,0,0,0,0,3,89,0,0,0,0,0,0,1,6,0,0,52,1428,0,0,0,0,3,19,152,4846,0,0,0,0,0,0,84,
-            2541,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,47,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ['dmel_mitochondrion_genome', 'A', 'G', '791', 'C',
-            0,0,0,0,0,0,0,0,0,0,1,9,0,0,0,0,0,0,0,0,0,0,0,0,1,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        ['dmel_mitochondrion_genome', 'A', 'G', '791', 'T',
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,9,8,99,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,10,0,0],
-        ['dmel_mitochondrion_genome', 'A', 'G', '791', 'G',
-            0,0,0,0,0,0,0,0,0,0,76,2474,23,709,1,22,0,0,0,0,0,0,53,1694,1501,31963,0,0,81,2535,0,0,98,3038,2,48,
-            0,0,0,0,0,0,0,0,0,0,0,0,1,34,0,0,0,0,0,0,0,0,0,0,201,5666,0,0,0,0,0,0,0,0,0,0,0,0,314,9877,0,0],
-        ['dmel_mitochondrion_genome', 'A', 'G', '791', '-',
-            0,0,0,0,0,0,0,0,0,0,1,33,0,0,0,0,0,0,0,0,0,0,0,0,15,333,0,0,0,0,0,0,1,27,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,49,0,0,0,0,0,0,0,0,0,0,0,0,13,389,0,0]]
+g_sample_data = const.read('20100730k')
 
 g_output_header_row = [
         'genetic_line', 'chromosome', 'position',
@@ -124,12 +53,12 @@ g_output_header_row = [
         'homozygous_ll', 'heterozygous_ll', 'bad_ll',
         'homozygous_posterior', 'heterozygous_posterior', 'bad_posterior']
 
+class TimeoutError(Exception): pass
 
 def get_form():
     """
     @return: the body of a form
     """
-    sample_lines = [',\t'.join(str(x) for x in row) for row in g_sample_rows]
     form_objects = [
             Form.Integer('good_coverage',
                 'expected read coverage of informative positions',
@@ -142,7 +71,7 @@ def get_form():
                 0.1, low_exclusive=0),
             Form.MultiLine('input_text',
                 'calls per nt per base call per chromosome per strain',
-                '\n'.join(sample_lines)),
+                g_sampel_data),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as a csv file')])]
@@ -397,11 +326,11 @@ def process(input_lines, good_coverage, bad_coverage, randomization_rate, T, nse
     # return the output text
     return out.getvalue().strip()
 
-def main(options):
+def main(args):
     # validate the options
-    assert 1 <= options.good_coverage
-    assert 1 <= options.bad_coverage
-    assert 0 < options.randomization_rate <= 1
+    assert 1 <= args.good_coverage
+    assert 1 <= args.bad_coverage
+    assert 0 < args.randomization_rate <= 1
     # define an arbitrary transition matrix
     T = np.array([
         [.98, .01, .01],
@@ -414,14 +343,16 @@ def main(options):
     # show the result
     use_pbar = True
     nseconds = None
-    print process(lines, options.good_coverage, options.bad_coverage, options.randomization_rate, T, nseconds, use_pbar)
+    print process(lines,
+            args.good_coverage, args.bad_coverage,
+            args.randomization_rate, T, nseconds, use_pbar)
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.add_option('--good-coverage', dest='good_coverage', type='int', default=20, help='expected read coverage of informative positions')
-    parser.add_option('--bad-coverage', dest='bad_coverage', type='int', default=100, help='expected read coverage of overcovered positions')
-    parser.add_option('--randomization-rate', dest='randomization_rate', type='float', default=0.1, help='randomization probability per read')
-    options, args = parser.parse_args()
-    main(options)
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--good-coverage', type='int',
+            default=20, help='expected read coverage of informative positions')
+    parser.add_argument('--bad-coverage', type='int',
+            default=100, help='expected read coverage of overcovered positions')
+    parser.add_argument('--randomization-rate', type='float',
+            default=0.1, help='randomization probability per read')
+    main(parser.parse_args())

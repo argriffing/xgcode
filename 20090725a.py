@@ -12,42 +12,9 @@ import Util
 import Form
 import FormOut
 import Progress
+import const
 
-#FIXME use const data
-
-g_matrix = [
-        [0,0,1,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],
-        [0,0,1,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,1,1,1,0,0,1,1,0,1,0,0,0],
-        [0,0,1,0,1,1,1,1,0,0,0,0,0,1,0,1,0,1,0,1,1,1,0,1,1,1,0,0,1,1,1,0,0,1,0,1,1,1],
-        [0,0,1,0,1,1,1,0,1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,1],
-        [0,0,1,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-        [0,0,0,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],
-        [0,0,1,0,1,1,1,0,0,0,0,1,1,1,0,1,0,0,0,1,0,1,0,0,1,1,0,0,0,0,1,0,0,1,0,1,1,0],
-        [0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0],
-        [0,0,1,0,1,1,1,1,0,0,1,1,0,1,0,1,0,1,0,0,0,0,0,1,1,1,0,0,0,0,1,1,0,1,0,1,1,1],
-        [0,0,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-        [1,1,0,1,0,0,1,0,1,0,1,1,0,0,0,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,0,1,1,0,1,1,0,1],
-        [0,0,1,0,1,1,1,1,0,0,1,1,0,1,0,1,0,1,0,1,0,0,0,1,1,1,0,0,0,0,1,1,0,1,0,1,1,1],
-        [1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,1,1,0,0,0,1,1,0,1,0,0,1,0,1,0,0,0],
-        [0,0,1,0,1,1,1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
-        [0,0,0,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-        [0,0,1,0,1,1,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],
-        [0,0,1,0,1,1,1,1,1,0,1,0,0,1,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1,1,0],
-        [0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0],
-        [0,0,1,0,1,1,1,0,1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,1,1,1,0,0,0,1,0,0,0,1,0,1,1,1],
-        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,1,0,0,0,0,0],
-        [0,0,1,1,1,1,1,0,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,1,1,1],
-        [0,0,1,0,1,1,1,1,1,0,0,0,1,1,0,0,0,1,0,1,0,1,0,1,1,1,0,0,0,1,0,0,0,1,0,1,1,1],
-        [0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0,1,1,0],
-        [0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0],
-        [0,0,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
-        [0,0,1,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0],
-        [0,0,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0],
-        [0,0,1,1,1,1,1,1,1,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1,1],
-        [0,0,1,1,1,1,0,1,1,0,0,0,1,1,0,0,1,0,0,0,0,1,0,0,1,1,0,0,0,0,1,1,0,1,0,1,1,0]]
+g_raw_matrix = const.read('20100730l').rstrip()
 
 def get_hamming_distance(a, b):
     """
@@ -71,13 +38,12 @@ def get_form():
     """
     @return: the body of a form
     """
-    bstrings = '\n'.join(''.join(str(x) for x in row) for row in g_matrix)
     form_objects = [
             Form.Integer('ncenters', 'find this many centers', 3, low=1),
             Form.RadioGroup('options', 'use this distance', [
                 Form.RadioItem('folded', 'folded hamming distance', True),
                 Form.RadioItem('hamming', 'hamming distance')]),
-            Form.MultiLine('bstrings', 'binary strings', bstrings)]
+            Form.MultiLine('bstrings', 'binary strings', g_raw_matrix)]
     return form_objects
 
 def get_form_out():
@@ -101,7 +67,8 @@ def get_centers(arrs, ncenters, metric, deadline):
     best_centers = None
     for center_indices in itertools.combinations(range(n), ncenters):
         if deadline and time.time() > deadline:
-            raise HandlingError('im sorry this calculation has exceeded my attention span')
+            msg = 'im sorry this calculation has exceeded my attention span'
+            raise HandlingError(msg)
         max_distance = max(min(D[c][t] for c in center_indices) for t in range(n))
         if not best_centers or max_distance < best_max_distance:
             best_max_distance = max_distance
@@ -129,9 +96,7 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the bstring lines
-    lines = StringIO(fs.bstrings).readlines()
-    lines = [line.strip() for line in lines]
-    lines = [line for line in lines if line]
+    lines = Util.get_stripped_lines(fs.bstrings.splitlines())
     # do some validation
     if not lines:
         raise HandlingError('expected some binary strings')
@@ -141,7 +106,8 @@ def get_response(fs):
     d = len(lines[0])
     for line in lines:
         if len(line) != d:
-            raise HandlingError('expected each binary string to have the same length')
+            msg = 'expected each binary string to have the same length'
+            raise HandlingError(msg)
     # convert the binary strings to arrays of integers
     arrs = [[int(x) for x in line] for line in lines]
     # define the distance metric
@@ -172,7 +138,8 @@ if __name__ == '__main__':
     parser.add_option('--do-permutations', action='store_true', dest='do_permutations', default=False, help='do a permutation test')
     options, args = parser.parse_args()
     # set the options
-    arrs = g_matrix
+    lines = Util.get_stripped_lines(g_raw_matrix.splitlines())
+    arrs = [list(line) for line in lines]
     ncenters = options.ncenters
     metric = get_folded_distance
     deadline = None
@@ -219,4 +186,3 @@ if __name__ == '__main__':
             for value, count in sorted(d.items()):
                 print '%d:\t%d' % (value, count)
             print
-

@@ -146,3 +146,24 @@ The number of gaps aligned at a position are counted.
 20100730j.dat
 Aligned read data with a header row.
 The file shows calls per nt per base call per chromosome per strain.
+This example has two strains.
+
+20100730k.dat
+Aligned read data with a header row.
+Each row spans multiple genetic strains.
+
+20100730l.dat
+Rows of ones and zeros.
+
+20100730m.dat
+A newick tree with named internal nodes and with branch lengths.
+This is the tree used in the paper
+'why neighbor joining works' by Lior Pachter et al.
+
+20100730n.dat
+A rooted newick tree with branch lengths.
+This is the tree used in the paper
+'why neighbor joining works' by Lior Pachter et al.
+
+20100730o.dat
+The exact distance matrix for the 'why neighbor joining works' tree.

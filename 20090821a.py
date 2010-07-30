@@ -52,26 +52,17 @@ import TransitionMatrix
 import ReadCoverage
 import FastHMM
 import iterutils
+import Util
+import const
 
-#FIXME use const data
+g_sample_data = const.read('20100730j')
 
 class TimeoutError(Exception): pass
-
-
-g_sample_rows = [
-        ['strain', 'chromosome', 'position', 'A', 'C', 'G', 'T', 'gap'],
-        ['222', '1024', '101', '0', '0', '0', '0', '0'],
-        ['222', '1024', '121', '21', '1', '0', '0', '0'],
-        ['222', '1024', '151', '0', '12', '2', '0', '9'],
-        ['444', '1024', '201', '0', '0', '0', '0', '0'],
-        ['444', '1024', '231', '21', '1', '0', '0', '0'],
-        ['444', '1024', '241', '0', '12', '2', '666', '9']]
 
 def get_form():
     """
     @return: the body of a form
     """
-    sample_lines = [',\t'.join(row) for row in g_sample_rows]
     form_objects = [
             Form.Integer('good_coverage',
                 'expected read coverage of informative positions',
@@ -87,14 +78,14 @@ def get_form():
                 0.1, low_exclusive=0),
             Form.MultiLine('input_text',
                 'calls per nt per base call per chromosome per strain',
-                '\n'.join(sample_lines)),
+                g_sample_data),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as a csv file')])]
     return form_objects
 
 def get_form_out():
-    return FormOut.Csv()
+    return FormOut.Csv('annotation')
 
 def get_response(fs):
     """
@@ -105,14 +96,15 @@ def get_response(fs):
     nseconds = 2
     use_pbar = False
     # get the lines from the multi-line input
-    lines = StringIO(fs.input_text).readlines()
-    lines = [line.strip() for line in lines]
-    lines = [line for line in lines if line]
+    lines = Util.get_stripped_lines(fs.input_text.splitlines())
     # try to get the response
     try:
-        response_text = process(lines, fs.good_coverage, fs.bad_coverage, fs.randomization_rate, fs.nstickinesses, nseconds, use_pbar)
+        response_text = process(lines,
+                fs.good_coverage, fs.bad_coverage,
+                fs.randomization_rate, fs.nstickinesses, nseconds, use_pbar)
     except TimeoutError:
-        raise HandlingError('sorry scripts run remotely have the attention span of a fruit fly')
+        msg = 'the script has exceeded its remote execution time limit'
+        raise HandlingError(msg)
     # deliver the response in the appropriate format
     response_headers = [('Content-Type', 'text/plain')]
     if fs.attachment:
@@ -314,9 +306,7 @@ def main(options):
     assert 1 <= options.bad_coverage
     assert 0 < options.randomization_rate <= 1
     # read from standard input
-    lines = sys.stdin.readlines()
-    lines = [line.strip() for line in lines]
-    lines = [line for line in lines if line]
+    lines = Util.get_stripped_lines(sys.stdin)
     # show the result
     use_pbar = True
     nseconds = None
