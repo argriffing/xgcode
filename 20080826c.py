@@ -1,24 +1,15 @@
 """Count the number of observed differences between two nucleotide sequences.
 """
 
-import math
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Fasta
 import F84
 import PairLikelihood
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-g_sample_fasta_string = """
->sequence_a
-AAAACCCCGGGGTTAA
->sequence_b
-GAAACCTCGGCGTAAA
-"""
+g_sample_fasta_string = const.read('20100730z')
 
 def get_form():
     """
@@ -39,7 +30,7 @@ def get_response(fs):
     """
     # get the alignment object
     try:
-        alignment = Fasta.Alignment(StringIO(fs.fasta))
+        alignment = Fasta.Alignment(fs.fasta.splitlines())
     except Fasta.AlignmentError, e:
         raise HandlingError('alignment error: ' + str(e))
     # assert that the alignment is of exactly two sequences
@@ -57,10 +48,9 @@ def get_response(fs):
         raise HandlingError(msg)
     # get the maximum likelihood estimate
     sequence_pair = alignment.sequences
-    count = sum(1 for a, b in zip(*alignment.sequences) if a != b)
+    count = sum(a != b for a, b in zip(*alignment.sequences))
     # begin the response
-    out = StringIO()
-    print >> out, 'difference count:', count
+    text = 'difference count: %d\n' % count
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return response_headers, text

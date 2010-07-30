@@ -1,0 +1,13 @@
+(((((((((
+(human_hg18:0.00669,chimp_panTro1:0.00757):0.0243,
+macaque_rheMac2:0.0592):0.0240,
+((rat_rn4:0.0817,mouse_mm8:0.0770):0.229,
+rabbit_oryCun1:0.207):0.107):0.0230,
+(cow_bosTau2:0.159,dog_canFam2:0.148):0.0394):0.0285,
+armadillo_dasNov1:0.150):0.0160,
+(elephant_loxAfr1:0.105,tenrec_echTel1:0.260):0.0404):0.218,
+monodelphis_monDom4:0.371):0.189,
+chicken_galGal2:0.455):0.123,
+xenopus_xenTro1:0.782):0.156,
+((tetraodon_tetNig1:0.199,fugu_fr1:0.239):0.493,
+zebrafish_danRer3:0.783):0.156);

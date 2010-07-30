@@ -8,34 +8,15 @@ The likelihood maximization can be done analytically
 because of the simplicity of the model.
 """
 
-import math
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Fasta
 import MatrixUtil
 import JC69
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-# HKY simulation parameters:
-# transition/transversion ratio 2, C:4, G:4, A:1, T:1, scaled to one
-g_fasta = """
->a
-TGGGGGCGCACTGTCGGCCGCGTTGCGCAGCACTCCACCGCCTGGCGCTCCCCCGGCGCC
-GTGCGGGGGTCGCCGGCGAGCGCGGCTTCCCCAGCGGGCT
->b
-GGTGTCCGCTAGGCAGGTGCGTCGCCCCACGTCCGCCCGCGGCGGCCCCGGGACGGCCAC
-CCGGGGGAGGGTCGGCGCGACTCGATGCGGTGCCCATGGC
->c
-GAATCGCCTCGCGCACCGACGCCGGGCCGGCGTGGCGCCTATCGCGCCCTCGGATGTGTA
-CGACGCGCCCGACGCCGTCCCCCTCGCGCGGGGCGCCCTC
->d
-CGTCCCTACGCGCGTCCGGGGCGTCGAGCGCGAGCCAGGGCGAATGACTGGCGGATCGCC
-GCGGGAGCGGCTCCGTCTAGCCGCACGGGGCGCCCCGTCC
-"""
+g_fasta = const.read('20100730y')
 
 def get_form():
     """
@@ -59,7 +40,7 @@ def get_response(fs):
     """
     # read the alignment
     try:
-        alignment = Fasta.Alignment(StringIO(fs.fasta))
+        alignment = Fasta.Alignment(fs.fasta.splitlines())
     except Fasta.AlignmentError, e:
         raise HandlingError('fasta alignment error: ' + str(e))
     if alignment.get_sequence_count() < 2:
@@ -71,7 +52,6 @@ def get_response(fs):
         corrected_row = [fs.infinity if x == float('inf') else x for x in row]
         row_major_distance_matrix.append(corrected_row)
     # write the response
-    out = StringIO()
-    print >> out, MatrixUtil.m_to_string(row_major_distance_matrix)
+    text = MatrixUtil.m_to_string(row_major_distance_matrix) + '\n'
     response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return response_headers, text

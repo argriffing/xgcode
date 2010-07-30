@@ -197,3 +197,15 @@ Sample MAPP output.
 
 20100730w.dat
 Sample tetraploid microsatellite data.
+
+20100730x.dat
+Another new tree with branch lengths from UCSC.
+
+20100730y.dat
+A fasta alignment of a few nucleotide sequences.
+It was sampled with HKY with the following parameters.
+The transition/transversion ratio was 2.
+The nucleotide probabilities were C:4, G:4, A:1, T:1, scaled to sum to one.
+
+20100730z.dat
+A tiny fasta alignment of a couple nucleotide sequences.

@@ -27,9 +27,11 @@ from Form import RadioItem
 from Form import CheckItem
 import Form
 import FormOut
+import const
+
+g_default_string = const.read('20100730q')
 
 #FIXME use distance matrix sampler module
-#FIXME use const data
 
 class DistanceMatrixSampler:
     """
@@ -165,8 +167,7 @@ class DistanceMatrixSampler:
 
 
 def get_default_original_tree():
-    tree_string = '(((a:0.05, b:0.05):0.15, c:0.2):0.8, x:1.0, (((m:0.05, n:0.05):0.15, p:0.2):0.8, y:1.0):1.0);'
-    tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     for node in tree.preorder():
         blen = node.get_branch_length()
         if blen is not None:
