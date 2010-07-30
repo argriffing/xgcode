@@ -24,17 +24,9 @@ import FormOut
 import Progress
 import DGRP
 import iterutils
+import const
 
-#FIXME use const data
-
-g_sample_lines = [
-        'YHet 3261 T C/C 2 A 0 C 1 G 0 T 1 15 15 50',
-        'YHet 4197 G C/C 2 A 0 C 1 G 1 T 0 2 2 60',
-        'YHet 4573 C T/T 3 A 0 C 0 G 0 T 3 36 36 51',
-        'YHet 5490 G A/A 7 A 4 C 0 G 3 T 0 2 2 0',
-        '2L 5091 T C/T 16 A 0 C 7 G 0 T 9 27 27 28',
-        '2L 5092 C C/T 16 A 0 C 9 G 0 T 7 30 78 28',
-        '2L 5095 T A/T 17 A 8 C 0 G 0 T 9 31 82 31']
+g_sample_data = const.read('20100730c.dat')
 
 g_header = '\t'.join(['position', 'A', 'C', 'G', 'T'])
 
@@ -43,9 +35,8 @@ def get_form():
     """
     @return: the body of a form
     """
-    sample_data = '\n'.join(g_sample_lines)
     form_objects = [
-            Form.MultiLine('data_in', 'filtered pileup file', sample_data)]
+            Form.MultiLine('data_in', 'filtered pileup file', g_sample_data)]
     return form_objects
 
 def get_form_out():

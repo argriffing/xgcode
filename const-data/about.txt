@@ -111,3 +111,22 @@ AA is the homozygous non-reference nucleotide count, and
 AB is the heterozygous non-reference and non-reference nucleotide count.
 Each row in the file gives counts for a single genome position.
 Each row sum is the read coverage at the position.
+
+20100730a.dat
+Each line has information about a column of aligned reads.
+The data represents a single chromosome.
+
+20100730b.dat
+Each line has information about a column of aligned reads.
+The data represents two chromosomes.
+
+20100730c.dat
+Each line has information about a column of aligned reads.
+The data represents two chromosomes.
+
+20100730d.dat
+For five cities give the x and y locations on a map.
+These coordinates may not be latitude and longitude.
+
+20100730e.dat
+Define the 2D layout of an undirected graph.

@@ -12,14 +12,10 @@ from SnippetUtil import HandlingError
 import Form
 import FormOut
 import CairoUtil
+import Util
+import const
 
-#FIXME use const data
-
-g_default_data = """Boston  -905.527460092  666.956097193
-Seattle 1573.80442188   425.46464836
-Phoenix 1030.45352721   -564.133058397
-Miami   -948.765620649  -600.926346854
-Raleigh -749.964868349  72.6386596982"""
+g_default_data = const.read('20100730d')
 
 
 class BorderInfo:
@@ -170,8 +166,7 @@ def get_response(fs):
     axis_info = AxisInfo(fs.flip_x, fs.flip_y, fs.show_x, fs.show_y)
     w, h = fs.width, fs.height
     # Parse the label and point input.
-    lines = [x.strip() for x in StringIO(fs.points).readlines()]
-    lines = [x for x in lines if x]
+    lines = Util.get_stripped_lines(fs.points.splitlines())
     triples = [x.split() for x in lines]
     parsed_triples = []
     for triple in triples:

@@ -35,18 +35,9 @@ import DGRP
 import ambignt
 import iterutils
 import iterfiller
+import const
 
-#FIXME use const data
-
-g_sample_lines = [
-        'chrI 61 T C/C 2 A 0 C 1 G 0 T 1 15 15 50',
-        'chrI 67 G C/C 2 A 0 C 1 G 1 T 0 2 2 60',
-        'chrI 73 C T/T 3 A 0 C 0 G 0 T 3 36 36 51',
-        'chrI 90 G A/A 7 A 4 C 0 G 3 T 0 2 2 0',
-        'chrQ 91 T C/T 16 A 0 C 7 G 0 T 9 27 27 28',
-        'chrQ 92 C C/T 16 A 0 C 9 G 0 T 7 30 78 28',
-        'chrQ 95 T A/T 17 A 8 C 0 G 0 T 9 31 82 31']
-
+g_sample_data = const.read('20100730b')
 
 class Scanner:
     """
@@ -157,9 +148,8 @@ def get_form():
     """
     @return: the body of a form
     """
-    sample_data = '\n'.join(g_sample_lines)
     form_objects = [
-            Form.MultiLine('data_in', 'filtered pileup file', sample_data),
+            Form.MultiLine('data_in', 'filtered pileup file', g_sample_data),
             Form.RadioGroup('low_info', 'low position', [
                 Form.RadioItem('low_0', '0'),
                 Form.RadioItem('low_1', '1', True),
