@@ -17,44 +17,14 @@ import Fasta
 import iterutils
 import Form
 import FormOut
-
-#FIXME use const data
+import const
 
 # TODO de-hardcode this path to the jar file
 g_mapp_jar_path = '/home/argriffi/mapp-analysis/MAPP.jar'
 
-# this is some sample data
-g_default_csv_lines = [
-        '"variant","chr","position","Amino Acid Change","alleles","Hg18","bosTau3","canFam2","danRer5","fr1","galGal3","gasAcu1","mm9","monDom4","ornAna1","oryLat1","panTro2","rheMac2","rn4","tetNig1"',
-        '"v47291",17,70360012,"L-Q","T-A","CTG","TTG","CTG","CTG","TTA","CTG","CTG","TTG","CTG","ND","CTC","CTG","CTC","CTG","TTA"',
-        '"v47321",17,70360024,"A-E","C-A","GCG","GCG","GCG","AGG","TCT","GGG","GCC","GCA","GAG","ND","TCC","GCG","GAG","GCA","GCC"',
-        '"v47278",17,70362556,"H-R","A-G","CAC","CAT","CAC","CAC","CAC","CAC","CAT","CAC","CAT","ND","CAT","CGC","CAC","CAC","CAC"',
-        '"v47269",17,70362745,"Q-H","G-T","CAG","CAG","CAG","CCC","CCC","CCG","CCC","CAG","CAG","ND","CCC","CAG","CAG","CAG","CCC"',
-        '"v49364",7,15393678,"F-L","T-C","TTT","GTT","GTT","TTA","ND","GCT","ND","CTT","CAT","ND","ND","TTT","TTT","CTC","ND"']
+g_default_csv_data = const.read('20100730t')
 
-# this is from genomewiki.ucsc.edu/index.php/Mm9_multiple_alignment
-g_default_tree_lines = [
-        '((((((((',
-        '(((mm9:0.076274,rn4:0.084383):0.200607,',
-        'cavPor2:0.202990):0.034350,',
-        'oryCun1:0.208548):0.014587,',
-        '((((((Hg18:0.005873,panTro2:0.007668):0.013037,',
-        'ponAbe2:0.02):0.013037,rheMac2:0.031973):0.0365,',
-        'calJac1:0.07):0.0365,otoGar1:0.151185):0.015682,',
-        'tupBel1:0.162844):0.006272):0.019763,',
-        '((sorAra1:0.248532,eriEur1:0.222255):0.045693,',
-        '(((canFam2:0.101137,felCat3:0.098203):0.048213,',
-        'equCab1:0.099323):0.007287,',
-        'bosTau3:0.163945):0.012398):0.018928):0.030081,',
-        '(dasNov1:0.133274,(loxAfr1:0.103030,',
-        'echTel1:0.232706):0.049511):0.008424):0.213469,',
-        'monDom4:0.320721):0.088647,',
-        'ornAna1:0.488110):0.118797,',
-        '(galGal3:0.395136,anoCar1:0.513962):0.093688):0.151358,',
-        'xenTro2:0.778272):0.174596,',
-        '(((tetNig1:0.203933,fr1:0.239587):0.203949,',
-        '(gasAcu1:0.314162,oryLat1:0.501915):0.055354):0.346008,',
-        'danRer5:0.730028):0.174596);']
+g_default_tree_string = const.read('20100730s')
 
 def get_form():
     """
@@ -63,9 +33,9 @@ def get_form():
     default_tree_string = '(a:2, b:2, (c:2, d:2):2);'
     form_objects = [
             Form.MultiLine('data', 'raw data from a csv file',
-                '\n'.join(g_default_csv_lines)),
+                g_default_csv_data),
             Form.MultiLine('tree', 'a tree with branch lengths',
-                '\n'.join(g_default_tree_lines))]
+                g_default_tree_string)]
     """
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
@@ -221,9 +191,7 @@ def get_response(fs):
     return response_headers, out.getvalue().strip()
 
 def main():
-    data_string = '\n'.join(g_default_csv_lines)
-    tree_string = '\n'.join(g_default_tree_lines)
-    print get_mapp_output(data_string, tree_string)
+    print get_mapp_output(g_default_csv_data, g_default_tree_string)
 
 if __name__ == '__main__':
     main()

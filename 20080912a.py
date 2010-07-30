@@ -18,16 +18,16 @@ import FelTree
 import DistanceMatrixSampler
 import Form
 import FormOut
+import const
 
-#FIXME use const data
+g_default_string = const.read('20100730q')
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default tree string
-    tree_string = '(((a:0.05, b:0.05):0.15, c:0.2):0.8, x:1.0, (((m:0.05, n:0.05):0.15, p:0.2):0.8, y:1.0):1.0);'
-    tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the form objects
     form_objects = [
@@ -120,7 +120,6 @@ def main():
         if run_seconds > allocated_seconds:
             break
     # define the response
-    out = StringIO()
     print 'these are the results for a', run_seconds, 'second run:'
     print sampler.proposed, 'samples were proposed'
     print sampler.accepted, 'samples were accepted'

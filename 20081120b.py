@@ -12,15 +12,15 @@ import FormOut
 import MatrixUtil
 import FelTree
 import NewickIO
+import const
 
-#FIXME use const data
+g_default_string = const.read('20100730q')
 
 def get_form():
     """
     @return: a list of form objects
     """
-    tree_string = '(((a:0.05, b:0.05):0.15, c:0.2):0.8, x:1.0, (((m:0.05, n:0.05):0.15, p:0.2):0.8, y:1.0):1.0);'
-    tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     M = np.array(tree.get_full_distance_matrix())
     form_objects = [
             Form.Matrix('matrix', 'matrix', M),

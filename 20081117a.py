@@ -18,35 +18,22 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
+import Util
 import MatrixUtil
 import iterutils
 from Form import RadioItem
 import Form
 import FormOut
+import const
 
-#FIXME use const data
+g_edge_data = const.read('20100730u')
 
 def get_form():
     """
     @return: a list of form objects
     """
     # define the edges of the default sparse graph
-    edge_lines = [
-            'A a 1',
-            'A B 2',
-            'A C 2',
-            'B D 2',
-            'B E 2',
-            'C D 2',
-            'C E 2',
-            'D E 2',
-            'a b 3',
-            'a c 3',
-            'b d 3',
-            'b e 3',
-            'c d 3',
-            'c e 3',
-            'd e 3']
+    edge_lines = Util.get_stripped_lines(g_edge_data)
     # define the vertices to be removed by default
     vertices_to_be_removed = ['A', 'a']
     # define the list of form objects
@@ -235,7 +222,7 @@ def get_conductance_transformation(edge_triples, name_to_index, reduced_ordered_
     reduced_L = -2*np.linalg.pinv(MatrixUtil.double_centered(reduced_R))
     # get reduced edge triples
     reduced_edge_triples = []
-    epsilon = 0.00000000001
+    epsilon = 1e-11
     for i, name_a in enumerate(reduced_ordered_vertex_names):
         for j, name_b in enumerate(reduced_ordered_vertex_names):
             if i < j:

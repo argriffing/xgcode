@@ -180,6 +180,17 @@ This is the tree used in the paper
 A newick tree with branch lengths.
 http://hgdownload.cse.ucsc.edu/goldenPath/hg18/phastCons28way/28way.mod
 
-20100730r.dat
+20100730s.dat
 A newick tree with branch lengths.
-Unknown origin.
+genomewiki.ucsc.edu/index.php/Mm9_multiple_alignment
+
+20100730t.dat
+A .csv file with a header row.
+Each row represents a genetic variant
+and shows an alignment column of codons.
+
+20100730u.dat
+A sparse graph with edge weights.
+
+20100730v.dat
+Sample MAPP output.

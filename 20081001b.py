@@ -19,22 +19,16 @@ from Form import RadioItem
 from Form import CheckItem
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-g_sample_tree_string = """(
-    ((a:0.05, b:0.05)AB:0.15, c:0.2)ABC:0.8,
-    x:1,
-    (((m:0.05, n:0.05)MN:0.15, p:0.2)MNP:0.8, y:1)MNPY:1
-)ABCX;
-"""
+g_default_string = const.read('20100730m')
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default tree string
-    tree = NewickIO.parse(g_sample_tree_string, FelTree.NewickTree)
+    tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the form objects
     form_objects = [
@@ -150,27 +144,23 @@ def get_response(fs):
     if fs.show_value:
         lines = [
                 'exact criterion value:',
-                str(best_value)
-                ]
+                str(best_value)]
         paragraphs.append('\n'.join(lines))
     if fs.show_value_minus_trace:
         lines = [
                 'exact criterion value minus trace:',
-                str(best_value - R_trace)
-                ]
+                str(best_value - R_trace)]
         paragraphs.append('\n'.join(lines))
     if fs.show_fiedler_split:
         lines = [
                 'spectral sign partition:',
                 set_to_string((set_to_string(fiedler_neg_set),
-                    set_to_string(fiedler_pos_set)))
-                ]
+                    set_to_string(fiedler_pos_set)))]
         paragraphs.append('\n'.join(lines))
     if fs.show_fiedler_eigenvector:
         lines = [
                 'eigenvector of interest:',
-                str(list(fiedler_eigenvector))
-                ]
+                str(list(fiedler_eigenvector))]
         paragraphs.append('\n'.join(lines))
     if fs.show_labels:
         lines = ['ordered labels:'] + ordered_names
@@ -184,14 +174,12 @@ def get_response(fs):
             title = 'distance matrix:'
         lines = [
                 title,
-                MatrixUtil.m_to_string(D)
-                ]
+                MatrixUtil.m_to_string(D)]
         paragraphs.append('\n'.join(lines))
     if fs.show_M_matrix:
         lines = [
                 'M matrix:',
-                MatrixUtil.m_to_string(R)
-                ]
+                MatrixUtil.m_to_string(R)]
         paragraphs.append('\n'.join(lines))
     # write the response
     out = StringIO()

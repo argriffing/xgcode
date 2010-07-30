@@ -1,0 +1,6 @@
+"variant","chr","position","Amino Acid Change","alleles","Hg18","bosTau3","canFam2","danRer5","fr1","galGal3","gasAcu1","mm9","monDom4","ornAna1","oryLat1","panTro2","rheMac2","rn4","tetNig1"
+"v47291",17,70360012,"L-Q","T-A","CTG","TTG","CTG","CTG","TTA","CTG","CTG","TTG","CTG","ND","CTC","CTG","CTC","CTG","TTA"
+"v47321",17,70360024,"A-E","C-A","GCG","GCG","GCG","AGG","TCT","GGG","GCC","GCA","GAG","ND","TCC","GCG","GAG","GCA","GCC"
+"v47278",17,70362556,"H-R","A-G","CAC","CAT","CAC","CAC","CAC","CAC","CAT","CAC","CAT","ND","CAT","CGC","CAC","CAC","CAC"
+"v47269",17,70362745,"Q-H","G-T","CAG","CAG","CAG","CCC","CCC","CCG","CCC","CAG","CAG","ND","CCC","CAG","CAG","CAG","CCC"
+"v49364",7,15393678,"F-L","T-C","TTT","GTT","GTT","TTA","ND","GCT","ND","CTT","CAT","ND","ND","TTT","TTT","CTC","ND"
