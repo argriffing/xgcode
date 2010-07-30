@@ -36,7 +36,8 @@ import ambignt
 import iterfiller
 import const
 
-g_sample_data = const.read('20100730')
+#FIXME this might be the wrong file
+g_sample_data = const.read('20100730b')
 
 def get_form():
     """

@@ -2,6 +2,7 @@
 Use a C extension module to do fast tree layout.
 """
 
+import unittest
 from optparse import OptionParser
 
 import SpatialTree

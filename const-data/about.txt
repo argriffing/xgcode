@@ -194,3 +194,6 @@ A sparse graph with edge weights.
 
 20100730v.dat
 Sample MAPP output.
+
+20100730w.dat
+Sample tetraploid microsatellite data.

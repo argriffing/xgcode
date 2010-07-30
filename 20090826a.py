@@ -38,7 +38,7 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('multiline_input',
-                'input file lines', g_sample_input))]
+                'input file lines', g_sample_input)]
     return form_objects
 
 def get_form_out():

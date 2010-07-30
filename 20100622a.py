@@ -51,7 +51,7 @@ def get_response(fs):
             ('Content-Disposition', disposition)]
     return response_headers, text
 
-def read_satellite_lines(raw_lines):
+def read_microsatellite_lines(raw_lines):
     """
     How can i combine the two haploid data sources?
     Maybe create each data matrix separately from the interleaved input.
@@ -96,9 +96,10 @@ def read_satellite_lines(raw_lines):
     a_binary_rows = Carbone.get_binary_rows_helper(a_columns, uniques)
     b_binary_rows = Carbone.get_binary_rows_helper(b_columns, uniques)
     # add the elements entrywise and return as a list of lists
-    binary_rows = (np.array(a_binary_rows) + np.array(b_binary_rows)).tolist()
+    bin_row_groups = [a_binary_rows, b_binary_rows]
+    binary_rows = np.array(bin_row_groups).sum(axis=0).tolist()
     return headers, binary_rows
 
 def process(raw_lines):
-    headers, binary_rows = read_satellite_lines(raw_lines)
+    headers, binary_rows = read_microsatellite_lines(raw_lines)
     return hud.encode(headers, binary_rows) + '\n'

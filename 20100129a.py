@@ -26,7 +26,7 @@ import DGRP
 import iterutils
 import const
 
-g_sample_data = const.read('20100730c.dat')
+g_sample_data = const.read('20100730c')
 
 g_header = '\t'.join(['position', 'A', 'C', 'G', 'T'])
 

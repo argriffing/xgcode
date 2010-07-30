@@ -52,6 +52,10 @@ def encode(headers, rows):
     """
     if not headers:
         return ''
+    if len(headers) != len(rows):
+        msg_a = 'expected the number of headers (%d) ' % len(headers)
+        msg_b = 'to be the same as the number of rows (%d)' % len(rows)
+        raise ValueError(msg_a + msg_b)
     n = max(len(x) for x in headers)
     ljust_headers = (x.ljust(n+1) for x in headers)
     data_lines = [' '.join(str(x) for x in row) for row in rows]
