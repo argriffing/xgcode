@@ -5,8 +5,22 @@ Deal with constant data.
 import unittest
 import os
 
+def read_line(name):
+    """
+    Return the first line stripped of leading and trailing whitespace.
+    If the first line is empty it is still returned.
+    @param name: something like '20480101c'
+    @return: the first line of text, stripped of terminal whitespace
+    """
+    a, b = os.path.split(os.path.abspath(__file__))
+    pathname = os.path.join(a, 'const-data', name + '.dat')
+    with open(pathname) as fin:
+        for line in fin:
+            return line.strip()
+
 def read(name):
     """
+    Read the whole file.
     @param name: something like '20480101c'
     @return: all of the raw data
     """

@@ -12,6 +12,7 @@ these are modules from the primordial ooze that do not have
 an upstream source.
 """
 
+import unittest
 import itertools
 import string
 import shutil
@@ -163,6 +164,18 @@ def get_tiered_names(raw_lines):
         tiered_names[t] = set(p)
     return tiered_names
 
+def _get_const_parser():
+    parser = (
+            Word(string.letters + '_') +
+            Literal('=') +
+            Literal('const.read') +
+            Literal('(') +
+            Literal("'") +
+            Word(string.digits + string.lowercase)('dep') +
+            Literal("'") +
+            Literal(')'))
+    return parser
+
 def get_const_deps(raw_lines):
     """
     @param raw_lines: raw lines of a python file
@@ -277,3 +290,21 @@ def add_python_files(module_names, python_project):
     _copy_default_modules(python_project)
     _copy_const_data(const_deps, python_project)
 
+
+class TestConstParser(unittest.TestCase):
+
+    def test_const_parser_read(self):
+        parser = _get_const_parser()
+        line = "foo = const.read('20100101a')"
+        result = parser.parseString(line)
+        self.assertEqual(result['dep'], '20100101a')
+
+    def test_const_parser_read_rstrip(self):
+        parser = _get_const_parser()
+        line = "foo = const.read('20100101a').rstrip()"
+        result = parser.parseString(line)
+        self.assertEqual(result['dep'], '20100101a')
+
+
+if __name__ == '__main__':
+    unittest.main()

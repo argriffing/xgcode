@@ -18,27 +18,17 @@ import ReadCoverageGap
 import FastHMM
 import TransitionMatrix
 import iterutils
+import Util
+import const
 
-#FIXME use const data
+g_sample_data = const.read('20100730j')
 
 class TimeoutError(Exception): pass
-
-
-g_sample_rows = [
-        ['strain', 'chromosome', 'position', 'A', 'C', 'G', 'T', 'gap'],
-        ['222', '1024', '101', '0', '0', '0', '0', '0'],
-        ['222', '1024', '121', '21', '1', '0', '0', '0'],
-        ['222', '1024', '151', '0', '12', '2', '0', '9'],
-        ['444', '1024', '201', '0', '0', '0', '0', '0'],
-        ['444', '1024', '231', '21', '1', '0', '0', '0'],
-        ['444', '1024', '241', '0', '12', '2', '666', '9']]
-
 
 def get_form():
     """
     @return: the body of a form
     """
-    sample_lines = [',\t'.join(row) for row in g_sample_rows]
     form_objects = [
             Form.Integer('good_coverage',
                 'expected read coverage of informative positions',
@@ -51,7 +41,7 @@ def get_form():
                 4, low=1, high=4),
             Form.MultiLine('input_text',
                 'calls per nt per base call per chromosome per strain',
-                '\n'.join(sample_lines)),
+                g_sample_data),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as an R table')])]
@@ -222,9 +212,7 @@ def process(linesources, good_coverage, randomization_rate, stickiness, nseconds
     try:
         for i, linesource in enumerate(linesources):
             # read the lines of text
-            lines = linesource.readlines()
-            lines = [line.strip() for line in lines]
-            lines = [line for line in lines if line]
+            lines = Util.get_stripped_lines(linesource.readlines())
             # validate the number of lines
             if len(lines) < 2:
                 raise ValueError('there should be at least two lines of input')

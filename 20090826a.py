@@ -26,30 +26,19 @@ import sys
 from SnippetUtil import HandlingError
 import Form
 import FormOut
+import const
 
-#FIXME use const data
+g_sample_input = const.read('20100730i')
 
 class LineLimitError(Exception): pass
-
-
-g_sample_input_rows = [
-        ['strain', 'chromosome', 'position', 'A', 'C', 'G', 'T', 'gap'],
-        ['222', '24', '101', '0', '0', '0', '0', '0'],
-        ['222', '24', '103', '21', '1', '0', '0', '0'],
-        ['222', '24', '108', '0', '12', '2', '0', '9'],
-        ['222', '24', '109', '0', '0', '0', '0', '0'],
-        ['222', '24', '110', '21', '1', '0', '0', '0'],
-        ['222', '24', '122', '0', '12', '2', '666', '9']]
-
 
 def get_form():
     """
     @return: the body of a form
     """
-    sample_lines = [','.join(row) for row in g_sample_input_rows]
     form_objects = [
             Form.MultiLine('multiline_input',
-                'input file lines', '\n'.join(sample_lines))]
+                'input file lines', g_sample_input))]
     return form_objects
 
 def get_form_out():

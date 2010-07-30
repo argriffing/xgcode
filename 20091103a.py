@@ -38,11 +38,9 @@ import NeighborJoining
 import FelTree
 import CairoUtil
 import Progress
+import const
 
-#FIXME add const data
-
-# this is the tree in our LAA paper
-g_tree_string = '((1:1, 2:0.5)6:1, 5:1, (3:0.33333333333, 4:0.5)7:1)8;'
+g_tree_string = const.read('20100730g').rstrip()
 
 
 def get_form():

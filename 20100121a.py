@@ -11,34 +11,17 @@ import Codon
 import Form
 import FormOut
 import CairoUtil
+import Util
+import const
 
-g_default_data = """
-POINTS
-0   -1.41  0.26
-1   -1.02  -1.20
-2   -0.09    -0.09
-3   0.97  0.29
-4   -0.38 -0.29
-5   -2.95  -0.48
-6   -3.24  -0.54
-7   -3.05  -0.34
-8   -2.18  2.15
-9   -3.64  0.12
-EDGES
-6   9
-6   7
-2   4
-"""
-
-#FIXME use const data
+g_default_data = const.read('20100730f')
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default labeled points
-    lines = [x.strip() for x in StringIO(g_default_data).readlines()]
-    lines = [x for x in lines if x]
+    lines = Util.get_stripped_lines(g_default_data.splitlines())
     # define the form objects
     form_objects = [
             Form.MultiLine('graph_data', 'connected points',
@@ -124,8 +107,7 @@ def read_points_and_edges(multiline):
     @param multiline: input like the default data
     @return: a list of (x, y) points and a set of point-index-pair edges
     """
-    lines = [x.strip() for x in StringIO(multiline).readlines()]
-    lines = [x for x in lines if x]
+    lines = Util.get_stripped_lines(multilines.splitlines())
     try:
         POINTS_index = lines.index('POINTS')
     except ValueError, e:
