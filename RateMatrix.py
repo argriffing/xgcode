@@ -10,6 +10,7 @@ import math
 
 import numpy as np
 import scipy
+from scipy import linalg
 
 import CodonFrequency
 import Codon
@@ -44,7 +45,7 @@ def get_stationary_distribution(row_major_rate_matrix):
     # get the eigensystem
     left = True
     right = False
-    w, vl = scipy.linalg.eig(numpy_array, None, left, right)
+    w, vl = linalg.eig(numpy_array, None, left, right)
     # find the eigenvalue with the smallest absolute value
     best_eigenvalue_size, best_index = min((abs(value), i) for i, value in enumerate(w))
     # get the stationary distribution
@@ -61,13 +62,13 @@ def get_eigendecomposition(row_major_matrix):
     @return: a numpy matrix of right eigenvectors with correct handling of repeated eigenvalues
     """
     p = get_stationary_distribution(row_major_matrix)
-    prematrix = scipy.diag([math.sqrt(x) for x in p])
-    postmatrix = scipy.diag([1/math.sqrt(x) for x in p])
+    prematrix = np.diag([math.sqrt(x) for x in p])
+    postmatrix = np.diag([1/math.sqrt(x) for x in p])
     M = np.array(row_major_matrix)
     # define a symmetric matrix
     S = np.dot(np.dot(prematrix, M), postmatrix)
     # get the spectral decomposition of the symmetric matrix
-    w, vr = scipy.linalg.eigh(S)
+    w, vr = linalg.eigh(S)
     #print 'this should be the identity matrix:'
     #print np.dot(vr, vr.T)
     # reconstruct the eigenvector matrix of the original matrix
@@ -144,13 +145,13 @@ class FastRateMatrix:
         self.matrix = np.array(row_major_matrix)
         M = self.matrix
         # get the diagonal matrix representing the square root of the stationary frequencies
-        D = scipy.diag([math.sqrt(x) for x in p])
+        D = np.diag([math.sqrt(x) for x in p])
         # get the inverse of the diagonal matrix
-        D_inv = scipy.diag([1/math.sqrt(x) for x in p])
+        D_inv = np.diag([1/math.sqrt(x) for x in p])
         # define a symmetric matrix
         S = np.dot(np.dot(D, M), D_inv)
         # get the spectral decomposition of the symmetrice matrix
-        w, vr = scipy.linalg.eigh(S)
+        w, vr = linalg.eigh(S)
         # reconstruct the eigenvector matrix of the original matrix
         self.diagonal = [x/self.rate for x in w]
         self.pre_matrix = np.dot(D_inv, vr)
@@ -167,10 +168,10 @@ class FastRateMatrix:
         """
         # define the eigenvector matrices
         #eigenvalues, U = get_eigendecomposition(self.get_row_major_rate_matrix())
-        #U_inv = scipy.linalg.inv(U)
+        #U_inv = linalg.inv(U)
         """
         # validate the eigendecomposition
-        D = scipy.diag(eigenvalues)
+        D = np.diag(eigenvalues)
         lhs = np.dot(self.matrix, U)
         rhs = np.dot(U, D)
         assert np.all(lhs == rhs), (lhs, rhs)
@@ -178,7 +179,7 @@ class FastRateMatrix:
         # define a diagonal matrix using exponentiated eigenvalues
         eigenvalues = [x * self.rate for x in self.diagonal]
         exponentiated_eigenvalues = [math.exp(t*x) for x in eigenvalues]
-        exponentiated_diagonal = scipy.diag(exponentiated_eigenvalues)
+        exponentiated_diagonal = np.diag(exponentiated_eigenvalues)
         # define the transition matrix for checking the calculation
         transition_matrix = np.dot(np.dot(self.pre_matrix, exponentiated_diagonal), self.post_matrix)
         U = self.pre_matrix
@@ -186,7 +187,7 @@ class FastRateMatrix:
         """
         # validate the transition matrix
         lhs = transition_matrix
-        rhs = scipy.linalg.expm(self.matrix*t)
+        rhs = linalg.expm(self.matrix*t)
         assert np.all(lhs == rhs), (lhs, rhs)
         """
         # get the unscaled wait time for each state
@@ -218,7 +219,7 @@ class FastRateMatrix:
         return scaled_wait_times
 
     def get_row_major_rate_matrix(self):
-        diagonal_matrix = scipy.diag(self.diagonal)
+        diagonal_matrix = np.diag(self.diagonal)
         numpy_matrix = np.dot(np.dot(self.pre_matrix, diagonal_matrix), self.post_matrix)
         row_major_rate_matrix = []
         m = len(self.states)
@@ -234,7 +235,7 @@ class FastRateMatrix:
         @return: a dictionary transition matrix
         """
         distance = self.rate * t
-        diagonal_matrix = scipy.diag([math.exp(distance*x) for x in self.diagonal])
+        diagonal_matrix = np.diag([math.exp(distance*x) for x in self.diagonal])
         numpy_transition_matrix = np.dot(np.dot(self.pre_matrix, diagonal_matrix), self.post_matrix)
         d = {}
         for i, a in enumerate(self.states):
@@ -358,7 +359,7 @@ class RateMatrix:
         transition_matrix = self.branch_length_to_numpy_transition_matrix.get(t, None)
         if transition_matrix is not None:
             return transition_matrix
-        transition_matrix = scipy.linalg.expm(self.numpy_rate_matrix * t)
+        transition_matrix = linalg.expm(self.numpy_rate_matrix * t)
         self.branch_length_to_numpy_transition_matrix[t] = transition_matrix
         return transition_matrix
 
@@ -697,7 +698,7 @@ def demo_rate_matrix_eigendecomposition():
     # get the eigensystem
     left = True
     right = True
-    w, vl, vr = scipy.linalg.eig(numpy_array, None, left, right)
+    w, vl, vr = linalg.eig(numpy_array, None, left, right)
     # show the eigensystem
     print 'eigenvalues:'
     print w
@@ -722,7 +723,7 @@ def demo_rate_matrix_stationary_distribution():
     # get the eigensystem
     left = True
     right = False
-    w, vl = scipy.linalg.eig(numpy_array, None, left, right)
+    w, vl = linalg.eig(numpy_array, None, left, right)
     # find the eigenvalue with the smallest absolute value
     best_eigenvalue_size, best_index = min((abs(value), i) for i, value in enumerate(w))
     print 'smallest absolute value of an eigenvalue:', best_eigenvalue_size
@@ -759,7 +760,7 @@ def demo_eigenvector_orthonormality():
     matrix_size = len(row_major)
     print 'M is', matrix_size, 'x', matrix_size
     eigenvalues, U = get_eigendecomposition(row_major)
-    D = scipy.diag(eigenvalues)
+    D = np.diag(eigenvalues)
     print len(set(eigenvalues)), 'distinct eigenvalues'
     print 'diagonal eigenvalue matrix (D):'
     print D
@@ -767,7 +768,7 @@ def demo_eigenvector_orthonormality():
     print U
     print 'transpose of U:'
     print U.T
-    U_inv = scipy.linalg.inv(U)
+    U_inv = linalg.inv(U)
     print 'inverse of U:'
     print U_inv
     print 'M x U:'
@@ -777,7 +778,7 @@ def demo_eigenvector_orthonormality():
     print 'U x U^T:'
     print np.dot(U, U.T)
     exp_eigenvalues = [math.exp(x) for x in eigenvalues]
-    exp_D = scipy.diag(exp_eigenvalues)
+    exp_D = np.diag(exp_eigenvalues)
     transition_matrix = np.dot(np.dot(U, exp_D), U_inv)
     print 'transition matrix:'
     print transition_matrix

@@ -8,7 +8,6 @@ from optparse import OptionParser
 import unittest
 import math
 import random
-import profile
 
 import cairo
 
@@ -150,7 +149,7 @@ class TestEqualDaylightLayout(unittest.TestCase):
         test_format, test_string = get_test_image_format_and_string()
 
 
-def main():
+def main_demo():
     """
     Make an image in memory and write it to a file.
     """
@@ -163,16 +162,4 @@ def main():
     fout.close()
 
 if __name__ == '__main__':
-    parser = OptionParser()
-    parser.add_option('--test', action='store_true', dest='test', default=False)
-    parser.add_option('--profile', action='store_true', dest='profile', default=False, help='run some profiled unit tests')
-    options, args = parser.parse_args()
-    if options.test or options.profile:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestEqualDaylightLayout)
-        if options.profile:
-            profile.run('unittest.TextTestRunner(verbosity=2).run(suite)')
-        else:
-            unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        main()
-
+    unittest.main()

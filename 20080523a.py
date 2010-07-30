@@ -3,7 +3,7 @@
 
 from StringIO import StringIO
 
-import scipy.optimize
+from scipy import optimize
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -113,7 +113,7 @@ def get_mle_rates(tree, alignment, rate_matrix):
                 # using a golden section search.
                 # The bracket is just a suggestion.
                 bracket = (0.51, 2.01)
-                mle_rate = scipy.optimize.golden(
+                mle_rate = optimize.golden(
                         objective_function, brack=bracket)
             column_to_mle_rate[column_tuple] = mle_rate
         mle_rates.append(mle_rate)
@@ -207,8 +207,4 @@ def main():
     print get_stockholm_string(tree, alignment, mle_rates)
 
 if __name__ == '__main__':
-    #import profile
-    #profile.run('main()')
     main()
-
-

@@ -12,8 +12,6 @@ if it has elements that are zero or infinity.
 from StringIO import StringIO
 import time
 
-import profile
-
 from SnippetUtil import HandlingError
 import NewickIO
 import FelTree
@@ -132,5 +130,5 @@ def main():
     print sampler.proposals_with_inf, msg
 
 if __name__ == '__main__':
-    profile.run('main()')
+    main()
 

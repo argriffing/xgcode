@@ -3,7 +3,6 @@ Use a C extension module to do fast tree layout.
 """
 
 from optparse import OptionParser
-import profile
 
 import SpatialTree
 import EqualArcLayout
@@ -252,19 +251,13 @@ def make_hiv_images():
         make_file_progressive(newick_string, name, 500)
 
 
-def main():
-    branch_manager_string = "(((((((((PV22:0.3,BH10:0.3):0.1,BRU:0.5):0.1,HXB:0.7):2.4,SF2:3.3):0.1,CDC:3.7):0.5,WMJ2:3.0):0.4,RF:4.3):2.6,(ELI:6.3,MAL:6.1):1.9):2.7,Z3:9.3);"
-    branch_manager_string_tri = "((((((((PV22:0.3,BH10:0.3):0.1,BRU:0.5):0.1,HXB:0.7):2.4,SF2:3.3):0.1,CDC:3.7):0.5,WMJ2:3.0):0.4,RF:4.3):2.6,(ELI:6.3,MAL:6.1):4.6,Z3:9.3);"
-    make_file_progressive(branch_manager_string, 'branch-manager', 500)
-    #make_hiv_images()
+class TestLayout(unittest.TestCase):
 
+    def test_progressive(self):
+        branch_manager_string = "(((((((((PV22:0.3,BH10:0.3):0.1,BRU:0.5):0.1,HXB:0.7):2.4,SF2:3.3):0.1,CDC:3.7):0.5,WMJ2:3.0):0.4,RF:4.3):2.6,(ELI:6.3,MAL:6.1):1.9):2.7,Z3:9.3);"
+        branch_manager_string_tri = "((((((((PV22:0.3,BH10:0.3):0.1,BRU:0.5):0.1,HXB:0.7):2.4,SF2:3.3):0.1,CDC:3.7):0.5,WMJ2:3.0):0.4,RF:4.3):2.6,(ELI:6.3,MAL:6.1):4.6,Z3:9.3);"
+        make_file_progressive(branch_manager_string, 'branch-manager', 500)
 
 
 if __name__ == '__main__':
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', help='output file')
-    options, args = parser.parse_args()
-    main()
-    #profile.run('main()')
-
+    unittest.main()

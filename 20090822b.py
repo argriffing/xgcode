@@ -5,7 +5,6 @@ from StringIO import StringIO
 import time
 import optparse
 import sys
-import profile
 import math
 
 import numpy as np
@@ -300,9 +299,5 @@ if __name__ == '__main__':
     parser.add_option('--good-coverage', dest='good_coverage', type='int', default=20, help='expected read coverage of informative positions')
     parser.add_option('--randomization-rate', dest='randomization_rate', type='float', default=0.1, help='randomization probability per base call')
     parser.add_option('--stickiness', dest='stickiness', type='int', default=4, help='level of stickiness')
-    parser.add_option('--profile', action='store_true', dest='profile')
     options, args = parser.parse_args()
-    if options.profile:
-        profile.run('main(options, args)')
-    else:
-        main(options, args)
+    main(options, args)

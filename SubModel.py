@@ -8,6 +8,7 @@ import Codon
 import MatrixUtil
 import RateMatrix
 import Util
+import iterutils
 
 
 class MixtureModelError(Exception):

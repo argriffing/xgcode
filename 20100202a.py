@@ -24,7 +24,6 @@ No header line is provided.
 from StringIO import StringIO
 import os
 
-import profile
 import argparse
 
 from SnippetUtil import HandlingError
@@ -272,8 +271,6 @@ def drosophila_position(value):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('infile')
-    parser.add_argument('--profile', action='store_true',
-            help='profile the script to look for slow spots')
     parser.add_argument('--force', action='store_true',
             help='overwrite existing files')
     parser.add_argument('--fill', action='store_true',
@@ -296,8 +293,4 @@ if __name__ == '__main__':
             help='prefix added to the chromosome name in the output filename')
     parser.add_argument('--out_suffix', default='.txt',
             help='suffix added to the chromosome name in the output filename')
-    args = parser.parse_args()
-    if args.profile:
-        profile.run('main(args)')
-    else:
-        main(args)
+    main(parser.parse_args())

@@ -548,25 +548,5 @@ def demo_xml():
 def demo_codon_xml():
     print get_sample_xml_string()
 
-def main():
-    demo_codon_xml()
-
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', default='-', help='output file')
-    parser.add_option('--test', action='store_true', dest='test', default=False, help='run some unit tests')
-    parser.add_option('--profile', action='store_true', dest='profile', default=False, help='run some profiled unit tests')
-    options, args = parser.parse_args()
-    # run a test or a profile or run a demo
-    if options.profile or options.test:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestDirectProtein)
-        if options.profile:
-            import profile
-            profile.run('unittest.TextTestRunner(verbosity=2).run(suite)')
-        elif options.test:
-            unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        main()
-
+    unittest.main()

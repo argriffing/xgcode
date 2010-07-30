@@ -280,7 +280,7 @@ class CodonAlignment:
         if not gappy_codon_sequences:
             raise CodonAlignmentError('no codon sequences were found')
         observed_gappy_codons = set(
-                iterools.chain.from_iterable(gappy_codon_sequences))
+                itertools.chain.from_iterable(gappy_codon_sequences))
         valid_gappy_codons = set(list(Codon.g_non_stop_codons) + ['---'])
         invalid_gappy_codons = observed_gappy_codons - valid_gappy_codons
         if invalid_gappy_codons:
