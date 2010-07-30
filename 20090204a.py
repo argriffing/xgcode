@@ -19,16 +19,16 @@ import FormOut
 import NewickIO
 import FelTree
 import Clustering
+import const
 
-#FIXME use const data
+g_default_string = const.read('20100730m')
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default tree string
-    tree_string = '(((a:0.05, b:0.05)ab:0.15, c:0.2)abc:0.8, x:1.0, (((m:0.05, n:0.05)mn:0.15, p:0.2)mnp:0.8, y:1.0)mnpy:1.0)abcxmnpy;'
-    tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # define the form objects
     form_objects = [
@@ -84,7 +84,7 @@ def get_response(fs):
     R_reduced[0][1] = R[la][rb]
     R_reduced[1][0] = R[lb][ra]
     R_reduced[1][1] = R[lb][rb]
-    epsilon = 0.0000000000001
+    epsilon = 1e-13
     criterion = np.linalg.det(R_reduced)
     if abs(criterion) < epsilon:
         criterion = 0

@@ -16,40 +16,19 @@ import HtmlTable
 import MAPP
 import Codon
 import LeafWeights
+import const
 
-#FIXME use const data
+g_default_string = const.read('20100730s')
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the default tree
-    default_tree_lines = [
-            '((((((((',
-            '(((mm9:0.076274,rn4:0.084383):0.200607,',
-            'cavPor2:0.202990):0.034350,',
-            'oryCun1:0.208548):0.014587,',
-            '((((((Hg18:0.005873,panTro2:0.007668):0.013037,',
-            'ponAbe2:0.02):0.013037,rheMac2:0.031973):0.0365,',
-            'calJac1:0.07):0.0365,otoGar1:0.151185):0.015682,',
-            'tupBel1:0.162844):0.006272):0.019763,',
-            '((sorAra1:0.248532,eriEur1:0.222255):0.045693,',
-            '(((canFam2:0.101137,felCat3:0.098203):0.048213,',
-            'equCab1:0.099323):0.007287,',
-            'bosTau3:0.163945):0.012398):0.018928):0.030081,',
-            '(dasNov1:0.133274,(loxAfr1:0.103030,',
-            'echTel1:0.232706):0.049511):0.008424):0.213469,',
-            'monDom4:0.320721):0.088647,',
-            'ornAna1:0.488110):0.118797,',
-            '(galGal3:0.395136,anoCar1:0.513962):0.093688):0.151358,',
-            'xenTro2:0.778272):0.174596,',
-            '(((tetNig1:0.203933,fr1:0.239587):0.203949,',
-            '(gasAcu1:0.314162,oryLat1:0.501915):0.055354):0.346008,',
-            'danRer5:0.730028):0.174596);']
-    tree_string = '\n'.join(default_tree_lines)
-    default_tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    default_tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     default_tree_string = NewickIO.get_narrow_newick_string(default_tree, 60)
-    # define the default lines that tell the amino acids in the column of the alignment
+    # Define the default lines
+    # that tell the amino acids in the column of the alignment.
     default_alignment_lines = [
             'Hg18 F',
             'bosTau3 V',

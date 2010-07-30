@@ -23,8 +23,9 @@ import Euclid
 import SchurAlgebra
 import Form
 import FormOut
+import data
 
-#FIXME use const data
+g_data = const.read('20100730p')
 
 def get_form():
     """
@@ -32,15 +33,7 @@ def get_form():
     """
     # define the default distance matrix
     # this is from figure two of a paper called why neighbor joining works
-    D = np.array([
-            [  0, 2.7, 2.6, 2.6, 2.6, 4.4, 4.4, 4.4],
-            [2.7,   0, 4.4, 4.4, 4.4, 2.6, 2.6, 2.6],
-            [2.6, 4.4,   0, 0.1, 0.4, 2.7, 2.7, 2.7],
-            [2.6, 4.4, 0.1,   0, 0.4, 2.7, 2.7, 2.7],
-            [2.6, 4.4, 0.4, 0.4,   0, 2.7, 2.7, 2.7],
-            [4.4, 2.6, 2.7, 2.7, 2.7,   0, 0.1, 0.4],
-            [4.4, 2.6, 2.7, 2.7, 2.7, 0.1,   0, 0.4],
-            [4.4, 2.6, 2.7, 2.7, 2.7, 0.4, 0.4,   0]])
+    D = MatrixUtil.read_matrix(Util.get_stripped_lines(g_data.splitlines()))
     states = list('xyabcmnp')
     # define some default strings
     ordered_label_string = '\n'.join(states)

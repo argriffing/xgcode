@@ -156,7 +156,7 @@ Each row spans multiple genetic strains.
 Rows of ones and zeros.
 
 20100730m.dat
-A newick tree with named internal nodes and with branch lengths.
+An unrooted newick tree with branch lengths and named internal nodes.
 This is the tree used in the paper
 'why neighbor joining works' by Lior Pachter et al.
 
@@ -167,3 +167,19 @@ This is the tree used in the paper
 
 20100730o.dat
 The exact distance matrix for the 'why neighbor joining works' tree.
+
+20100730p.dat
+The perturbed distance matrix for the 'why neighbor joining works' tree.
+
+20100730q.dat
+An unrooted newick tree with branch lengths.
+This is the tree used in the paper
+'why neighbor joining works' by Lior Pachter et al.
+
+20100730r.dat
+A newick tree with branch lengths.
+http://hgdownload.cse.ucsc.edu/goldenPath/hg18/phastCons28way/28way.mod
+
+20100730r.dat
+A newick tree with branch lengths.
+Unknown origin.

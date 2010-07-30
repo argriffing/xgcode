@@ -16,16 +16,16 @@ import MatrixUtil
 import NewickIO
 import FelTree
 import HtmlTable
+import const
 
-#FIXME use const data
+g_default_string = const.read('20100730m')
 
 def get_form():
     """
     @return: a list of form objects
     """
     # define the default tree string
-    tree_string = '(((a:0.05, b:0.05)ab:0.15, c:0.2)abc:0.8, x:1.0, (((m:0.05, n:0.05)mn:0.15, p:0.2)mnp:0.8, y:1.0)mnpy:1.0)abcxmnpy;'
-    tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     # return the form objects
     return [

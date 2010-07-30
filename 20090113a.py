@@ -15,8 +15,9 @@ import LeafWeights
 import NewickIO
 import Newick
 import FelTree
+import const
 
-#FIXME use const data
+g_default_string = const.read('20100730r')
 
 # Define some web locations which should probably be moved to a config file.
 g_base_dir = '/var/www/python_scripts/data/exon-alignments'
@@ -30,19 +31,7 @@ def get_form():
     @return: the body of a form
     """
     # define the default tree
-    # http://hgdownload.cse.ucsc.edu/goldenPath/hg18/phastCons28way/28way.mod
-    default_tree_lines = [
-            '((((((((((((hg18:0.005873,panTro2:0.007668):0.026074,rheMac2:0.031973):0.073300,',
-            'otoGar1:0.151185):0.015682,tupBel1:0.162844):0.006272,(((rn4:0.084383,',
-            'mm8:0.076274):0.200607,cavPor2:0.202990):0.034350,oryCun1:0.208548):0.014587):0.019763,',
-            '((sorAra1:0.248532,eriEur1:0.222255):0.045693,(((canFam2:0.101137,felCat3:0.098203):0.048213,',
-            'equCab1:0.099323):0.007287,bosTau3:0.163945):0.012398):0.018928):0.030081,(dasNov1:0.133274,',
-            '(loxAfr1:0.103030,echTel1:0.232706):0.049511):0.008424):0.213469,monDom4:0.320721):0.088647,',
-            'ornAna1:0.488110):0.118797,(galGal3:0.395136,anoCar1:0.513962):0.093688):0.151358,xenTro2:0.778272):0.174596,',
-            '(((tetNig1:0.203933,fr2:0.239587):0.203949,(gasAcu1:0.314162,oryLat1:0.501915):0.055354):0.346008,',
-            'danRer4:0.730028):0.174596);']
-    tree_string = '\n'.join(default_tree_lines)
-    default_tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    default_tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     default_tree_string = NewickIO.get_narrow_newick_string(default_tree, 60)
     # define the list of form objects
     form_objects = [
