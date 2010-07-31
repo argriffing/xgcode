@@ -12,6 +12,7 @@ import argparse
 from SnippetUtil import HandlingError
 import Form
 import FormOut
+import iterutils
 
 g_tags = ['carbone_lab']
 
@@ -22,13 +23,13 @@ IC3 U   Control
 IC4 M   Ignore
 """.strip()
 
-def process(lines):
+def process(raw_lines):
     """
     @param lines: lines of an .ind file
     @return: the single string of a .pheno file
     """
     values = []
-    for line in lines:
+    for line in iterutils.stripped_lines(raw_lines):
         name, gender, status = line.split()
         if status == 'Control':
             v = '0'

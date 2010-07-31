@@ -3,6 +3,9 @@
 The output is an R frame.
 The principal components are computed according to Patterson et al.
 in their work on population structure.
+This is really only for diploid biallelic data.
+Microsatellite data is condoned.
+Using this for multi-allelic high-ploidy data is probably a hack.
 """
 
 from StringIO import StringIO
@@ -37,9 +40,12 @@ def get_form():
             Form.MultiLine('hud',
                 'contents of a .hud file',
                 g_default_hud_string),
+            Form.CheckGroup('input_options', 'input options', [
+                Form.CheckItem('diploid_and_biallelic',
+                    'the data source is really diploid and biallelic', True)]),
             Form.Integer('npcs',
                 'find this many principal components', 3),
-            Form.CheckGroup('cleangroup', 'more options', [
+            Form.CheckGroup('output_options', 'output options', [
                 Form.CheckItem('add_indices',
                     'add row indices for R table compatibility', True),
                 Form.CheckItem('clean_isolates',
@@ -76,6 +82,11 @@ def process(args, raw_hud_lines):
     # create the floating point count matrix
     C_full = np.array(data)
     m_full, n_full = C_full.shape
+    # check compatibility of counts and ploidy
+    if args.diploid_and_biallelic:
+        if np.max(C_full) > 2:
+            msg = 'no count should be greater than two for diploid data'
+            raise ValueError(msg)
     # remove invariant columns
     C = np.vstack([v for v in C_full.T if len(set(v))>1]).T
     # get the shape of the matrix
@@ -83,7 +94,11 @@ def process(args, raw_hud_lines):
     # get the column means
     u = C.mean(axis=0)
     # get the centered and normalized counts matrix
-    M = (C - u) / np.sqrt(u * (1 - u))
+    M = (C - u)
+    # normalize if diploid and biallelic
+    if args.diploid_and_biallelic:
+        p = u/2
+        M /= np.sqrt(p * (1 - p))
     # construct the sample covariance matrix
     X = np.dot(M, M.T) / n
     # get the eigendecomposition of the covariance matrix

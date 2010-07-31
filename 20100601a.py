@@ -106,6 +106,9 @@ def process(hud_lines, info_lines, threshold):
     # read the csv file
     rows = list(csv.reader(info_lines))
     header, data_rows = rows[0], rows[1:]
+    print 'info_lines:', info_lines
+    print 'header:', header
+    print 'data_rows:', data_rows
     cases, controls = get_precipitation_info(data_rows, threshold)
     # write the .ind file contents
     for name in names:
