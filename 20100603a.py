@@ -8,11 +8,7 @@ The output file is in eigenstrat format.
 """
 
 from StringIO import StringIO
-import sys
-import os
 import csv
-
-import argparse
 
 from SnippetUtil import HandlingError
 import Form
@@ -61,15 +57,33 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.EigenstratInd('temperature.ind', [])
+    return FormOut.EigenstratInd('temperature.ind')
 
 def get_response(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    text = process(fs.hud.splitlines(), fs.info.splitlines(), fs.threshold)
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.ind') 
+    out = StringIO()
+    # extract name order from the .hud file
+    names, hud_data = hud.decode(fs.hud.splitlines())
+    # read the csv file
+    rows = list(csv.reader(Util.get_stripped_lines(fs.info.splitlines())))
+    header, data_rows = rows[0], rows[1:]
+    cases, controls = get_temperature_info(data_rows, fs.threshold)
+    # write the .ind file contents
+    for name in names:
+        gender = 'U'
+        classification = 'Ignore'
+        if name in cases:
+            classification = 'Case'
+        elif name in controls:
+            classification = 'Control'
+        row = [name, gender, classification]
+        print >> out, '\t'.join(row)
+    text = out.getvalue()
+    disposition = "%s; filename=%s" % (
+            fs.contentdisposition, 'temperature.ind') 
     response_headers = [
             ('Content-Type', 'text/plain'),
             ('Content-Disposition', disposition)]
@@ -97,36 +111,3 @@ def get_temperature_info(data_rows, threshold):
         except Exception, e:
             raise DataRowError(row, e)
     return cases, controls
-
-def process(hud_lines, info_lines, threshold):
-    out = StringIO()
-    # extract name order from the .hud file
-    names, hud_data = hud.decode(hud_lines)
-    # read the csv file
-    rows = list(csv.reader(info_lines))
-    header, data_rows = rows[0], rows[1:]
-    cases, controls = get_temperature_info(data_rows, threshold)
-    # write the .ind file contents
-    for name in names:
-        gender = 'U'
-        classification = 'Ignore'
-        if name in cases:
-            classification = 'Case'
-        elif name in controls:
-            classification = 'Control'
-        row = [name, gender, classification]
-        print >> out, '\t'.join(row)
-    return out.getvalue().rstrip()
-
-def main(args):
-    with open(os.path.expanduser(args.hud)) as fin_hud:
-        with open(os.path.expanduser(args.csv)) as fin_info:
-            print process(fin_hud, fin_info, args.threshold)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--hud', help='.hud file')
-    parser.add_argument('--info', help='a .csv like amdS_PCA_Info.csv')
-    parser.add_argument('--threshold', type=float, default=22.0,
-            help='temperature threshold (C)')
-    main(parser.parse_args())

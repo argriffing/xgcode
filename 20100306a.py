@@ -21,7 +21,7 @@ def get_form():
                 23011546),
             Form.Integer('feature_width',
                 'number of positions spanned by a feature',
-                10000)]
+                100)]
     return form_objects
 
 def get_form_out():

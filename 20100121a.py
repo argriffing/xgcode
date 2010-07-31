@@ -107,7 +107,7 @@ def read_points_and_edges(multiline):
     @param multiline: input like the default data
     @return: a list of (x, y) points and a set of point-index-pair edges
     """
-    lines = Util.get_stripped_lines(multilines.splitlines())
+    lines = Util.get_stripped_lines(multiline.splitlines())
     try:
         POINTS_index = lines.index('POINTS')
     except ValueError, e:
