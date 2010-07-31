@@ -140,6 +140,10 @@ class Fasta(FormOut):
     def __init__(self, fmt='out', interpolants=[]):
         FormOut.__init__(self, fmt + '.fasta', interpolants)
 
+class Phylip(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        FormOut.__init__(self, fmt + '.phy', interpolants)
+
 class TransitionMatrix(FormOut):
     def __init__(self, fmt='transition_matrix', interpolants=[]):
         FormOut.__init__(self, fmt + '.txt', interpolants)

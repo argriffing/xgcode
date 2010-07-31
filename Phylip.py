@@ -17,7 +17,7 @@ import Util
 class PhylipError(Exception):
     pass
 
-def get_lines(raw_lines):
+def _get_lines(raw_lines):
     """
     @param raw_lines: raw lines
     @return: a list of nonempty lines
@@ -39,7 +39,7 @@ def decode(raw_lines):
     @param raw_lines: raw lines of a non-interleaved phylip alignment file
     @return: headers, sequences
     """
-    lines = get_lines(raw_lines)
+    lines = _get_lines(raw_lines)
     header_line, data_lines = lines[0], lines[1:]
     header_row = header_line.split()
     if len(header_row) != 2:
@@ -126,7 +126,7 @@ def make_sample_alignment():
     """
     Make a sample alignment object.
     """
-    return Fasta.Alignment(StringIO(Fasta.example_fasta_aligned))
+    return Fasta.Alignment(Fasta.example_fasta_aligned.splitlines())
 
 
 

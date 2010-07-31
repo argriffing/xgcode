@@ -1,11 +1,5 @@
 """Convert a phylip alignment to a binary character alignment.
-
-In cmdline mode the phylip is read from stdin.
 """
-
-import sys
-
-import argparse
 
 from SnippetUtil import HandlingError
 import Form
@@ -18,6 +12,8 @@ import const
 g_tags = ['carbone_lab']
 
 g_default_data = const.read('20100625a')
+
+#FIXME multiple output types
 
 def get_form():
     """
@@ -59,10 +55,3 @@ def process(fs, raw_lines):
     elif fs.phy:
         binary_seqs = [''.join(str(x) for x in row) for row in binary_rows]
         return Phylip.encode(headers, binary_seqs) + '\n'
-
-def main(args):
-    print process(args, sys.stdin)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    main(parser.parse_args())

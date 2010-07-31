@@ -8,12 +8,29 @@ import os
 import re
 import sys
 
+import numpy as np
 import lxml.html as ht
 
 from SnippetUtil import HandlingError
 import Form
 
 class SnippetTestError(Exception): pass
+
+np.seterr(all='raise')
+
+# failed attempt to catch numpy/scipy warnings
+"""
+except Warning as e:
+    msg = 'warning getting the response: ' + str(e)
+    raise SnippetTestError(msg)
+"""
+
+# another failed attempt to catch numpy/scipy warnings
+"""
+with warnings.catch_warnings():
+    warnings.simplefilter('error')
+"""
+
 
 def main():
     # first load the module names
