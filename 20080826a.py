@@ -8,8 +8,6 @@ The sequence order field may be left empty
 if the order of the sequences in the FASTA output is unimportant.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import Util
@@ -17,19 +15,16 @@ import Fasta
 import JC69
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-# This tree is in an arXiv paper by Lior Pachter.
-g_newick = '(((a:0.05, b:0.05):0.15, c:0.2):0.8, x:1.0, (((m:0.05, n:0.05):0.15, p:0.2):0.8, y:1.0):1.0);'
+g_default_string = const.read('20100730q')
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the newick string and the ordered labels
-    tree_string = g_newick
-    tree = Newick.parse(tree_string, Newick.NewickTree)
+    tree = Newick.parse(g_default_string, Newick.NewickTree)
     formatted_tree_string = Newick.get_narrow_newick_string(tree, 60)
     labels = list('xyabcmnp')
     # define the form objects
@@ -51,7 +46,7 @@ def get_response(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # get the sequence order if it exists
-    ordered_names = Util.get_stripped_lines(StringIO(fs.order))
+    ordered_names = Util.get_stripped_lines(fs.order.splitlines())
     if ordered_names:
         observed_name_set = set(ordered_names)
         expected_name_set = set(node.get_name() for node in tree.gen_tips())
@@ -71,8 +66,7 @@ def get_response(fs):
     sampled_sequences = JC69.sample_sequences(tree, ordered_names, fs.length)
     alignment = Fasta.create_alignment(ordered_names, sampled_sequences)
     # begin the response
-    out = StringIO()
-    print >> out, alignment.to_fasta_string()
+    text = alignment.to_fasta_string() + '\n'
     # return the response
     response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return response_headers, text

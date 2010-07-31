@@ -17,15 +17,9 @@ import F84
 import PairLikelihood
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-g_sample_fasta_string = """
->sequence_a
-AAAACCCCGGGGTTAA
->sequence_b
-GAAACCTCGGCGTAAA
-"""
+g_sample_fasta_string = const.read('20100730z')
 
 def get_form():
     """
@@ -46,7 +40,7 @@ def get_response(fs):
     """
     # get the alignment object
     try:
-        alignment = Fasta.Alignment(StringIO(fs.fasta))
+        alignment = Fasta.Alignment(fs.fasta.splitlines())
     except Fasta.AlignmentError, e:
         raise HandlingError('alignment error: ' + str(e))
     # assert that the alignment is of exactly two sequences

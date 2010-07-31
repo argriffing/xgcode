@@ -19,27 +19,9 @@ import DirectRna
 import Form
 import FormOut
 import iterutils
+import const
 
-#FIXME use const data
-
-# This alignment is unrealistic.
-g_sample_alignment_string = """
->Gibbon
-AAAAATATAAAAAAGAAAGAAGATATAAAAACAGACCTTATAAAGAATCAAATCGGAAGT
-TATAGAAGACTATATAATAAAAAAAGCTGATAGAGGAAAT
->Orangutan
-TTAAATATCATAACGCAAGAATATATAAGAATAGAGGTTATCAGTAATCAAATAGGCAAA
-ATAAGAAAGCTAAGGAACTAATAAAGCGAACCTAGAAAAG
->Gorilla
-CAAAATAATTACAGGCTATAATACATTAAAATAGTCGAGAGAAAACGGGATAAAGGATTA
-AACAAATAATGAAACCAATATAAAATCGTGTTCAGAACAG
->Chimpanzee
-GAAGTTAATTAAATTCGAAAATAAATCAAAAAAGCTTACAATCAAAGCAAATATCAAATA
-ACAAACCAATTAAACCCTAAAAAAACTAATGTCAGGACAA
->Human
-TAAGATAATTACATTCAAAAATAAATCAAAAAAGATTACATACAAAGCAAAACTCAAATC
-ACAACACAAGTAAACTATAAAAAAACTAATGTCAGGACAC
-"""
+g_sample_alignment_string = const.read('20100731c')
 
 def get_form():
     """
@@ -71,7 +53,7 @@ def get_response(fs):
     tree.assert_valid()
     # get the nucleotide alignment
     try:
-        alignment = Fasta.Alignment(StringIO(fs.alignment))
+        alignment = Fasta.Alignment(fs.alignment.splitlines())
         alignment.force_nucleotide()
     except Fasta.AlignmentError, e:
         raise HandlingError(e)

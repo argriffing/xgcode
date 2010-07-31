@@ -6,7 +6,7 @@ between a pair of sequences given a rate matrix.
 
 from StringIO import StringIO
 
-import scipy.optimize
+from scipy import optimize
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -17,23 +17,9 @@ import Util
 import PairLikelihood
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-# HKY simulation parameters:
-# transition/transversion ratio 2, C:4, G:4, A:1, T:1, scaled to one
-g_fasta = """
->hello
-GGCACCGCGGGCGGCCCCGGAGCAGACCGGGTACACGCGTCCGTGCTGCCTCCCGCCCGT
-AGGTGGGGGGGCCGCCGTGCCGATGACCACCGGCAGCGATCCCACCGAGAACCGGTCGCC
-CCTTGTGCCGATGCCACAGCCAGACAGCCTACCCCGGCTGCTGCGCCGCTCGCGACCGCT
-GACGTGAAGGCCGCCGTTTG
->world
-CCCCGGGCGACCCCAACCACCGCCGGCCCACCGGCCGCCGGCCTGGCTGGGGGGGAGACG
-ATGGGGCTGGTACTCGCCGGGCTAGACCAGCCGGCGTGCCCCCTGCCACAGTCGGCTGTC
-CTTGGTCAAGCCAGGCCGAGTCACCAGCCCGAGCCGGGGGGCGCCGCCCGCCCCCCCGCA
-CGGCCGGCGGCCAGGGCGGG
-"""
+g_fasta = const.read('20100731a')
 
 def get_form():
     """
@@ -93,7 +79,7 @@ def get_response(fs):
     """
     # read the alignment
     try:
-        alignment = Fasta.Alignment(StringIO(fs.fasta))
+        alignment = Fasta.Alignment(fs.fasta.splitlines())
     except Fasta.AlignmentError, e:
         raise HandlingError('fasta alignment error: ' + str(e))
     if alignment.get_sequence_count() != 2:
@@ -101,7 +87,7 @@ def get_response(fs):
     # read the rate matrix
     R = fs.matrix
     # read the ordered states
-    ordered_states = Util.get_stripped_lines(StringIO(fs.states))
+    ordered_states = Util.get_stripped_lines(fs.states.splitlines())
     if len(ordered_states) != len(R):
         msg_a = 'the number of ordered states must be the same '
         msg_b = 'as the number of rows in the rate matrix'
@@ -115,7 +101,7 @@ def get_response(fs):
     # Use golden section search to find the mle distance.
     # The bracket is just a suggestion.
     bracket = (0.51, 2.01)
-    mle_distance = scipy.optimize.golden(objective, brack=bracket)
+    mle_distance = optimize.golden(objective, brack=bracket)
     # write the response
     out = StringIO()
     print >> out, 'maximum likelihood distance:', mle_distance

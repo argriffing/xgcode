@@ -10,25 +10,17 @@ For the JC69 model, the maximum likelihood estimator
 for the distance can be written explicitly.
 """
 
-import math
 from StringIO import StringIO
 
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Fasta
 import JC69
-import PairLikelihood
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-g_sample_fasta_string = """
->sequence_a
-AAAACCCCGGGGTTAA
->sequence_b
-GAAACCTCGGCGTAAA
-"""
+g_sample_fasta_string = const.read('20100730z')
 
 def get_form():
     """
@@ -69,8 +61,7 @@ def get_response(fs):
     sequence_pair = alignment.sequences
     mle = JC69.get_ML_distance(*sequence_pair)
     # begin the response
-    out = StringIO()
-    print >> out, 'ML distance estimate:', mle
+    text = 'ML distance estimate: %f\n' % mle
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return response_headers, text

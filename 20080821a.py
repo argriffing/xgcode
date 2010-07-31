@@ -18,15 +18,9 @@ import F84
 import PairLikelihood
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-g_sample_fasta_string = """
->sequence_a
-AAAACCCCGGGGTTAA
->sequence_b
-GAAACCTCGGCGTAAA
-"""
+g_sample_fasta_string = const.read('20100730z')
 
 def get_form():
     """
@@ -66,7 +60,7 @@ def get_response(fs):
     # get the maximum likelihood estimates according to a numeric optimizer.
     f = F84.Objective(alignment.sequences)
     values = list(f.get_initial_parameters())
-    result = scipy.optimize.fmin(f, values, ftol=.0000000001, disp=0)
+    result = scipy.optimize.fmin(f, values, ftol=1e-10, disp=0)
     distance, kappa, wC, wG, wT= result
     nt_distribution = F84.parameters_to_distribution((wC, wG, wT))
     A, C, G, T = nt_distribution

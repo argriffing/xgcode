@@ -1,8 +1,6 @@
 """Make a newick tree from a distance matrix by splitting instead of joining.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -13,24 +11,17 @@ import NeighborhoodJoining
 import NewickIO
 import Form
 import FormOut
+import const
 
-#FIXME use a const data file
+# this is a perturbed distance matrix not an exact distance matrix
+g_d = const.read('20100730p')
 
 def get_form():
     """
     @return: the body of a form
     """
-    # define the default distance matrix
-    # this is from figure two of a paper called why neighbor joining works
-    D = np.array([
-        [  0, 2.7, 2.6, 2.6, 2.6, 4.4, 4.4, 4.4],
-        [2.7,   0, 4.4, 4.4, 4.4, 2.6, 2.6, 2.6],
-        [2.6, 4.4,   0, 0.1, 0.4, 2.7, 2.7, 2.7],
-        [2.6, 4.4, 0.1,   0, 0.4, 2.7, 2.7, 2.7],
-        [2.6, 4.4, 0.4, 0.4,   0, 2.7, 2.7, 2.7],
-        [4.4, 2.6, 2.7, 2.7, 2.7,   0, 0.1, 0.4],
-        [4.4, 2.6, 2.7, 2.7, 2.7, 0.1,   0, 0.4],
-        [4.4, 2.6, 2.7, 2.7, 2.7, 0.4, 0.4,   0]])
+    lines = Util.get_stripped_lines(g_d.splitlines())
+    D = np.array(MatrixUtil.read_matrix(lines))
     labels = list('xyabcmnp')
     # define the form objects
     form_objects = [
@@ -56,7 +47,7 @@ def get_response(fs):
     if len(D) < 3:
         raise HandlingError('the matrix should have at least three rows')
     # read the ordered labels
-    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
+    ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     if len(ordered_labels) != len(D):
         msg_a = 'the number of ordered labels should be the same '
         msg_b = 'as the number of rows in the matrix'
@@ -78,8 +69,7 @@ def get_response(fs):
     # build the tree
     tree = tree_builder.build()
     # define the response
-    out = StringIO()
-    print >> out, NewickIO.get_newick_string(tree)
+    text = NewickIO.get_newick_string(tree) + '\n'
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return response_headers, text

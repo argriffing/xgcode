@@ -22,27 +22,9 @@ import Fasta
 import SubModel
 import Form
 import FormOut
+import const
 
-#FIXME use const data
-
-# This alignment is unrealistic.
-g_sample_alignment_string = """
->Gibbon
-AAAAATATAAAAAAGAAAGAAGATATAAAAACAGACCTTATAAAGAATCAAATCGGAAGT
-TATAGAAGACTATATAATAAAAAAAGCTGATAGAGGAAAT
->Orangutan
-TTAAATATCATAACGCAAGAATATATAAGAATAGAGGTTATCAGTAATCAAATAGGCAAA
-ATAAGAAAGCTAAGGAACTAATAAAGCGAACCTAGAAAAG
->Gorilla
-CAAAATAATTACAGGCTATAATACATTAAAATAGTCGAGAGAAAACGGGATAAAGGATTA
-AACAAATAATGAAACCAATATAAAATCGTGTTCAGAACAG
->Chimpanzee
-GAAGTTAATTAAATTCGAAAATAAATCAAAAAAGCTTACAATCAAAGCAAATATCAAATA
-ACAAACCAATTAAACCCTAAAAAAACTAATGTCAGGACAA
->Human
-TAAGATAATTACATTCAAAAATAAATCAAAAAAGATTACATACAAAGCAAAACTCAAATC
-ACAACACAAGTAAACTATAAAAAAACTAATGTCAGGACAC
-"""
+g_sample_alignment_string = const.read('20100731c')
 
 g_nt_matrix_a = np.array([
     [-3, 1, 1, 1], [1, -3, 1, 1], [1, 1, -3, 1], [1, 1, 1, -3]])
@@ -100,7 +82,7 @@ def get_response(fs):
             raise HandlingError(msg)
     # get the nucleotide alignment
     try:
-        alignment = Fasta.Alignment(StringIO(fs.alignment))
+        alignment = Fasta.Alignment(fs.alignment.splitlines())
         alignment.force_nucleotide()
     except Fasta.AlignmentError, e:
         raise HandlingError(e)

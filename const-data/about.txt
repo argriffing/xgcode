@@ -209,3 +209,15 @@ The nucleotide probabilities were C:4, G:4, A:1, T:1, scaled to sum to one.
 
 20100730z.dat
 A tiny fasta alignment of a couple nucleotide sequences.
+
+20100731a.dat
+A fasta alignment of two nucleotide sequences.
+It was sampled with HKY with the following parameters.
+The transition/transversion ratio was 2.
+The nucleotide probabilities were C:4, G:4, A:1, T:1, scaled to sum to one.
+
+20100731b.dat
+An unrealistic fasta codon alignment.
+
+20100731c.dat
+An unrealistic fasta nucleotide alignment.
