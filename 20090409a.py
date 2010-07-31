@@ -23,7 +23,7 @@ import Euclid
 import SchurAlgebra
 import Form
 import FormOut
-import data
+import const
 
 g_data = const.read('20100730p')
 

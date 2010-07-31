@@ -71,7 +71,7 @@ def get_form():
                 0.1, low_exclusive=0),
             Form.MultiLine('input_text',
                 'calls per nt per base call per chromosome per strain',
-                g_sampel_data),
+                g_sample_data),
             Form.RadioGroup('delivery', 'delivery', [
                 Form.RadioItem('inline', 'view as text', True),
                 Form.RadioItem('attachment', 'download as a csv file')])]

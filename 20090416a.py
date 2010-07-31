@@ -21,7 +21,7 @@ def get_form():
     """
     # define the default distance matrix and the ordered labels
     lines = Util.get_stripped_lines(g_data.splitlines())
-    D = np.array([[float(x) for x in line] for line in lines])
+    D = np.array(MatrixUtil.read_matrix(lines))
     ordered_labels = list('xyabcmnp')
     # define the form objects
     form_objects = [

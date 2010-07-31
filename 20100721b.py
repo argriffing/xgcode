@@ -7,10 +7,10 @@ Output is verbose commentary and debugging information.
 from StringIO import StringIO
 import os
 import time
-from scipy import cluster
 
 import argparse
 import numpy as np
+from scipy import cluster
 
 from SnippetUtil import HandlingError
 import Form
