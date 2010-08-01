@@ -87,7 +87,7 @@ class AnalysisResult:
         # get the distance matrix with respect to this ordering
         D = tree.get_distance_matrix(self.ordered_names)
         # get the Gower doubly centered matrix
-        G = MatrixUtil.double_centered(numpy.array(D))
+        G = MatrixUtil.double_centered(np.array(D))
         # get the eigendecomposition of the Gower matrix
         eigenvalues, eigenvector_transposes = np.linalg.eigh(G)
         eigenvectors = eigenvector_transposes.T

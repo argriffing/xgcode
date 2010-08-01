@@ -33,7 +33,7 @@ def get_form():
     @return: a list of form objects
     """
     # define the edges of the default sparse graph
-    edge_lines = Util.get_stripped_lines(g_edge_data)
+    edge_lines = Util.get_stripped_lines(g_edge_data.splitlines())
     # define the vertices to be removed by default
     vertices_to_be_removed = ['A', 'a']
     # define the list of form objects
@@ -239,10 +239,12 @@ def get_response(fs):
     """
     # read the edge triples (vertex name, vertex name, edge weight)
     edge_triples = []
-    for line in iterutils.stripped_lines(StringIO(fs.graph)):
+    for line in iterutils.stripped_lines(fs.graph.splitlines()):
         string_triple = line.split()
         if len(string_triple) != 3:
-            raise HandlingError('each graph edge should have two vertex names and a weight')
+            msg_a = 'each graph row should have three elements '
+            msg_b = 'but found this line: ' + line
+            raise HandlingError(msg_a + msg_b)
         triple = string_triple[:2]
         try:
             weight = float(string_triple[2])
@@ -271,7 +273,7 @@ def get_response(fs):
     n = len(ordered_vertex_names)
     # read the set of vertices that the user wants to remove
     vertex_names_to_remove = set()
-    for name in iterutils.stripped_lines(StringIO(fs.vertices)):
+    for name in iterutils.stripped_lines(fs.vertices.splitlines()):
         if name in vertex_names_to_remove:
             raise HandlingError('vertices should be named for removal at most once')
         vertex_names_to_remove.add(name)
@@ -296,5 +298,5 @@ def get_response(fs):
         print >> out, name_a, name_b, weight
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return response_headers, out.getvalue()
 

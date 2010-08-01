@@ -8,6 +8,7 @@ I should probably change the notation.
 
 from StringIO import StringIO
 
+from scipy import linalg
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -61,7 +62,7 @@ def get_eigenvector_of_interest(row_major_matrix):
     @return: an eigenvector
     """
     R = np.array(row_major_matrix)
-    w, vl, vr = np.linalg.eig(R, left=True, right=True)
+    w, vl, vr = linalg.eig(R, left=True, right=True)
     eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
     stationary_eigenvector_index = eigenvalue_info[0][1]
     first_axis_eigenvector_index = eigenvalue_info[1][1]

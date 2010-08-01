@@ -8,6 +8,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
+import Util
 import NewickIO
 import FelTree
 import NeighborJoining
@@ -57,7 +58,7 @@ def get_response(fs):
     # read the ordered labels
     states = []
     if fs.inlabels:
-        states = Util.get_stripped_lines(StringIO(fs.inlabels))
+        states = Util.get_stripped_lines(fs.inlabels.splitlines())
     if len(states) > 1:
         if set(states) != set(alphabetically_ordered_states):
             msg_a = 'if ordered labels are provided, '
@@ -131,9 +132,8 @@ def get_response(fs):
         print >> paragraph, 'ordered labels:'
         print >> paragraph, '\n'.join(states)
         paragraphs.append(paragraph.getvalue().strip())
-    # start to prepare the reponse
-    out = StringIO()
-    print >> out, '\n\n'.join(paragraphs)
+    # prepare the reponse
+    text = '\n\n'.join(paragraphs) + '\n'
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return response_headers, text

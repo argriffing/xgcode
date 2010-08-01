@@ -7,6 +7,7 @@ The line x=0 defines the spectral sign split of the tree.
 
 from StringIO import StringIO
 
+from scipy import linalg
 import numpy as np
 import cairo
 
@@ -52,7 +53,7 @@ def get_eigenvectors(row_major_matrix):
     @return: a pair of eigenvectors
     """
     R = np.array(row_major_matrix)
-    w, vl, vr = np.linalg.eig(R, left=True, right=True)
+    w, vl, vr = linalg.eig(R, left=True, right=True)
     eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
     stationary_eigenvector_index = eigenvalue_info[0][1]
     first_axis_eigenvector_index = eigenvalue_info[1][1]

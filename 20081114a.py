@@ -11,7 +11,7 @@ from SnippetUtil import HandlingError
 import SnippetUtil
 import Form
 import FormOut
-import Util
+import iterutils
 import FelTree
 import NewickIO
 import TreeComparison
@@ -59,7 +59,7 @@ def get_response(fs):
     """
     # get the newick trees.
     trees = []
-    for tree_string in Util.stripped_lines(StringIO(fs.trees)):
+    for tree_string in iterutils.stripped_lines(fs.trees.splitlines()):
         # parse each tree and make sure that it conforms to various requirements
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]

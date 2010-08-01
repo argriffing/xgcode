@@ -32,11 +32,15 @@ def get_form():
     form_objects = [
             Form.MultiLine('hud', 'binary character table',
                 '\n'.join(g_lines)),
-            Form.RadioGroup('options', 'sequence combination operation', [
+            Form.RadioGroup('combo_options',
+                'sequence combination operation', [
                 Form.RadioItem('combine_exist',
                     'combine by existence', True),
                 Form.RadioItem('combine_count',
                     'combine by counting')]),
+            Form.CheckGroup('output_options', 'post processing', [
+                Form.CheckItem('remove_invariant',
+                    'remove invariant columns', True)]),
             Form.ContentDisposition()]
     return form_objects
 
@@ -83,6 +87,16 @@ def process_headers(headers):
             pairs.append([h, [h]])
     return pairs
 
+def remove_invariant_columns(M):
+    """
+    This function does not modify the input, but rather creates a new output.
+    @param M: a row major sequence of sequences
+    @return: a copy of M with invariant columns removed
+    """
+    cols = zip(*M)
+    filtered_cols = [c for c in cols if len(set(c)) > 1]
+    return zip(*filtered_cols)
+
 def get_response(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
@@ -99,6 +113,8 @@ def get_response(fs):
         if fs.combine_exist:
             data = np.minimum(1, data)
         sequences_out.append(data)
+    if fs.remove_invariant:
+        sequences_out = remove_invariant_columns(sequences_out)
     text = hud.encode(headers_out, sequences_out) + '\n'
     disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.hud') 
     response_headers = [

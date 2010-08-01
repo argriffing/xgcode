@@ -71,6 +71,6 @@ def get_response(fs):
         name_weight_pairs = LeafWeights.get_thompson_weights(tree)
     # report the weights
     lines = ['%s: %f' % pair for pair in name_weight_pairs]
-    content = '\n'.join(lines) + '\n'
+    text = '\n'.join(lines) + '\n'
     response_headers = [('Content-Type', 'text/plain')]
     return response_headers, text

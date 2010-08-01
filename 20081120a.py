@@ -6,6 +6,7 @@ to the Fiedler vector of a related graph.
 
 from StringIO import StringIO
 
+from scipy import linalg
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -16,13 +17,15 @@ import MatrixUtil
 import Clustering
 import NewickIO
 import FelTree
+import const
+
+g_default_string = const.read('20100730q')
 
 def get_form():
     """
     @return: a list of form objects
     """
-    tree_string = '(((a:0.05, b:0.05):0.15, c:0.2):0.8, x:1.0, (((m:0.05, n:0.05):0.15, p:0.2):0.8, y:1.0):1.0);'
-    tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    tree = NewickIO.parse(g_default_string, FelTree.NewickTree)
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 60)
     return [Form.MultiLine('tree', 'tree', formatted_tree_string)]
 
@@ -38,7 +41,7 @@ def get_eigenvectors(row_major_matrix):
     @return: a pair of eigenvectors
     """
     R = np.array(row_major_matrix)
-    w, vl, vr = np.linalg.eig(R, left=True, right=True)
+    w, vl, vr = linalg.eig(R, left=True, right=True)
     eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
     stationary_eigenvector_index = eigenvalue_info[0][1]
     first_eigenvector_index = eigenvalue_info[1][1]

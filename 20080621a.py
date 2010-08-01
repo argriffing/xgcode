@@ -50,9 +50,9 @@ def get_response(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = list(Util.stripped_lines(StringIO(fs.labels)))
+    ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     # read the set of selected labels
-    selected_labels = set(Util.stripped_lines(StringIO(fs.selection)))
+    selected_labels = set(Util.get_stripped_lines(fs.selection.splitlines()))
     # get the set of selected indices and its complement
     n = len(D)
     selection = set(i for i, label in enumerate(ordered_labels)

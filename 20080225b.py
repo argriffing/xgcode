@@ -38,11 +38,11 @@ def get_response(fs):
     # get the stationary distribution of the rate matrix
     try:
         v = RateMatrix.get_stationary_distribution(R.tolist())
-    except RateMatrix.RateMatrixError, e:
+    except RateMatrix.RateMatrixError as e:
         msg = 'error calculating the stationary distribution: ' + str(e)
         raise HandlingError(msg)
     # get the stationary distribution string
-    stationary_distribution_string = '\n'.join(str(x) for x in d)
+    text = '\n'.join(str(x) for x in v) + '\n'
     # write the response
     response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, stationary_distribution_string
+    return response_headers, text

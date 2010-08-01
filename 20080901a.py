@@ -80,10 +80,10 @@ def get_response(fs):
     @return: a (response_headers, response_text) pair
     """
     # read the headers
-    headers = list(Util.stripped_lines(StringIO(fs.headers)))
+    headers = Util.get_stripped_lines(fs.headers.splitlines())
     # read the tab separated MAPP output
     tsv_lists = []
-    for line in StringIO(fs.mapp):
+    for line in fs.mapp.splitlines():
         if line.strip():
             tsv_list = [element.strip() for element in line.split('\t')]
             tsv_lists.append(tsv_list)

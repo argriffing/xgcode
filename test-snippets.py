@@ -59,11 +59,11 @@ def main():
                 form_body = Form.get_html_string(response)
                 form_html = '<form>' + form_body  + '</form>'
             except HandlingError, e:
-                msg = 'handled error getting the form: ' + str(e)
+                msg = 'get form: ' + str(e)
                 raise SnippetTestError(msg)
             except:
                 error_message = str(sys.exc_info()[1])
-                msg = 'unhandled error getting the form: ' + error_message
+                msg = 'get form: ' + error_message
                 raise SnippetTestError(msg)
             # parse the default html parameters from the html string
             document = ht.fragment_fromstring(form_html)
@@ -76,18 +76,18 @@ def main():
                 for form_item in response:
                     form_item.process_fieldstorage(mock_field_storage)
             except Form.FormError as e:
-                msg = 'form error getting the response: ' + str(e)
+                msg = 'get response: ' + str(e)
                 raise SnippetTestError(msg)
             # get the result of calling the function
             # using the default parameter values
             try:
                 module.get_response(mock_field_storage)
             except HandlingError as e:
-                msg = 'handled error getting the response: ' + str(e)
+                msg = 'get response: ' + str(e)
                 raise SnippetTestError(msg)
             except:
                 error_message = str(sys.exc_info()[1])
-                msg = 'unhandled error getting the response: ' + error_message
+                msg = 'get response: ' + error_message
                 raise SnippetTestError(msg)
             else:
                 success_count += 1

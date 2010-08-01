@@ -40,14 +40,14 @@ def transform_a(L, D_partial):
     """
     nleaves = len(D_partial)
     # get the Moore-Penrose inverse of the laplacian
-    L_pinv = linalg.pinv(np.array(L))
+    L_pinv = np.linalg.pinv(np.array(L))
     # extract the principal k by k matrix from L_pinv
     reduced_L_pinv = np.zeros((nleaves, nleaves))
     for i in range(nleaves):
         for j in range(nleaves):
             reduced_L_pinv[i][j] = L_pinv[i][j]
     # get the Moore-Penrose inverse of this reduced matrix
-    S = linalg.pinv(reduced_L_pinv)
+    S = np.linalg.pinv(reduced_L_pinv)
     return S
 
 def transform_b(L, D_partial):
@@ -74,7 +74,7 @@ def transform_b(L, D_partial):
         for j in range(nancestors):
             A[i][j] = L[i][nleaves+j]
     # get the transformed matrix
-    L_in_inv = linalg.inv(L_in)
+    L_in_inv = np.linalg.inv(L_in)
     S = L_out - np.dot(A, np.dot(L_in_inv, A.T))
     return S
 
