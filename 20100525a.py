@@ -51,7 +51,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.EigenstratSnp('out.snp', [])
+    return FormOut.EigenstratSnp('out')
 
 def get_response(fs):
     """

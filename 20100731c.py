@@ -45,7 +45,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Report('out.hud', [])
+    return FormOut.Hud('out')
 
 def process_headers(headers):
     """

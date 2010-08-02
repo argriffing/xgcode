@@ -43,7 +43,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.RTable('out.table', [])
+    return FormOut.RTable('out')
 
 def get_rtable_info(rtable, cluster_header, axes_string):
     """

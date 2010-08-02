@@ -62,7 +62,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.EigenstratInd('location.ind', [])
+    return FormOut.EigenstratInd('location')
 
 def get_response(fs):
     """

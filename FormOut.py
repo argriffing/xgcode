@@ -112,6 +112,10 @@ class Report(FormOut):
     def __init__(self, fmt='report', interpolants=[]):
         FormOut.__init__(self, fmt + '.txt', interpolants)
 
+class Hud(FormOut):
+    def __init__(self, fmt='out', interpolants=[]):
+        FormOut.__init__(self, fmt + '.hud', interpolants)
+
 class RTable(FormOut):
     def __init__(self, fmt='out', interpolants=[]):
         FormOut.__init__(self, fmt + '.table', interpolants)

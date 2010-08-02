@@ -38,7 +38,7 @@ def get_form_out():
     """
     @return: the format of the output
     """
-    return FormOut.Report('report.txt', [])
+    return FormOut.Report('report')
 
 def get_response(fs):
     """

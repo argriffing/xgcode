@@ -176,7 +176,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Report('out.txt', [])
+    return FormOut.Report('out')
 
 def get_response(fs):
     """
