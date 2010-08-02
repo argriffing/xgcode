@@ -21,6 +21,8 @@ import const
 
 g_default_string = const.read('20100730q')
 
+#FIXME use library functions
+
 def get_form():
     """
     @return: a list of form objects
@@ -37,11 +39,7 @@ def get_form():
 def get_form_out():
     return FormOut.Html()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     ordered_names = list(sorted(node.name for node in tree.gen_tips()))
@@ -60,9 +58,9 @@ def get_response(fs):
     out = StringIO()
     print >> out, '<html>'
     print >> out, '<body>'
-    print >> out, HtmlTable.get_labeled_table_string(sorted_eigenvalues, ordered_names, M)
+    print >> out, HtmlTable.get_labeled_table_string(
+            sorted_eigenvalues, ordered_names, M)
     print >> out, '</body>'
     print >> out, '</html>'
     # write the response
-    response_headers = [('Content-Type', 'text/html')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

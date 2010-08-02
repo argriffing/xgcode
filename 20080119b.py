@@ -18,14 +18,10 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     try:
-        alignment = Fasta.Alignment(StringIO(fs.fasta))
+        alignment = Fasta.Alignment(fs.fasta.splitlines())
         print >> out, 'This is a valid alignment.'
     except Fasta.AlignmentError, e:
         alignment = None
@@ -44,5 +40,4 @@ def get_response(fs):
             print >> out, 'This is not a valid nucleotide alignment:', e
     for header, seq in Fasta.gen_header_sequence_pairs(StringIO(fs.fasta)):
         print >> out, '%s: %d' % (header, len(seq))
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

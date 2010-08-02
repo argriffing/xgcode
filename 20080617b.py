@@ -37,11 +37,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix from the form data
     A = fs.matrix
     n = len(A)
@@ -76,6 +72,5 @@ def get_response(fs):
     print >> out, 'labels belonging to the smaller cluster:'
     for label in sorted(smallest_cluster):
         print >> out, label
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

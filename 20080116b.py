@@ -1,11 +1,7 @@
 """Given a newick tree, draw an image using one of several file formats.
 """
 
-from StringIO import StringIO
-import random
-
 from SnippetUtil import HandlingError
-import SnippetUtil
 import Newick
 import SpatialTree
 import DrawTreeImage
@@ -35,15 +31,9 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('tree', [])
+    return FormOut.Image('tree')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # start writing the response type
-    response_headers = []
+def get_response_content(fs):
     # get a properly formatted newick tree with branch lengths
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
@@ -56,29 +46,20 @@ def get_response(fs):
         try:
             layout = FastDaylightLayout.StraightBranchLayout()
             layout.do_layout(tree)
-        except RuntimeError, e:
+        except RuntimeError as e:
             pass
     elif fs.curved:
         try:
             layout = FastDaylightLayout.CurvedBranchLayout()
             layout.set_min_segment_count(400)
             layout.do_layout(tree)
-        except RuntimeError, e:
+        except RuntimeError as e:
             pass
     elif fs.arc:
         EqualArcLayout.do_layout(tree)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'tree.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
+        return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

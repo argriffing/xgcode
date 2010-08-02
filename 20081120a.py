@@ -21,6 +21,8 @@ import const
 
 g_default_string = const.read('20100730q')
 
+#FIXME use library functions
+
 def get_form():
     """
     @return: a list of form objects
@@ -48,13 +50,7 @@ def get_eigenvectors(row_major_matrix):
     second_eigenvector_index = eigenvalue_info[2][1]
     return vl.T[first_eigenvector_index], vl.T[second_eigenvector_index]
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
-    # start writing the response type
-    response_headers = []
+def get_response_content(fs):
     # read the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get ordered identifiers
@@ -84,5 +80,4 @@ def get_response(fs):
     print >> out, 'associated with the graph of the full tree:'
     print >> out, str(tuple(full_va[:len(ordered_tip_ids)]))
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

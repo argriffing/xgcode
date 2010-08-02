@@ -1,9 +1,6 @@
 """Given a newick tree, draw an ascii representation.
 """
 
-from StringIO import StringIO
-
-from SnippetUtil import HandlingError
 import Newick
 import DrawTree
 import Form
@@ -34,21 +31,14 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # get the tree
+def get_response_content(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
-    # start writing the output
-    out = StringIO()
     # Draw the tree using a simple indented format
     # if the user chose the first option.
     # Otherwise create a drawing object and draw fancier ascii art.
     if fs.choice1:
-        print >> out, tree
+        return str(tree) + '\n'
     else:
         # customize the tree drawing object according to the user choice
         drawer = DrawTree.DrawTree()
@@ -68,6 +58,4 @@ def get_response(fs):
             drawer.vertical_spacing = 3
             drawer.horizontal_spacing = 6
         # draw the tree
-        print >> out, drawer.draw(tree)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().rstrip()
+        return drawer.draw(tree) + '\n'

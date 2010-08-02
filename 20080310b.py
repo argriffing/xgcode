@@ -24,11 +24,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # deserialize the xml data to create a DirectRnaMixture
     try:
         mixture_model = DirectRna.deserialize_mixture_model(fs.model)
@@ -45,5 +41,4 @@ def get_response(fs):
     for nt, proportion in zip(Codon.g_nt_letters, nt_distribution):
         print >> out, '%s : %s' % (nt, proportion)
     # return the summary
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

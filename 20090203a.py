@@ -57,11 +57,7 @@ def get_deleted_matrix(M, row_indices, column_indices):
             D.append(row)
     return np.array(D)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     M = fs.matrix
     n = len(M)
@@ -106,6 +102,5 @@ def get_response(fs):
         print >> out, MatrixUtil.m_to_string(matrix)
         print >> out, ('determinant of %s:' % name), np.linalg.det(matrix)
         print >> out
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

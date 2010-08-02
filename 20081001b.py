@@ -6,8 +6,6 @@ NOTE: Here the term 'M matrix' is not necessarily used in its technical sense.
 I should probably change the notation.
 """
 
-from StringIO import StringIO
-
 from scipy import linalg
 import numpy as np
 
@@ -77,13 +75,7 @@ def set_to_string(set_in):
     """
     return '{' + ', '.join(set_in) + '}'
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # start writing the response type
-    response_headers = []
+def get_response_content(fs):
     # read the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # create a putative list of nodes
@@ -182,8 +174,5 @@ def get_response(fs):
                 'M matrix:',
                 MatrixUtil.m_to_string(R)]
         paragraphs.append('\n'.join(lines))
-    # write the response
-    out = StringIO()
-    print >> out, '\n\n'.join(paragraphs)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return '\n\n'.join(paragraphs) + '\n'

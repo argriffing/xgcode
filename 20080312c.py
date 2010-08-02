@@ -5,8 +5,6 @@ See "Population Genetics Without Intraspecific Data" by Thorne et al.
 for more information about the Direct Protein model.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import PhyLikelihood
@@ -35,11 +33,7 @@ def get_form():
 def get_form_out():
     return FormOut.CodonFasta()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the newick string
     try:
         tree = Newick.parse(fs.tree, Newick.NewickTree)
@@ -55,11 +49,9 @@ def get_response(fs):
                 mixture_model, fs.ncols)
     except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
-    # get the alignment string
+    # get the alignment
     arr = []
     for node in tree.gen_tips():
         arr.append(alignment.get_fasta_sequence(node.name))
-    alignment_string = '\n'.join(arr)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, alignment_string
+    # return the alignment string
+    return '\n'.join(arr) + '\n'

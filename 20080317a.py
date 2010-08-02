@@ -48,11 +48,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the nucleotide distribution
     nt_to_probability = SnippetUtil.get_distribution(fs.nucleotides,
             'nucleotide', nt_letters)
@@ -96,9 +92,8 @@ def get_response(fs):
     print >> out, 'amino acid energies:'
     for aa, energy in zip(aa_letters, result_aa_energies):
         print >> out, '%s : %s' % (aa, energy)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 # for sanity checking only
 eps = .000000001

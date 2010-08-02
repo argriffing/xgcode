@@ -40,11 +40,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     # try to make some graphs
     unconnected_count = 0
@@ -101,9 +97,8 @@ def get_response(fs):
     print >> out, 'this many random graphs were not connected:', unconnected_count
     print >> out, 'this many splits were valid:', valid_split_count
     print >> out, 'this many splits were invalid:', invalid_split_count
-    # write the result
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue()
+    # return the result
+    return out.getvalue()
 
 def get_single_element_schur_complement(L, index):
     """

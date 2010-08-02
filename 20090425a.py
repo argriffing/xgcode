@@ -1,11 +1,8 @@
 """Do varimax rotation.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
-from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
 import FormOut
@@ -22,11 +19,6 @@ def get_form():
 def get_form_out():
     return FormOut.Matrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     rotated_matrix = np.dot(fs.matrix, MatrixUtil.varimax(fs.matrix))
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, MatrixUtil.m_to_string(rotated_matrix)
+    return MatrixUtil.m_to_string(rotated_matrix) + '\n'

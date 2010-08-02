@@ -1,8 +1,6 @@
 """Given a transition matrix, get the stationary distribution.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -12,6 +10,8 @@ import MatrixUtil
 import TransitionMatrix
 import Form
 import FormOut
+
+#FIXME numpy may not be necessary
 
 def get_form():
     """
@@ -30,19 +30,12 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the stationary distribution of the transition matrix
     T = fs.matrix
     try:
         v = TransitionMatrix.get_stationary_distribution(T.tolist())
     except TransitionMatrix.TransitionMatrixError, e:
         raise HandlingError(e)
-    # get the stationary distribution string
-    stationary_distribution_string = '\n'.join(str(x) for x in v)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, stationary_distribution_string
+    # return the stationary distribution
+    return '\n'.join(str(x) for x in v) + '\n'

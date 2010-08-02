@@ -149,11 +149,7 @@ def get_form():
 def get_form_out():
     return FormOut.Stockholm()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -174,11 +170,8 @@ def get_response(fs):
     rate_matrix.normalize()
     # get the mle rates
     mle_rates = get_mle_rates(tree, alignment, rate_matrix)
-    # get the response
-    stockholm_string = get_stockholm_string(tree, alignment, mle_rates)
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, stockholm_string
+    return get_stockholm_string(tree, alignment, mle_rates) + '\n'
 
 def main():
     # create the alignment object

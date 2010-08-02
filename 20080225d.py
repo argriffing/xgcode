@@ -1,8 +1,6 @@
 """Normalize a rate matrix to have one expected transition per unit time.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -10,6 +8,8 @@ import MatrixUtil
 import RateMatrix
 import Form
 import FormOut
+
+#FIXME numpy may not be necessary
 
 def get_form():
     """
@@ -30,11 +30,7 @@ def get_form():
 def get_form_out():
     return FormOut.RateMatrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix from the form data
     R = fs.matrix
     n = len(R)
@@ -43,7 +39,5 @@ def get_response(fs):
     rate_matrix_object = RateMatrix.RateMatrix(R.tolist(), arbitrary_states)
     rate_matrix_object.normalize()
     normalized_row_major = rate_matrix_object.get_row_major_rate_matrix()
-    rate_matrix_string = MatrixUtil.m_to_string(normalized_row_major)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, rate_matrix_string
+    # return the rate matrix
+    return MatrixUtil.m_to_string(normalized_row_major) + '\n'

@@ -160,12 +160,7 @@ def get_mapp_output(data_string, tree_string):
     # read the output
     return process_output
 
-
-def get_response(fs):
-    """
-    @param fs: a decorated FieldStorage object
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     # get the aligment
     alignment = get_alignment(fs.data, fs.tree)
@@ -177,8 +172,7 @@ def get_response(fs):
     #print >> out, 'mapp output:'
     #print >> out, mapp_output
     #print >> out
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
+    # return the response
     """
     if fs.inline:
         response_headers = [('Content-Type', 'text/plain')]
@@ -188,11 +182,4 @@ def get_response(fs):
         output_filename = 'raw-MAPP-output.xls'
     response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.delivery, output_filename)))
     """
-    return response_headers, out.getvalue().strip()
-
-def main():
-    print get_mapp_output(g_default_csv_data, g_default_tree_string)
-
-if __name__ == '__main__':
-    main()
-
+    return out.getvalue()

@@ -41,6 +41,21 @@ def get_form():
 def get_form_out():
     return FormOut.NucleotideRateMatrix()
 
+def get_response_content(fs):
+    # get the nucleotide distribution
+    distribution = SnippetUtil.get_distribution(
+            fs.weights, 'nucleotide', list('ACGT'))
+    # get the rate matrix defined by the nucleotide distribution and kappa
+    rate_matrix_object = create_rate_matrix(distribution, fs.kappa, fs.f)
+    if fs.scaled:
+        rate_matrix_object.normalize()
+    rate_matrix = rate_matrix_object.get_dictionary_rate_matrix()
+    # show the rate matrix in convenient text form
+    out = StringIO()
+    for nta in 'ACGT':
+        print >> out, '\t'.join(str(rate_matrix[(nta, ntb)]) for ntb in 'ACGT')
+    return out.getvalue()
+
 def create_rate_matrix(distribution, kappa, f):
     """
     The parameter f does not affect the stationary distribution.
@@ -76,23 +91,3 @@ def create_rate_matrix(distribution, kappa, f):
     rate_matrix_object = RateMatrix.RateMatrix(
             row_major_rate_matrix, ordered_states)
     return rate_matrix_object
-
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # get the nucleotide distribution
-    distribution = SnippetUtil.get_distribution(
-            fs.weights, 'nucleotide', list('ACGT'))
-    # get the rate matrix defined by the nucleotide distribution and kappa
-    rate_matrix_object = create_rate_matrix(distribution, fs.kappa, fs.f)
-    if fs.scaled:
-        rate_matrix_object.normalize()
-    rate_matrix = rate_matrix_object.get_dictionary_rate_matrix()
-    # show the rate matrix in convenient text form
-    out = StringIO()
-    for nta in 'ACGT':
-        print >> out, '\t'.join(str(rate_matrix[(nta, ntb)]) for ntb in 'ACGT')
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()

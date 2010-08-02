@@ -127,11 +127,7 @@ def get_tree_and_column(fs):
         tree.remove_node(node) 
     return tree, taxon_to_aa_letter
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # start writing the html response
     out = StringIO()
     print >> out, '<html>'
@@ -276,7 +272,5 @@ def get_response(fs):
     # write the html footer
     print >> out, '</body>'
     print >> out, '</html>'
-    # write the response
-    response_headers = [('Content-Type', 'text/html')]
-    return response_headers, out.getvalue()
-
+    # return the response
+    return out.getvalue()

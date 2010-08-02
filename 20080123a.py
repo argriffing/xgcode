@@ -1,8 +1,6 @@
 """ Given a newick tree, draw an image using colored branches.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Newick
@@ -36,13 +34,9 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('tree', [])
+    return FormOut.Image('tree')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get a properly formatted newick tree with branch lengths
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
@@ -53,7 +47,7 @@ def get_response(fs):
     # get the dictionary mapping the branch name to the rgb color
     name_to_rgb = {}
     # parse the coloration string
-    for line in iterutils.stripped_lines(StringIO(fs.coloration)):
+    for line in iterutils.stripped_lines(fs.coloration.splitlines())
         # get the branch and its color
         name_string, rgb_string = SnippetUtil.get_state_value_pair(line)
         rgb_string = rgb_string.upper()
@@ -80,18 +74,9 @@ def get_response(fs):
         layout.do_layout(tree)
     except RuntimeError, e:
         pass
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'tree.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
+        return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    # return the response
-    return response_headers, image_string

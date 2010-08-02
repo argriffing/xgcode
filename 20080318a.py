@@ -23,11 +23,7 @@ def get_form():
 def get_form_out():
     return FormOut.Html()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # deserialize the xml data to create a DirectProteinMixture
     try:
         mixture_model = DirectProtein.deserialize_mixture_model(fs.model)
@@ -64,5 +60,4 @@ def get_response(fs):
     print >> out, '</body>'
     print >> out, '</html>'
     # return the response
-    response_headers = [('Content-Type', 'text/html')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

@@ -37,11 +37,7 @@ def get_form():
 def get_form_out():
     return FormOut.NucleotideFasta()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -65,8 +61,5 @@ def get_response(fs):
     # do the sampling
     sampled_sequences = JC69.sample_sequences(tree, ordered_names, fs.length)
     alignment = Fasta.create_alignment(ordered_names, sampled_sequences)
-    # begin the response
-    text = alignment.to_fasta_string() + '\n'
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, text
+    return alignment.to_fasta_string() + '\n'

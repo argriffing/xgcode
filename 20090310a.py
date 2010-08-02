@@ -30,11 +30,7 @@ def get_form():
 def get_form_out():
     return FormOut.Matrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the distance matrix
     D = fs.matrix
     n = len(D)
@@ -45,9 +41,5 @@ def get_response(fs):
     for i in range(n):
         for j in range(n):
             sigma[i][j] = (V[i] + V[j] - D[i][j]) / 2
-    # begin the response
-    out = StringIO()
-    print >> out, MatrixUtil.m_to_string(sigma)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return MatrixUtil.m_to_string(sigma) + '\n'

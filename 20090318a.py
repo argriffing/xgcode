@@ -91,11 +91,7 @@ def get_elementwise_squared_matrix(M):
             Q[i][j] *= Q[i][j]
     return Q
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the newick trees.
     trees = []
     for tree_string in iterutils.stripped_lines(StringIO(fs.trees)):
@@ -144,9 +140,8 @@ def get_response(fs):
             print >> out
     print >> out, 'errors found:', nerrors
     print >> out, 'counterexamples found:', ncounterexamples
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 def main():
     filename = 'counterexamples.out'

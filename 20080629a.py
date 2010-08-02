@@ -4,8 +4,6 @@ Given a newick tree, determine if a bipartition
 is a member of the split set of the tree.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Util
 import FelTree
@@ -34,11 +32,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get a properly formatted newick tree without caring about branch lengths
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # make sure that each leaf has a unique name
@@ -50,7 +44,7 @@ def get_response(fs):
     if len(set(tip_names)) != len(tip_names):
         raise HandlingError('each leaf name must be unique')
     # get the selected taxa
-    selected_taxa = set(Util.get_stripped_lines(StringIO(fs.selection)))
+    selected_taxa = set(Util.get_stripped_lines(fs.selection.splitlines())
     # assert that the selected names are actually leaf names
     if set(selected_taxa) - set(tip_names):
         msg = 'one or more selected taxa are not leaf names in the tree'
@@ -71,13 +65,9 @@ def get_response(fs):
         msg_b = 'can always be separated from the others'
         raise HandlingError(msg_a + msg_b)
     # define the response
-    out = StringIO()
     tip_selection = [tip for tip in tree.gen_tips()
             if tip.get_name() in selected_taxa]
     if tree.get_split_branch(tip_selection):
-        print >> out, 'this split is valid and nontrivial'
+        return 'this split is valid and nontrivial'
     else:
-        print >> out, 'this split is invalid'
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+        return 'this split is invalid'

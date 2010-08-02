@@ -111,16 +111,10 @@ def process(npoints, nseconds):
         print >> out, '\t'.join(str(x) for x in point)
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     nseconds = 2
     npoints = fs.npoints
-    response_text = process(npoints, nseconds)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, response_text
+    return process(npoints, nseconds) + '\n'
 
 def main():
     nseconds = 5

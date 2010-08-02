@@ -39,10 +39,6 @@ def get_form_out():
     return FormOut.Report()
 
 def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
     # define the states using the default transition matrix
     default_transition_matrix = EnglishModel.get_transition_matrix()
     states = list(sorted(set(a for a, b in default_transition_matrix)))
@@ -65,5 +61,4 @@ def get_response(fs):
     path = PathSampler.get_discrete_path_sample(fs.first, fs.last,
             states, fs.count, matrix)
     # show the simulated path in convenient text form
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, ''.join(path)
+    return ''.join(path) + '\n'

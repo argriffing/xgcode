@@ -7,7 +7,6 @@ The kappa parameter is the mutation process transition transversion rate ratio.
 """
 
 from StringIO import StringIO
-import math
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -47,11 +46,7 @@ def get_form():
 def get_form_out():
     return FormOut.CodonRateMatrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the mutation process nucleotide distribution
     nt_distribution = SnippetUtil.get_distribution(fs.nucleotides,
             'nucleotide', nt_ordered)
@@ -93,5 +88,4 @@ def get_response(fs):
         # write the rate matrix scaling factor
         print >> out, rate_matrix_object.get_expected_rate()
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue() + '\n'

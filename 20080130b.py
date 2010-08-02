@@ -1,12 +1,12 @@
 """Given a newick tree, merge segmented branches.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import Form
 import FormOut
+
+#FIXME use const data
 
 def get_form():
     """
@@ -22,11 +22,7 @@ def get_form():
 def get_form_out():
     return FormOut.Newick()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -34,6 +30,5 @@ def get_response(fs):
     segmenting_nodes = [p for p in tree.preorder() if len(p.children) == 1]
     for node in segmenting_nodes:
         tree.remove_node(node)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, tree.get_newick_string()
+    # return the response
+    return tree.get_newick_string() + '\n'

@@ -16,10 +16,8 @@ import Form
 import FormOut
 
 # define the input nexus path
-global hyphy_nexus
 hyphy_nexus = os.path.join(Config.data_path, 'hyphy.nex')
 # define the input batch file model path
-global hyphy_bf
 hyphy_bf = os.path.join(Config.data_path, 'model.bf')
 # tell hyphy to use this model
 hky_hyphy_model_sio = StringIO()
@@ -63,7 +61,6 @@ fprintf(stdout, "\n");
 fprintf(stdout, res);
 fprintf(stdout, lf);
 """.strip()
-global hky_hyphy_model
 hky_hyphy_model = hky_hyphy_model_sio.getvalue().strip()
 
 def get_form():
@@ -82,7 +79,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -105,7 +102,8 @@ def get_response(fs):
     print >> fout, nexus
     fout.close()
     # run hyphy
-    p = subprocess.Popen([Config.hyphy_exe_path, hyphy_bf], close_fds=True, stdout=subprocess.PIPE)
+    cmd = [Config.hyphy_exe_path, hyphy_bf]
+    p = subprocess.Popen(cmd, close_fds=True, stdout=subprocess.PIPE)
     hyphy_output = p.stdout.read()
     # move back to the original directory
     os.chdir(original_directory)
@@ -133,9 +131,8 @@ def get_response(fs):
     print >> out, 'C :', ns.eqFreqC
     print >> out, 'G :', ns.eqFreqG
     print >> out, 'T :', ns.eqFreqT
-    # send the results
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the results
+    return out.getvalue()
 
 def get_hyphy_debug_info(hyphy_output):
     """

@@ -34,11 +34,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the branch length and the sequence length
     branch_length = fs.branch_length
     sequence_length = fs.sequence_length
@@ -53,8 +49,7 @@ def get_response(fs):
     print >> out, 'without multiple change information:', estimate_b
     print >> out, 'without reverted change information:', estimate_c
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()
 
 def sample_distance(mean_changes, p_observed, p_nonreverted):
     """

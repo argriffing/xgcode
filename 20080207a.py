@@ -3,8 +3,6 @@
 Maybe this is the one that was buggy.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -60,15 +58,9 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('tree', [])
+    return FormOut.Image('tree')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # start writing the response type
-    response_headers = []
+def get_response_content(fs):
     # get a properly formatted newick tree with branch lengths
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
@@ -78,7 +70,7 @@ def get_response(fs):
     tree.add_branch_lengths()
     # get the dictionary mapping the branch name to the nucleotide
     name_to_nt = {}
-    lines = Util.get_stripped_lines(StringIO(fs.column))
+    lines = Util.get_stripped_lines(fs.column.splitlines())
     if lines:
         name_to_nt = SnippetUtil.get_generic_dictionary(lines, 'name',
                 'nucleotide', list('acgtACGT'))
@@ -105,21 +97,12 @@ def get_response(fs):
         simulate_branch_path(tree, node, rate_matrix_object)
     # do the layout
     EqualArcLayout.do_layout(tree)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'tree.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
+        return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    # return the response
-    return response_headers, image_string
 
 def simulate_branch_path(tree, node, rate_matrix_object):
     # purines are red; pyrimidines are blue

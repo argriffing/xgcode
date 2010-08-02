@@ -72,11 +72,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -230,6 +226,5 @@ def get_response(fs):
     print >> out, v
     print >> out, 'corresponding fiedler vector:'
     print >> out, fiedler_vector
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

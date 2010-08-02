@@ -35,11 +35,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -71,6 +67,4 @@ def get_response(fs):
         name_weight_pairs = LeafWeights.get_thompson_weights(tree)
     # report the weights
     lines = ['%s: %f' % pair for pair in name_weight_pairs]
-    text = '\n'.join(lines) + '\n'
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, text
+    return '\n'.join(lines) + '\n'

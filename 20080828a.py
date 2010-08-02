@@ -205,11 +205,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the criterion string, creating the splitter object
     if fs.exact:
         splitter = Clustering.StoneExactDMS()
@@ -280,9 +276,8 @@ def get_response(fs):
         print >> out, 'reconstructed tree topologies with mismatch counts:'
         for mismatch_count, tree in sorted(mismatch_count_tree_pairs):
             print >> out, NewickIO.get_newick_string(tree), mismatch_count
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 
 class Simulation:

@@ -1,8 +1,6 @@
 """Calculate an objective function of a given graph cut.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -80,17 +78,13 @@ def get_cut(selection, affinity):
     complement = set(range(n)) - selection
     return sum(affinity[i][j] for i in selection for j in complement)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     M = fs.matrix
     # read the ordered labels
-    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
+    ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     # read the set of selected labels
-    selected_labels = set(Util.get_stripped_lines(StringIO(fs.selection)))
+    selected_labels = set(Util.get_stripped_lines(fs.selection.splitlines())
     # get the set of selected indices
     selection = set(i for i, label in enumerate(ordered_labels)
             if label in selected_labels)
@@ -99,11 +93,4 @@ def get_response(fs):
         value = get_cut(selection, M.tolist())
     elif fs.conductance:
         value = get_conductance(selection, M.tolist())
-    # start to prepare the reponse
-    out = StringIO()
-    # show the value of the objective function
-    print >> out, 'objective function value:'
-    print >> out, value
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return str(value) + '\n'

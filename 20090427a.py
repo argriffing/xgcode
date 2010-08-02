@@ -9,8 +9,6 @@ The reconstructed tree will be rooted at the center
 of the branch implied by the contrast matrix.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Util
 import MatrixUtil
@@ -39,23 +37,17 @@ def get_form():
 def get_form_out():
     return FormOut.Newick()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     C = fs.contrast_matrix
     # read the ordered labels
-    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
+    ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     # validate the input
     if len(C) != len(ordered_labels):
-        raise HandlingError('the number of rows in the contrast matrix should match the number of labels')
-    # start to prepare the reponse
-    out = StringIO()
+        msg_a = 'the number of rows in the contrast matrix '
+        msg_b = 'should match the number of labels'
+        raise HandlingError(msg_a + msg_b)
+    # reconstruct the tree
     reconstructed_tree = Contrasts.contrast_matrix_to_tree(C, ordered_labels)
-    newick_string = NewickIO.get_newick_string(reconstructed_tree)
-    print >> out, newick_string
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the reponse
+    return NewickIO.get_newick_string(reconstructed_tree) + '\n'

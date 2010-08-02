@@ -29,11 +29,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix from the form data
     R = fs.matrix
     # get the stationary distribution of the rate matrix
@@ -69,7 +65,6 @@ def get_response(fs):
         header_entries.append('r<sub>ji</sub>')
         header_row = ''.join('<th>%s</th>' % entry for entry in header_entries)
         # show detailed balance equation results
-        response_headers = [('Content-Type', 'text/html')]
         print >> out, '<p>'
         print >> out, 'This table shows each state pair for which the detailed balance equation is not satisfied exactly.'
         print >> out, '</p>'
@@ -83,7 +78,8 @@ def get_response(fs):
         print >> out, '</body>'
         print >> out, '</html>'
     else:
-        response_headers = [('Content-Type', 'text/plain')]
+        print >> out, '<html><body>'
         print >> out, 'All detailed balance equations are satisfied for this rate matrix.'
+        print >> out, '</body></html>'
     # return the response
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

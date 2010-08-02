@@ -38,11 +38,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the nucleotide distribution
     nt_to_weight = SnippetUtil.get_distribution(fs.nucleotides,
             'nucleotide', nt_letters)
@@ -109,9 +105,8 @@ def get_response(fs):
     print >> out, 'implied nucleotide stationary distribution:'
     for nt, p in zip(nt_letters, implied_stationary_nt_distribution):
         print >> out, '%s : %s' % (nt, p)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 def normalized(distribution):
     """

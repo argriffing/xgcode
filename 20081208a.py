@@ -37,7 +37,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('state', [])
+    return FormOut.Png('graph')
 
 def get_image_string(D, ordered_labels, iteration):
     """
@@ -78,11 +78,7 @@ def get_image_string(D, ordered_labels, iteration):
     # return the image string
     return image_string
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     if len(D) < 3:
@@ -106,12 +102,5 @@ def get_response(fs):
         msg_a = 'the iteration index '
         msg_b = 'should be in [%d, %d]' % (min_iteration, max_iteration)
         raise HandlingError(msg_a + msg_b)
-    # get the image string
-    image_string = get_image_string(D, ordered_labels, iteration)
-    # return the response
-    disposition = '%s; filename=%s' % (fs.contentdisposition, 'graph.png')
-    response_headers = [
-            ('Content-Type', 'image/png'),
-            ('Content-Disposition', disposition)]
-    return response_headers, image_string
-
+    # return the image string
+    return get_image_string(D, ordered_labels, iteration)

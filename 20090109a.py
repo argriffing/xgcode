@@ -6,7 +6,6 @@ This snippet can also be run from the command line
 to build the data directories required for its operation.
 """
 
-from StringIO import StringIO
 import sys
 import os
 
@@ -41,12 +40,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
-    out = StringIO()
+def get_response_content(fs):
     try:
         finder = KGEA.Finder(
                 g_index_dir, g_valid_chromosome_strings_pathname, g_fasta_dir)
@@ -55,14 +49,12 @@ def get_response(fs):
         elif fs.show_column:
             lines = finder.get_column_lines(fs.chromosome, fs.position)
         if lines:
-            print >> out, '\n'.join(lines)
+            return '\n'.join(lines) + '\n'
         else:
             msg = 'this position has no corresponding amino acid'
             raise KGEA.KGEAError(msg)
     except KGEA.KGEAError, e:
         raise HandlingError(e)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue()
 
 
 class MySyntaxError(Exception):

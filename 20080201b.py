@@ -38,11 +38,7 @@ def get_form():
 def get_form_out():
     return FormOut.CodonRateMatrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the codon distribution
     codons = Codon.g_sorted_non_stop_codons
     distribution = SnippetUtil.get_distribution(fs.weights, 'codon', codons)
@@ -52,5 +48,4 @@ def get_response(fs):
     out = StringIO()
     for ca in codons:
         print >> out, '\t'.join(str(r[(ca, cb)]) for cb in codons)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

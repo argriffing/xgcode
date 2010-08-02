@@ -5,8 +5,6 @@ Elements in the output matrix with absolute values smaller than epsilon
 will be zeroed.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Util
 import NewickIO
@@ -44,17 +42,13 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Report()
+    return FormOut.ContextDependent()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # read the ordered labels
-    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
+    ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     # validate the input
     observed_label_set = set(node.get_name() for node in tree.gen_tips())
     if set(ordered_labels) != observed_label_set:
@@ -64,14 +58,10 @@ def get_response(fs):
     C = Contrasts.get_contrast_matrix(tree, ordered_labels)
     # set elements with small absolute value to zero
     C[abs(C) < fs.epsilon] = 0
-    # start to prepare the reponse
-    out = StringIO()
+    # return the reponse
     if fs.plain_format:
-        print >> out, MatrixUtil.m_to_string(C)
+        return MatrixUtil.m_to_string(C) + '\n'
     elif fs.matlab_format:
-        print >> out, MatrixUtil.m_to_matlab_string(C)
+        return MatrixUtil.m_to_matlab_string(C) + '\n'
     elif fs.r_format:
-        print >> out, MatrixUtil.m_to_R_string(C)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+        return MatrixUtil.m_to_R_string(C) + '\n'

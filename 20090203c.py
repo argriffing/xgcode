@@ -38,16 +38,13 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     # begin the response
     out = StringIO()
-    # look at the eigenvalues of the associated doubly centered covariance matrix
+    # Look at the eigenvalues
+    # of the associated doubly centered covariance matrix.
     HSH = Euclid.edm_to_dccov(D)
     w, V_T = np.linalg.eigh(HSH)
     V = V_T.T
@@ -70,5 +67,4 @@ def get_response(fs):
     print >> out, 'A Euclidean distance matrix is spherical if and only if the sum of the elements of its pseudoinverse is positive.'
     print >> out, 'For this distance matrix, this sum is', criterion
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

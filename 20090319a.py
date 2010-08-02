@@ -5,7 +5,6 @@ MMC is Modulated Modularity Clustering as in the paper
 for Functional Genomic Inference".
 """
 
-from StringIO import StringIO
 import math
 
 import numpy as np
@@ -289,17 +288,13 @@ def get_affinity_matrix(corr_matrix, sigma):
                 affinity_matrix[i][j] = math.exp(log_affinity)
     return affinity_matrix
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the observation lines
-    observation_lines = Util.get_stripped_lines(StringIO(fs.observations))
+    observation_lines = Util.get_stripped_lines(fs.observations.splitlines())
     row_labels, column_labels, data_matrix = parse_observation_lines(observation_lines)
     ngenes = len(row_labels)
     # read the module lines
-    module_lines = Util.get_stripped_lines(StringIO(fs.modules))
+    module_lines = Util.get_stripped_lines(fs.modules.splitlines())
     gene_labels, module_indices, gene_indices = parse_module_lines(module_lines)
     # each multi-line input should have a header line and N gene lines
     if len(observation_lines) != len(module_lines):
@@ -323,12 +318,8 @@ def get_response(fs):
     elif fs.other_c:
         fn_get_modularity = get_modularity_other_c
     modularity = fn_get_modularity(affinity_matrix, ordered_module_indices)
-    # begin the response
-    out = StringIO()
-    print >> out, modularity
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return str(modularity) + '\n'
 
 def main():
     """

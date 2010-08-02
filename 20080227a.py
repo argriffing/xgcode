@@ -1,7 +1,6 @@
 """Given N free energies, get an NxN rate matrix.
 """
 
-from StringIO import StringIO
 import math
 
 from SnippetUtil import HandlingError
@@ -27,14 +26,10 @@ def get_form():
 def get_form_out():
     return FormOut.RateMatrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the energies from the form data
     energies = []
-    for line in iterutils.stripped_lines(StringIO(fs.energies)):
+    for line in iterutils.stripped_lines(fs.energies.splitlines()):
         try:
             energy = float(line)
         except ValueError, e:
@@ -52,8 +47,5 @@ def get_response(fs):
     # correct the diagonal elements
     for i, row in enumerate(matrix):
         matrix[i][i] = -(sum(row) - 1)
-    # create the string representing the rate matrix
-    matrix_string = MatrixUtil.m_to_string(matrix)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, matrix_string
+    # return the rate matrix
+    return MatrixUtil.m_to_string(matrix) + '\n'

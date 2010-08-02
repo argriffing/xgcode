@@ -4,8 +4,6 @@ Note that the distance functions used here are not commutative.
 The weighted split distance gives more importance to deep partitions implied by the reference tree.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import NewickIO
 import FelTree
@@ -34,11 +32,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the query tree
     query_tree = NewickIO.parse(fs.query, FelTree.NewickTree)
     # read the reference tree
@@ -60,13 +54,9 @@ def get_response(fs):
                     TreeComparison.get_weighted_split_count(reference_tree))
     else:
         loss_denominator = 1
-    # define the response
-    out = StringIO()
+    # return the response
     if loss_denominator:
-        print >> out, loss_numerator / loss_denominator
+        return str(loss_numerator / loss_denominator) + '\n'
     else:
-        print >> out, 'normalization failed'
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+        return 'normalization failed\n'
 

@@ -26,12 +26,7 @@ def get_form():
 def get_form_out():
     return FormOut.Matrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     D = fs.matrix
     L = Euclid.edm_to_laplacian(D)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, MatrixUtil.m_to_string(L)
+    return MatrixUtil.m_to_string(L) + '\n'

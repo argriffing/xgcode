@@ -3,8 +3,6 @@
 Taxa with zero branch length to the rest of the tree may be removed.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import Form
@@ -20,7 +18,7 @@ def get_form():
 def get_form_out():
     return FormOut.Newick()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -44,6 +42,5 @@ def get_response(fs):
             # remove intersection nodes that have a single child
             if intersection.get_child_count() == 1:
                 tree.remove_node(intersection)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, tree.get_newick_string()
+    # return the response
+    return tree.get_newick_string() + '\n'

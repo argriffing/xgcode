@@ -135,11 +135,7 @@ def process(edges, epsilon, nsamples, deadline, pbar):
             print >> out, '\t'.join((a, b, str(v)))
     return out
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the graph lines
     lines = Util.get_stripped_lines(StringIO(fs.graphlines))
     edges = []
@@ -157,9 +153,8 @@ def get_response(fs):
     deadline = time.time() + 10
     # get the results
     out = process(edges, fs.epsilon, fs.nsamples, deadline, None)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 def main(options):
     """

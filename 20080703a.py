@@ -46,11 +46,7 @@ def get_form():
 def get_form_out():
     return FormOut.Matrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     alphabetically_ordered_states = list(sorted(node.name
@@ -67,8 +63,6 @@ def get_response(fs):
             raise HandlingError(msg_a + msg_b)
     else:
         states = alphabetically_ordered_states
-    # start to prepare the reponse
-    out = StringIO()
     # create the distance matrix
     D = tree.get_distance_matrix(states)
     # create the perturbed distance matrix if necessary
@@ -102,7 +96,5 @@ def get_response(fs):
         print >> paragraph, 'ordered labels:'
         print >> paragraph, '\n'.join(states)
         paragraphs.append(paragraph.getvalue().strip())
-    print >> out, '\n\n'.join(paragraphs)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return '\n\n'.join(paragraphs) + '\n'

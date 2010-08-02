@@ -224,11 +224,7 @@ def get_form():
 def get_form_out():
     return FormOut.Image('out', [])
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # start writing the response type
     response_headers = []
     # read the headers
@@ -285,19 +281,10 @@ def get_response(fs):
                 raise invalid_pvalue_error
             pvalue_list.append(pvalue)
         pvalue_lists.append(pvalue_list)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'mapp.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
         image_string = get_image_string(
                 pvalue_lists, headers, wild_list, mutant_list, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

@@ -1,8 +1,6 @@
 """Calculate pairwise correlations between rows.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -31,7 +29,7 @@ def get_form():
 def get_form_out():
     return FormOut.CorrelationMatrix()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -41,10 +39,5 @@ def get_response(fs):
     # set values smaller than user-defined epsilon to zero
     # so the output is easy to read
     cmat[abs(cmat) < fs.epsilon] = 0
-    # begin the response
-    out = StringIO()
-    # print the correlation matrix
-    print >> out, MatrixUtil.m_to_string(cmat)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return MatrixUtil.m_to_string(cmat) + '\n'

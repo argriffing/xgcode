@@ -1,12 +1,8 @@
 """Calculate the Moore-Penrose inverse of a matrix.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
-from SnippetUtil import HandlingError
-import SnippetUtil
 import Form
 import FormOut
 import MatrixUtil
@@ -30,20 +26,12 @@ def get_form():
 def get_form_out():
     return FormOut.Matrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     M = fs.matrix
     # get the pseudo inverse
     M_pinv = np.linalg.pinv(M)
     # set small values to zero in the output
     M_pinv[abs(M_pinv) < fs.epsilon] = 0
-    # create the response string
-    out = StringIO()
-    print >> out, MatrixUtil.m_to_string(M_pinv)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response string
+    return MatrixUtil.m_to_string(M_pinv) + '\n'

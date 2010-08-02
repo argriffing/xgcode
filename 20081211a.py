@@ -89,11 +89,7 @@ def transform_c(L, D_partial):
     S = -2*M
     return S
 
-def get_response(fs):
-    """
-    @param fs: a decorated FieldStorage object
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
@@ -130,5 +126,4 @@ def get_response(fs):
         print >> out, MatrixUtil.m_to_string(S)
         print >> out
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

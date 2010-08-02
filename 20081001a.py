@@ -5,8 +5,6 @@ doubly centered distance matrix.
 The line x=0 defines the spectral sign split of the tree.
 """
 
-from StringIO import StringIO
-
 from scipy import linalg
 import numpy as np
 import cairo
@@ -152,11 +150,7 @@ def get_image(row_major_matrix, incidence_matrix, ordered_names,
     # get the image string
     return cairo_helper.get_image_string()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # start writing the response type
     response_headers = []
     # get the processing options
@@ -195,20 +189,11 @@ def get_response(fs):
     else:
         D = tree.get_distance_matrix(ordered_names)
     R_matrix = Clustering.get_R_balaji(D)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
         image_size = (640, 480)
         image_string = get_image(R_matrix, incidence_matrix, ordered_names,
                 image_size, ext, fs.axes, fs.connections)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

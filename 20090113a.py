@@ -77,11 +77,7 @@ def aa_letter_to_aa_index(aa_letter):
             return i
     return None
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the upper case amino acid letter
     aa_of_interest = fs.aminoacid.upper()
     if aa_of_interest not in Codon.g_aa_letters:
@@ -146,8 +142,7 @@ def get_response(fs):
             print >> out, 'no aligned amino acids were found at this position'
     except KGEA.KGEAError, e:
         print >> out, e
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue()
+    return out.getvalue()
 
 
 

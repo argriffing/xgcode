@@ -72,11 +72,7 @@ class Objective:
         return -log_likelihood
 
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the alignment
     try:
         alignment = Fasta.Alignment(fs.fasta.splitlines())
@@ -108,5 +104,4 @@ def get_response(fs):
     #distances = (mle_distance, 0.2, 2.0, 20.0)
     #for distance in distances:
         #print >> out, 'f(%s): %s' % (distance, objective(distance))
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

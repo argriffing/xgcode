@@ -51,7 +51,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Report()
+    return FormOut.ContextDependent()
 
 def get_eigendecomposition(M):
     """
@@ -88,7 +88,7 @@ def get_contrast_matrix(w, v, eps=1e-10):
         points.append(p)
     return np.array(points)
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -118,5 +118,4 @@ def get_response(fs):
     elif fs.r_format:
         print >> out, MatrixUtil.m_to_R_string(C)
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

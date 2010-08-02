@@ -23,6 +23,8 @@ from Form import RadioItem
 import Form
 import FormOut
 
+#FIXME use const data
+
 def get_form():
     """
     @return: the body of a form
@@ -49,11 +51,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the newick trees.
     trees = []
     for tree_string in iterutils.stripped_lines(StringIO(fs.trees)):
@@ -122,6 +120,5 @@ def get_response(fs):
     print >> out, informative_split_count, 'informative splits'
     print >> out, degenerate_split_count, 'degenerate splits'
     print >> out, invalid_split_count, 'invalid splits'
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

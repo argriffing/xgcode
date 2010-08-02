@@ -59,11 +59,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     if len(D) < 3:
@@ -116,6 +112,5 @@ def get_response(fs):
     tree_builder.set_original_tree(tree)
     tree_builder.set_output_stream(out)
     tree = tree_builder.build()
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

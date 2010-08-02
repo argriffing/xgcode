@@ -1,8 +1,6 @@
 """Use neighbor joining to make a newick tree from a distance matrix.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -40,26 +38,18 @@ def get_form():
 def get_form_out():
     return FormOut.Newick()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     if len(D) < 3:
         raise HandlingError('the matrix should have at least three rows')
     # read the ordered labels
-    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
+    ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     if len(ordered_labels) != len(D):
         msg_a = 'the number of ordered labels should be the same '
         msg_b = 'as the number of rows in the matrix'
         raise HandlingError(msg_a + msg_b)
     # get the newick tree
     tree = NeighborJoining.make_tree(D.tolist(), ordered_labels)
-    # define the response
-    out = StringIO()
-    print >> out, NewickIO.get_newick_string(tree)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return NewickIO.get_newick_string(tree) + '\n'

@@ -45,11 +45,7 @@ def get_form_out():
 
 #FIXME use eigutil
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the distance matrix
     D = fs.matrix
     # if the distances are plane-like then square each element of the distance matrix
@@ -81,6 +77,5 @@ def get_response(fs):
     out = StringIO()
     for point in points:
         print >> out, '\t'.join(str(v) for v in point)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

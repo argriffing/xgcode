@@ -58,11 +58,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     L = fs.laplacian
     # read the ordered labels
@@ -108,5 +104,4 @@ def get_response(fs):
     for index in sorted(index_complement):
         print >> out, ordered_labels[index]
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

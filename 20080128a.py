@@ -1,8 +1,6 @@
 """Given a newick tree, remove a set of tips.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import Util
@@ -27,16 +25,12 @@ def get_form():
 def get_form_out():
     return FormOut.Newick()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # get the set of names
-    selection = Util.get_stripped_lines(StringIO(fs.names))
+    selection = Util.get_stripped_lines(fs.names.splitlines())
     selected_name_set = set(selection)
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set
@@ -59,6 +53,5 @@ def get_response(fs):
             node for node in tree.preorder() if node.get_child_count() == 1]
     for node in internal_nodes_to_remove:
         tree.remove_node(node)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, tree.get_newick_string()
+    # return the response
+    return tree.get_newick_string() + '\n'

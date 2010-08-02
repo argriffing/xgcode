@@ -107,11 +107,7 @@ def get_split_branch_midpoint_distances(D, selection, complement):
         nv[i] = v[i] + (a - b)/4
     return nv
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
@@ -126,7 +122,8 @@ def get_response(fs):
         raise HandlingError('no selected labels were provided')
     weird_labels = selected_labels - set(ordered_labels)
     if weird_labels:
-        raise HandlingError('some selected labels are invalid: ' + str(weird_labels))
+        msg = 'some selected labels are invalid: ' + str(weird_labels)
+        raise HandlingError(msg)
     # assert that the size of the distance matrix is compatible with the number of ordered labels
     if len(D) != len(ordered_labels):
         raise HandlingError('one ordered label should be provided for each row of the distance matrix')
@@ -152,7 +149,5 @@ def get_response(fs):
     print >> out, 'distances to the midpoint of the branch defined by the bipartition:'
     for i, d in enumerate(v):
         print >> out, ordered_labels[i], ':', d
-    print >> out
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

@@ -72,7 +72,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -129,9 +129,8 @@ def get_response(fs):
     print >> out, sim.get_histogram_string()
     print >> out, ''
     print >> out, 'weighted partition errors:', sim.get_deep_loss()
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 
 

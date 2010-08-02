@@ -1,8 +1,6 @@
 """Given a newick tree, draw an image highlighting selected taxa.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Util
 import SpatialTree
@@ -97,11 +95,7 @@ def add_colors(tree, selection):
         rgb_string = ('%02x%02x%02x' % (r, g, b)).upper()
         node.branch_color = rgb_string
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # start writing the response type
     response_headers = []
     # get a properly formatted newick tree with branch lengths
@@ -112,7 +106,7 @@ def get_response(fs):
         raise HandlingError(msg)
     tree.add_branch_lengths()
     # get the selected taxa
-    selected_taxa = Util.get_stripped_lines(StringIO(fs.selection))
+    selected_taxa = Util.get_stripped_lines(fs.selection.splitlines())
     # verify that each name is present in the tree
     for name in selected_taxa:
         try:
@@ -132,18 +126,9 @@ def get_response(fs):
         layout.do_layout(tree)
     except RuntimeError, e:
         pass
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'tree.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
         image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

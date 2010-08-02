@@ -57,7 +57,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -145,7 +145,5 @@ def get_response(fs):
         print >> out, 'proposed distance matrices had estimates of zero'
         print >> out, sampler.proposals_with_inf,
         print >> out, 'proposed distance matrices had estimates of infinity'
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
-
+    # return the response
+    return out.getvalue()

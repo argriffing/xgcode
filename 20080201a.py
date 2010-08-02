@@ -40,11 +40,7 @@ def get_form():
 def get_form_out():
     return FormOut.NucleotideRateMatrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the nucleotide distribution
     d = SnippetUtil.get_distribution(fs.weights, 'nucleotide', list('ACGT'))
     # get the rate matrix defined by the nucleotide distribution and kappa
@@ -56,5 +52,4 @@ def get_response(fs):
     out = StringIO()
     for nta in 'ACGT':
         print >> out, '\t'.join(str(rate_matrix[(nta, ntb)]) for ntb in 'ACGT')
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

@@ -4,8 +4,6 @@ Given a newick tree and a nucleotide alignment,
 sample ancestral sequences using a Jukes-Cantor rate matrix.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import Fasta
@@ -14,6 +12,8 @@ import RateMatrix
 import MatrixUtil
 import Form
 import FormOut
+
+#FIXME use const data
 
 def get_form():
     """
@@ -33,17 +33,13 @@ def get_form():
 def get_form_out():
     return FormOut.Fasta()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # get the alignment
     try:
-        alignment = Fasta.Alignment(StringIO(fs.fasta))
+        alignment = Fasta.Alignment(fs.fasta.splitlines())
         alignment.force_nucleotide()
     except Fasta.AlignmentError, e:
         raise HandlingError(e)
@@ -64,9 +60,5 @@ def get_response(fs):
     arr = []
     for node in tree.preorder():
         arr.append(alignment.get_fasta_sequence(node.name))
-    alignment_string = '\n'.join(arr)
-    # write the response
-    out = StringIO()
-    print >> out, alignment_string
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return '\n'.join(arr) + '\n'

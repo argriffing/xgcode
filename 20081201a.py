@@ -17,6 +17,8 @@ from Form import CheckItem
 import Form
 import FormOut
 
+#FIXME use const data
+
 def get_form():
     """
     @return: the body of a form
@@ -178,11 +180,7 @@ class AnalysisResult:
         return preamble_lines + error_lines
 
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the newick trees.
     trees = []
     for tree_string in iterutils.stripped_lines(StringIO(fs.trees)):
@@ -214,8 +212,7 @@ def get_response(fs):
         for line in result.get_response_lines(selected_options):
             print >> out, line
         print >> out
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 

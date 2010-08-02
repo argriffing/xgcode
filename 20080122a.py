@@ -4,8 +4,6 @@ Use the pruning algorithm to calculate the logarithm
 of the Jukes-Cantor likelihood of a nucleotide alignment.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import Fasta
@@ -33,17 +31,13 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     # get the alignment
     try:
-        alignment = Fasta.Alignment(StringIO(fs.fasta))
+        alignment = Fasta.Alignment(fs.fasta.splitlines())
         alignment.force_nucleotide()
     except Fasta.AlignmentError, e:
         raise HandlingError(e)
@@ -56,8 +50,5 @@ def get_response(fs):
             row_major_rate_matrix, ordered_states)
     log_likelihood = PhyLikelihood.get_log_likelihood(
             tree, alignment, rate_matrix_object)
-    # write the response
-    out = StringIO()
-    print >> out, log_likelihood
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return str(log_likelihood) + '\n'

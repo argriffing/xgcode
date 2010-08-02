@@ -118,11 +118,7 @@ def gen_normalized_laplacian_contrasts(w, v, d):
         yield p
 
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the laplacian matrix
     L = fs.laplacian
     n = len(L)
@@ -166,9 +162,5 @@ def get_response(fs):
                 'contrast loadings:',
                 '\n'.join('\t'.join(str(value) for value in point) for point in contrasts)]
         paragraphs.append(paragraph)
-    # define the response
-    out = StringIO()
-    print >> out, '\n\n'.join('\n'.join(paragraph) for paragraph in paragraphs)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return '\n\n'.join('\n'.join(p) for p in paragraphs) + '\n'

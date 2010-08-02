@@ -6,8 +6,6 @@ The rows and columns of the rate matrices
 are ordered alphabetically by nucleotide.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -60,11 +58,7 @@ def get_form():
 def get_form_out():
     return FormOut.NucleotideFasta()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -96,11 +90,9 @@ def get_response(fs):
                 mixture_model, fs.ncols)
     except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
-    # get the alignment string
+    # get the alignment
     arr = []
     for node in tree.gen_tips():
         arr.append(alignment.get_fasta_sequence(node.name))
-    alignment_string = '\n'.join(arr)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, alignment_string
+    # return the alignment string
+    return '\n'.join(arr) + '\n'

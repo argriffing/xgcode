@@ -1,8 +1,6 @@
 """Given a newick tree, break the tree into segments.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import Form
@@ -26,11 +24,7 @@ def get_form():
 def get_form_out():
     return FormOut.Newick()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -59,6 +53,5 @@ def get_response(fs):
         # if no node was added then break out of the loop
         if len(old_nodes) == len(list(tree.preorder())):
             break
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, tree.get_newick_string()
+    # return the response
+    return tree.get_newick_string() + '\n'

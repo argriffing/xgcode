@@ -36,11 +36,7 @@ def get_form():
 def get_form_out():
     return FormOut.NucleotideFasta()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the nucleotide weights
     nt_weights = [fs.A, fs.C, fs.G, fs.T]
     # convert the nucleotide weights to probabilities
@@ -70,10 +66,4 @@ def get_response(fs):
     print >> aln, ''.join(sequence_pair[0])
     print >> aln, '>second'
     print >> aln, ''.join(sequence_pair[1])
-    alignment = Fasta.Alignment(StringIO(aln.getvalue()))
-    # begin the response
-    out = StringIO()
-    print >> out, alignment.to_fasta_string()
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return Fasta.Alignment(StringIO(aln.getvalue())).to_fasta_string() + '\n'

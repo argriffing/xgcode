@@ -58,17 +58,14 @@ def check_four_point_condition(D):
                         return False
     return True
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     # begin the response
     out = StringIO()
-    print >> out, 'satisifies the three-point condition:', check_three_point_condition(D)
-    print >> out, 'satisifies the four-point condition:', check_four_point_condition(D)
+    three_point = check_three_point_condition(D)
+    four_point = check_four_point_condition(D)
+    print >> out, 'satisifies the three-point condition:', three_point
+    print >> out, 'satisifies the four-point condition:', four_point
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

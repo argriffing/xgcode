@@ -55,11 +55,7 @@ def split_to_string(my_split):
     """
     return ', '.join(set_to_string(taxa) for taxa in my_split)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
@@ -88,5 +84,4 @@ def get_response(fs):
         taxon_split = [[ordered_labels[i] for i in group] for group in index_split]
         print >> out, split_to_string(taxon_split)
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

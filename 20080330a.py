@@ -44,11 +44,7 @@ def get_form():
 def get_form_out():
     return FormOut.Html()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the nexus data
     nexus = Nexus.Nexus()
     try:
@@ -79,11 +75,8 @@ def get_response(fs):
             mixture_proportions, rate_matrix_objects)
     # normalize the mixture model
     mixture_model.normalize()
-    # create the results
-    html_string = do_analysis(mixture_model, nexus.alignment, nexus.tree)
-    # write the response
-    response_headers = [('Content-Type', 'text/html')]
-    return response_headers, html_string
+    # return the results
+    return do_analysis(mixture_model, nexus.alignment, nexus.tree) + '\n'
 
 def do_analysis_helper(labels, element_lists, w):
     """

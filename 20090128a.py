@@ -104,11 +104,7 @@ def process_tree(tree, tree_name, show_newick, show_art):
     # return the string
     return out.getvalue()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the set of names
     selection = Util.get_stripped_lines(StringIO(fs.names))
     # get the tree
@@ -118,7 +114,9 @@ def get_response(fs):
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set
     if extra_names:
-        raise HandlingError('the following selected names are not valid tips: %s' % str(tuple(extra_names)))
+        msg_a = 'the following selected names '
+        msg_b = 'are not valid tips: %s' % str(tuple(extra_names)))
+        raise HandlingError(msg_a + msg_b)
     # get the pruned tree
     simple_tree = NewickIO.parse(fs.tree, Newick.NewickTree)
     pruned_tree = get_pruned_tree(simple_tree, selected_name_set)
@@ -130,6 +128,5 @@ def get_response(fs):
         print >> out, 'calculating splits of %s:' % tree_name
         print >> out, process_tree(tree, tree_name, fs.show_newick, fs.show_art)
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue()
+    return out.getvalue()
 

@@ -1,6 +1,7 @@
 """Compare spectral sign splits with and without internal nodes.
 
-For each of a set of trees, compare spectral sign splits with and without internal nodes.
+For each of a set of trees,
+compare spectral sign splits with and without internal nodes.
 """
 
 from StringIO import StringIO
@@ -16,6 +17,8 @@ import FelTree
 import NewickIO
 import TreeComparison
 import TreeSampler
+
+#FIXME use const data
 
 def get_form():
     """
@@ -52,11 +55,7 @@ def get_vector(distance_matrix):
         for w, v in zip(eigenvalues, eigenvectors)])
     return max_v
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the newick trees.
     trees = []
     for tree_string in iterutils.stripped_lines(fs.trees.splitlines()):
@@ -140,8 +139,7 @@ def get_response(fs):
     print >> out, 'for this many trees different splits were found:',
     print >> out, diff_count
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()
 
 def main():
     filename = 'counterexamples.out'

@@ -1,8 +1,6 @@
 """Given a newick tree, scale the branch lengths.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Newick
@@ -26,11 +24,7 @@ def get_form():
 def get_form_out():
     return FormOut.Newick()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the newick string
     try:
         tree = Newick.parse(fs.tree, Newick.NewickTree)
@@ -41,6 +35,5 @@ def get_response(fs):
     for node in tree.preorder():
         if node.blen is not None:
             node.blen *= fs.sf
-    # write the newick tree
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, tree.get_newick_string()
+    # return the newick tree
+    return tree.get_newick_string() + '\n'

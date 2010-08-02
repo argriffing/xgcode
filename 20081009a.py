@@ -50,11 +50,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the values from the form
     subtree_a = NewickIO.parse(fs.subtree_a, Newick.NewickTree)
     taxa_a1 = Util.get_stripped_lines(StringIO(fs.taxa_a1))
@@ -150,9 +146,8 @@ def get_response(fs):
     print >> out, MatrixUtil.m_to_string(R)
     print >> out, 'M summed within blocks:'
     print >> out, MatrixUtil.m_to_string(block_R)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 def do_third_method(tree_a, tree_b, tree, branch_d2,
         taxa_a1, taxa_a2, taxa_b1, taxa_b2, out):

@@ -34,11 +34,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the nucleotide distribution
     nt_distribution = SnippetUtil.get_distribution(fs.nucleotides,
             'nucleotide', Codon.g_nt_letters)
@@ -73,9 +69,8 @@ def get_response(fs):
         codon_to_weight[codon] = codon_aa_weight * codon_nt_weight
         codon_to_weight[codon] /= sibling_nt_weight_sum
     total_weight = sum(codon_to_weight.values())
-    # write the codon distribution
+    # return the codon distribution
     out = StringIO()
-    response_headers = [('Content-Type', 'text/plain')]
     for codon, weight in sorted(codon_to_weight.items()):
         print >> out, codon, ':', weight / total_weight
-    return response_headers, out.getvalue().strip()
+    return out.getvalue() + '\n'

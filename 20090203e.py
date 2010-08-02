@@ -4,9 +4,6 @@ Note that the elements of the Euclidean distance matrix (EDM) are
 usually defined as squared pairwise Euclidean distances.
 """
 
-from StringIO import StringIO
-import math
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -39,11 +36,7 @@ def get_form():
 def get_form_out():
     return FormOut.Matrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the points
     M = fs.points
     # get the squared distance between each pair of points
@@ -56,9 +49,5 @@ def get_response(fs):
                 D[i][j] = d*d
             else:
                 D[i][j] = d
-    # define the response
-    out = StringIO()
-    print >> out, MatrixUtil.m_to_string(D)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return MatrixUtil.m_to_string(D) + '\n'

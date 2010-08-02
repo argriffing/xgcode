@@ -72,11 +72,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # arbitrarily define the size of the alphabet
     k = 4
     # define the response
@@ -107,6 +103,5 @@ def get_response(fs):
     for name, value in zip(ordered_tip_names, dissimilarity_vector):
         print >> out, '\t'.join((name, str(value)))
     print >> out
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

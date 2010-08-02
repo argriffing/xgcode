@@ -45,11 +45,7 @@ def list_to_diagonal_matrix(arr):
         D[i][i] = value
     return D
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # define the ordering of the nodes
@@ -72,5 +68,4 @@ def get_response(fs):
     print >> out, 'ordered node labels:'
     print >> out, '\n'.join(ordered_names)
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

@@ -1,8 +1,6 @@
 """Visualize a matrix as a heat map.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -12,6 +10,8 @@ import HeatMap
 import MatrixUtil
 import Form
 import FormOut
+
+#FIXME importing numpy is unnecessary if row major lists will suffice
 
 def get_form():
     """
@@ -32,7 +32,7 @@ def get_form():
 def get_form_out():
     return FormOut.Html()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -43,5 +43,4 @@ def get_response(fs):
     renderer = HeatMap.PreHeatMap(heatmap)
     html_string = renderer.get_example_html()
     # return the response
-    response_headers = [('Content-Type', 'text/html')]
-    return response_headers, html_string
+    return html_string + '\n'

@@ -1,8 +1,6 @@
 """Given a newick tree, calculate tip weights.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import Newick
 import LeafWeights
@@ -30,25 +28,17 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # get the tree
+def get_response_content(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
     tree.add_branch_lengths()
     if tree.has_negative_branch_lengths():
-        raise HandlingError('calculating weights for a tree with negative branch lengths is not implemented')
-    # get the weights
+        msg_a = 'calculating weights for a tree '
+        msg_b = 'with negative branch lengths is not implemented'
+        raise HandlingError(msg_a + msg_b)
     if fs.stone:
         name_weight_pairs = LeafWeights.get_stone_weights(tree)
     elif fs.thompson:
         name_weight_pairs = LeafWeights.get_thompson_weights(tree)
-    # report the weights
-    out = StringIO()
-    for name, weight in name_weight_pairs:
-        print >> out, '%s: %f' % (name, weight)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    lines = ['%s: %f' % pair for pair in name_weight_pairs]
+    return '\n'.join(lines) + '\n'

@@ -19,6 +19,8 @@ import Nexus
 import Form
 import FormOut
 
+#FIXME multiple output types
+
 def get_form():
     """
     @return: the body of a form
@@ -41,7 +43,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Nexus()
+    return FormOut.ContextDependent()
 
 def get_response(fs):
     """

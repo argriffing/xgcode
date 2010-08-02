@@ -4,8 +4,6 @@ Given strings, find vectors whose correlations are
 proportions of matching sites.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -41,7 +39,8 @@ def get_vectors(n):
     The dot product of each vector with the unit vector is zero.
     The dot product of each vector with itself is one.
     The dot product of each vector with each other vector is zero.
-    These vectors are found using the eigendecomposition of the centering matrix.
+    These vectors are found using
+    the eigendecomposition of the centering matrix.
     @param n: get this many vectors
     @return: a list of n vectors
     """
@@ -62,14 +61,10 @@ def eps_filter(x, epsilon):
     """
     return 0 if (abs(x) < epsilon) else x
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the sequences
     sequences = []
-    for raw_string in iterutils.stripped_lines(StringIO(fs.sequences)):
+    for raw_string in iterutils.stripped_lines(fs.sequences.splitlines()):
         sequences.append(raw_string.strip())
     # get the alphabet
     alphabet = list(sorted(set(''.join(sequences))))
@@ -86,10 +81,5 @@ def get_response(fs):
         for letter in sequence:
             number_list.extend(letter_to_vector[letter])
         number_lists.append(number_list)
-    # begin the response
-    out = StringIO()
-    # print the correlation matrix
-    print >> out, MatrixUtil.m_to_string(number_lists)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return MatrixUtil.m_to_string(number_lists) + '\n'

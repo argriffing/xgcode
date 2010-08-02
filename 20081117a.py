@@ -175,7 +175,7 @@ def get_ohm_transformation(edge_triples, name_to_index, reduced_ordered_vertex_n
     reduced_L = -2*np.linalg.pinv(MatrixUtil.double_centered(reduced_R))
     # get reduced edge triples
     reduced_edge_triples = []
-    epsilon = 0.00000000001
+    epsilon = 1e-11
     for i, name_a in enumerate(reduced_ordered_vertex_names):
         for j, name_b in enumerate(reduced_ordered_vertex_names):
             if i < j:
@@ -232,11 +232,7 @@ def get_conductance_transformation(edge_triples, name_to_index, reduced_ordered_
                     reduced_edge_triples.append(triple)
     return reduced_edge_triples
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the edge triples (vertex name, vertex name, edge weight)
     edge_triples = []
     for line in iterutils.stripped_lines(fs.graph.splitlines()):
@@ -249,54 +245,67 @@ def get_response(fs):
         try:
             weight = float(string_triple[2])
         except ValueError, e:
-            raise HandlingError('edge weights should be floating point numbers')
+            msg = 'edge weights should be floating point numbers'
+            raise HandlingError(msg)
         if weight <= 0:
-            raise HandlingError('edge weights should be positive')
+            msg = 'edge weights should be positive'
+            raise HandlingError(msg)
         triple.append(weight)
         edge_triples.append(triple)
     # get the set of directed edges to check for redundant or invalid input
     unordered_directed_edges = set()
     for a, b, weight in edge_triples:
         if a == b:
-            raise HandlingError('vertices should not have edges connecting to themselves')
+            msg = 'vertices should not have edges connecting to themselves'
+            raise HandlingError(msg)
         if (a, b) in unordered_directed_edges:
-            raise HandlingError('each edge should be given only once')
+            msg = 'each edge should be given only once'
+            raise HandlingError(msg)
         if (b, a) in unordered_directed_edges:
-            raise HandlingError('each edge should be given in only one direction')
+            msg = 'each edge should be given in only one direction'
+            raise HandlingError(msg)
         unordered_directed_edges.add((a, b))
     # get the lexicographically ordered list of vertex names
     unordered_vertex_names = set()
     for edge in unordered_directed_edges:
         unordered_vertex_names.update(set(edge))
     ordered_vertex_names = list(sorted(unordered_vertex_names))
-    name_to_index = dict((name, i) for i, name in enumerate(ordered_vertex_names))
+    name_to_index = dict(
+            (name, i) for i, name in enumerate(ordered_vertex_names))
     n = len(ordered_vertex_names)
     # read the set of vertices that the user wants to remove
     vertex_names_to_remove = set()
     for name in iterutils.stripped_lines(fs.vertices.splitlines()):
         if name in vertex_names_to_remove:
-            raise HandlingError('vertices should be named for removal at most once')
+            msg = 'vertices should be named for removal at most once'
+            raise HandlingError(msg)
         vertex_names_to_remove.add(name)
-    # assert that the set of vertex names for removal is a subset of the vertex names in the graph
+    # Assert that the set of vertex names for removal
+    # is a subset of the vertex names in the graph.
     weird_names = vertex_names_to_remove - unordered_vertex_names
     if weird_names:
-        raise HandlingError('some vertices named for removal were not found in the graph: ' + str(weird_names))
+        msg_a = 'some vertices named for removal '
+        msg_b = 'were not found in the graph: ' + str(weird_names)
+        raise HandlingError(msg_a + msg_b)
     # get the ordered list of vertex names that will remain
-    reduced_ordered_vertex_names = list(sorted(unordered_vertex_names - vertex_names_to_remove))
+    reduced_ordered_vertex_names = list(
+            sorted(unordered_vertex_names - vertex_names_to_remove))
     # get the laplacian depending on the method
     if fs.funky:
-        reduced_edge_triples = get_funky_transformation(edge_triples, name_to_index, reduced_ordered_vertex_names)
+        reduced_edge_triples = get_funky_transformation(
+                edge_triples, name_to_index, reduced_ordered_vertex_names)
     elif fs.funky_corrected:
-        reduced_edge_triples = get_corrected_funky_transformation(edge_triples, name_to_index, reduced_ordered_vertex_names)
+        reduced_edge_triples = get_corrected_funky_transformation(
+                edge_triples, name_to_index, reduced_ordered_vertex_names)
     elif fs.ohm:
-        reduced_edge_triples = get_ohm_transformation(edge_triples, name_to_index, reduced_ordered_vertex_names)
+        reduced_edge_triples = get_ohm_transformation(
+                edge_triples, name_to_index, reduced_ordered_vertex_names)
     elif fs.conductance:
-        reduced_edge_triples = get_conductance_transformation(edge_triples, name_to_index, reduced_ordered_vertex_names)
+        reduced_edge_triples = get_conductance_transformation(
+                edge_triples, name_to_index, reduced_ordered_vertex_names)
     # write the reduced edge triples
     out = StringIO()
     for name_a, name_b, weight in reduced_edge_triples:
         print >> out, name_a, name_b, weight
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue()
-
+    return out.getvalue()

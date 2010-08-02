@@ -4,8 +4,6 @@ Given a distance matrix, find the length of the branch connecting two subtrees.
 This procedure is based on R code by Eric Stone.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -136,27 +134,17 @@ def get_branch_length_c(D, selection, complement):
     return branch_length
 
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
-    ordered_labels = Util.get_stripped_lines(StringIO(fs.labels))
+    ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     # read the set of selected labels
-    selected_labels = set(Util.get_stripped_lines(StringIO(fs.selection)))
-    # start to prepare the reponse
-    out = StringIO()
+    selected_labels = set(Util.get_stripped_lines(fs.selection.splitlines())
     # get the set of selected indices and its complement
     n = len(D)
     selection = set(i
             for i, x in enumerate(ordered_labels) if x in selected_labels)
     complement = set(range(n)) - selection
     branch_length = get_branch_length_c(D, selection, complement)
-    print >> out, 'branch length:'
-    print >> out, branch_length
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return str(branch_length) + '\n'

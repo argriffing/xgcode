@@ -51,11 +51,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # do Procrustes Rotation as in section 14.7 of Multivariate Analysis by Mardia et al.
     Y_uncentered = fs.input_points
     X_uncentered = fs.reference_points
@@ -83,5 +79,4 @@ def get_response(fs):
         new_point = c_hat * np.dot(point, A_hat) + reference_center
         print >> out, '\t'.join(str(v) for v in new_point)
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

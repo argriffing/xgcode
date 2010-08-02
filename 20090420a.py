@@ -31,6 +31,8 @@ import FormOut
 class InfiniteDistanceError(Exception): pass
 class ZeroDistanceError(Exception): pass
 
+#FIXME use the distance matrix sampling library
+
 def get_form():
     """
     @return: the body of a form
@@ -201,11 +203,7 @@ def process(ntaxa, length, nseconds, builders, branch_length_sampler):
             print >> out, nresults, 'reconstructions', sa, 'and', sb
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     nseconds = 2
     length = fs.length
     ntaxa = fs.ntaxa
@@ -245,9 +243,9 @@ def get_response(fs):
         updater = BuildTreeTopology.update_using_laplacian
         second_builder = Builder(splitter, updater, 'specnj')
     builders = [first_builder, second_builder]
-    response_text = process(ntaxa, length, nseconds, builders, branch_length_sampler)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, response_text
+    response_text = process(
+            ntaxa, length, nseconds, builders, branch_length_sampler)
+    return response_text
 
 def main():
     ntaxa = 20

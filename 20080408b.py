@@ -20,10 +20,8 @@ import Form
 import FormOut
 
 # define the input nexus path
-global hyphy_nexus
 hyphy_nexus = os.path.join(Config.data_path, 'hyphy.nex')
 # define the input batch file model path
-global hyphy_bf
 hyphy_bf = os.path.join(Config.data_path, 'model.bf')
 
 def get_form():
@@ -159,9 +157,8 @@ def get_response(fs):
         print >> out, '---------------------------------------'
         print >> out, ''
         print >> out, ''
-    # send the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 def get_hyphy_model_string(nexus_path, ncategories):
     """

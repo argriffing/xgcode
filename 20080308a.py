@@ -65,11 +65,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -101,11 +97,8 @@ def get_response(fs):
             rate_matrix_objects)
     # normalize the mixture model
     mixture_model.normalize()
-    # get the html string
-    html_string = do_analysis(mixture_model, alignment, tree)
-    # write the response
-    response_headers = [('Content-Type', 'text/html')]
-    return response_headers, html_string
+    # return the html string
+    return do_analysis(mixture_model, alignment, tree) + '\n'
 
 def do_analysis_helper(labels, element_lists, w):
     """

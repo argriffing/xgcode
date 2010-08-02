@@ -1,8 +1,6 @@
 """Given a rate matrix, get the expected number of transitions per unit time.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -10,6 +8,8 @@ import MatrixUtil
 import RateMatrix
 import Form
 import FormOut
+
+#FIXME numpy may not be necessary
 
 def get_form():
     """
@@ -28,11 +28,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix from the form data
     R = fs.matrix
     # get the expected rate
@@ -42,6 +38,5 @@ def get_response(fs):
         expected_rate = rate_matrix_object.get_expected_rate()
     except RateMatrix.RateMatrixError, e:
         raise HandlingError('error calculating the expected rate: ' + str(e))
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, str(expected_rate)
+    # return the response
+    return str(expected_rate) + '\n'

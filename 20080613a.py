@@ -148,27 +148,14 @@ def get_image(row_major_matrix, width_and_height,
     # get the image string
     return cairo_helper.get_image_string()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     M = fs.matrix
     if M.shape[0] < 3 or M.shape[1] < 3:
         raise HandlingError('expected at least a 3x3 matrix')
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = get_image(M.tolist(), (640, 480), ext,
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
+        return get_image(M.tolist(), (640, 480), ext,
                 fs.axes, fs.connections, fs.vertices)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

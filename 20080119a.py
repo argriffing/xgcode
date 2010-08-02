@@ -6,8 +6,6 @@ and the fraction of the distance between the parent and the child
 where the root will be added.
 """
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Newick
@@ -33,11 +31,7 @@ def get_form():
 def get_form_out():
     return FormOut.Newick()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
@@ -75,6 +69,5 @@ def get_response(fs):
     # if the old root has a single child then remove the old root
     if len(old.children) == 1:
         tree.remove_node(old)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, tree.get_newick_string()
+    # return the response
+    return tree.get_newick_string() + '\n'

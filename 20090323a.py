@@ -79,11 +79,7 @@ def column_vector_to_list(v):
 def list_to_column_vector(arr):
     return np.array([[element] for element in arr])
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # define the response
     out = StringIO()
     # get the tree
@@ -204,6 +200,5 @@ def get_response(fs):
     for distance in normalized_L1_distances:
         print >> out, distance
     print >> out
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

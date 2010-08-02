@@ -4,8 +4,6 @@ Evaluate a split of taxa for a given tree
 using the exact criterion for deep splits.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -34,15 +32,11 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get the selected names
-    selection = Util.get_stripped_lines(StringIO(fs.selection))
+    selection = Util.get_stripped_lines(fs.selection.splitlines())
     selected_name_set = set(selection)
     possible_name_set = set(node.get_name() for node in tree.gen_tips())
     extra_names = selected_name_set - possible_name_set
@@ -70,8 +64,5 @@ def get_response(fs):
     # get the R matrix
     R = Clustering.get_R_balaji(D)
     value = np.dot(np.dot(Y, R), Y.T)
-    # report the results
-    out = StringIO()
-    print >> out, value
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the taxon split evaluation
+    return str(value) + '\n'

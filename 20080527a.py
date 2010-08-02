@@ -41,11 +41,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix from the form data
     R = fs.matrix
     matrix_size = len(R)
@@ -67,6 +63,5 @@ def get_response(fs):
     out = StringIO()
     for state_index, expected_wait_time in enumerate(expected_wait_times):
         print >> out, state_index, ':', expected_wait_time / fs.time
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

@@ -4,8 +4,6 @@ The matrix exponential computation uses the default scipy implementation,
 which I think is Pade approximation of order 7.
 """
 
-from StringIO import StringIO
-
 from scipy import linalg
 import numpy as np
 
@@ -36,16 +34,7 @@ def get_form():
 def get_form_out():
     return FormOut.TransitionMatrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # exponentiate the matrix
+def get_response_content(fs):
     R = fs.matrix * fs.time
     T = linalg.expm(R)
-    # write the response
-    out = StringIO()
-    print >> out, MatrixUtil.m_to_string(T)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return MatrixUtil.m_to_string(T) + '\n'

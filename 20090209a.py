@@ -55,11 +55,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # assert the the given labels are tips of the tree
@@ -99,11 +95,11 @@ def get_response(fs):
     L_reduced[1][0] = L[lb][ra]
     L_reduced[1][1] = L[lb][rb]
     epsilon = 1e-13
-    epsilon = 0.0000000000001
     criterion = np.linalg.det(L_reduced)
     if abs(criterion) < epsilon:
         criterion = 0
-    # in analogy to the four point condition, use two different ways of calculating the distance
+    # In analogy to the four point condition,
+    # use two different ways of calculating the distance.
     blen_a = (D[la][rb] + D[lb][ra] - D[la][lb] - D[ra][rb]) / 2.0
     blen_b = (D[la][ra] + D[lb][rb] - D[la][lb] - D[ra][rb]) / 2.0
     blen = min(blen_a, blen_b)
@@ -130,7 +126,5 @@ def get_response(fs):
                 'branch length defined by the split:',
                 str(blen)]
         paragraphs.append(paragraph)
-    print >> out, '\n\n'.join('\n'.join(paragraph) for paragraph in paragraphs)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return '\n\n'.join('\n'.join(p) for p in paragraphs) + '\n'

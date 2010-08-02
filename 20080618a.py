@@ -5,8 +5,6 @@ Each element is the reciprocal of the value of a resistor
 directly connecting the nodes.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -35,17 +33,8 @@ def get_form():
 def get_form_out():
     return FormOut.Matrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     A = fs.matrix
     L = Euclid.adjacency_to_laplacian(A)
     D = Euclid.laplacian_to_edm(L)
-    # start to prepare the reponse
-    out = StringIO()
-    print >> out, MatrixUtil.m_to_string(D)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return MatrixUtil.m_to_string(D) + '\n'

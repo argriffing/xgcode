@@ -33,11 +33,7 @@ def get_form():
 def get_form_out():
     return FormOut.Matrix()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the alignment
     try:
         alignment = Fasta.Alignment(fs.fasta.splitlines())
@@ -51,7 +47,5 @@ def get_response(fs):
     for row in JC69.get_ML_distance_matrix(alignment.sequences):
         corrected_row = [fs.infinity if x == float('inf') else x for x in row]
         row_major_distance_matrix.append(corrected_row)
-    # write the response
-    text = MatrixUtil.m_to_string(row_major_distance_matrix) + '\n'
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, text
+    # return the response
+    return MatrixUtil.m_to_string(row_major_distance_matrix) + '\n'

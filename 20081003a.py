@@ -175,11 +175,7 @@ def make_laplacian(D, stddev):
         laplacian_matrix[i][i] -= sum(laplacian_matrix[i])
     return laplacian_matrix
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_context(fs):
     # get the points
     points = fs.points
     # get the distance matrix from the euclidean points
@@ -191,23 +187,14 @@ def get_response(fs):
     #stddev = 1.0 # this gives something that looks like the original matrix
     stddev = 0.3
     laplacian_matrix = make_laplacian(D, stddev)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
         image_size = (640, 480)
         draw_axes = True
-        image_string = get_image(laplacian_matrix, image_size, ext, draw_axes)
+        return get_image(laplacian_matrix, image_size, ext, draw_axes)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string
 
 def main():
     """

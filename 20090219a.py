@@ -1,7 +1,6 @@
 """Plot some labeled points.
 """
 
-from StringIO import StringIO
 import math
 
 import cairo
@@ -12,6 +11,8 @@ import Form
 import FormOut
 import Util
 import CairoUtil
+
+#FIXME use haversine because this is horrible
 
 def todec(degrees, minutes):
     """
@@ -114,15 +115,12 @@ def get_image_string(labels, points, total_width, total_height,
     # get the image string
     return cairo_helper.get_image_string()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the labeled points
     labels = []
     points = []
-    labeled_point_lines = Util.get_stripped_lines(StringIO(fs.labeled_points))
+    labeled_point_lines = Util.get_stripped_lines(
+            fs.labeled_points.splitlines())
     for line in labeled_point_lines:
         labeled_point = line.split()
         if len(labeled_point) != 3:
@@ -143,19 +141,10 @@ def get_response(fs):
     if width < 1 or height < 1:
         msg = 'the image dimensions do not allow for enough drawable area'
         raise HandlingError(msg)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
         image_string = get_image_string(labels, points,
                 fs.total_width, fs.total_height, fs.border, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

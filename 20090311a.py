@@ -55,11 +55,7 @@ def get_precision_matrix(S):
     """
     return np.linalg.inv(S)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     D = fs.matrix
     L = Euclid.edm_to_laplacian(D)
     S = get_sigma_matrix(D)
@@ -83,7 +79,5 @@ def get_response(fs):
     print >> out
     print >> out, 'the pseudo-inverse of the double centered sigma matrix minus the laplacian matrix:'
     print >> out, MatrixUtil.m_to_string(np.linalg.pinv(MatrixUtil.double_centered(S))-L)
-    print >> out
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

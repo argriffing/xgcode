@@ -74,11 +74,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the headers
     headers = Util.get_stripped_lines(fs.headers.splitlines())
     # read the tab separated MAPP output
@@ -123,6 +119,5 @@ def get_response(fs):
         for pvalue, aa_letter in sorted(zip(pvalue_list, Codon.g_aa_letters)):
             print >> out, aa_letter, pvalue
         print >> out, ''
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

@@ -98,11 +98,7 @@ def get_euclidean_distance_matrix(points):
         D.append(row)
     return D
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     states = list(sorted(node.name for node in tree.gen_tips()))
@@ -131,9 +127,8 @@ def get_response(fs):
     origin = [0 for i in range(n)]
     for z in z_points:
         print >> out, sum((a-b)**2 for a, b in zip(z, origin))
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()
 
 def hard_coded_analysis_a():
     tree_string = '(a:1, (b:2, d:5):1, c:4);'

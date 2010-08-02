@@ -6,9 +6,6 @@ This uses an incorrect formula from "On Euclidean distance matrices"
 and a corrected version by Eric Stone.
 """
 
-from StringIO import StringIO
-import math
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -38,6 +35,17 @@ def get_form():
 
 def get_form_out():
     return FormOut.Matrix()
+
+def get_response_content(fs):
+    # read the matrix
+    L = fs.laplacian
+    # get the distance matrix
+    if fs.correct:
+        D = get_correct_distance_matrix(L)
+    else:
+        D = get_incorrect_distance_matrix(L)
+    # return the response
+    return MatrixUtil.m_to_string(D) + '\n'
 
 def get_deleted_matrix(M, row_indices, column_indices):
     """
@@ -91,22 +99,3 @@ def get_correct_distance_matrix(L):
             if i != j:
                 D[i][j] = get_minor(L, [i, j], [i, j]) / get_minor(L, [i], [i])
     return D
-
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # read the matrix
-    L = fs.laplacian
-    # get the distance matrix
-    if fs.correct:
-        D = get_correct_distance_matrix(L)
-    else:
-        D = get_incorrect_distance_matrix(L)
-    # define the response
-    out = StringIO()
-    print >> out, MatrixUtil.m_to_string(D)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()

@@ -12,8 +12,6 @@ The way it does the conditional probability is not right.
 # ((a:1, b:2)A:1, (c:3, d:4)B:1, (e:0.25, f:0.5)C:1);
 g_tree_string = '((a:1, b:2)A:1, (c:3, d:4)B:1, (e:0.25, f:0.5)C:1);'
 
-from StringIO import StringIO
-
 from SnippetUtil import HandlingError
 import SnippetUtil
 import RateMatrix
@@ -55,15 +53,9 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('tree', [])
+    return FormOut.Image('tree')
 
 def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # start writing the response type
-    response_headers = []
     # get a properly formatted newick tree with branch lengths
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     tree.assert_valid()
@@ -74,7 +66,7 @@ def get_response(fs):
     # get the dictionary mapping the branch name to the nucleotide
     name_to_nucleotide = {}
     # parse the column string
-    for line in iterutils.stripped_lines(StringIO(fs.column)):
+    for line in iterutils.stripped_lines(fs.column.splitlines()):
         name_string, nucleotide_string = SnippetUtil.get_state_value_pair(line)
         if nucleotide_string not in list('acgtACGT'):
             msg = '"%s" is not a valid nucleotide' % nucleotide_string
@@ -108,22 +100,12 @@ def get_response(fs):
         simulate_branch_path(tree, node)
     # do the layout
     EqualArcLayout.do_layout(tree)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'tree.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
+        return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    # return the response
-    return response_headers, image_string
-
 
 def simulate_branch_path(tree, node):
     """

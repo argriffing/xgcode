@@ -1,8 +1,6 @@
 """Given a rate matrix, get the stationary distribution.
 """
 
-from StringIO import StringIO
-
 import numpy as np
 
 from SnippetUtil import HandlingError
@@ -10,6 +8,8 @@ import MatrixUtil
 import RateMatrix
 import Form
 import FormOut
+
+#FIXME numpy may not be necessary
 
 def get_form():
     """
@@ -28,11 +28,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix from the form data
     R = fs.matrix
     # get the stationary distribution of the rate matrix
@@ -41,8 +37,5 @@ def get_response(fs):
     except RateMatrix.RateMatrixError as e:
         msg = 'error calculating the stationary distribution: ' + str(e)
         raise HandlingError(msg)
-    # get the stationary distribution string
-    text = '\n'.join(str(x) for x in v) + '\n'
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, text
+    # return the stationary distribution string
+    return '\n'.join(str(x) for x in v) + '\n'

@@ -2,12 +2,9 @@
 """
 
 from StringIO import StringIO
-import math
 
 import numpy as np
 
-from SnippetUtil import HandlingError
-import SnippetUtil
 import Form
 import FormOut
 import MatrixUtil
@@ -46,11 +43,7 @@ def add_sierpinski(M, offset, iterations):
         for i in range(3):
             add_sierpinski(M, offset + blocksize*i, iterations-1)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # begin the response
     out = StringIO()
     # create the adjacency matrix
@@ -66,5 +59,4 @@ def get_response(fs):
         M = -M
         print >> out, MatrixUtil.m_to_string(M)
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

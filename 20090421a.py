@@ -250,11 +250,7 @@ def process(ntaxa, length, nseconds, branch_length_sampler):
         print >> out, s
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     nseconds = 2
     length = fs.length
     ntaxa = fs.ntaxa
@@ -267,9 +263,7 @@ def get_response(fs):
         branch_length_sampler = BranchLengthSampler.UniformA()
     elif fs.uniform_length_b:
         branch_length_sampler = BranchLengthSampler.UniformB()
-    response_text = process(ntaxa, length, nseconds, branch_length_sampler)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, response_text
+    return process(ntaxa, length, nseconds, branch_length_sampler) + '\n'
 
 def main(options):
     assert 0 <= options.nseconds
