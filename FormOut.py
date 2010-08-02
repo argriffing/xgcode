@@ -24,13 +24,17 @@ def _get_filename_metaprogram(fmt, interpolants):
 class FormOut(object):
 
     def __init__(self,
-            filename_format_string='default.out', filename_interpolants=[]):
-        self.filename_format_string = filename_format_string
-        self.filename_interpolants = filename_interpolants
+            name_base='default', name_ext='out', name_interpolants=None):
+        if name_ext:
+            self.filename_format_string = name_base + '.' + name_ext
+        else:
+            self.filename_format_string = name_base
+        self.filename_interpolants = name_interpolants
 
     def get_filename_metaprogram(self):
         """
         This is ugly but necessary metaprogramming for Mobyle compatibility.
+        Mobyle wants python code embedded in XML.
         @return: a string that is a python expression
         """
         return _get_filename_metaprogram(
@@ -40,15 +44,18 @@ class FormOut(object):
         """
         @param fs: fieldstorage
         """
-        rhs = tuple(getattr(fs, x) for x in self.filename_interpolants)
-        return self.filename_format_string % rhs
+        if self.filename_interpolants:
+            rhs = tuple(getattr(fs, x) for x in self.filename_interpolants)
+            return self.filename_format_string % rhs
+        else:
+            return self.filename_format_string
 
     def get_contenttype(self, fs):
         return 'text/plain'
 
     def get_response_headers(self, fs):
         response_headers = []
-        response_headers.append(('Content-Type', self.get_contenttype()))
+        response_headers.append(('Content-Type', self.get_contenttype(fs)))
         if hasattr(fs, 'contentdisposition'):
             filename = self.get_filename(fs)
             disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
@@ -108,101 +115,104 @@ class Image(FormOut):
         return 'Binary'
 
 
+class ContextDependent(FormOut):
+    def __init__(self, fmt='out', ext='unknown', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
+
 class Report(FormOut):
-    def __init__(self, fmt='report', interpolants=[]):
-        FormOut.__init__(self, fmt + '.txt', interpolants)
+    def __init__(self, fmt='out', ext='txt', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Hud(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.hud', interpolants)
+    def __init__(self, fmt='out', ext='hud', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class RTable(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.table', interpolants)
+    def __init__(self, fmt='out', ext='table', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class EigenstratInd(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.ind', interpolants)
+    def __init__(self, fmt='out', ext='ind', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class EigenstratPheno(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.pheno', interpolants)
+    def __init__(self, fmt='out', ext='pheno', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class EigenstratGeno(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.geno', interpolants)
+    def __init__(self, fmt='out', ext='geno', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class EigenstratSnp(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.snp', interpolants)
+    def __init__(self, fmt='out', ext='snp', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Newick(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.newick', interpolants)
+    def __init__(self, fmt='out', ext='newick', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Fasta(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.fasta', interpolants)
+    def __init__(self, fmt='out', ext='fasta', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Phylip(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.phy', interpolants)
+    def __init__(self, fmt='out', ext='phy', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class TransitionMatrix(FormOut):
-    def __init__(self, fmt='transition_matrix', interpolants=[]):
-        FormOut.__init__(self, fmt + '.txt', interpolants)
+    def __init__(self, fmt='transition_matrix', ext='txt', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class NucleotideRateMatrix(FormOut):
-    def __init__(self, fmt='nt_rate_matrix', interpolants=[]):
-        FormOut.__init__(self, fmt + '.txt', interpolants)
+    def __init__(self, fmt='nt_rate_matrix', ext='txt', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class CodonRateMatrix(FormOut):
-    def __init__(self, fmt='codon_rate_matrix', interpolants=[]):
-        FormOut.__init__(self, fmt + '.txt', interpolants)
+    def __init__(self, fmt='codon_rate_matrix', ext='txt', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Html(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.html', interpolants)
+    def __init__(self, fmt='out', ext='html', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
     def get_contenttype_type(self, fs):
         return 'text/html'
 
 class RateMatrix(FormOut):
-    def __init__(self, fmt='rate_matrix', interpolants=[]):
-        FormOut.__init__(self, fmt + '.txt', interpolants)
+    def __init__(self, fmt='rate_matrix', ext='txt', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class NucleotideFasta(FormOut):
-    def __init__(self, fmt='nucleotide_alignment', interpolants=[]):
-        FormOut.__init__(self, fmt + '.fasta', interpolants)
+    def __init__(self, fmt='nt_alignment', ext='fasta', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class CodonFasta(FormOut):
-    def __init__(self, fmt='codon_alignment', interpolants=[]):
-        FormOut.__init__(self, fmt + '.fasta', interpolants)
+    def __init__(self, fmt='codon_alignment', ext='fasta', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Nexus(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.nex', interpolants)
+    def __init__(self, fmt='out', ext='nex', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Stockholm(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.stockholm', interpolants)
+    def __init__(self, fmt='out', ext='stockholm', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Matrix(FormOut):
-    def __init__(self, fmt='matrix', interpolants=[]):
-        FormOut.__init__(self, fmt + '.txt', interpolants)
+    def __init__(self, fmt='matrix', ext='txt', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class CorrelationMatrix(FormOut):
-    def __init__(self, fmt='correlation_matrix', interpolants=[]):
-        FormOut.__init__(self, fmt + '.txt', interpolants)
+    def __init__(self, fmt='correlation_matrix', ext='txt', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Csv(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.csv', interpolants)
+    def __init__(self, fmt='out', ext='csv', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
 
 class Gff(FormOut):
-    def __init__(self, fmt='out', interpolants=[]):
-        FormOut.__init__(self, fmt + '.gff', interpolants)
-
-class Alignment(FormOut):
-    def __init__(self, fmt='alignment', interpolants=[]):
+    def __init__(self, fmt='out', ext='gff', interpolants=None):
         FormOut.__init__(self, fmt, interpolants)
 
+class Alignment(FormOut):
+    def __init__(self, fmt='alignment', ext=None, interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)

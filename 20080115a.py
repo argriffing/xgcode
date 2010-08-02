@@ -1,9 +1,6 @@
 """Given a newick tree, check it for syntax errors and briefly summarize it.
 """
 
-from StringIO import StringIO
-
-from SnippetUtil import HandlingError
 import Newick
 import Form
 import FormOut
@@ -22,16 +19,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # get the tree
+def get_response_content(fs):
     tree = Newick.parse(fs.tree, Newick.NewickTree)
     tree.assert_valid()
-    # write the response
-    out = StringIO()
-    print >> out, '\n'.join(tree.gen_description_lines())
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return '\n'.join(tree.gen_description_lines()) + '\n'

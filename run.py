@@ -101,24 +101,34 @@ class GadgetForm(object):
     def __init__(self, module):
         self.module = module
         self.form_objects = None
+        self.form_out = None
 
-    def _init_form_objects(self):
+    def _init_form(self):
         if self.form_objects is None:
             self.form_objects = self.module.get_form()
+        if self.form_out is None:
+            self.form_out = self.module.get_form_out()
 
     @cherrypy.expose
     def process(self, **param_dict):
-        self._init_form_objects()
+        self._init_form()
         fs = FieldStorage(param_dict)
         for form_item in self.form_objects:
             form_item.process_fieldstorage(fs)
-        header_pairs, content = self.module.get_response(fs)
+        # get the header pairs using the new method
+        header_pairs = self.form_out.get_response_headers(fs)
+        # Use the new get_response_content function if available.
+        # Otherwise use the old get_response function.
+        if hasattr(self.module, 'get_response_content'):
+            content = self.module.get_response_content(fs)
+        else:
+            deprecated_header_pairs, content = self.module.get_response(fs)
         cherrypy.response.headers.update(dict(header_pairs))
         return content
 
     @cherrypy.expose
     def index(self):
-        self._init_form_objects()
+        self._init_form()
         form_html = Form.get_html_string(self.form_objects)
         arr = []
         arr += ['<html>']
