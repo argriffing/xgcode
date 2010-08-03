@@ -115,7 +115,7 @@ def get_response_content(fs):
     extra_names = selected_name_set - possible_name_set
     if extra_names:
         msg_a = 'the following selected names '
-        msg_b = 'are not valid tips: %s' % str(tuple(extra_names)))
+        msg_b = 'are not valid tips: %s' % str(tuple(extra_names))
         raise HandlingError(msg_a + msg_b)
     # get the pruned tree
     simple_tree = NewickIO.parse(fs.tree, Newick.NewickTree)

@@ -48,8 +48,13 @@ def main():
         try:
             module = None
             try:
+                requested_methods = [
+                        '__doc__',
+                        'get_form',
+                        'get_response',
+                        'get_response_content']
                 module = __import__(module_name, globals(), locals(),
-                        ['__doc__', 'get_form', 'get_response'])
+                        requested_methods)
             except:
                 error_message = str(sys.exc_info()[1])
                 msg = 'error importing the snippet: ' + error_message
@@ -58,9 +63,6 @@ def main():
                 response = module.get_form()
                 form_body = Form.get_html_string(response)
                 form_html = '<form>' + form_body  + '</form>'
-            except HandlingError, e:
-                msg = 'get form: ' + str(e)
-                raise SnippetTestError(msg)
             except:
                 error_message = str(sys.exc_info()[1])
                 msg = 'get form: ' + error_message
@@ -76,21 +78,28 @@ def main():
                 for form_item in response:
                     form_item.process_fieldstorage(mock_field_storage)
             except Form.FormError as e:
-                msg = 'get response: ' + str(e)
+                msg = 'default error: ' + str(e)
                 raise SnippetTestError(msg)
             # get the result of calling the function
             # using the default parameter values
-            try:
-                module.get_response(mock_field_storage)
-            except HandlingError as e:
-                msg = 'get response: ' + str(e)
-                raise SnippetTestError(msg)
-            except:
-                error_message = str(sys.exc_info()[1])
-                msg = 'get response: ' + error_message
-                raise SnippetTestError(msg)
-            else:
-                success_count += 1
+            if hasattr(module, 'get_response_content'):
+                try:
+                    module.get_response_content(mock_field_storage)
+                except:
+                    error_message = str(sys.exc_info()[1])
+                    msg = 'get response content: ' + error_message
+                    raise SnippetTestError(msg)
+                else:
+                    success_count += 1
+            elif hasattr(module, 'get_response'):
+                try:
+                    module.get_response(mock_field_storage)
+                except:
+                    error_message = str(sys.exc_info()[1])
+                    msg = 'get response: ' + error_message
+                    raise SnippetTestError(msg)
+                else:
+                    success_count += 1
         except SnippetTestError as e:
             print module_name, ':', e
         # we are done with the imported snippet

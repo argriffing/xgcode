@@ -53,8 +53,10 @@ def get_response_content(fs):
     # allow only two seconds for web access, and don't use a progress bar
     nseconds = 2
     use_pbar = False
-    # make the multiline input look like one of many open files
-    linesources = [fs.input_text.splitlines()]
+    # Make the multiline input look like one of many open files.
+    # Apparently this needs to be really like an open file and not
+    # just a line source.
+    linesources = [StringIO(fs.input_text)]
     # try to get the response
     try:
         response_text = process(linesources, fs.good_coverage,

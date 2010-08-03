@@ -44,7 +44,7 @@ def get_response_content(fs):
     if len(set(tip_names)) != len(tip_names):
         raise HandlingError('each leaf name must be unique')
     # get the selected taxa
-    selected_taxa = set(Util.get_stripped_lines(fs.selection.splitlines())
+    selected_taxa = set(Util.get_stripped_lines(fs.selection.splitlines()))
     # assert that the selected names are actually leaf names
     if set(selected_taxa) - set(tip_names):
         msg = 'one or more selected taxa are not leaf names in the tree'

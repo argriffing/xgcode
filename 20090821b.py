@@ -50,7 +50,7 @@ def get_response_content(fs):
     try:
         return 'this is not web accessible\n'
     except TimeoutError:
-        return = 'exceeded remote run time limit\n'
+        return 'exceeded remote run time limit\n'
 
 
 class Oracle:

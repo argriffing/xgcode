@@ -84,10 +84,9 @@ def get_response_content(fs):
     # read the ordered labels
     ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     # read the set of selected labels
-    selected_labels = set(Util.get_stripped_lines(fs.selection.splitlines())
+    sel_labels = set(Util.get_stripped_lines(fs.selection.splitlines()))
     # get the set of selected indices
-    selection = set(i for i, label in enumerate(ordered_labels)
-            if label in selected_labels)
+    selection = set(i for i, x in enumerate(ordered_labels) if x in sel_labels)
     # get the value of the objective function
     if fs.min:
         value = get_cut(selection, M.tolist())

@@ -133,14 +133,13 @@ def get_branch_length_c(D, selection, complement):
     # return the branch length
     return branch_length
 
-
 def get_response_content(fs):
     # read the matrix
     D = fs.matrix
     # read the ordered labels
     ordered_labels = Util.get_stripped_lines(fs.labels.splitlines())
     # read the set of selected labels
-    selected_labels = set(Util.get_stripped_lines(fs.selection.splitlines())
+    selected_labels = set(Util.get_stripped_lines(fs.selection.splitlines()))
     # get the set of selected indices and its complement
     n = len(D)
     selection = set(i

@@ -47,7 +47,7 @@ def get_response_content(fs):
     # get the dictionary mapping the branch name to the rgb color
     name_to_rgb = {}
     # parse the coloration string
-    for line in iterutils.stripped_lines(fs.coloration.splitlines())
+    for line in iterutils.stripped_lines(fs.coloration.splitlines()):
         # get the branch and its color
         name_string, rgb_string = SnippetUtil.get_state_value_pair(line)
         rgb_string = rgb_string.upper()
