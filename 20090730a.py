@@ -72,17 +72,11 @@ def get_estimates_b(phen, snpa, snpb):
     # return the estimates
     return [mu_hat, alpha_hat, beta_hat]
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # create the response
     out = StringIO()
     phen, snpa, snpb = sample_stuff()
     print >> out, get_estimates_a(phen, snpa, snpb)
     print >> out, get_estimates_b(phen, snpa, snpb)
     # return the response
-    response_text = out.getvalue().strip()
-    return [('Content-Type', 'text/plain')], response_text
-
+    return out.getvalue()

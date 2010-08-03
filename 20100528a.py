@@ -225,11 +225,7 @@ def aa_letter_to_aa_index(aa_letter):
         if aa == aa_letter:
             return i
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the list of annotated snps
     snps = list(lines_to_annotated_snps(StringIO(fs.annotation)))
     # define the names of the temporary files
@@ -282,8 +278,7 @@ def get_response(fs):
         row_out = [snp.variant_id, trans, col, impact, pvalue]
         print >> out, '\t'.join(str(x) for x in row_out)
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().rstrip()
+    return out.getvalue()
 
 def main(args):
     pass

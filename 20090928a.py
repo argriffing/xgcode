@@ -92,11 +92,7 @@ def get_R_alpha_beta_gamma(D, index_set):
     alpha = alpha_plus_gamma - gamma
     return R, alpha, beta, gamma
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the matrix
     D = np.array(fs.matrix)
     n = len(D)
@@ -137,6 +133,5 @@ def get_response(fs):
     print >> out, 'ordered labels corresponding to this matrix:'
     for name in D_B_names:
         print >> out, name
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

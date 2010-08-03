@@ -42,11 +42,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # quickly skim the lines to get some info
     fin = StringIO(fs.data_in)
     skimmer = DGRP.ChromoSkimmer()
@@ -69,7 +65,7 @@ def get_response(fs):
         name = row[0]
         if name == chromo_names[0]:
             print >> out, '\t'.join(str(x) for x in convert_row(row))
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return out.getvalue()
 
 def line_to_row(line):
     """

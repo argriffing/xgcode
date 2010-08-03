@@ -29,15 +29,11 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     distn = DGRP.get_zygosity_distribution(fs.ref_length, fs.child_length)
     out = StringIO()
     print >> out, 'p(RR):', distn[0]
     print >> out, 'p(RA):', distn[1]
     print >> out, 'p(AA):', distn[2]
     print >> out, 'p(AB):', distn[3]
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return out.getvalue()

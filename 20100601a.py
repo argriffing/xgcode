@@ -62,11 +62,7 @@ def get_form():
 def get_form_out():
     return FormOut.EigenstratInd('precipitation')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     # extract names from the .hud file
     names, hud_data = hud.decode(fs.hud.splitlines())
@@ -84,13 +80,7 @@ def get_response(fs):
             classification = 'Control'
         row = [name, gender, classification]
         print >> out, '\t'.join(row)
-    text = out.getvalue()
-    disposition = "%s; filename=%s" % (
-        fs.contentdisposition, 'precipitation.ind') 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+    return out.getvalue()
 
 def get_precipitation_info(data_rows, threshold):
     """

@@ -90,11 +90,7 @@ def get_result_string(arrs, max_distance, centers):
         print >> out, ''.join(str(x) for x in center)
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the bstring lines
     lines = Util.get_stripped_lines(fs.bstrings.splitlines())
     # do some validation
@@ -118,8 +114,7 @@ def get_response(fs):
     # do the analysis
     deadline = time.time() + 5.0
     max_distance, centers = get_centers(arrs, fs.ncenters, metric, deadline)
-    result_string = get_result_string(arrs, max_distance, centers)
-    return [('Content-Type', 'text/plain')], result_string
+    return get_result_string(arrs, max_distance, centers) + '\n'
 
 def get_histogram(arr):
     """

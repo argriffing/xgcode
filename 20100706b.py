@@ -83,11 +83,7 @@ def get_rtable_info(rtable, cluster_header, axes_string):
     points = np.array(zip(*axis_lists))
     return points
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     rtable = Carbone.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
@@ -102,13 +98,8 @@ def get_response(fs):
     for i, (label, data_row) in enumerate(zip(labels, data_rows)):
         row = data_row + [str(label)]
         lines.append('\t'.join(row))
-    content = '\n'.join(lines) + '\n'
-    # return the response
-    disposition = '%s; filename=%s' % (fs.contentdisposition, 'out.table')
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, content
+    # return teh response
+    return '\n'.join(lines) + '\n'
 
 
 class GlobalState(object):

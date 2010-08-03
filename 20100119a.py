@@ -9,6 +9,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import SnippetUtil
+import Util
 import Form
 import FormOut
 import GPS
@@ -62,13 +63,9 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the lat-lon points from the input
-    lines = [x.strip() for x in StringIO(fs.datalines).readlines()]
+    lines = Util.get_stripped_lines(fs.datalines.splitlines())
     rows = parse_lines(lines)
     latlon_points = []
     city_names = []
@@ -120,5 +117,5 @@ def get_response(fs):
         print >> out
         # break between distance methods
         print >> out
-    # write the response
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    # return the response
+    return out.getvalue()

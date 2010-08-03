@@ -95,11 +95,7 @@ def sample_distance_matrix(xtree_root, sequence_length):
     return D
 
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # allow only two seconds for web access
     nseconds = 2
     # read the options
@@ -120,11 +116,9 @@ def get_response(fs):
     elif fs.uniform_length_b:
         branch_length_sampler = BranchLengthSampler.UniformB()
     # get the response
-    response_text = process(ntaxa, nseconds, nlengths, nsamples, nj_like, branch_length_sampler, False)
-    response_headers = [('Content-Type', 'text/plain')]
-    if fs.attachment:
-        response_headers.append(('Content-Disposition', 'attachment; filename=distances.table'))
-    return response_headers, response_text
+    response_text = process(ntaxa, nseconds, nlengths, nsamples,
+            nj_like, branch_length_sampler, False)
+    return response_text + '\n'
 
 def gen_sequence_lengths_helper(n, low, high):
     """

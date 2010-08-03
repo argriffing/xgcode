@@ -54,7 +54,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -98,5 +98,4 @@ def get_response(fs):
     print >> out, 'posterior distribution:'
     for name, p in zip(names, posterior):
         print >> out, '%s:\t%s' % (name, p)
-    print >> out
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return out.getvalue()

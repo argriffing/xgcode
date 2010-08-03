@@ -90,11 +90,7 @@ def sample_sequence_alternating_sign(n):
         seq.append(current)
     return seq
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # define a test sequence from page 22 of
     # "Time series analysis: univariate and multivariate methods"
     # by Wei
@@ -129,6 +125,5 @@ def get_response(fs):
     print >> out, 'observed partial autocorrelation of lag 1:', get_pacf_1(seq)
     print >> out, 'observed partial autocorrelation of lag 2:', get_pacf_2(seq)
     print >> out
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

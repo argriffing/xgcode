@@ -294,11 +294,7 @@ def process(ntaxa, length, nseconds, branch_length_sampler, use_nj, use_modified
         print >> out, s
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     nseconds = 2
     length = fs.length
     ntaxa = fs.ntaxa
@@ -311,12 +307,9 @@ def get_response(fs):
         branch_length_sampler = BranchLengthSampler.UniformA()
     elif fs.uniform_length_b:
         branch_length_sampler = BranchLengthSampler.UniformB()
-    response_text = process(ntaxa, length, nseconds, branch_length_sampler, fs.nj, fs.modified_nj, fs.all_spectral, fs.one_spectral)
-    response_headers = [('Content-Type', 'text/plain')]
-    if fs.attachment:
-        output_filename = 'distances.table'
-        response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.delivery, output_filename)))
-    return response_headers, response_text
+    response_text = process(ntaxa, length, nseconds, branch_length_sampler,
+            fs.nj, fs.modified_nj, fs.all_spectral, fs.one_spectral)
+    return response_text + '\n'
 
 def main(options):
     assert 0 <= options.nseconds

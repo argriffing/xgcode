@@ -60,13 +60,9 @@ def do_smacof(D):
     """
     pass
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
     """
-    # start writing the response
-    out = StringIO()
-    print >> out, 'not implemented'
-    # write the response
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return 'not implemented\n'

@@ -89,17 +89,8 @@ def get_form():
 def get_form_out():
     return FormOut.RTable('out')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs.hud.splitlines(), fs.info.splitlines())
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'data.table') 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+def get_response_content(fs):
+    return process(fs.hud.splitlines(), fs.info.splitlines()) + '\n'
 
 def row_to_temperature(row):
     t = row[3]

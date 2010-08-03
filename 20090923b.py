@@ -85,7 +85,7 @@ def point_to_orthant(p):
     """
     return tuple(1 if x > 0 else -1 for x in p)
 
-def process(nseconds, ntaxa):
+def process(ntaxa, nseconds):
     """
     @param nseconds: allow this many seconds to run or None to run forever
     @return: a multi-line string that summarizes the results
@@ -159,20 +159,9 @@ def process(nseconds, ntaxa):
     print >> out, len(pattern_to_topo_surrogate), 'unique canonical sign patterns were observed'
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # on the web we have a short attention span
-    nseconds = 2
-    # get arguements from the user
-    ntaxa = fs.ntaxa
-    # get the response
-    result_string = process(nseconds, ntaxa)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, result_string
+    return process(fs.ntaxa, nseconds=2) + '\n'
 
 def get_ordered_ids(tree):
     """
@@ -186,7 +175,7 @@ def get_ordered_ids(tree):
     return ordered_ids
 
 def main(args):
-    print process(args.nseconds, args.ntaxa)
+    print process(args.ntaxa, args.nseconds)
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser(description=SnippetUtil.docstring_to_title(__doc__))

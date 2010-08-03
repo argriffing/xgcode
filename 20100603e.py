@@ -88,17 +88,8 @@ def get_form():
 def get_form_out():
     return FormOut.EigenstratInd('out')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs.hud.splitlines(), fs.matpheno.splitlines())
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.ind') 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+def get_response_content(fs):
+    return process(fs.hud.splitlines(), fs.matpheno.splitlines()) + '\n'
 
 def main(args):
     with open(os.path.expanduser(args.hud)) as fin_hud:
@@ -112,9 +103,3 @@ if __name__ == '__main__':
     parser.add_argument('--matpheno', required=True,
             help = 'a MAT_pheno.txt file')
     main(parser.parse_args())
-
-
-
-
-
-

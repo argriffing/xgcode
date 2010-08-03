@@ -266,13 +266,10 @@ def do_tree_search(tree_search, nseconds, sampling_function):
     print >> out, tree_search.get_result_text()
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     nseconds = 2
-    sampling_function = BranchLengthSampler.ShortAscii(fs.allow_integers, fs.allow_reciprocals)
+    sampling_function = BranchLengthSampler.ShortAscii(
+            fs.allow_integers, fs.allow_reciprocals)
     if fs.six_leaves:
         tree_search = SixLeafSearch()
     elif fs.seven_leaves:
@@ -281,13 +278,13 @@ def get_response(fs):
     tree_search.force_difference = fs.force_difference
     tree_search.informative_full_split = fs.informative_full_split
     tree_search.invalid_dendrogram = fs.invalid_dendrogram
-    response_text = do_tree_search(tree_search, nseconds, sampling_function)
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, response_text
+    return do_tree_search(tree_search, nseconds, sampling_function) + '\n'
 
 def main(options):
+    #FIXME use argparse and a nonnegative type instead of the assertion
     assert 0 <= options.nseconds
-    sampling_function = BranchLengthSampler.ShortAscii(options.allow_integers, options.allow_reciprocals)
+    sampling_function = BranchLengthSampler.ShortAscii(
+            options.allow_integers, options.allow_reciprocals)
     tree_search = SixLeafSearch()
     tree_search.informative_children = options.informative_children
     tree_search.force_difference = options.force_difference

@@ -40,11 +40,7 @@ def get_form_out():
     """
     return FormOut.Report('report')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the initialization strategy
     init_strategy = kmeans.InitStrategy().string_to_function(fs.kmeans_init)
     # read the table
@@ -114,8 +110,7 @@ def get_response(fs):
             row = [k_unique, wgss, calinski]
             print >> out, '\t'.join(str(x) for x in row)
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue()
+    return out.getvalue()
 
 def main(args):
     #TODO something

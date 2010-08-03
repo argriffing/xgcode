@@ -50,11 +50,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get the arbitrarily ordered names
@@ -108,7 +104,5 @@ def get_response(fs):
                 'closeness:',
                 closeness_string]
         paragraphs.append(paragraph)
-    print >> out, '\n\n'.join('\n'.join(paragraph) for paragraph in paragraphs)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return '\n\n'.join('\n'.join(p) for p in paragraphs) + '\n'

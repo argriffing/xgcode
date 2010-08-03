@@ -1,4 +1,4 @@
-"""Split a file by the first whitespace separated element on each line.
+"""Split a file by the first whitespace separated element on each line. [NOWEB]
 
 This is not so useful as a web app.
 The file is split by lines into multiple files.
@@ -25,14 +25,8 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    out = StringIO()
-    print >> out, 'this particular snippet is much more useful in the shell'
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+def get_response_content(fs):
+    return 'this is not web accessible\n'
 
 def main(args):
     # read the arguments

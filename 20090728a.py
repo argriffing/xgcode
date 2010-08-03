@@ -80,12 +80,8 @@ def get_result_string(arrs, max_distance, centers):
         print >> out, ''.join(str(x) for x in center)
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    return [('Content-Type', 'text/plain')], 'sorry this is not finished'
+def get_response_content(fs):
+    return 'sorry this is not finished'
 
 def get_histogram(arr):
     """

@@ -156,11 +156,7 @@ def get_form():
 def get_form_out():
     return FormOut.Image('plot', [])
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # Collect the image format information.
     border_info = BorderInfo(fs.border_x, fs.border_y)
     axis_info = AxisInfo(fs.flip_x, fs.flip_y, fs.show_x, fs.show_y)
@@ -180,16 +176,7 @@ def get_response(fs):
             raise HandlingError('expected x and y coordinates to be numbers')
         parsed_triples.append((label, x, y))
     labels, X, Y = zip(*parsed_triples)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
     image_info = ImageInfo(w, h, axis_info, border_info, ext)
     image_string = get_image_string(X, Y, labels, image_info)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

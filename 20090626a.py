@@ -66,11 +66,7 @@ def get_dominant_ev_pair(M):
     w, vt = np.linalg.eigh(M)
     return max(zip(w, vt.T))
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     # check the input
     n = fs.n
@@ -184,6 +180,5 @@ def get_response(fs):
     print >> out, 'dominant eigenvector from Y_corr applied to Y_corr:'
     print >> out, get_bilinear_form(Y_corr, get_dominant_ev_pair(Y_corr)[1])
     print >> out
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

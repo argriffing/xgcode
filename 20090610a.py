@@ -31,7 +31,7 @@ def sample_matrix(block_size):
     """
     Sample a block 4x4 symmetric matrix.
     Each block is square with block_size rows.
-    @param block_size: the number of rows in square blocks of the partitioned matrix
+    @param block_size: the number of rows in blocks of the partitioned matrix
     @return: a sampled matrix
     """
     n = block_size * 4
@@ -45,18 +45,21 @@ def sample_matrix(block_size):
 def analyze_matrix(M, block_size):
     """
     Get results for g(f(M)) and f(g(M)).
+    Each block is square with block_size rows.
     @param M: a matrix
-    @param block_size: the number of rows in square blocks of the partitioned matrix
+    @param block_size: the number of rows in blocks of the partitioned matrix
     @return: a string of results
     """
     # define the response
     out = StringIO()
     # get the new matrix using the first composition of functions
     M_11 = SchurAlgebra.mmerge(M, set(range(2*block_size)))
-    M_12 = SchurAlgebra.mschur(M_11, set(1 + block_size + k for k in range(block_size)))
+    M_12 = SchurAlgebra.mschur(
+            M_11, set(1 + block_size + k for k in range(block_size)))
     print >> out, M_12
     # get the new matrix using the second composition of functions
-    M_21 = SchurAlgebra.mschur(M, set(3*block_size + k for k in range(block_size)))
+    M_21 = SchurAlgebra.mschur(
+            M, set(3*block_size + k for k in range(block_size)))
     M_22 = SchurAlgebra.mmerge(M_21, set(range(2*block_size)))
     print >> out, M_22
     if np.allclose(M_12, M_22):
@@ -65,11 +68,7 @@ def analyze_matrix(M, block_size):
         print >> out, 'the matrices are different'
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # define the response
     out = StringIO()
     # sample a matrix
@@ -81,5 +80,4 @@ def get_response(fs):
     print >> out, 'symmetric analysis:'
     print >> out, analyze_matrix(M + M.T, b)
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

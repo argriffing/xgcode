@@ -46,14 +46,8 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs, fs.hud.splitlines())
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, text
+def get_response_content(fs):
+    return process(fs, fs.hud.splitlines()) + '\n'
 
 def words_to_matrix(words):
     """

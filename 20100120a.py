@@ -110,11 +110,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # start writing the response
     out = StringIO()
     # define the points; each is a numpy array of length 2
@@ -151,5 +147,5 @@ def get_response(fs):
     print >> out, 'EDGES'
     for i, j in edges:
         print >> out, '\t'.join(str(x) for x in [i, j])
-    # write the response
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    # return the response
+    return out.getvalue()

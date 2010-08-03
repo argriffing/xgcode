@@ -26,6 +26,8 @@ g_colorbrewer_set1 = [
     "#984EA3", "#FF7F00", "#FFFF33",
     "#A65628", "#F781BF", "#999999"]
 
+#FIXME multiple output types
+
 def rgb_floats_to_ints(rgb_floats):
     return tuple(int(round(x*255)) for x in rgb_floats)
 
@@ -81,11 +83,7 @@ def get_form():
 def get_form_out():
     return FormOut.Image('%s.%s.pca.3d', ['shape', 'color'])
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # create a response that depends on the requested output type
     #if fs.show_image:
     if 1:
@@ -117,12 +115,7 @@ def get_response(fs):
             contenttype = 'text/plain'
             filename = 'script.R'
     """
-    # return the response
-    disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', disposition)]
-    return response_headers, content
+    return content
 
 class LegendPositionError(Exception): pass
 

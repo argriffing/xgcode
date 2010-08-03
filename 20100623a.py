@@ -45,17 +45,8 @@ def get_form():
 def get_form_out():
     return FormOut.Report('out')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process([fs.table_a.splitlines(), fs.table_b.splitlines()])
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.hud') 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+def get_response_content(fs):
+    return process([fs.table_a.splitlines(), fs.table_b.splitlines()]) + '\n'
 
 def process(line_sources):
     """

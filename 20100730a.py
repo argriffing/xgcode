@@ -31,19 +31,9 @@ def get_form():
 def get_form_out():
     return FormOut.Hud('out.hud')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     headers, binary_rows = read_microsatellite_lines(fs.data.splitlines())
-    text = hud.encode(headers, binary_rows) + '\n'
-    filename = 'out.hud'
-    disposition = "%s; filename=%s" % (fs.contentdisposition, filename) 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+    return hud.encode(headers, binary_rows) + '\n'
 
 def get_ploidy(names):
     """

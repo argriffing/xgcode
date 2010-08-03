@@ -28,17 +28,13 @@ def get_form_out():
     return FormOut.Gff('demo')
 
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     for i, line in enumerate(gen_cantor_track_lines(fs)):
         print >> out, line
         if i > 100:
             raise HandlingError('too many features')
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return out.getvalue()
 
 def change_base(n, base=3):
     while n:

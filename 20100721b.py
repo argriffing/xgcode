@@ -84,11 +84,7 @@ def get_rtable_info(rtable, cluster_header, axes_string):
     points = np.array(zip(*axis_lists))
     return points
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # define constants
     nrestarts = 10
     # read the input
@@ -110,6 +106,4 @@ def get_response(fs):
     print >> out, 'recomputed distortion:', redistortion
     print >> out, 'wgss:', wgss
     # return the response
-    response_headers = [
-            ('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue()
+    return out.getvalue()

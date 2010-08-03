@@ -139,11 +139,7 @@ def get_subtree_messages(D, eigensplit, ordered_tip_names):
         print >> out
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
@@ -189,6 +185,5 @@ def get_response(fs):
     print >> out
     # get the Fiedler cuts of Schur complements of subtrees
     print >> out, get_subtree_messages(D, eigensplit, ordered_tip_names)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    # return the response
+    return out.getvalue()

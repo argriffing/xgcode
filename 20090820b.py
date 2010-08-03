@@ -1,4 +1,4 @@
-"""Get some statistics for resequenced chromosomes.
+"""Get some statistics for resequenced chromosomes. [NOWEB]
 
 Note that this analysis does *not* use a Markov model.
 For each input file representing a chromosome of a genetic line,
@@ -42,20 +42,15 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # allow only two seconds for web access, and don't use a progress bar
     nseconds = 2
     use_pbar = False
     # try to get the response
     try:
-        response_text = 'for now this script is accessible only from the command line'
+        return 'this is not web accessible\n'
     except TimeoutError:
-        response_text = 'sorry scripts run remotely have the attention span of a fruit fly'
-    return [('Content-Type', 'text/plain')], response_text
+        return 'exceeded remote run time limit\n'
 
 
 class Oracle:

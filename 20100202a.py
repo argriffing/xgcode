@@ -165,11 +165,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # unpack the first and last requested positions
     low = {'low_0':0, 'low_1':1, 'low_none':None}[fs.low_info]
     high = {'high_1000':1000, 'high_none':None}[fs.high_info]
@@ -195,7 +191,7 @@ def get_response(fs):
     for name, line in scanner.gen_named_lines(fin):
         if name == names[0]:
             print >> out, line
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return out.getvalue()
 
 def gen_typed_rows(fin):
     for line in fin:

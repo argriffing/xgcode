@@ -84,11 +84,7 @@ def do_it_wrong(D):
     hierarchy = Dendrogram.get_hierarchy(D, BuildTreeTopology.split_nj, labels)
     return set(Dendrogram.hierarchy_to_nontrivial_splits(hierarchy))
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the tree
     tree = NewickIO.parse(fs.tree, FelTree.NewickTree)
     # get the distance matrix
@@ -105,7 +101,5 @@ def get_response(fs):
     splits = do_it_wrong(D)
     print >> out, 'doing it wrong'
     print >> out, '\n'.join(split_to_line(split, ordered_tip_names) for split in splits)
-    print >> out
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

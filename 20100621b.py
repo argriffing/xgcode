@@ -29,23 +29,10 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Report('out.%s', ['format_out'])
+    return FormOut.Report('out.%s', None, ['format_out'])
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs, fs.phylip.splitlines())
-    if fs.hud:
-        filename = 'out.hud'
-    elif fs.phy:
-        filename = 'out.phy'
-    disposition = "%s; filename=%s" % (fs.contentdisposition, filename) 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+def get_response_content(fs):
+    return process(fs, fs.phylip.splitlines()) + '\n'
 
 def process(fs, raw_lines):
     headers, sequences = Phylip.decode(raw_lines)

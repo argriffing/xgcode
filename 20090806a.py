@@ -92,11 +92,7 @@ def sample_distance_matrix(xtree_root, sequence_length):
     return D
 
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # allow only two seconds for web access
     nseconds = 2
     # read the options
@@ -112,14 +108,10 @@ def get_response(fs):
         branch_length_sampler = BranchLengthSampler.UniformA()
     elif fs.uniform_length_b:
         branch_length_sampler = BranchLengthSampler.UniformB()
-    # get the response
-    response_text = process(ntaxa, nseconds, seqlen, nsamples, branch_length_sampler, False)
-    response_headers = [('Content-Type', 'text/plain')]
-    if fs.attachment:
-        output_filename = 'sim.table'
-        response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.delivery, output_filename)))
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, response_text
+    # return the response
+    response_text = process(ntaxa, nseconds, seqlen, nsamples,
+            branch_length_sampler, False)
+    return response_text + '\n'
 
 def process(ntaxa, nseconds, seqlen, nsamples, branch_length_sampler, use_pbar):
     """

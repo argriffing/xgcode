@@ -55,11 +55,7 @@ def create_laplacian_matrix(nvertices):
     L = Euclid.adjacency_to_laplacian(A)
     return L
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # define the requested physical size of the images (in pixels)
     physical_size = (640, 480)
     # get the points
@@ -78,22 +74,12 @@ def get_response(fs):
     for i in range(g_naxes):
         if F[i][0] < 0:
             F[i] *= -1
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'mds.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = create_image_string(
-                ext, physical_size, F, fs.xaxis_length)
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
+        return create_image_string(ext, physical_size, F, fs.xaxis_length)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string
 
 def create_image_string(image_format, physical_size, F, xaxis_length):
     """

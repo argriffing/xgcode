@@ -87,11 +87,7 @@ def get_form():
 def get_form_out():
     return FormOut.Csv('annotation')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # allow only two seconds for web access, and don't use a progress bar
     nseconds = 2
     use_pbar = False
@@ -103,14 +99,9 @@ def get_response(fs):
                 fs.good_coverage, fs.bad_coverage,
                 fs.randomization_rate, fs.nstickinesses, nseconds, use_pbar)
     except TimeoutError:
-        msg = 'the script has exceeded its remote execution time limit'
-        raise HandlingError(msg)
-    # deliver the response in the appropriate format
-    response_headers = [('Content-Type', 'text/plain')]
-    if fs.attachment:
-        output_filename = 'annotation.csv'
-        response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.delivery, output_filename)))
-    return response_headers, response_text
+        raise HandlingError('exceeded remote run time limit')
+    # return the response
+    return response_text + '\n'
 
 
 class Chromosome:

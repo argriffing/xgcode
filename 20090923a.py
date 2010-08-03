@@ -123,7 +123,7 @@ def get_blocked_orthants(pta, ptb):
     points = get_internal_points(pta, ptb)
     return set(point_to_orthant(p) for p in points)
 
-def process(nseconds):
+def process(nseconds=None):
     """
     @param nseconds: allow this many seconds to run or None to run forever
     @return: a multi-line string that summarizes the results
@@ -236,18 +236,9 @@ def process(nseconds):
     print >> out, 'control fragment-vertex orthant collisions', ncontrol_fragment_vertex_collisions
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # on the web we have a short attention span
-    nseconds = 2
-    # get the response
-    result_string = process(nseconds)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, result_string
+    return process(nseconds=2) + '\n'
 
 def get_ordered_ids(tree):
     """
@@ -261,8 +252,7 @@ def get_ordered_ids(tree):
     return ordered_ids
 
 def main():
-    nseconds = None
-    print process(nseconds)
+    print process()
 
 if __name__ == '__main__':
     main()

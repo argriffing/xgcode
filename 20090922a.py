@@ -76,7 +76,7 @@ def do_external_projection(D_full, nleaves):
     points = np.dot(X, Vt.T).T[:(nleaves-1)].T
     return points
 
-def process(nseconds):
+def process(nseconds=None):
     """
     @param nseconds: allow this many seconds to run or None to run forever
     @return: a multi-line string that summarizes the results
@@ -199,18 +199,9 @@ def process(nseconds):
         print >> out, axis+1, ':', '{', ', '.join(str(ncuts) + ':' + str(count) for ncuts, count in sorted(ncuts_dict.items())), '}'
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # on the web we have a short attention span
-    nseconds = 2
-    # get the response
-    result_string = process(nseconds)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, result_string
+    return process(nseconds=2) + '\n'
 
 def get_ordered_ids(tree):
     """
@@ -224,8 +215,7 @@ def get_ordered_ids(tree):
     return ordered_ids
 
 def main():
-    nseconds = None
-    print process(nseconds)
+    print process()
 
 if __name__ == '__main__':
     main()

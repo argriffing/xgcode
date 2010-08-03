@@ -5,7 +5,6 @@ it has one line per SNP
 and each line has one character per individual.
 """
 
-from StringIO import StringIO
 import sys
 import os
 
@@ -38,17 +37,8 @@ def get_form():
 def get_form_out():
     return FormOut.EigenstratGeno('out')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs.hud.splitlines())
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.geno') 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+def get_response_content(fs):
+    return process(fs.hud.splitlines()) + '\n'
 
 def process(raw_hud_lines):
     names, data = hud.decode(raw_hud_lines)

@@ -60,11 +60,7 @@ def do_analysis(n, p):
     print >> out, nseconds, 'seconds to get the singular value decomposition of the transpose'
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     out = StringIO()
     # get the response
     n = 50
@@ -75,7 +71,5 @@ def get_response(fs):
     n = 30*15
     report = do_analysis(n, 10000)
     print >> out, report
-    print >> out
     # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return out.getvalue()

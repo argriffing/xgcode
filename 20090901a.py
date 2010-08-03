@@ -120,20 +120,11 @@ def process(ntaxa, nseconds, branch_length_sampler):
         print >> out, '\t'.join([str(i+1), str(atteson), str(spectral), '"' + newick + '"'])
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     nseconds = 2
     ntaxa = fs.ntaxa
     branch_length_sampler = BranchLengthComboPack()
-    response_text = process(ntaxa, nseconds, branch_length_sampler)
-    # define the headers depending on whether we should use an attachment
-    response_headers = [('Content-Type', 'text/plain')]
-    if fs.download:
-        response_headers.append(('Content-Disposition', 'attachment; filename=out.table'))
-    return response_headers, response_text
+    return process(ntaxa, nseconds, branch_length_sampler) + '\n'
 
 def main(options):
     assert 0 <= options.nseconds

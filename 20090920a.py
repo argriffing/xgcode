@@ -202,11 +202,7 @@ def do_full_projection(D_full, nleaves):
     vertices_on_plane = np.dot(X, Vt.T).T[:(nleaves-1)].T
     return vertices_on_plane
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # start writing the response type
     response_headers = []
     # read the tree
@@ -239,23 +235,14 @@ def get_response(fs):
     # Compute the projection of all points
     # onto the 2D plane defined by MDS of the leaves.
     projected_points = do_projection(D_full, nleaves)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
         image_size = (640, 480)
-        image_string = get_image(projected_points, nleaves,
+        return get_image(projected_points, nleaves,
                 incidence_matrix, ordered_names, image_size, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string
 
 def examine_projected_distance_matrix():
     tree = NewickIO.parse(g_tree_string, FelTree.NewickTree)

@@ -59,20 +59,11 @@ def sample_branch_lengths(tree):
             branch_length = float(random.randrange(1, 1000))
             node.set_branch_length(branch_length)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # on the web we have a short attention span
-    nseconds = 2
-    # get the response
-    result_string = process(nseconds)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, result_string
+    return process(nseconds=2) + '\n'
 
-def process(nseconds):
+def process(nseconds=None):
     """
     @param nseconds: allow this many seconds to run or None to run forever
     @return: a multi-line string that summarizes the results

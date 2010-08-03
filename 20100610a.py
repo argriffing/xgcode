@@ -20,6 +20,8 @@ g_tags = ['carbone_lab']
 
 g_default = const.read('20100709a')
 
+#FIXME multiple output types
+
 class MissingError(Exception): pass
 
 def get_form():
@@ -54,11 +56,7 @@ def get_form():
 def get_form_out():
     return FormOut.Image('%s.%s.pca.3d', ['shape', 'color'])
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # create a response that depends on the requested output type
     #if fs.show_image:
     if 1:
@@ -90,12 +88,7 @@ def get_response(fs):
             contenttype = 'text/plain'
             filename = 'script.R'
     """
-    # return the response
-    disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', disposition)]
-    return response_headers, content
+    return content
 
 
 class PlotInfo:

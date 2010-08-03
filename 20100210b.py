@@ -34,7 +34,7 @@ def distn_to_string(distn):
     lines = ['p(%s): %s' % (name, p) for name, p in zip(names, distn)]
     return '\n'.join(lines)
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -60,5 +60,4 @@ def get_response(fs):
     b = fs.z
     distn = DGRP.get_zygosity_distribution(a, b)
     print >> out, distn_to_string(distn)
-    print >> out
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return out.getvalue()

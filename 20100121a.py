@@ -155,11 +155,7 @@ def read_points_and_edges(multiline):
     return points, edges
 
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the points and edges
     points, edges = read_points_and_edges(fs.graph_data)
     # get the width and height of the drawable area of the image
@@ -168,19 +164,10 @@ def get_response(fs):
     if width < 1 or height < 1:
         msg = 'the image dimensions do not allow for enough drawable area'
         raise HandlingError(msg)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
     try:
-        image_string = get_image_string(points, edges,
+        ext = Form.g_imageformat_to_ext[fs.imageformat]
+        return get_image_string(points, edges,
                 fs.total_width, fs.total_height, fs.border, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

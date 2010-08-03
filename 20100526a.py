@@ -285,11 +285,7 @@ def process_snp(snp, full_tree_string):
     pvalue = letter_to_pvalue[snp.mutant_aa]
     return '\t'.join(str(x) for x in (snp.variant_id, impact, pvalue))
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object decorated with field values
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # start writing the html response
     out = StringIO()
     # get the list of annotated snps
@@ -298,13 +294,4 @@ def get_response(fs):
     for snp in snps:
         print >> out, process_snp(snp, fs.tree)
     # return the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().rstrip()
-
-def main(args):
-    pass
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    main(args)
+    return out.getvalue()

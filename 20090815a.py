@@ -81,11 +81,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # allow only two seconds for web access
     nseconds = 2
     # read the options
@@ -101,8 +97,9 @@ def get_response(fs):
     elif fs.uniform_length_b:
         branch_length_sampler = BranchLengthSampler.UniformB()
     # get the response
-    response_text = process(ntaxa, nseconds, nsamples, branch_length_sampler, False)
-    return [('Content-Type', 'text/plain')], response_text
+    response_text = process(ntaxa, nseconds, nsamples,
+            branch_length_sampler, False)
+    return response_text + '\n'
 
 def sample_perturbation_matrix(n, frobnorm):
     """

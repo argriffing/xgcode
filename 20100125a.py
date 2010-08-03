@@ -257,11 +257,7 @@ def valuations_to_colors(valuations):
         colors.append(c)
     return colors
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the points and edges
     points, edges = read_points_and_edges(fs.graph_data)
     # define edge weights
@@ -284,19 +280,10 @@ def get_response(fs):
     points = [(-p[0] if fs.flip else p[0], p[1]) for p in X]
     x_coords, y_coords = zip(*points)
     colors = valuations_to_colors(x_coords)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
     info = ImageInfo(fs.total_width, fs.total_height, fs.border, ext)
     try:
-        image_string = get_image_string(points, edges, colors, fs.black, info)
+        return get_image_string(points, edges, colors, fs.black, info)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string

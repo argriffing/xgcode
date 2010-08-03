@@ -57,17 +57,8 @@ def get_form():
 def get_form_out():
     return FormOut.EigenstratPheno('out')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs.ind.splitlines())
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'fungus.pheno') 
-    content_type = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return content_type, text
+def get_response_content(fs):
+    return process(fs.ind.splitlines()) + '\n'
 
 def main(args):
     with open(os.path.expanduser(args.hud)) as fin:

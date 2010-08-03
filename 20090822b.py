@@ -47,29 +47,22 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.RTable()
+    return FormOut.RTable('posterior-expectations')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # allow only two seconds for web access, and don't use a progress bar
     nseconds = 2
     use_pbar = False
     # make the multiline input look like one of many open files
-    linesources = [StringIO(fs.input_text)]
+    linesources = [fs.input_text.splitlines()]
     # try to get the response
     try:
-        response_text = process(linesources, fs.good_coverage, fs.randomization_rate, fs.stickiness, nseconds, use_pbar)
+        response_text = process(linesources, fs.good_coverage,
+                fs.randomization_rate, fs.stickiness, nseconds, use_pbar)
     except TimeoutError:
-        raise HandlingError('sorry scripts run remotely have the attention span of a fruit fly')
-    # deliver the response in the appropriate format
-    response_headers = [('Content-Type', 'text/plain')]
-    if fs.attachment:
-        output_filename = 'posterior-expectations.table'
-        response_headers.append(('Content-Disposition', "%s; filename=%s" % (fs.delivery, output_filename)))
-    return response_headers, response_text
+        raise HandlingError('exceeded remote run time limit')
+    # return the response
+    return response_text + '\n'
 
 
 class Chromosome:

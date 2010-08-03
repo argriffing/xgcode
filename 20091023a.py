@@ -119,15 +119,11 @@ def do_distance_analysis(X):
     print >> out, D_reconstructed
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     X = fs.tetrahedron
     # start writing the response
     out = StringIO()
     print >> out, do_steiner_analysis(X)
     print >> out, do_distance_analysis(X)
-    # write the response
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    # return the response
+    return out.getvalue()

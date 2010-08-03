@@ -44,11 +44,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     line_source = StringIO(fs.multiline_input)
     row_source = gen_rows(line_source)
     out = StringIO()
@@ -57,7 +53,7 @@ def get_response(fs):
         process(row_source, row_writer)
     except LineLimitError, e:
         raise HandlingError(e)
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return out.getvalue()
 
 def gen_rows(line_source):
     for line in line_source:

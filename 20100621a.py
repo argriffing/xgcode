@@ -35,17 +35,8 @@ def get_form():
 def get_form_out():
     return FormOut.RTable('out')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs, fs.table.splitlines())
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.table') 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+def get_response_content(fs):
+    return process(fs, fs.table.splitlines()) + '\n'
 
 def process(args, raw_lines):
     lines = Util.get_stripped_lines(raw_lines)

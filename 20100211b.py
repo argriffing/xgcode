@@ -84,7 +84,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: a (response_headers, response_text) pair
@@ -134,7 +134,7 @@ def get_response(fs):
         # show the inference for this position
         print >> out, obs, p, maxpost
     o_stream.close()
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    return out.getvalue()
 
 
 def main(args):

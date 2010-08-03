@@ -58,16 +58,8 @@ def do_analysis():
     V = np.array([[np.array(x).var() for x in row] for row in V_list])
     return str(V)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # start writing the response
-    out = StringIO()
-    print >> out, do_analysis()
-    # write the response
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+def get_response_content(fs):
+    return do_analysis() + '\n'
 
 if __name__ == '__main__':
     print do_analysis()

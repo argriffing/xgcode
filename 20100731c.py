@@ -97,11 +97,7 @@ def remove_invariant_columns(M):
     filtered_cols = [c for c in cols if len(set(c)) > 1]
     return zip(*filtered_cols)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # get the headers and data from all of the input sources
     headers, sequences = hud.decode(fs.hud.splitlines())
     h_to_s = dict((h, s) for h, s in zip(headers, sequences))
@@ -115,9 +111,4 @@ def get_response(fs):
         sequences_out.append(data)
     if fs.remove_invariant:
         sequences_out = remove_invariant_columns(sequences_out)
-    text = hud.encode(headers_out, sequences_out) + '\n'
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'out.hud') 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+    return hud.encode(headers_out, sequences_out) + '\n'

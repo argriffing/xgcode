@@ -25,20 +25,10 @@ def get_form():
 def get_form_out():
     return FormOut.Phylip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     headers, sequences = Phylip.decode(fs.phylip.splitlines())
     if fs.name not in headers:
         raise ValueError('the name was not found')
     new_pairs = [(h, s) for h, s in zip(headers, sequences) if h != fs.name]
     new_headers, new_sequences = zip(*new_pairs)
-    text = Phylip.encode(new_headers, new_sequences) + '\n'
-    filename = 'out.phy'
-    disposition = "%s; filename=%s" % (fs.contentdisposition, filename) 
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, text
+    return Phylip.encode(new_headers, new_sequences) + '\n'

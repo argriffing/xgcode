@@ -81,11 +81,7 @@ def create_test_image(image_format, width, height):
     # get the contents of the image
     return cairo_helper.get_image_string()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # define the requested physical size of the images (in pixels)
     physical_size = (640, 480)
     # build the newick tree from the string
@@ -100,21 +96,12 @@ def get_response(fs):
     # Create the reference points so that the video frames
     # are not reflected arbitrarily.
     reference_points = Euclid.edm_to_points(D).T[:2].T
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'mds.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # draw the image
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
     mass_vector = get_mass_vector(nvertices, nleaves, fs.progress)
     points = get_canonical_2d_mds(D, mass_vector, reference_points)
-    image_string = get_animation_frame(ext, physical_size, fs.scale,
+    return get_animation_frame(ext, physical_size, fs.scale,
             mass_vector, index_edges, points)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string
 
 def reflect_to_reference(points, reference_points):
     """

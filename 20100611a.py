@@ -65,19 +65,9 @@ def get_form():
 def get_form_out():
     return FormOut.RTable('out')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs, fs.info.splitlines(),
-            fs.input_headers.splitlines(), fs.output_headers.splitlines())
-    filename = 'fungus.table'
-    response_headers = [('Content-Type', 'text/plain')] 
-    disposition = "%s; filename=%s" % (fs.contentdisposition, filename) 
-    response_headers.append(('Content-Disposition', disposition)) 
-    return response_headers, text
-
+def get_response_content(fs):
+    return process(fs, fs.info.splitlines(), fs.input_headers.splitlines(),
+            fs.output_headers.splitlines()) + '\n'
 
 def process(args, raw_info_lines, raw_input_headers, raw_output_headers):
     info_lines = Util.get_stripped_lines(raw_info_lines)

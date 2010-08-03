@@ -52,11 +52,7 @@ def remove_redundant_nodes(tree):
             if intersection.get_child_count() == 1:
                 tree.remove_node(intersection)
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # read the tree
     tree = NewickIO.parse(fs.tree, Newick.NewickTree) 
     # begin the response
@@ -89,6 +85,4 @@ def get_response(fs):
     formatted_tree_string = NewickIO.get_narrow_newick_string(tree, 120) 
     print >> out, formatted_tree_string
     # return the response
-    response_text = out.getvalue().strip()
-    return [('Content-Type', 'text/plain')], response_text
-
+    return out.getvalue()

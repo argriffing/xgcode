@@ -141,16 +141,8 @@ def process(ntaxa):
     print >> out
     return out.getvalue().strip()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # get the response
-    result_string = process(fs.ntaxa)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, result_string
+def get_response_content(fs):
+    return process(fs.ntaxa) + '\n'
 
 def get_ordered_ids(tree):
     """

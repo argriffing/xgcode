@@ -178,10 +178,5 @@ def get_form():
 def get_form_out():
     return FormOut.Report('out')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    text = process(fs, fs.hud.splitlines())
-    return [('Content-Type', 'text/plain')], text
+def get_response_content(fs):
+    return process(fs, fs.hud.splitlines()) + '\n'

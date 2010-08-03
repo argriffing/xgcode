@@ -18,9 +18,9 @@ import FormOut
 import Progress
 import ReadCoverage
 
+#FIXME use const data
 
 class TimeoutError(Exception): pass
-
 
 g_example_lines = [
         'chr,ref,var,pos,bp,208cov,208sco,301cov,301sco',
@@ -63,11 +63,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # allow only two seconds for web access, and don't use a progress bar
     nseconds = 2
     use_pbar = False
@@ -81,10 +77,11 @@ def get_response(fs):
     lines = [line for line in lines if line]
     # try to get the response
     try:
-        response_text = process(lines, good_coverage, bad_coverage, randomization_rate, nseconds, use_pbar)
+        response_text = process(lines, good_coverage, bad_coverage,
+                randomization_rate, nseconds, use_pbar)
     except TimeoutError:
         response_text = 'sorry scripts run remotely have the attention span of a fruit fly'
-    return [('Content-Type', 'text/plain')], response_text
+    return response_text + '\n'
 
 def get_log_likelihoods_per_strain(rows, models):
     """

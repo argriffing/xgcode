@@ -301,11 +301,7 @@ def edges_to_laplacian(edges, edge_weights):
     L = Euclid.adjacency_to_laplacian(A)
     return L
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # Collect the image format information.
     border_info = BorderInfo(fs.border_x, fs.border_y)
     axis_info = AxisInfo(fs.flip_x, fs.flip_y, fs.show_x, fs.show_y)
@@ -325,18 +321,9 @@ def get_response(fs):
     points = [(p[0], p[1]) for p in X]
     xs, ys = zip(*points)
     colors = valuations_to_colors(xs)
-    # get some options
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    filename = 'plot.' + ext
-    contenttype = Form.g_imageformat_to_contenttype[fs.imageformat]
-    contentdisposition = '%s; filename=%s' % (fs.contentdisposition, filename)
     # Get the image.
+    ext = Form.g_imageformat_to_ext[fs.imageformat]
     image_info = ImageInfo(fs.width, fs.height,
             fs.black, fs.show_edges, fs.show_labels,
             axis_info, border_info, ext)
-    image_string = get_image_string(xs, ys, colors, edges, image_info)
-    # return the response
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, image_string
+    return get_image_string(xs, ys, colors, edges, image_info)

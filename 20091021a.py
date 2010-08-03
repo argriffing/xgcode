@@ -107,20 +107,18 @@ def get_angle(x, y):
 def get_random_point():
     return np.array([random.random() for i in range(3)])
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # build the newick tree from the string
     tree = NewickIO.parse(fs.tree_string, FelTree.NewickTree)
     leaf_names = list(sorted(leaf.get_name() for leaf in tree.gen_tips()))
     # assert that the newick tree has the correct set of leaves
     if leaf_names != ['a', 'b', 'c', 'd']:
-        raise HandlingError('expected the tree to have leaves named {a, b, c, d}')
+        msg = 'expected the tree to have leaves named {a, b, c, d}'
+        raise HandlingError(msg)
     # start writing the response
     out = StringIO()
-    # get the distance matrix with ordered indices including all nodes in the tree
+    # Get the distance matrix with ordered indices
+    # including all nodes in the tree.
     D = np.array(tree.get_distance_matrix(leaf_names))
     # get the embedded points
     X = Euclid.edm_to_points(D)
@@ -158,5 +156,5 @@ def get_response(fs):
     print >> out, 'gradient of the objective function at each estimated steiner point:'
     print >> out, s1_gradient
     print >> out, s2_gradient
-    # write the response
-    return [('Content-Type', 'text/plain')], out.getvalue().strip()
+    # return the response
+    return out.getvalue()

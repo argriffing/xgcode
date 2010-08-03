@@ -41,18 +41,8 @@ def create_adjacency_matrix(affinity, nvertices):
         A[j,i] = affinity
     return A
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
-    # create the matrix
+def get_response_content(fs):
     M = create_adjacency_matrix(fs.edge_affinity, fs.nvertices)
     if fs.laplacian:
         M = Euclid.adjacency_to_laplacian(M)
-    # create the response
-    out = StringIO()
-    print >> out, MatrixUtil.m_to_string(M)
-    # write the response
-    response_headers = [('Content-Type', 'text/plain')]
-    return response_headers, out.getvalue().strip()
+    return MatrixUtil.m_to_string(M) + '\n'
