@@ -23,9 +23,7 @@ def get_form():
     """
     form_objects = [
             Form.Integer('ntaxa', 'number of taxa', 20, low=4, high=20),
-            Form.RadioGroup('options', 'output format options', [
-                Form.RadioItem('download', 'download as an R table', True),
-                Form.RadioItem('view', 'view as text')])]
+            Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():
@@ -56,8 +54,8 @@ def get_sorted_eigensystem(M):
 def get_stability(D):
     """
     The stability is defined as a bound on norms of perturbation matrices.
-    If D is perturbed by a matrix whose Frobenius norm is less than the stability,
-    then the spectral split remains unchanged.
+    If D is perturbed by a matrix whose Frobenius norm
+    is less than the stability, then the spectral split remains unchanged.
     @param D: a distance matrix
     @return: the stability of the distance matrix
     """
@@ -82,9 +80,10 @@ def get_stability(D):
 
 def process(ntaxa, nseconds, branch_length_sampler):
     """
+    The sampling functor returns a branch length and has a string cast.
     @param ntaxa: the number of taxa in the sampled trees
     @param nseconds: allow this many seconds to run or None to run forever
-    @param branch_length_sampler: a functor that returns a branch length and has a string cast
+    @param branch_length_sampler: a sampling functor
     @return: a multi-line string that summarizes the results
     """
     data_rows = []
@@ -99,7 +98,7 @@ def process(ntaxa, nseconds, branch_length_sampler):
             # get the atteson bound
             for branch in tree.get_branches():
                 branch.length = branch_length_sampler()
-            atteson_bound = 0.5 * min(branch.length for branch in tree.get_branches())
+            atteson_bound = 0.5 * min(b.length for b in tree.get_branches())
             # get the spectral bound
             D = np.array(tree.get_distance_matrix())
             k = len(D)
@@ -117,7 +116,8 @@ def process(ntaxa, nseconds, branch_length_sampler):
     print >> out, '\t'.join(['atteson.bound', 'spectral.bound', 'newick'])
     for i, row in enumerate(data_rows):
         atteson, spectral, newick = row
-        print >> out, '\t'.join([str(i+1), str(atteson), str(spectral), '"' + newick + '"'])
+        print >> out, '\t'.join([
+            str(i+1), str(atteson), str(spectral), '"' + newick + '"'])
     return out.getvalue().strip()
 
 def get_response_content(fs):
@@ -132,10 +132,14 @@ def main(options):
     branch_length_sampler = BranchLengthComboPack()
     print process(options.ntaxa, options.nseconds, branch_length_sampler)
 
+#FIXME use argparse with types instead of using assert
+
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
-    parser.add_option('--nseconds', dest='nseconds', type='int', default=0, help='seconds to run or 0 to run until ctrl-c')
-    parser.add_option('--ntaxa', dest='ntaxa', type='int', default=20, help='number of taxa in each sampled tree topology')
+    parser.add_option('--nseconds', dest='nseconds', type='int', default=0,
+            help='seconds to run or 0 to run until ctrl-c')
+    parser.add_option('--ntaxa', dest='ntaxa', type='int', default=20,
+            help='number of taxa in each sampled tree topology')
     options, args = parser.parse_args()
     main(options)
