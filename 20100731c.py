@@ -17,12 +17,12 @@ import Util
 import hud
 import iterutils
 
-g_tags = ['carbone_lab']
+g_tags = ['ztools']
 
 g_lines = [
-        'IC31 2 0 0 2 0 0 2 0 0 0 1 1 0 2 0 0 2 0',
-        'IC32 0 2 0 0 2 0 0 2 0 0 1 1 0 2 0 0 2 0',
-        'IC33 0 0 2 0 0 2 0 0 1 1 0 0 2 0 1 1 0 2']
+        'IC31a 2 0 0 2 0 0 2 0 0 0 1 1 0 2 0 0 2 0',
+        'IC32b 0 2 0 0 2 0 0 2 0 0 1 1 0 2 0 0 2 0',
+        'IC33  0 0 2 0 0 2 0 0 1 1 0 0 2 0 1 1 0 2']
 
 
 def get_form():

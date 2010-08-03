@@ -15,7 +15,7 @@ import Form
 import FormOut
 import hud
 
-g_tags = ['carbone_lab']
+g_tags = ['ztools:convert']
 
 g_hud_string = """
 IC1 1 1 1 0

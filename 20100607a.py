@@ -17,7 +17,7 @@ import FormOut
 import hud
 import EigUtil
 
-g_tags = ['carbone_lab']
+g_tags = ['ztools:compute']
 
 
 g_default_hud_string = """

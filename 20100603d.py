@@ -14,7 +14,7 @@ import Form
 import FormOut
 import iterutils
 
-g_tags = ['carbone_lab']
+g_tags = ['ztools']
 
 g_default_ind_string = """
 IC1 U   Case

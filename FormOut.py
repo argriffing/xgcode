@@ -66,8 +66,12 @@ class FormOut(object):
     def get_mobyle_class(self):
         """
         Mobyle does not need to understand this name.
+        Or maybe it does.
+        For now, change everything to Text.
         """
-        return self.__class__.__name__
+        #FIXME why doesn't mobyle like custom names?
+        #return self.__class__.__name__
+        return 'Text'
 
     def get_mobyle_superclass(self):
         """
@@ -166,14 +170,20 @@ class EigenstratSnp(FormOut):
 class Newick(FormOut):
     def __init__(self, fmt='out', ext='newick', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
+    def get_mobyle_class(self):
+        return 'Tree'
 
 class Fasta(FormOut):
     def __init__(self, fmt='out', ext='fasta', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
+    def get_mobyle_class(self):
+        return 'Alignment'
 
 class Phylip(FormOut):
     def __init__(self, fmt='out', ext='phy', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
+    def get_mobyle_class(self):
+        return 'Alignment'
 
 class TransitionMatrix(FormOut):
     def __init__(self, fmt='transition_matrix', ext='txt', interpolants=None):
@@ -200,18 +210,26 @@ class RateMatrix(FormOut):
 class NucleotideFasta(FormOut):
     def __init__(self, fmt='nt_alignment', ext='fasta', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
+    def get_mobyle_class(self):
+        return 'Alignment'
 
 class CodonFasta(FormOut):
     def __init__(self, fmt='codon_alignment', ext='fasta', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
+    def get_mobyle_class(self):
+        return 'Alignment'
 
 class Nexus(FormOut):
     def __init__(self, fmt='out', ext='nex', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
+    def get_mobyle_class(self):
+        return 'Alignment'
 
 class Stockholm(FormOut):
     def __init__(self, fmt='out', ext='stockholm', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
+    def get_mobyle_class(self):
+        return 'Alignment'
 
 class Matrix(FormOut):
     def __init__(self, fmt='matrix', ext='txt', interpolants=None):
@@ -232,3 +250,5 @@ class Gff(FormOut):
 class Alignment(FormOut):
     def __init__(self, fmt='alignment', ext=None, interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
+    def get_mobyle_class(self):
+        return 'Alignment'

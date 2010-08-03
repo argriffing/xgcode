@@ -9,6 +9,9 @@ import os
 
 import iterutils
 
+def list_starts_with(mylist, prefix):
+    return mylist[:len(prefix)] == prefix
+
 def get_tmp_filename():
     """
     The old tempfile.mktemp is deprecated.

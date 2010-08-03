@@ -13,7 +13,7 @@ import FormOut
 import Util
 import Carbone
 
-g_tags = ['carbone_lab']
+g_tags = ['ztools:convert']
 
 g_info_lines = [
         '"IC","Haplo","Location","Temp (C)","Precip (mm)","Species",'

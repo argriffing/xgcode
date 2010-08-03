@@ -23,6 +23,20 @@ import argparse
 import meta
 import mobyle
 import mobenv
+import Util
+
+def is_tag_prefix(tags, prefix):
+    """
+    The prefix and each tag may be colon-separated.
+    @param tags: a list of tags for a module
+    @param prefix: look for this prefix tag
+    """
+    prefix_as_list = prefix.split(':')
+    for tag in tags:
+        tag_as_list = tag.split(':')
+        if Util.list_starts_with(tag_as_list, prefix_as_list):
+            return True
+    return False
 
 def get_module_names(manifest, create_all, create_tagged):
     """
@@ -55,7 +69,7 @@ def get_module_names(manifest, create_all, create_tagged):
                     pass
                 if usermod:
                     if hasattr(usermod, 'g_tags'):
-                        if create_tagged in usermod.g_tags:
+                        if is_tag_prefix(usermod.g_tags, create_tagged):
                             module_names.append(module_name)
     return module_names
 

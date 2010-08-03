@@ -16,7 +16,7 @@ import Carbone
 import kmeans
 import const
 
-g_tags = ['carbone_lab']
+g_tags = ['ztools:compute']
 
 g_default = const.read('20100709a')
 

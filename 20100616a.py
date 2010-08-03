@@ -11,7 +11,7 @@ import Util
 import Carbone
 import iterutils
 
-g_tags = ['carbone_lab']
+g_tags = ['ztools']
 
 
 g_default_info_rows = [
