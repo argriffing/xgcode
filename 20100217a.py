@@ -161,7 +161,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('plot', [])
+    return FormOut.Image('plot')
 
 def edges_to_node_degrees(edges):
     """

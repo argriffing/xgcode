@@ -51,7 +51,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('points', [])
+    return FormOut.Image('points')
 
 def get_image_string(labels, points, total_width, total_height,
         border, image_format):

@@ -31,7 +31,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('pca', [])
+    return FormOut.Image('pca')
 
 def get_eigenvectors(row_major_matrix):
     """

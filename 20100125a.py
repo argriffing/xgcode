@@ -82,7 +82,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('plot', [])
+    return FormOut.Image('plot')
 
 def get_image_string(points, edges, point_colors, all_black, image_info):
     """

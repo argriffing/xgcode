@@ -30,7 +30,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('tree', [])
+    return FormOut.Image('tree')
 
 def split_branches(tree):
     """

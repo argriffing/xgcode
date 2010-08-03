@@ -60,7 +60,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('frame', [])
+    return FormOut.Image('frame')
 
 def create_test_image(image_format, width, height):
     """

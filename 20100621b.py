@@ -29,7 +29,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Report('out.%s', None, ['format_out'])
+    return FormOut.Report('out.%s', interpolants=['format_out'])
 
 def get_response_content(fs):
     return process(fs, fs.phylip.splitlines()) + '\n'

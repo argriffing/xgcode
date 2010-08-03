@@ -222,7 +222,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('out', [])
+    return FormOut.Image('out')
 
 def get_response_content(fs):
     # start writing the response type

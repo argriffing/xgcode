@@ -71,7 +71,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.RTable('distances.table', [])
+    return FormOut.RTable('distances')
 
 def sample_distance_matrix(xtree_root, sequence_length):
     sequences = JC69.sample_xtree_sequences(xtree_root, sequence_length)
