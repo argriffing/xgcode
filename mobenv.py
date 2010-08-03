@@ -1,6 +1,7 @@
 """
 Code related to the Mobyle environment.
-This module should have few dependencies.
+This module should have few dependencies,
+because it is used on a target machine as part of the installation.
 """
 
 import os

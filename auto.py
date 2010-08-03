@@ -55,16 +55,15 @@ def main():
                 obj.process_cmdline_dict(d_in, d_out)
         args = dict_to_args(d_out)
         args.contentdisposition = 'attachment'
-        header_pairs, content = usermod.get_response(args)
+        if hasattr(usermod, 'get_response_content'):
+            content = usermod.get_response_content(args)
+        else:
+            deprecated_header_pairs, content = usermod.get_response(args)
         if '--write_to_file_for_mobyle' in sys.argv:
-            if hasattr(usermod, 'get_form_out'):
-                form_out = usermod.get_form_out()
-                filename = form_out.get_filename(args)
-                with open(filename, 'w') as fout:
-                    fout.write(content)
-            else:
-                msg = 'this module provides no output metadata'
-                raise Exception(msg)
+            form_out = usermod.get_form_out()
+            filename = form_out.get_filename(args)
+            with open(filename, 'w') as fout:
+                fout.write(content)
         else:
             sys.stdout.write(content)
 

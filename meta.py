@@ -286,6 +286,8 @@ def _copy_const_data(const_deps, target):
 def add_python_files(module_names, python_project):
     module_deps, const_deps = get_module_and_const_deps(module_names)
     selected_module_names = set(module_names) | module_deps[2]
+    if not os.path.exists(python_project):
+        os.makedirs(python_project)
     _copy_custom_modules(selected_module_names, python_project)
     _copy_default_modules(python_project)
     _copy_const_data(const_deps, python_project)

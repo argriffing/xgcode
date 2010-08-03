@@ -24,24 +24,39 @@ import meta
 import mobyle
 import mobenv
 
-def get_module_names(manifest, create_all):
+def get_module_names(manifest, create_all, create_tagged):
     """
     @param manifest: None or filename listing modules
     @param create_all: flag
+    @param create_tagged: None or a tag
     @return: module names
     """
-    if bool(manifest) == bool(create_all):
-        msg = 'expected exactly one of {manifest, create_all}'
+    if sum(bool(x) for x in (manifest, create_all, create_tagged)) != 1:
+        msg = 'expected exactly one of {manifest, create_all, create_tagged}'
         raise ValueError(msg)
+    module_names = []
     if manifest:
         with open(manifest) as fin:
             module_names = [x.strip() for x in fin]
-    if create_all:
-        module_names = []
+    elif create_all:
         for name in os.listdir('.'):
             if re.match(r'^\d{8}[a-zA-Z]\.py$', name):
                 module_name = name[:-3]
                 module_names.append(module_name)
+    elif create_tagged:
+        for name in os.listdir('.'):
+            if re.match(r'^\d{8}[a-zA-Z]\.py$', name):
+                module_name = name[:-3]
+                usermod = None
+                try:
+                    usermod = __import__(
+                            module_name, globals(), locals(), [], -1)
+                except ImportError as e:
+                    pass
+                if usermod:
+                    if hasattr(usermod, 'g_tags'):
+                        if create_tagged in usermod.g_tags:
+                            module_names.append(module_name)
     return module_names
 
 def create_installer(args, cat_info, env_info, module_names):
@@ -94,7 +109,8 @@ def main(args):
     cat_info = mobyle.CategoryInfo(
             args.show_io_types, args.show_tags, args.universal_category)
     # get the module names
-    module_names = get_module_names(args.manifest, args.create_all)
+    module_names = get_module_names(
+            args.manifest, args.create_all, args.create_tagged)
     # define the environment on the target server
     auto_path = os.path.join(args.target, 'auto.py')
     env_info = mobenv.EnvironmentInfo(
@@ -117,11 +133,13 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--manifest',
-            help='a module manifest filename')
+            help='create xmls for snippets listed in this file')
     parser.add_argument('--create_all', action='store_true',
             help='create xmls for all snippets')
+    parser.add_argument('--create_tagged',
+            help='create xmls for snippets with this tag')
     parser.add_argument('--target', required=True,
-            help='python files will be created in this existing directory')
+            help='python files will be created in this directory')
     parser.add_argument('--python_path', default='python',
             help='path to the python executable')
     parser.add_argument('--mobyle_core', required=True,
