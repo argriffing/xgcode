@@ -179,4 +179,4 @@ def get_response_content(fs):
     # draw the image
     ext = Form.g_imageformat_to_ext[fs.imageformat]
     image_info = ImageInfo(w, h, axis_info, border_info, ext)
-    image_string = get_image_string(X, Y, labels, image_info)
+    return get_image_string(X, Y, labels, image_info)

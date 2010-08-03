@@ -84,7 +84,9 @@ def main():
             # using the default parameter values
             if hasattr(module, 'get_response_content'):
                 try:
-                    module.get_response_content(mock_field_storage)
+                    response = module.get_response_content(mock_field_storage)
+                    if response is None:
+                        raise SnippetTestError('no response')
                 except:
                     error_message = str(sys.exc_info()[1])
                     msg = 'get response content: ' + error_message

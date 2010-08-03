@@ -129,6 +129,6 @@ def get_response_content(fs):
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
-        image_string = DrawTreeImage.get_tree_image(tree, (640, 480), ext)
+        return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)

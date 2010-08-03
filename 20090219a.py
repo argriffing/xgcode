@@ -144,7 +144,7 @@ def get_response_content(fs):
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
-        image_string = get_image_string(labels, points,
+        return get_image_string(labels, points,
                 fs.total_width, fs.total_height, fs.border, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)

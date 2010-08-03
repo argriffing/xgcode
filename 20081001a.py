@@ -193,7 +193,7 @@ def get_response_content(fs):
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         image_size = (640, 480)
-        image_string = get_image(R_matrix, incidence_matrix, ordered_names,
+        return get_image(R_matrix, incidence_matrix, ordered_names,
                 image_size, ext, fs.axes, fs.connections)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
