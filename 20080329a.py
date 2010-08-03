@@ -49,7 +49,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Alignment('out.%s', ['fmt'])
+    return FormOut.Alignment('out.%s', interpolants=['fmt'])
 
 def get_response(fs):
     """

@@ -14,10 +14,11 @@ except ImportError as e:
     pass
 
 def _get_filename_metaprogram(fmt, interpolants):
-    if len(interpolants) == 1:
-        return '"%s" %% %s' % (fmt, interpolants[0])
-    elif len(interpolants) > 1:
-        return '"%s" %% (%s)' % (fmt, ', '.join(interpolants))
+    if interpolants:
+        if len(interpolants) == 1:
+            return '"%s" %% %s' % (fmt, interpolants[0])
+        elif len(interpolants) > 1:
+            return '"%s" %% (%s)' % (fmt, ', '.join(interpolants))
     else:
         return '"%s"' % fmt
 
@@ -107,6 +108,21 @@ class Image(FormOut):
 
     def get_contenttype(self, fs):
         return Form.g_imageformat_to_contenttype[fs.imageformat]
+
+    def get_mobyle_class(self):
+        return 'Picture'
+
+    def get_mobyle_superclass(self):
+        return 'Binary'
+
+
+class Png(FormOut):
+
+    def __init__(self, fmt='img', ext='png', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
+
+    def get_contenttype(self, fs):
+        return 'image/png'
 
     def get_mobyle_class(self):
         return 'Picture'

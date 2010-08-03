@@ -10,6 +10,7 @@ import os
 import unittest
 import string
 import collections
+import sys
 
 from lxml import etree
 
@@ -200,16 +201,27 @@ def add_xml_files(cat_info, env_info,
         titles.append(doc_lines[0])
     # Get corresponding unique short names.
     short_names = get_short_titles(titles, short_name_length)
+    # Get the xmls.
+    nsuccesses = 0
+    nfailures = 0
     for usermod, name, short_name in zip(usermods, module_names, short_names):
+        xml_content = None
         try:
-            xml_content = get_xml(cat_info, env_info, usermod, name, short_name)
-        except MobyleError as e:
-            xml_content = None
-            print e
+            xml_content = get_xml(
+                    cat_info, env_info, usermod, name, short_name)
+            nsuccesses += 1
+        except:
+            error_message = str(sys.exc_info()[1])
+            msg = '%s: error making xml: %s' % (name, error_message)
+            print >> sys.stderr, msg
+            nfailures += 1
         if xml_content:
             xml_filename = os.path.join(local_xml_dir, short_name + '.xml')
             with open(xml_filename, 'w') as fout:
                 fout.write(xml_content)
+    print >> sys.stderr, len(import_errors), 'import errors'
+    print >> sys.stderr, nfailures, 'failures to create an xml'
+    print >> sys.stderr, nsuccesses, 'successfully created xmls'
     return import_errors
 
 class TestMobyle(unittest.TestCase):
