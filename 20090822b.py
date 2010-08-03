@@ -41,9 +41,7 @@ def get_form():
             Form.MultiLine('input_text',
                 'calls per nt per base call per chromosome per strain',
                 g_sample_data),
-            Form.RadioGroup('delivery', 'delivery', [
-                Form.RadioItem('inline', 'view as text', True),
-                Form.RadioItem('attachment', 'download as an R table')])]
+            Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():

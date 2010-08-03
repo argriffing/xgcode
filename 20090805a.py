@@ -51,20 +51,32 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('ntaxa', 'number of taxa for distance matrix sampling', 20, low=4, high=20),
-            Form.Integer('nlengths', 'number of sequence lengths to consider (must be odd)', 9, low=3, high=99),
-            Form.Integer('nsamples', 'number of samples per sequence length', 5, low=1, high=99),
+            Form.Integer('ntaxa',
+                'number of taxa for distance matrix sampling',
+                20, low=4, high=20),
+            Form.Integer('nlengths',
+                'number of sequence lengths to consider (must be odd)',
+                9, low=3, high=99),
+            Form.Integer('nsamples',
+                'number of samples per sequence length',
+                5, low=1, high=99),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))]),
-            Form.RadioGroup('distance_options', 'recursive matrix construction method', [
-                Form.RadioItem('pruning_like', 'go through the Laplacian, like Felsenstein pruning', True),
-                Form.RadioItem('nj_like', 'directly use distances, like neighbor joining')]),
-            Form.RadioGroup('delivery', 'delivery', [
-                Form.RadioItem('inline', 'view as text', True),
-                Form.RadioItem('attachment', 'download as an R table')])]
+                Form.RadioItem('pachter_length',
+                    str(BranchLengthSampler.Pachter()), True),
+                Form.RadioItem('exponential_length',
+                    str(BranchLengthSampler.Exponential())),
+                Form.RadioItem('uniform_length_a',
+                    str(BranchLengthSampler.UniformA())),
+                Form.RadioItem('uniform_length_b',
+                    str(BranchLengthSampler.UniformB()))]),
+            Form.RadioGroup('distance_options',
+                'recursive matrix construction method', [
+                Form.RadioItem('pruning_like',
+                    'go through the Laplacian, like Felsenstein pruning',
+                    True),
+                Form.RadioItem('nj_like',
+                    'directly use distances, like neighbor joining')]),
+            Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():

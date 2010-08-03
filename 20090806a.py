@@ -59,9 +59,7 @@ def get_form():
                     str(BranchLengthSampler.UniformA())),
                 Form.RadioItem('uniform_length_b',
                     str(BranchLengthSampler.UniformB()))]),
-            Form.RadioGroup('delivery', 'delivery', [
-                Form.RadioItem('inline', 'view as text', True),
-                Form.RadioItem('attachment', 'download as an R table')])]
+            Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():
