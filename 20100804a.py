@@ -1,4 +1,4 @@
-"""Scatter plot 3D given an R table with two categorical variables.
+"""Scatter plot 2D given an R table with two categorical variables.
 """
 
 from StringIO import StringIO
