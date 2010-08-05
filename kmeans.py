@@ -7,6 +7,7 @@ Use an example from the clusterSim R package.
 import unittest
 import random
 import textwrap
+import collections
 
 import numpy as np
 
@@ -292,7 +293,9 @@ def get_allmeandist(points):
 
 def get_calinski_index(bgss, wgss, k, n):
     """
-    Choose the number of clusters that gives the greatest calinski index.
+    Compute the calinski index.
+    This is a criterion that can be used to pick the number of clusters;
+    the number of clusters that gives the greatest index could be used.
     @param bgss: between groups sum of squares
     @param wgss: within groups sum of squares
     @param k: number of clusters
@@ -309,9 +312,46 @@ def get_calinski_index(bgss, wgss, k, n):
         return float('inf')
     return numerator / denominator
 
+def get_calinski_index_naive(points, labels):
+    """
+    Compute the calinski index.
+    This is a naive computation for testing.
+    @param points: points in euclidean space
+    @param labels: a conformant array giving a cluster label to each point
+    """
+    # convert the labels to a cluster map
+    cluster_map = collections.defaultdict(set)
+    for i, label in enumerate(labels):
+        cluster_map[label].add(i)
+    # get the sum of squared distances to the center
+    allmeandist = get_allmeandist(points)
+    # check the input sizes
+    n = len(points)
+    k = len(cluster_map)
+    if not (1 < k < n):
+        msg_a = 'the calinski index '
+        msg_b = 'is defined for integers k and n such that 1 < k < n'
+        raise ValueError(msg_a + msg_b)
+    # compute wgss using squares of distances
+    wgss = 0
+    for point_indices in cluster_map.values():
+        d = 0
+        for i in point_indices:
+            for j in point_indices:
+                diff = points[j] - points[i]
+                d += np.dot(diff, diff)
+        wgss += d / float(2*len(point_indices))
+    # get the index from allmeandist, wgss, and the sizes
+    bgss = allmeandist - wgss
+    numerator = bgss / float(k - 1)
+    denominator = wgss / float(n - k)
+    if not denominator:
+        return float('inf')
+    return numerator / denominator
+
 
 class TestCalinski(unittest.TestCase):
-    
+
     def create_test_points(self):
         data_lines = Util.get_stripped_lines(g_data_ratio.splitlines())[1:]
         data_rows = [x.split()[1:] for x in data_lines]
@@ -323,6 +363,17 @@ class TestCalinski(unittest.TestCase):
         row = line.split()
         labels = [int(x) for x in row]
         return np.array(labels)
+
+    def test_wcss_bcss_regression(self):
+        points = np.array([[0],[1],[4]], dtype=float)
+        labels = np.array([0,0,1])
+        centers = get_centers(points, labels)
+        sqdists = get_point_center_sqdists(points, centers)
+        allmeandist = get_allmeandist(points)
+        wcss = get_wcss(sqdists, labels)
+        bcss = allmeandist - wcss
+        self.assertTrue(np.allclose(wcss, 0.5))
+        self.assertTrue(np.allclose(bcss, 49 / 6.0))
 
     def test_calinski(self):
         points = self.create_test_points()
@@ -338,6 +389,15 @@ class TestCalinski(unittest.TestCase):
         fcal_observed = '%.4f' % calinski
         fcal_expected = '%.4f' % g_expected_calinski
         self.assertEqual(fcal_observed, fcal_expected)
+
+    def test_calinski_naive(self):
+        points = self.create_test_points()
+        labels = self.create_test_labels()
+        calinski = get_calinski_index_naive(points, labels)
+        fcal_observed = '%.4f' % calinski
+        fcal_expected = '%.4f' % g_expected_calinski
+        self.assertEqual(fcal_observed, fcal_expected)
+
 
 if __name__ == '__main__':
     unittest.main()

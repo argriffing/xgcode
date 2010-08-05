@@ -86,10 +86,11 @@ def get_response_content(fs):
     points = get_rtable_info(rtable, fs.annotation, fs.axes)
     # do the clustering
     cluster_map = agglom.get_initial_cluster_map(points)
-    ssd_map = agglom.get_initial_ssd_map(points)
+    w_ssd_map = agglom.get_initial_w_ssd_map(points)
+    b_ssd_map = agglom.get_initial_b_ssd_map(points)
     while len(cluster_map) > fs.k:
-        pair = agglom.get_pair(cluster_map, ssd_map)
-        agglom.merge(cluster_map, ssd_map, pair)
+        pair = agglom.get_pair(cluster_map, b_ssd_map)
+        agglom.merge(cluster_map, w_ssd_map, b_ssd_map, pair)
     # create the map from a point index to a cluster index
     point_to_cluster = {}
     for cluster_index, point_indices in cluster_map.items():

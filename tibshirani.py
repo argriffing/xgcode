@@ -53,7 +53,7 @@ def get_wcss(X):
 def get_sum_of_distances(X):
     """
     @param X: each row of numpy array X is a point
-    @return: sum of euclidean distances between all ordered pairs
+    @return: sum of squares of euclidean distances between all ordered pairs
     """
     return _get_sum_of_distances_fast(X)
 
@@ -67,7 +67,7 @@ def _sample_point(ranges):
 def _get_sum_of_distances_fast(X):
     """
     @param X: each row of numpy array X is a point
-    @return: sum of euclidean distances between all ordered pairs
+    @return: sum of squares of euclidean distances between all ordered pairs
     """
     nrows, ncols = X.shape
     colsums = X.sum(axis=0)
@@ -78,7 +78,7 @@ def _get_sum_of_distances_fast(X):
 def _get_sum_of_distances_centered(X):
     """
     @param X: each row of numpy array X is a point
-    @return: sum of euclidean distances between all ordered pairs
+    @return: sum of squares of euclidean distances between all ordered pairs
     """
     nrows, ncols = X.shape
     center = X.mean(axis=0)
@@ -87,7 +87,7 @@ def _get_sum_of_distances_centered(X):
 def _get_sum_of_distances_naive(X):
     """
     @param X: each row of numpy array X is a point
-    @return: sum of euclidean distances between all ordered pairs
+    @return: sum of squares of euclidean distances between all ordered pairs
     """
     return sum(np.dot(a-b, a-b) for a, b in itertools.product(X, X))
 
@@ -100,7 +100,15 @@ class TestTibshirani(unittest.TestCase):
             [1, 2, 3, 4],
             [1, 1, 1, 1],
             [8, 2, 3, 6]], dtype=float)
-    
+
+    def assertAllclose(self, x, y):
+        self.assert_(np.allclose(x, y), (x, y)) 
+
+    def test_sum_of_distances(self):
+        points = np.array([[0,0], [3,4]], dtype=float)
+        observed = get_sum_of_distances(points)
+        self.assertAllclose(observed, 50.0)
+
     def test_sum_of_distances_fast(self):
         expected = _get_sum_of_distances_naive(self.M)
         observed = _get_sum_of_distances_fast(self.M)
