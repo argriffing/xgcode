@@ -79,10 +79,11 @@ def get_response_content(fs):
     cluster_map = agglom.get_initial_cluster_map(points)
     w_ssd_map = agglom.get_initial_w_ssd_map(points)
     b_ssd_map = agglom.get_initial_b_ssd_map(points)
+    q = agglom.get_initial_queue(b_ssd_map)
     while len(cluster_map) > 2:
         # do an agglomeration step
-        pair = agglom.get_pair(cluster_map, b_ssd_map)
-        agglom.merge(cluster_map, w_ssd_map, b_ssd_map, pair)
+        pair = agglom.get_pair_fast(cluster_map, q)
+        agglom.merge_fast(cluster_map, w_ssd_map, b_ssd_map, q, pair)
         # compute the within group sum of squares
         indices = cluster_map.keys()
         wgss = sum(w_ssd_map[i] / float(len(cluster_map[i])) for i in indices)
