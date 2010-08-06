@@ -17,7 +17,7 @@ import FormOut
 import iterutils
 import hud
 
-g_tags = ['ztools:convert']
+g_tags = ['pca:convert']
 
 
 g_default_hud_string = """

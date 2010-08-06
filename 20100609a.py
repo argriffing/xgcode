@@ -15,7 +15,7 @@ import FormOut
 from Form import RadioItem
 import Util
 
-g_tags = ['ztools:convert']
+g_tags = ['pca:convert']
 
 g_default_info_lines = [
         '"IC","Haplo","Location","Temp (C)","Precip (mm)","Species",'

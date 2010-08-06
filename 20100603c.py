@@ -15,7 +15,7 @@ import Form
 import FormOut
 import hud
 
-g_tags = ['ztools:convert']
+g_tags = ['pca:convert']
 
 g_hud_string = """
 IC1 1 1 1 0

@@ -16,7 +16,7 @@ import FormOut
 import Util
 import hud
 
-g_tags = ['ztools']
+g_tags = ['pca:misc']
 
 g_default_hud_string = """
 IC1 1 1 1 0

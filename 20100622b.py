@@ -12,7 +12,7 @@ import FormOut
 import Util
 import Carbone
 
-g_tags = ['ztools:convert']
+g_tags = ['pca:convert']
 
 g_info_rows = [
         ['IC', 'Location', 'Temp_C', 'Precip_mm', 'Species'],

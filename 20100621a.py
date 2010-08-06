@@ -10,7 +10,7 @@ import Form
 import FormOut
 import Util
 
-g_tags = ['ztools:convert']
+g_tags = ['pca:convert']
 
 
 g_default_rows = [

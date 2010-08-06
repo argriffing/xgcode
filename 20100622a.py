@@ -13,7 +13,7 @@ import hud
 import Util
 import iterutils
 
-g_tags = ['ztools:convert']
+g_tags = ['pca:convert']
 
 g_default_rows = [
         ['DOE3-0002Aa', '94', '94', '156', '162', '89', '172'],

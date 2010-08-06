@@ -17,7 +17,7 @@ import Carbone
 import iterutils
 import const
 
-g_tags = ['ztools:plot']
+g_tags = ['pca:plot']
 
 g_default = const.read('20100709a')
 

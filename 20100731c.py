@@ -17,7 +17,7 @@ import Util
 import hud
 import iterutils
 
-g_tags = ['ztools']
+g_tags = ['pca:misc']
 
 g_lines = [
         'IC31a 2 0 0 2 0 0 2 0 0 0 1 1 0 2 0 0 2 0',

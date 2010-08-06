@@ -7,7 +7,7 @@ import FormOut
 import Phylip
 import const
 
-g_tags = ['ztools']
+g_tags = ['pca:misc']
 
 g_default_data = const.read('20100625a')
 

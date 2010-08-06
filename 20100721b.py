@@ -21,7 +21,7 @@ import kmeans
 import combobreaker
 import const
 
-g_tags = ['ztools']
+g_tags = ['pca:misc']
 
 g_default_lines = [
         'p1 p2',

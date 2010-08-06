@@ -11,7 +11,7 @@ import Util
 import Carbone
 import iterutils
 
-g_tags = ['ztools']
+g_tags = ['pca:misc']
 
 
 g_default_info_rows = [

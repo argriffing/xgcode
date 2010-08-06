@@ -9,7 +9,7 @@ import Carbone
 import hud
 import const
 
-g_tags = ['ztools:convert']
+g_tags = ['pca:convert']
 
 g_default_data = const.read('20100625a')
 

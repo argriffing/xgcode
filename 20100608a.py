@@ -22,7 +22,7 @@ import EigUtil
 import Form
 import FormOut
 
-g_tags = ['ztools:compute']
+g_tags = ['pca:compute']
 
 
 g_default_hud_string = """

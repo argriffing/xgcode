@@ -16,7 +16,7 @@ import FormOut
 import Util
 import hud
 
-g_tags = ['ztools:convert']
+g_tags = ['pca:convert']
 
 g_default_string = """
 foo 1 1 1

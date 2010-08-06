@@ -18,7 +18,7 @@ import Carbone
 import agglom
 import const
 
-g_tags = ['ztools:compute']
+g_tags = ['pca:compute']
 
 g_default = const.read('20100709a')
 

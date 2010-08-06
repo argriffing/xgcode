@@ -14,7 +14,7 @@ import Util
 import iterutils
 import const
 
-g_tags = ['ztools']
+g_tags = ['pca:misc']
 
 g_default_data = const.read('20100730w')
 
