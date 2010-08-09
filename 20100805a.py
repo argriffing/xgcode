@@ -30,7 +30,7 @@ def get_form():
             Form.MultiLine('table', 'R table', g_default),
             Form.SingleLine('axes', 'column labels of Euclidean axes',
                 ' '.join(('pc1', 'pc2', 'pc3'))),
-            Form.Integer('k', 'maximum number of clusters',
+            Form.Integer('k', 'number of clusters',
                 2, low=2),
             Form.SingleLine('annotation', 'header of added column',
                 'cluster'),

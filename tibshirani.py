@@ -1,5 +1,5 @@
 """
-Implmentation of the gap statistic for clustering.
+Implementation of the gap statistic for clustering.
 
 This is implemented from the description
 in the paper entitled 'estimating the number of clusters
@@ -9,6 +9,7 @@ in a data set via the gap statistic' by Tibshirani et al.
 import unittest
 import itertools
 import random
+import math
 
 import numpy as np
 
@@ -37,7 +38,7 @@ def get_simulation_correction(wlogs):
     @param wlogs: numpy array of logs of within cluster sums of squares
     @return: the correction for simulation error
     """
-    B = len(ws)
+    B = len(wlogs)
     sd = np.std(wlogs)
     return sd * math.sqrt(1.0 + 1.0/B)
 
