@@ -54,6 +54,7 @@ def do_sampling(extents, npoints, B):
     @param extents: the length of each axis of the hypercube
     @param npoints: sample this many points at a time
     @param B: use this many monte carlo samples
+    @return: (k, expected log Wk, sk) triples
     """
     # Get the list of the number of clusters at each step,
     # and get the corresponding logarithms of wgss.
@@ -77,8 +78,8 @@ def do_sampling(extents, npoints, B):
     if len(nclusters_list) != len(thresholds):
         msg = 'expected as many thresholds as cluster levels'
         raise ValueError(msg)
-    # Sort by increasing cluster size.
-    triples = sorted(zip(nclusters_list, expectations, thresholds))
+    # reverse all of the lists so that they are by increasing cluster size
+    triples = list(reversed(zip(nclusters_list, expectations, thresholds)))
     # Return the nclusters_list, the expectations, and the thresholds.
     return zip(*triples)
 
@@ -155,28 +156,27 @@ def get_response_content(fs):
         wgss = sum(w_ssd_map[i] / float(len(cluster_map[i])) for i in indices)
         # compute the between group sum of squares
         bgss = allmeandist - wgss
-        # get the calinksi index
-        n = len(points)
-        k = len(cluster_map)
         # append to the lists
-        cluster_counts.append(k)
+        cluster_counts.append(len(cluster_map))
         wgss_values.append(wgss)
     # compute the log wgss values
     wlogs = np.log(wgss_values)
+    # reverse the log values so that they are by increasing cluster size
+    wlogs = list(reversed(wlogs))
     # sample from the null distribution
     extents = np.max(points, axis=0) - np.min(points, axis=0)
     nclusters_list, expectations, thresholds = do_sampling(
             extents, len(points), fs.nsamples)
     # get the gaps
-    gaps = wlogs - np.array(expectations)
+    gaps = np.array(expectations) - wlogs
     # Get the best cluster count according to the gap statistic.
     best_i = None
     criteria = []
     for i, ip1 in iterutils.pairwise(range(len(nclusters_list))):
         k, kp1 = nclusters_list[i], nclusters_list[ip1]
-        criterion = gaps[ip1] - gaps[i] - thresholds[i]
+        criterion = gaps[i] - gaps[ip1] + thresholds[ip1]
         criteria.append(criterion)
-        if criterion < 0:
+        if criterion > 0:
             if best_i is None:
                 best_i = i
     best_k = nclusters_list[best_i]
@@ -185,13 +185,14 @@ def get_response_content(fs):
     print >> out, 'best cluster count: k = %d' % best_k
     if fs.verbose:
         print >> out
-        print >> out, '(k, gap, threshold, criterion):'
+        print >> out, '(k, expected, observed, gap, threshold, criterion):'
         n = len(nclusters_list)
         for i, k in enumerate(nclusters_list):
+            row = [k, expectations[i], wlogs[i], gaps[i], thresholds[i]]
             if i < n-1:
-                row = (k, gaps[i], thresholds[i], criteria[i])
+                row += [criteria[i]]
             else:
-                row = (k, gaps[i], thresholds[i], '-')
+                row += ['-']
             print >> out, '\t'.join(str(x) for x in row)
     # return the response
     return out.getvalue()
