@@ -21,3 +21,13 @@ def eigh(M):
     sorted_pairs = list(reversed(sorted(zip(ws, vs))))
     w, v = zip(*sorted_pairs)
     return np.array(w), [np.array(x) for x in v]
+
+def principal_eigh(M):
+    """
+    @param M: a symmetric numpy 2D array
+    @return: principal eigenvalue and eigenvector
+    """
+    w, vt = np.linalg.eigh(M)
+    ws, vs = w.tolist(), vt.T.tolist()
+    val, vec = max(zip(ws, vs))
+    return val, np.array(vec)
