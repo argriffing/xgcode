@@ -2,7 +2,8 @@
 Make data structures to efficiently represent a tree.
 The tree is represented as branches connecting nodes.
 This is analogous to edges connecting vertices in other literature.
-These data structures are designed to facilitate various dynamic programming algorithms.
+These data structures are designed to facilitate various
+dynamic programming algorithms.
 """
 
 from optparse import OptionParser
@@ -28,7 +29,8 @@ class Tree:
         if node and not node.is_root():
             path = list(node.gen_path_to_root())
             for child, parent in zip(path[:-1], path[1:]):
-                parent.set_directed_branch_to_parent(parent.get_directed_branch_to(child))
+                parent.set_directed_branch_to_parent(
+                        parent.get_directed_branch_to(child))
             node.set_directed_branch_to_parent(None)
         self.root = node
     
@@ -56,7 +58,8 @@ class Tree:
         directed_branches_to_children = list(node.gen_exits(parent))
         # remove the connection from the parent to the selected node
         parent.directed_branches.remove(parent.get_directed_branch_to(node))
-        # connect the children of the selected node to the parent of the selected node
+        # Connect the children of the selected node
+        # to the parent of the selected node.
         for directed_branch_to_child in directed_branches_to_children:
             child = directed_branch_to_child.get_target()
             child.get_directed_branch_to_parent().set_target(parent)
@@ -114,7 +117,7 @@ class Tree:
     def get_min_binary_branch_length(self):
         """
         This is for checking the Atteson condition for neighbor joining.
-        @return: 0 if the tree is not binary, otherwise the smallest branch length.
+        @return: 0 if the tree is not binary, else the smallest branch length.
         """
         min_blen = 0
         max_nneighbors = 0
@@ -176,13 +179,19 @@ class Tree:
 
     def get_split_branch(self, selected_tip_list):
         """
-        Return a source node and its directed branch leading towards the unrooted subtree defined by the selected tips.
-        @param selected_tip_list: a list of selected tip nodes that defines a bipartition
-        @return: None or a (node, directed_branch) pair that separates the selection from its complement
+        Return a source node and its directed branch.
+        Return a source node and its directed branch leading towards the
+        unrooted subtree defined by the selected tips.
+        The (node, directed branch) pair separaters the selection
+        from its complement.
+        @param selected_tip_list: list of selected tips defining a bipartition
+        @return: None or a (node, directed_branch) pair
         """
-        # define the set of tip ids that are on the target end of the requested branch
+        # Define the set of tip ids
+        # that are on the target end of the requested branch.
         id_selection = set(id(tip) for tip in selected_tip_list)
-        # define the set of tip ids that are on the target end of the branch with a given id
+        # Define the set of tip ids
+        # that are on the target end of the branch with a given id.
         directed_branch_id_to_set = {}
         # fill the dynamic programming data structure
         for node, exiting_branch in self.gen_postorder_exits():
@@ -231,14 +240,18 @@ class Node:
         # connect the input node to the current node
         child_directed_branch = child.get_directed_branch_to_parent()
         if child_directed_branch:
-            # if the node already has a dummy parent then reconnect the child to the current node
+            # If the node already has a dummy parent
+            # then reconnect the child to the current node.
             child_undirected_branch = child_directed_branch.get_undirected_branch()
             child_parent = child_directed_branch.get_target()
             if child_parent:
-                raise ValueError('adding a child node that already has a non-degenerate parent')
+                msg_a = 'adding a child node '
+                msg_b = 'that already has a non-degenerate parent'
+                raise ValueError(msg_a + msg_b)
             child_directed_branch.set_target(self)
         else:
-            # if the child has no dummy parent then connect the child to the current node
+            # If the child has no dummy parent
+            # then connect the child to the current node.
             child_undirected_branch = self.UndirectedBranchFactory()
             child_directed_branch = DirectedBranch(self, child_undirected_branch)
             child.add_directed_branch(child_directed_branch)
@@ -254,7 +267,9 @@ class Node:
         @param branch: the undirected branch that connects with the parent
         """
         if branch.is_root():
-            raise ValueError('setting the undirected branch of the root is an undefined operation')
+            msg_a = 'setting the undirected branch of the root '
+            msg_b = 'is an undefined operation'
+            raise ValueError(msg_a + msg_b)
         directed_branch_to_parent = self.get_directed_branch_to_parent()
         parent = branch_to_parent.get_target()
         directed_branch_from_parent = parent.get_directed_branch_to(self)
@@ -310,8 +325,8 @@ class Node:
 
     def gen_exits(self, entrance_node):
         """
-        Generate all exiting directed branches that do not lead to the entrance node.
-        @param entrance_node: the current node was entered by way of the entrance node
+        Generate all exiting directed branches not leading to the entrance node.
+        @param entrance_node: the node which lead to the current node
         """
         for directed_branch in self.gen_directed_branches():
             if directed_branch.get_target() is not entrance_node:
@@ -373,8 +388,9 @@ class Node:
 
 class DirectedBranch:
     """
-    These directed branches are the only connections between the nodes composing the tree.
-    This extra layer is useful for storing partial results during dynamic programming.
+    Directed branches are the only connections between the nodes of the tree.
+    This extra layer is useful for storing partial results
+    during dynamic programming.
     """
     def __init__(self, node, branch):
         """
@@ -414,10 +430,12 @@ class NewickUndirectedBranch(UndirectedBranch):
     def create_halves(self):
         """
         Split the branch in half, returning the resulting pair of branches.
-        @return: a pair of undirected branches each of half the original branch length
+        Each of the pair of undirected branches has half the original length.
+        @return: a pair of undirected branches
         """
         new_branch_length = self.get_branch_length() / 2.0
-        return (NewickUndirectedBranch(new_branch_length), NewickUndirectedBranch(new_branch_length))
+        return (NewickUndirectedBranch(new_branch_length),
+                NewickUndirectedBranch(new_branch_length))
 
 
 class NewickNode(Node):
@@ -433,7 +451,7 @@ class NewickNode(Node):
 
     def get_branch_length(self):
         """
-        The branch associated with a node is the branch that connects to its parent.
+        The branch associated with a node is the one connecting to its parent.
         @return: a floating point branch length or None
         """
         directed_branch = self.get_directed_branch_to_parent()
@@ -445,17 +463,18 @@ class NewickNode(Node):
     def get_name(self):
         return self.name
 
-    def set_branch_length(self, branch_length):
+    def set_branch_length(self, blen):
         """
-        The branch associated with a node is the branch that connects to its parent.
-        If the current node is the root then possibly add a dummy parent and an associated undirected branch.
+        The branch associated with a node is the one connecting to its parent.
+        If the current node is the root
+        then possibly add a dummy parent and an associated undirected branch.
         @return: a floating point branch length or None
         """
         directed_branch = self.get_directed_branch_to_parent()
         if directed_branch:
-            directed_branch.get_undirected_branch().set_branch_length(branch_length)
+            directed_branch.get_undirected_branch().set_branch_length(blen)
         else:
-            undirected_branch = self.UndirectedBranchFactory(branch_length)
+            undirected_branch = self.UndirectedBranchFactory(blen)
             directed_branch = DirectedBranch(None, undirected_branch)
             self.add_directed_branch(directed_branch)
             self.set_directed_branch_to_parent(directed_branch)
@@ -482,7 +501,9 @@ class NewickNode(Node):
 
 class NewickTree(Tree):
     """
-    A Newick tree understands that nodes can have names and that branches can have lengths.
+    A formalization of a phylogenetic tree.
+    A Newick tree understands that nodes can have names
+    and that branches can have lengths.
     """
 
     NodeFactory = NewickNode
@@ -494,7 +515,7 @@ class NewickTree(Tree):
         """
         n = len(ordered_ids)
         A = [[0]*n for i in range(n)]
-        id_to_index = dict((my_id, index) for index, my_id in enumerate(ordered_ids))
+        id_to_index = dict((my_id, i) for i, my_id in enumerate(ordered_ids))
         nodes = list(self.preorder())
         for node_a in nodes:
             index_a = id_to_index.get(id(node_a), None)

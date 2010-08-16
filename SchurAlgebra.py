@@ -49,9 +49,9 @@ def assert_square(M):
 def schur_helper(M, nremove):
     """
     Remove some number of final rows and columns by schur complementation.
-    @param M: a square rank 2 numpy array
+    @param M: a square numpy array
     @param nremove: Schur out this many of the last rows and columns
-    @return: a new square rank 2 numpy array
+    @return: a new square numpy array
     """
     assert_square(M)
     if not nremove:
@@ -132,6 +132,7 @@ def mschur(M, index_set):
     """
     @param M: a symmetric square matrix
     @param index_set: a set of indices to be removed by schur complementation
+    @return: a new square numpy array
     """
     assert_square(M)
     assert_valid_indices(len(M), index_set)
