@@ -83,7 +83,7 @@ def get_response_content(fs):
     w_aug, v_aug = EigUtil.principal_eigh(L_aug_pinv)
     fiedler_aug = v_aug * math.sqrt(w_aug)
     # report the results
-    np.set_printoptions(linewidth=300)
+    np.set_printoptions(linewidth=300, threshold=10000)
     out = StringIO()
     print >> out, 'Laplacian matrix:'
     print >> out, L
