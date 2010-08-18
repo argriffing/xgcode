@@ -6,6 +6,7 @@ import math
 
 import numpy as np
 import cairo
+from matplotlib.delaunay.triangulate import Triangulation
 
 from SnippetUtil import HandlingError
 import Form
@@ -83,22 +84,49 @@ def sample_with_rejection(npoints, poly, limit):
             break
     return points
 
+def gen_noncrossing_edges(query_edges, boundary_edges, allpoints):
+    """
+    Yield query edges which do not intersect boundary edges.
+    @param query_edges: point index pairs
+    @param boundary_edges: point index pairs
+    @param allpoints: ordered points as pairs of coordinates
+    """
+    for query in query_edges:
+        q0 = CompGeom.Point(allpoints[query[0]])
+        q1 = CompGeom.Point(allpoints[query[1]])
+        for boundary in boundary_edges:
+            b0 = CompGeom.Point(allpoints[boundary[0]])
+            b1 = CompGeom.Point(allpoints[boundary[1]])
+            if CompGeom.line_segments_intersect(q0, q1, b0, b1):
+                break
+        else:
+            yield query
+
 def get_response_content(fs):
     limit = fs.npoints*100
-    points = sample_with_rejection(fs.npoints, g_africa_poly, limit)
+    # get points defining the boundary of africa
     nafrica = len(g_africa_poly)
-    edges = [(i, (i+1)%nafrica) for i in range(nafrica)]
+    africa_edges = [(i, (i+1)%nafrica) for i in range(nafrica)]
+    # get some points and edges inside africa
+    points = sample_with_rejection(fs.npoints, g_africa_poly, limit)
+    x_list, y_list = zip(*points)
+    tri = Triangulation(x_list, y_list)
+    tri_edges = [(i+nafrica, j+nafrica) for i, j in tri.edge_db.tolist()]
+    # get the whole list of points
+    allpoints = g_africa_poly + points
+    # refine the list of edges
+    tri_edges = list(gen_noncrossing_edges(tri_edges, africa_edges, allpoints))
+    alledges = africa_edges + tri_edges
     # get the width and height of the drawable area of the image
     width = fs.total_width - 2*fs.border
     height = fs.total_height - 2*fs.border
     if width < 1 or height < 1:
         msg = 'the image dimensions do not allow for enough drawable area'
         raise HandlingError(msg)
-    allpoints = g_africa_poly + points
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
-        return get_image_string(allpoints, edges,
+        return get_image_string(allpoints, alledges,
                 fs.total_width, fs.total_height, fs.border, ext)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
