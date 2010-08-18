@@ -189,26 +189,30 @@ def q_to_edm(Q):
     """
     return cov_to_edm(q_to_cov(Q))
 
-def dccov_to_points(HSH):
+def dccov_to_points(HSH, naxes=None):
     """
     Get points where the first coordinate is on the principal axis.
     @param HSH: a centered covariance matrix or a Gower matrix
-    @return: a matrix whose rows define N points in (N-1)-space
+    @param naxes: use this many axes, defaulting to N-1
+    @return: a matrix whose rows define N points in (naxes)-space
     """
+    if naxes is None:
+        naxes = len(HSH) - 1
     W, VT = np.linalg.eigh(HSH)
     V = VT.T.tolist()
-    vectors = [np.array(v)*w for w, v in list(reversed(sorted(zip(np.sqrt(W), V))))[:-1]]
+    vectors = [np.array(v)*w for w, v in list(reversed(sorted(zip(np.sqrt(W), V))))[:naxes]]
     X = np.array(zip(*vectors))
     return X
 
-def edm_to_points(D):
+def edm_to_points(D, naxes=None):
     """
     Get points where the first coordinate is on the principal axis.
     @param D: a matrix of squared Euclidean distances
-    @return: a matrix whose rows define N points in (N-1)-space
+    @param naxes: use this many axes, defaulting to N-1
+    @return: a matrix whose rows define N points in (naxes)-space
     """
     HSH = edm_to_dccov(D)
-    return dccov_to_points(HSH)
+    return dccov_to_points(HSH, naxes)
 
 def edm_to_weighted_cross_product(D, m):
     """
