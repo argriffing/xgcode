@@ -8,6 +8,9 @@ import itertools
 import numpy as np
 import cairo
 from matplotlib.delaunay.triangulate import Triangulation
+import matplotlib.pyplot as plt
+import matplotlib
+import argparse
 
 from SnippetUtil import HandlingError
 import Form
@@ -232,6 +235,42 @@ class ImgHelper:
         self.x_final = [x+border for x in x_trans]
         self.y_final = [y+border for y in y_trans]
 
+    def draw_contour_plot(self, valuations, nafrica):
+        """
+        Note that this is not useful for the web.
+        Also it is not useful for calling over ssh
+        because it pops up a picture.
+        @param valuations: valuations conformant to the spanning tree points
+        @param nafrica: the number of points on the continent boundary
+        """
+        # y axis is flipped in matplotlib relative to cairo
+        x = self.x_final
+        y = [self.t_height - y for y in self.y_final]
+        # get the relevant points
+        mst_x = x[nafrica:]
+        mst_y = y[nafrica:]
+        # do a grid interpolation
+        xvalues = np.arange(min(mst_x), max(mst_x), 1.0)
+        yvalues = np.arange(min(mst_y), max(mst_y), 1.0)
+        xi, yi = np.meshgrid(xvalues, yvalues)
+        tri = Triangulation(mst_x, mst_y)
+        interp = tri.nn_interpolator(valuations)
+        zi = interp(xi, yi)
+        # define the africa clip path
+        # http://matplotlib.sourceforge.net/examples/api/compound_path.html
+        continent_poly = np.array(zip(x[:nafrica], y[:nafrica]) + [(0,0)])
+        continent_codes = ([matplotlib.path.Path.MOVETO] +
+                [matplotlib.path.Path.LINETO]*(nafrica-1) +
+                [matplotlib.path.Path.CLOSEPOLY])
+        continent_path = matplotlib.path.Path(continent_poly, continent_codes)
+        # draw the plot
+        plt.figure()
+        cs = plt.contour(xi, yi, zi, clip_path=continent_path)
+        plt.fill(x[:nafrica], y[:nafrica],
+                fill=False)
+        plt.axes().set_aspect('equal')
+        plt.show()
+
     def get_image_string(self, colors, radii, image_format):
         """
         @param colors: point colors as rgb triples in [0,1]
@@ -267,3 +306,62 @@ class ImgHelper:
             context.restore()
         # get the image string
         return cairo_helper.get_image_string()
+
+def main(fs):
+    # use a fixed seed if requested
+    if fs.seed:
+        random.seed(fs.seed)
+    # define the max number of rejection iterations
+    limit = fs.npoints*100
+    # validate input
+    if fs.axis < 0:
+        raise ValueError('the mds axis must be nonnegative')
+    # get points defining the boundary of africa
+    nafrica = len(g_africa_poly)
+    africa_edges = [(i, (i+1)%nafrica) for i in range(nafrica)]
+    # get some points and edges inside africa
+    points = sample_with_rejection(fs.npoints, g_africa_poly, limit)
+    x_list, y_list = zip(*points)
+    tri = Triangulation(x_list, y_list)
+    tri_edges = [(i+nafrica, j+nafrica) for i, j in tri.edge_db.tolist()]
+    # get the whole list of points
+    allpoints = g_africa_poly + points
+    # refine the list of edges
+    tri_edges = list(gen_noncrossing_edges(tri_edges, africa_edges, allpoints))
+    tri_edges = get_mst(tri_edges, allpoints)
+    alledges = africa_edges + tri_edges
+    # make the graph laplacian
+    A = np.zeros((len(points), len(points)))
+    for ia, ib in tri_edges:
+        xa, ya = allpoints[ia]
+        xb, yb = allpoints[ib]
+        d = math.hypot(xb-xa, yb-ya)
+        A[ia-nafrica, ib-nafrica] = 1/d
+        A[ib-nafrica, ia-nafrica] = 1/d
+    L = Euclid.adjacency_to_laplacian(A)
+    ws, vs = EigUtil.eigh(np.linalg.pinv(L))
+    if fs.axis >= len(ws):
+        raise ValueError('choose a smaller mds axis')
+    v = vs[fs.axis]
+    # get the color and sizes for the points
+    v /= max(np.abs(v))
+    # draw the picture
+    helper = ImgHelper(allpoints, alledges,
+            fs.total_width, fs.total_height, fs.border)
+    helper.draw_contour_plot(v, nafrica)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--seed', default=0, type=int,
+            help='random number seed or 0')
+    parser.add_argument('--axis', default=0, type=int,
+            help='color using this axis')
+    parser.add_argument('--npoints', default=100, type=int,
+            help='sample this many points')
+    parser.add_argument('--total_width', default=720, type=int,
+            help='image width')
+    parser.add_argument('--total_height', default=720, type=int,
+            help='image height')
+    parser.add_argument('--border', default=10, type=int,
+            help='image border')
+    main(parser.parse_args())
