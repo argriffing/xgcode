@@ -49,48 +49,31 @@ def get_response_content(fs):
     D_aug = get_augmented_distance(D, nleaves, fs.ndups)
     # analyze the leaf distance matrix
     X_leaf = Euclid.edm_to_points(D_leaf)
-    # get the eigendecomposition of the centered augmented distance matrix
-    X_aug = Euclid.edm_to_points(D_aug, nvertices-1)
-    # explicitly compute the points for the given number of dups using weights
-    m = [1]*ninternal + [1+fs.ndups]*nleaves
-    m = np.array(m, dtype=float) / sum(m)
-    X_weighted = Euclid.edm_to_weighted_points(D, m)
-    # explicitly compute the points for 10x dups
-    m = [1]*ninternal + [1+fs.ndups*10]*nleaves
-    m = np.array(m, dtype=float) / sum(m)
-    X_weighted_10x = Euclid.edm_to_weighted_points(D, m)
+    w_leaf, v_leaf = Euclid.edm_to_dccov(D_leaf)
+    V_leaf = np.array(v_leaf).T
     # explicitly compute the limiting points as the number of dups increases
     X = Euclid.edm_to_points(D)
     X -= np.mean(X[-nleaves:], axis=0)
     XL = X[-nleaves:]
     U, s, Vt = np.linalg.svd(XL)
     Z = np.dot(X, Vt.T)
+    # hack the Z matrix
+    Z = Z.T[ninternal:].T
+    WY = Z / np.sqrt(w_leaf)
     # report the results
     np.set_printoptions(linewidth=300, threshold=10000)
     out = StringIO()
     print >> out, 'leaf distance matrix:'
     print >> out, D_leaf
     print >> out
-    print >> out, 'points derived from the leaf distance matrix'
-    print >> out, '(the first column is proportional to the Fiedler vector):'
-    print >> out, X_leaf
+    print >> out, 'eigenvalues derived from the leaf distance matrix'
+    print >> out, w_leaf
     print >> out
-    if fs.show_aug:
-        print >> out, 'augmented distance matrix:'
-        print >> out, D_aug
-        print >> out
-    print >> out, 'points derived from the augmented distance matrix'
-    print >> out, '(the first column is proportional to the Fiedler vector):'
-    print >> out, get_ugly_matrix(X_aug, ninternal, nleaves)
-    print >> out
-    print >> out, 'points computed using masses:'
-    print >> out, X_weighted
-    print >> out
-    print >> out, 'points computed using masses with 10x dups:'
-    print >> out, X_weighted_10x
+    print >> out, 'corresponding eigenvectors (as columns)'
+    print >> out, V_leaf
     print >> out
     print >> out, 'limiting points:'
-    print >> out, Z
+    print >> out, WY
     print >> out
     return out.getvalue()
 
