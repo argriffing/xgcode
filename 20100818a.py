@@ -79,7 +79,7 @@ def get_ugly_matrix(M, ninternal, ntips):
     if n <= ninternal + 3*ntips:
         return str(M)
     filler = ' ...,'
-    out_lines = lines[:ninternal + 2*ntips] + [filler] + lines[-ntips:]
+    out_lines = lines[:ninternal + ntips] + [filler] + lines[-2*ntips:]
     return '\n'.join(out_lines)
 
 def get_response_content(fs):
@@ -99,6 +99,14 @@ def get_response_content(fs):
     X_leaf = Euclid.edm_to_points(D_leaf)
     # get the eigendecomposition of the centered augmented distance matrix
     X_aug = Euclid.edm_to_points(D_aug, nvertices-1)
+    # explicitly compute the points for the given number of dups using weights
+    m = [1]*ninternal + [1+fs.ndups]*nleaves
+    m = np.array(m, dtype=float) / sum(m)
+    X_weighted = Euclid.edm_to_weighted_points(D, m)
+    # explicitly compute the points for 10x dups
+    m = [1]*ninternal + [1+fs.ndups*10]*nleaves
+    m = np.array(m, dtype=float) / sum(m)
+    X_weighted_10x = Euclid.edm_to_weighted_points(D, m)
     # explicitly compute the limiting points as the number of dups increases
     X = Euclid.edm_to_points(D)
     X -= np.mean(X[-nleaves:], axis=0)
@@ -122,6 +130,12 @@ def get_response_content(fs):
     print >> out, 'points derived from the augmented distance matrix'
     print >> out, '(the first column is proportional to the Fiedler vector):'
     print >> out, get_ugly_matrix(X_aug, ninternal, nleaves)
+    print >> out
+    print >> out, 'points computed using masses:'
+    print >> out, X_weighted
+    print >> out
+    print >> out, 'points computed using masses with 10x dups:'
+    print >> out, X_weighted_10x
     print >> out
     print >> out, 'limiting points:'
     print >> out, Z
