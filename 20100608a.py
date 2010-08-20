@@ -94,7 +94,7 @@ def process(args, raw_hud_lines):
     X = np.dot(M, M.T) / n
     # get the eigendecomposition of the covariance matrix
     evals, evecs = EigUtil.eigh(X)
-    # scale the eigenvectos by the eigenvalues
+    # scale the eigenvectors by the eigenvalues
     pcs = [w*v for w, v in zip(evals, evecs)]
     # check for sufficient number of eigenvectors
     if len(evecs) < args.npcs:
