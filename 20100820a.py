@@ -1,7 +1,4 @@
-"""Compute eigensnps given a .hud file.
-
-This uses a singular value decomposition
-and is complementary to the principal components analysis.
+"""Compute SNP correlations with principal components given a .hud file.
 """
 
 from StringIO import StringIO
@@ -40,7 +37,7 @@ def get_form():
                 Form.CheckItem('diploid_and_biallelic',
                     'the data source is really diploid and biallelic', True)]),
             Form.Integer('ncoords',
-                'show this many coordinates per eigensnp', 3),
+                'show this many axes', 3),
             Form.ContentDisposition()]
     return form_objects
 
@@ -49,6 +46,16 @@ def get_form_out():
 
 def get_response_content(fs):
     return process(fs, fs.hud.splitlines()) + '\n'
+
+def mycorr(a, b):
+    stda = np.std(a)
+    stdb = np.std(b)
+    if not stda:
+        return 0
+    if not stdb:
+        return 0
+    m = np.mean((a - np.mean(a)) * (b - np.mean(b)))
+    return m / (stda * stdb)
 
 def process(args, raw_hud_lines):
     """
@@ -78,13 +85,21 @@ def process(args, raw_hud_lines):
     if args.diploid_and_biallelic:
         p = u/2
         M /= np.sqrt(p * (1 - p))
-    # compute the svd
-    #U, s, Vt = np.linalg.svd(M / math.sqrt(n), full_matrices=False)
-    Vt_scaled = np.dot(np.diag(s), Vt)
-    if Vt_scaled.shape[1] < args.ncoords:
-        msg = 'this data cannot support the number of requested coordinates'
-        raise ValueError(msg)
-    Vt_reduced = Vt_scaled.T[:args.ncoords].T
-    # show the rows
+    # construct the sample covariance matrix
+    X = np.dot(M, M.T) / n
+    # get the eigendecomposition of the covariance matrix
+    evals, evecs = EigUtil.eigh(X)
+    # scale the eigenvectors by the eigenvalues
+    pcs = [w*v for w, v in zip(evals, evecs)]
+    # check for sufficient number of eigenvectors
+    if len(evecs) < args.ncoords:
+        msg_a = 'the number of requested principal components '
+        msg_b = 'must be no more than the number of OTUs'
+        raise ValueError(msg_a + msg_b)
+    # compute the correlation of each SNP vector with each principal PC
+    mylist = []
+    for snp in C_full.T:
+        row = [mycorr(snp, pc) for pc in pcs[:args.ncoords]]
+        mylist.append(row)
     np.set_printoptions(linewidth=300, threshold=10000)
-    return str(Vt_reduced)
+    return str(np.array(mylist))
