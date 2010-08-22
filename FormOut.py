@@ -63,6 +63,9 @@ class FormOut(object):
             response_headers.append(('Content-Disposition', disposition))
         return response_headers
 
+    def get_galaxy_format(self):
+        return 'txt'
+
     def get_mobyle_class(self):
         """
         Mobyle does not need to understand this name.

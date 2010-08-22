@@ -226,6 +226,26 @@ class RadioGroup:
     def _get_default_string(self):
         return self._get_checked_list()[0].label
 
+    def get_galaxy_cmd(self):
+        return '$%s' % self.label
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        param = etree.SubElement(parent, 'param',
+                type='select', display='radio', multiple='false',
+                name=self.label, label=self.description)
+        for item in self.radio_items:
+            if item.default:
+                etree.SubElement(param, 'option',
+                        value=item.label,
+                        selected='true').text = item.description
+            else:
+                etree.SubElement(param, 'option',
+                        value=item.label).text = item.description
+
     def add_mob_xml(self, parent, next_argpos):
         """
         Add a mobyle parameter to the xml tree.
@@ -571,6 +591,18 @@ class SingleLine:
     def web_only(self):
         return False
 
+    def get_galaxy_cmd(self):
+        return '--%s=$%s' % (self.label, self.label)
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        etree.SubElement(parent, 'param',
+                type='text', value=self.default_line,
+                name=self.label, label=self.description)
+
     def add_mob_xml(self, parent, next_argpos):
         """
         Add a mobyle parameter to the xml tree.
@@ -679,6 +711,18 @@ class Float:
 
     def web_only(self):
         return False
+
+    def get_galaxy_cmd(self):
+        return '--%s=$%s' % (self.label, self.label)
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        etree.SubElement(parent, 'param',
+                type='float', value=str(self.default_float),
+                name=self.label, label=self.description)
 
     def add_mob_xml(self, parent, next_argpos):
         """
@@ -825,6 +869,18 @@ class Integer:
 
     def web_only(self):
         return False
+
+    def get_galaxy_cmd(self):
+        return '--%s=$%s' % (self.label, self.label)
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        etree.SubElement(parent, 'param',
+                type='integer', value=str(self.default_integer),
+                name=self.label, label=self.description)
 
     def add_mob_xml(self, parent, next_argpos):
         """
@@ -1070,6 +1126,18 @@ class MultiLine:
 
     def web_only(self):
         return False
+
+    def get_galaxy_cmd(self):
+        return '--%s=$%s' % (self.label, self.label)
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        etree.SubElement(parent, 'param',
+                type='data', format='txt',
+                name=self.label, label=self.description)
 
     def add_mob_xml(self, parent, next_argpos):
         """

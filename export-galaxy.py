@@ -10,6 +10,7 @@ import subprocess
 import tarfile
 
 import argparse
+from lxml import etree
 
 import meta
 import mobyle
@@ -68,9 +69,23 @@ def get_module_names(manifest, create_all, create_tagged):
                             module_names.append(module_name)
     return module_names
 
-def get_xml(cat_info, usermod, module_name, short_name):
+def make_command(module_name, form_objects):
     """
-    @param cat_info: how xmls will be categorized
+    The python call is implicit.
+    @param module_name: something like '20100707a'
+    @param form_objects: a list of input parameter objects
+    @return: a single line string with placeholders
+    """
+    elements = [
+            'auto.py', module_name,
+            '--output_filename_for_galaxy=$out_file1']
+    for obj in form_objects:
+        if not obj.web_only():
+            elements.append(obj.get_galaxy_cmd())
+    return ' '.join(elements)
+
+def get_xml(usermod, module_name, short_name):
+    """
     @param usermod: module object
     @param module_name: something like '20100707a'
     @param short_name: something like 'plot_pca_3d'
@@ -88,27 +103,26 @@ def get_xml(cat_info, usermod, module_name, short_name):
     except AttributeError:
         tags = []
     # create the python command string with wildcards
-    #FIXME
-    cmd = make_command()
+    cmd = make_command(module_name, form_objects)
     # build the xml
     tool = etree.Element('tool', id=short_name, name=short_name)
-    etree.subelement(tool, 'description').text = doc_lines[0]
-    etree.subelement(tool, 'command', interpreter='python').txt = cmd
-    inputs = etree.subelement(tool, 'inputs')
-    outputs = etree.subelement(tool, 'outputs')
+    etree.SubElement(tool, 'description').text = doc_lines[0]
+    etree.SubElement(tool, 'command', interpreter='python').text = cmd
+    inputs = etree.SubElement(tool, 'inputs')
+    outputs = etree.SubElement(tool, 'outputs')
     # add inputs
     for obj in form_objects:
         if not obj.web_only():
             obj.add_galaxy_xml(inputs)
     # add output
-    form_out.add_galaxy_xml(outputs, short_name)
+    etree.SubElement(outputs, 'data',
+            format=form_out.get_galaxy_format(),
+            name='out_file1')
     # serialize the xml
     return etree.tostring(etree.ElementTree(tool), pretty_print=True)
 
-def add_xml_files(cat_info, galaxy_root,
-        module_names, short_name_length, tools_subdir):
+def add_xml_files(galaxy_root, module_names, short_name_length, tools_subdir):
     """
-    @param cat_info: how xmls will be categorized
     @param galaxy_root: root of the galaxy installation
     @param module_names: generally uninformative names of modules
     @param short_name_length: max length of unique short module names
@@ -138,7 +152,7 @@ def add_xml_files(cat_info, galaxy_root,
     for usermod, name, short_name in zip(usermods, module_names, short_names):
         xml_content = None
         try:
-            xml_content = get_xml(cat_info, usermod, name, short_name)
+            xml_content = get_xml(usermod, name, short_name)
             nsuccesses += 1
         except:
             error_message = str(sys.exc_info()[1])
@@ -147,7 +161,8 @@ def add_xml_files(cat_info, galaxy_root,
             nfailures += 1
         if xml_content:
             xml_filename = short_name + '.xml'
-            xml_pathname = os.path.join(local_xml_dir, xml_filename)
+            xml_pathname = os.path.join(
+                    galaxy_root, 'tools', tools_subdir, xml_filename)
             with open(xml_pathname, 'w') as fout:
                 fout.write(xml_content)
             xml_filenames.append(xml_filename)
@@ -166,28 +181,25 @@ def get_toolbox_xml(section_name, section_id, tools_subdir, xml_filenames):
     """
     # build the xml
     toolbox = etree.Element('toolbox')
-    section = etree.subelement(toolbox, 'section',
+    section = etree.SubElement(toolbox, 'section',
             name=section_name, id=section_id)
     # add the items
     for filename in xml_filenames:
         target = os.path.join(tools_subdir, filename)
-        etree.subelement(section, 'tool', file=target)
+        etree.SubElement(section, 'tool', file=target)
     # serialize the xml
     return etree.tostring(etree.ElementTree(toolbox), pretty_print=True)
 
 def main(args):
-    # initialize the category information
-    cat_info = mobyle.CategoryInfo(
-            args.show_io_types, args.show_tags, args.universal_category)
     # get the module names
     module_names = get_module_names(
             args.manifest, args.create_all, args.create_tagged)
     # create the python subtree
-    tools_subdir_path = os.path.join(args.galaxy_root, args.tools_subdir)
+    tools_subdir_path = os.path.join(
+            args.galaxy_root, 'tools', args.tools_subdir)
     meta.add_python_files(module_names, tools_subdir_path)
     # create the galaxy xml interface files
-    xml_filenames, import_errors = add_xml_files(
-            cat_info, args.galaxy_root,
+    xml_filenames, import_errors = add_xml_files(args.galaxy_root,
             module_names, args.short_length, args.tools_subdir)
     for e in import_errors:
         print e

@@ -37,6 +37,16 @@ def dict_to_args(d):
         setattr(args, k, v)
     return args
 
+def get_output_filename_for_galaxy(argv):
+    """
+    @param argv: all arguments
+    @return: None or the output filename for galaxy
+    """
+    for arg in argv:
+        if arg.startswith('--output_filename_for_galaxy'):
+            a, b, c = arg.partition('=')
+            return c
+
 def main():
     if len(sys.argv) < 2:
         raise UsageError('not enough params')
@@ -59,7 +69,11 @@ def main():
             content = usermod.get_response_content(args)
         else:
             deprecated_header_pairs, content = usermod.get_response(args)
-        if '--write_to_file_for_mobyle' in sys.argv:
+        output_filename_for_galaxy = get_output_filename_for_galaxy(sys.argv)
+        if output_filename_for_galaxy:
+            with open(output_filename_for_galaxy, 'w') as fout:
+                fout.write(content)
+        elif '--write_to_file_for_mobyle' in sys.argv:
             form_out = usermod.get_form_out()
             filename = form_out.get_filename(args)
             with open(filename, 'w') as fout:
