@@ -227,7 +227,7 @@ class RadioGroup:
         return self._get_checked_list()[0].label
 
     def get_galaxy_cmd(self):
-        return '$%s' % self.label
+        return '--%s=$%s' % (self.label, self.label)
 
     def add_galaxy_xml(self, parent):
         """
@@ -387,6 +387,26 @@ class CheckGroup:
     def web_only(self):
         return False
 
+    def get_galaxy_cmd(self):
+        return '--%s="$%s"' % (self.label, self.label)
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        param = etree.SubElement(parent, 'param',
+                type='select', display='checkboxes', multiple='true',
+                name=self.label, label=self.description)
+        for item in self.check_items:
+            if item.default:
+                etree.SubElement(param, 'option',
+                        value=item.label,
+                        selected='true').text = item.description
+            else:
+                etree.SubElement(param, 'option',
+                        value=item.label).text = item.description
+
     def add_mob_xml(self, parent, next_argpos):
         """
         Add a mobyle parameter to the xml tree.
@@ -430,6 +450,16 @@ class CheckGroup:
         for item in self.check_items:
             item.process_cmdline_dict(d_in, d_out)
         checked = set(x.label for x in self.check_items if x.label in d_out)
+        # look for items set using the checkgroup itself under galaxy
+        if self.label in d_in:
+            observed = set(d_in[self.label].split(','))
+            allowed = set(x.label for x in self.check_items)
+            bad = observed - allowed
+            if bad:
+                raise FormError('these choices are not allowed: %s' % bad)
+            for item in self.check_items:
+                d_out[item.label] = True
+            checked |= observed
         _set_unique(d_out, self.label, checked)
 
     def process_fieldstorage(self, fs):
@@ -592,7 +622,7 @@ class SingleLine:
         return False
 
     def get_galaxy_cmd(self):
-        return '--%s=$%s' % (self.label, self.label)
+        return '--%s="$%s"' % (self.label, self.label)
 
     def add_galaxy_xml(self, parent):
         """

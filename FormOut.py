@@ -5,13 +5,15 @@ Some metaprogramming is done for compatibility with Mobyle.
 In Mobyle, all script output is to a file or to stdout.
 """
 
-
 import Form
 
 try:
     from lxml import etree
 except ImportError as e:
     pass
+
+#FIXME galaxy has trouble with varying output types
+#so it thinks that all images are pngs
 
 def _get_filename_metaprogram(fmt, interpolants):
     if interpolants:
@@ -122,6 +124,9 @@ class Image(FormOut):
     def get_mobyle_superclass(self):
         return 'Binary'
 
+    def get_galaxy_format(self):
+        return 'png'
+
 
 class Png(FormOut):
 
@@ -136,6 +141,9 @@ class Png(FormOut):
 
     def get_mobyle_superclass(self):
         return 'Binary'
+
+    def get_galaxy_format(self):
+        return 'png'
 
 
 class ContextDependent(FormOut):

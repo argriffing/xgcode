@@ -5,6 +5,7 @@ use the get_request function in the module to
 get the interface.
 """
 
+from StringIO import StringIO
 import sys
 import textwrap
 
@@ -90,5 +91,8 @@ if __name__ == '__main__':
     try:
         main()
     except UsageError as e:
-        print str(e)
-        print usage
+        out = StringIO()
+        print >> out, str(e)
+        print >> out, ' '.join(sys.argv)
+        print >> out, usage
+        raise UsageError(out.getvalue())

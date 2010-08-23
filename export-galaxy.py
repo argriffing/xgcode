@@ -19,6 +19,22 @@ import Util
 
 #FIXME put mobyle functions called here into a non-mobyle and non-galaxy module
 
+def get_name_description_pair(description, name_length=20):
+    """
+    Galaxy wants the description to be split up.
+    The name should be the first part of the input description.
+    The description should be the last part of the input description.
+    @param description: the long description of the mini app
+    @name_length: choose roughly this many letters of the prefix as a name
+    """
+    elements = description.split()
+    k = 0
+    for i, x in enumerate(elements):
+        if k + len(x) > name_length:
+            break
+        k += len(x)
+    return ' '.join(elements[:i]), ' '.join(elements[i:])
+
 def is_tag_prefix(tags, prefix):
     """
     The prefix and each tag may be colon-separated.
@@ -105,8 +121,10 @@ def get_xml(usermod, module_name, short_name):
     # create the python command string with wildcards
     cmd = make_command(module_name, form_objects)
     # build the xml
-    tool = etree.Element('tool', id=short_name, name=short_name)
-    etree.SubElement(tool, 'description').text = doc_lines[0]
+    desc_prefix, desc_suffix = get_name_description_pair(doc_lines[0])
+    tool = etree.Element('tool', id=short_name, name=desc_prefix)
+    if desc_suffix:
+        etree.SubElement(tool, 'description').text = desc_suffix
     etree.SubElement(tool, 'command', interpreter='python').text = cmd
     inputs = etree.SubElement(tool, 'inputs')
     outputs = etree.SubElement(tool, 'outputs')
@@ -118,6 +136,12 @@ def get_xml(usermod, module_name, short_name):
     etree.SubElement(outputs, 'data',
             format=form_out.get_galaxy_format(),
             name='out_file1')
+    # Add the format tweak if there is an image.
+    # This is a hack required because galaxy does not
+    # play well with apps which have varying output formats.
+    # See the EMBOSS apps for more examples.
+    if 'imageformat' in [x.label for x in form_objects]:
+        etree.SubElement(tool, 'code', file='galaxy_format_tweak.py')
     # serialize the xml
     return etree.tostring(etree.ElementTree(tool), pretty_print=True)
 
@@ -198,6 +222,8 @@ def main(args):
     tools_subdir_path = os.path.join(
             args.galaxy_root, 'tools', args.tools_subdir)
     meta.add_python_files(module_names, tools_subdir_path)
+    shutil.copyfile('galaxy_format_tweak.py',
+            os.path.join(tools_subdir_path, 'galaxy_format_tweak.py'))
     # create the galaxy xml interface files
     xml_filenames, import_errors = add_xml_files(args.galaxy_root,
             module_names, args.short_length, args.tools_subdir)
