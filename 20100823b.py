@@ -42,13 +42,13 @@ def get_response_content(fs):
     counts = [len(set(col)) for col in phylip_columns]
     header_low_high = []
     k = 0 if fs.from_zero else 1
-    for i, (h, count) in enumerate(zip(headers, counts)):
+    for i, count in enumerate(counts):
         if not (count == 1 and fs.remove):
             low = k
             high = k + (count - 1)
-            header_low_high.append((h, low, high))
+            header_low_high.append((i+(1 if fs.from_one else 0), low, high))
         k += count
     out = StringIO()
     for triple in header_low_high:
-        print >> out, 'locus.%s.phy\t%d-%d' % triple
+        print >> out, 'locus%s.phy\t%d-%d' % triple
     return out.getvalue()
