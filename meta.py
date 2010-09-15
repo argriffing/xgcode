@@ -22,6 +22,7 @@ import pyparsing
 from pyparsing import Word, Literal
 
 import iterutils
+import Util
 
 class MetaError(Exception): pass
 
@@ -292,6 +293,50 @@ def add_python_files(module_names, python_project):
     _copy_default_modules(python_project)
     _copy_const_data(const_deps, python_project)
 
+def get_title(usermod):
+    """
+    @param usermod: an imported snippet module
+    @return: the title of the snippet
+    """
+    return Util.get_stripped_lines(usermod.__doc__.splitlines())[0]
+
+def get_module_names(manifest, create_all, create_tagged, srcdir='.'):
+    """
+    This function is for selecting modules.
+    @param manifest: None or filename listing modules
+    @param create_all: flag
+    @param create_tagged: None or a tag
+    @return: module names
+    """
+    pattern = r'^\d{8}[a-zA-Z]\.py$'
+    if sum(bool(x) for x in (manifest, create_all, create_tagged)) != 1:
+        msg = 'expected exactly one of {manifest, create_all, create_tagged}'
+        raise ValueError(msg)
+    module_names = []
+    if manifest:
+        with open(manifest) as fin:
+            module_names = [x.strip() for x in fin]
+    elif create_all:
+        for name in os.listdir(srcdir):
+            if re.match(pattern, name):
+                module_name = name[:-3]
+                module_names.append(module_name)
+    elif create_tagged:
+        for name in os.listdir(srcdir):
+            if re.match(pattern, name):
+                module_name = name[:-3]
+                usermod = None
+                try:
+                    usermod = __import__(
+                            module_name, globals(), locals(), [], -1)
+                except ImportError as e:
+                    pass
+                if usermod:
+                    #FIXME do all modules have g_tags yet?
+                    if hasattr(usermod, 'g_tags'):
+                        if is_tag_prefix(usermod.g_tags, create_tagged):
+                            module_names.append(module_name)
+    return module_names
 
 class TestConstParser(unittest.TestCase):
 
