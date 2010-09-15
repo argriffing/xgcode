@@ -152,7 +152,7 @@ def get_usermod_info(module_names, short_name_length):
     # Get info per module.
     mod_infos = []
     for usermod, identifier in zip(usermods, identifiers):
-        mod_infos.append(ImportModuleInfo(usermod, identifier))
+        mod_infos.append(ImportedModuleInfo(usermod, identifier))
     return mod_infos, import_errors
 
 def add_xml_files(galaxy_root, module_names, short_name_length, tools_subdir):
@@ -279,7 +279,7 @@ def get_suite_config_xml(added_infos):
         module_description = info.get_title()
         tool = etree.SubElement(suite, 'tool',
                 id=module_id, name=module_name, version='1.0.0')
-        tool.SubElement(suite, 'description').text = module_description
+        etree.SubElement(tool, 'description').text = module_description
     return etree.tostring(etree.ElementTree(suite), pretty_print=True)
 
 def main_non_archive(args):
@@ -318,36 +318,37 @@ def main_archive(args):
     if args.galaxy_root:
         msg = 'in archive mode the galaxy root must not be specified'
         raise ValueError(msg)
-    if args.tool_conf:
-        msg = 'in archive mode the tool conf must not be specified'
-        raise ValueError(msg)
     if args.tools_subdir:
         msg = 'in archive mode the tools subdirectory must not be specified'
         raise ValueError(msg)
     # delete the suite directory and archive if they exist
-
+    try:
+        shutil.rmtree(args.suite_archive)
+        os.remove(args.suite_archive + '.tgz')
+    except OSError as e:
+        pass
+    # create the empty suite directory
+    os.makedirs(args.suite_archive)
     # get the module names
     module_names = meta.get_module_names(
             args.manifest, args.create_all, args.create_tagged)
-    # create the python subtree
-    tools_subdir_path = os.path.join(
-            args.galaxy_root, 'tools', args.tools_subdir)
-    meta.add_python_files(module_names, tools_subdir_path)
+    # add the python files
+    meta.add_python_files(module_names, args.suite_archive)
     shutil.copyfile('galaxy_format_tweak.py',
-            os.path.join(tools_subdir_path, 'galaxy_format_tweak.py'))
+            os.path.join(args.suite_archive, 'galaxy_format_tweak.py'))
     # create the galaxy xml interface files
-    xml_filenames, import_errors = add_xml_files(args.galaxy_root,
-            module_names, args.short_length, args.tools_subdir)
+    mod_infos, import_errors = add_xml_archive_files(
+            module_names, args.short_length, args.suite_archive)
     for e in import_errors:
         print e
     # create the toolbox xml pointing to the installed xmls
-    toolbox_pathname = os.path.join(args.galaxy_root, args.tool_conf)
-    section_name = args.tools_subdir
-    section_id = args.tools_subdir
-    toolbox_xml = get_toolbox_xml(section_name, section_id,
-            args.tools_subdir, xml_filenames)
-    with open(toolbox_pathname, 'wt') as fout:
-        fout.write(toolbox_xml)
+    config_pathname = os.path.join(args.suite_archive, 'suite_config.xml')
+    config_xml = get_suite_config_xml(mod_infos)
+    with open(config_pathname, 'wt') as fout:
+        fout.write(config_xml)
+    # use subprocess instead of tarfile to create the tgz
+    cmd = ['tar', 'czvf', args.suite_archive + '.tgz', args.suite_archive]
+    subprocess.call(cmd)
 
 def main(args):
     if args.suite_archive:

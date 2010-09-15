@@ -1040,6 +1040,18 @@ class Matrix:
     def web_only(self):
         return False
 
+    def get_galaxy_cmd(self):
+        return '--%s=$%s' % (self.label, self.label)
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        etree.SubElement(parent, 'param',
+                type='data', format='txt',
+                name=self.label, label=self.description)
+
     def add_mob_xml(self, parent, next_argpos):
         """
         Add a mobyle parameter to the xml tree.
