@@ -262,7 +262,7 @@ def get_suite_config_xml(added_infos, suite_name):
     etree.SubElement(suite, 'description').text = suite_description
     for info in added_infos:
         module_id = info.get_identifier()
-        module_name = info.get_title()
+        module_name = get_split_title(info.get_title())[0]
         module_description = info.get_title()
         tool = etree.SubElement(suite, 'tool',
                 id=module_id, name=module_name, version='1.0.0')
