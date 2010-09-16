@@ -25,54 +25,6 @@ import mobyle
 import mobenv
 import Util
 
-def is_tag_prefix(tags, prefix):
-    """
-    The prefix and each tag may be colon-separated.
-    @param tags: a list of tags for a module
-    @param prefix: look for this prefix tag
-    """
-    prefix_as_list = prefix.split(':')
-    for tag in tags:
-        tag_as_list = tag.split(':')
-        if Util.list_starts_with(tag_as_list, prefix_as_list):
-            return True
-    return False
-
-def get_module_names(manifest, create_all, create_tagged):
-    """
-    @param manifest: None or filename listing modules
-    @param create_all: flag
-    @param create_tagged: None or a tag
-    @return: module names
-    """
-    if sum(bool(x) for x in (manifest, create_all, create_tagged)) != 1:
-        msg = 'expected exactly one of {manifest, create_all, create_tagged}'
-        raise ValueError(msg)
-    module_names = []
-    if manifest:
-        with open(manifest) as fin:
-            module_names = [x.strip() for x in fin]
-    elif create_all:
-        for name in os.listdir('.'):
-            if re.match(r'^\d{8}[a-zA-Z]\.py$', name):
-                module_name = name[:-3]
-                module_names.append(module_name)
-    elif create_tagged:
-        for name in os.listdir('.'):
-            if re.match(r'^\d{8}[a-zA-Z]\.py$', name):
-                module_name = name[:-3]
-                usermod = None
-                try:
-                    usermod = __import__(
-                            module_name, globals(), locals(), [], -1)
-                except ImportError as e:
-                    pass
-                if usermod:
-                    if hasattr(usermod, 'g_tags'):
-                        if is_tag_prefix(usermod.g_tags, create_tagged):
-                            module_names.append(module_name)
-    return module_names
-
 def create_installer(args, cat_info, env_info, module_names):
     """
     Overwrite a staging subtree of the current directory.
@@ -123,7 +75,7 @@ def main(args):
     cat_info = mobyle.CategoryInfo(
             args.show_io_types, args.show_tags, args.universal_category)
     # get the module names
-    module_names = get_module_names(
+    module_names = meta.get_module_names(
             args.manifest, args.create_all, args.create_tagged)
     # define the environment on the target server
     auto_path = os.path.join(args.target, 'auto.py')

@@ -55,20 +55,6 @@ def get_split_title(description, prefix_length=20):
         k += len(x)
     return ' '.join(elements[:i]), ' '.join(elements[i:])
 
-def is_tag_prefix(tags, prefix):
-    """
-    The prefix and each tag may be colon-separated.
-    @param tags: a list of tags for a module
-    @param prefix: look for this prefix tag
-    """
-    #FIXME move this to a non-galaxy-specific module
-    prefix_as_list = prefix.split(':')
-    for tag in tags:
-        tag_as_list = tag.split(':')
-        if Util.list_starts_with(tag_as_list, prefix_as_list):
-            return True
-    return False
-
 def make_command(module_name, form_objects):
     """
     The python call is implicit.
@@ -263,13 +249,14 @@ def get_toolbox_xml(section_name, section_id, tools_subdir, xml_filenames):
     # serialize the xml
     return etree.tostring(etree.ElementTree(toolbox), pretty_print=True)
 
-def get_suite_config_xml(added_infos):
+def get_suite_config_xml(added_infos, suite_name):
     """
     Create suite_config.xml contents for a galaxy tool suite archive.
     @param added_infos: ImportedModuleInfo objects for added tools
+    @param suite_name: the name of the suite directory, not the whole path
     @return: contents of suite_config.xml
     """
-    suite = etree.Element('suite', id='alexg_tool_suite',
+    suite = etree.Element('suite', id=suite_name,
             name='Suite of misc tools', version='1.0.0')
     suite_description = 'Suite of misc tools for Galaxy'
     etree.SubElement(suite, 'description').text = suite_description
@@ -321,10 +308,15 @@ def main_archive(args):
     if args.tools_subdir:
         msg = 'in archive mode the tools subdirectory must not be specified'
         raise ValueError(msg)
+    # define the archive extension and the compression command
+    archive_extension = '.tar.bz2'
+    archive_prefix = os.path.basename(args.suite_archive.rstrip('/'))
+    archive_name = archive_prefix + archive_extension
+    archive_cmd = ['tar', 'cjvf', archive_name, args.suite_archive]
     # delete the suite directory and archive if they exist
     try:
         shutil.rmtree(args.suite_archive)
-        os.remove(args.suite_archive + '.tgz')
+        os.remove(archive_name)
     except OSError as e:
         pass
     # create the empty suite directory
@@ -343,12 +335,11 @@ def main_archive(args):
         print e
     # create the toolbox xml pointing to the installed xmls
     config_pathname = os.path.join(args.suite_archive, 'suite_config.xml')
-    config_xml = get_suite_config_xml(mod_infos)
+    config_xml = get_suite_config_xml(mod_infos, archive_prefix)
     with open(config_pathname, 'wt') as fout:
         fout.write(config_xml)
     # use subprocess instead of tarfile to create the tgz
-    cmd = ['tar', 'czvf', args.suite_archive + '.tgz', args.suite_archive]
-    subprocess.call(cmd)
+    subprocess.call(archive_cmd)
 
 def main(args):
     if args.suite_archive:
