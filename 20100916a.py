@@ -24,7 +24,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Hud('out')
+    return FormOut.RTable('out')
 
 def get_response_content(fs):
     headers, data_rows = hud.decode(fs.table.splitlines())
