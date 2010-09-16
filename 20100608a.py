@@ -72,9 +72,10 @@ def process(args, raw_hud_lines):
     if args.clean_isolates:
         names = [Carbone.clean_isolate_element(x) for x in names]
     # get the pcs
-    pcs = eigenpop.get_scaled_eigenvectors(data, args.diploid_and_biallelic)
+    C_full = np.array(data, dtype=float)
+    pcs = eigenpop.get_scaled_eigenvectors(C_full, args.diploid_and_biallelic)
     # check for sufficient number of eigenvectors
-    if len(evecs) < args.npcs:
+    if len(pcs) < args.npcs:
         msg_a = 'the number of requested principal components '
         msg_b = 'must be no more than the number of OTUs'
         raise ValueError(msg_a + msg_b)

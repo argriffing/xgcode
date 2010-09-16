@@ -1,4 +1,4 @@
-"""Rank loci by their correlation with a given principal component. [unfinished]
+"""Rank loci by their correlation with a given principal component.
 """
 
 from StringIO import StringIO
@@ -31,19 +31,19 @@ def get_form():
     form_objects = [
             Form.MultiLine('hud',
                 'contents of a .hud file', g_default_hud_string),
+            Form.Integer('axis',
+                'rank by correlation with this axis (the first axis is 1)', 1),
             Form.CheckGroup('input_options', 'input options', [
                 Form.CheckItem('diploid_and_biallelic',
                     'the data source is really diploid and biallelic', True)]),
-            Form.Integer('axis',
-                'rank by correlation with this axis (the first axis is 1)', 1),
             Form.RadioGroup('locus_options', 'locus indexing output format', [
                 Form.RadioItem('locus_from_0', 'count loci from 0', True),
-                Form.RadioItem('locus_from_1', 'count loci from 1')])
+                Form.RadioItem('locus_from_1', 'count loci from 1')]),
             Form.RadioGroup('rank_options', 'ranking output format', [
                 Form.RadioItem('rank_squared',
                     'rank by decreasing squared correlation', True),
                 Form.RadioItem('rank_unsquared',
-                    'rank by decreasing correlation')])
+                    'rank by decreasing correlation')]),
             Form.ContentDisposition()]
     return form_objects
 
@@ -71,16 +71,28 @@ def process(args, raw_hud_lines):
     """
     out = StringIO()
     names, data = hud.decode(raw_hud_lines)
-    pcs = eigenpop.get_scaled_eigenvectors(data, args.diploid_and_biallelic)
+    C_full = np.array(data, dtype=float)
+    pcs = eigenpop.get_scaled_eigenvectors(C_full, args.diploid_and_biallelic)
+    axis_index = args.axis - 1
     # check for sufficient number of eigenvectors
-    if len(evecs) < args.ncoords:
-        msg_a = 'the number of requested principal components '
-        msg_b = 'must be no more than the number of OTUs'
-        raise ValueError(msg_a + msg_b)
-    # compute the correlation of each SNP vector with each principal PC
-    mylist = []
-    for snp in C_full.T:
-        row = [mycorr(snp, pc) for pc in pcs[:args.ncoords]]
-        mylist.append(row)
-    np.set_printoptions(linewidth=300, threshold=10000)
-    return str(np.array(mylist))
+    if axis_index >= len(pcs):
+        msg = 'the requested axis is not available'
+        raise ValueError(msg)
+    # compute the correlation of each SNP vector the requested PC
+    pc = pcs[axis_index]
+    corrs = [mycorr(snp, pc) for snp in C_full.T]
+    sqcorrs = [mycorr(snp, pc)**2 for snp in C_full.T]
+    if args.rank_squared:
+        keys = sqcorrs
+    else:
+        keys = corrs
+    corr_index_pairs = [(cor, i) for i, cor in enumerate(keys)]
+    sorted_pairs = list(reversed(sorted(corr_index_pairs)))
+    indices = zip(*sorted_pairs)[1]
+    if args.locus_from_1:
+        nominal_indices = [i+1 for i in indices]
+    else:
+        nominal_indices = indices
+    rows = [(nom_i, corrs[i]) for i, nom_i in zip(indices, nominal_indices)]
+    lines = ['\t'.join(str(x) for x in row) for row in rows]
+    return '\n'.join(lines) + '\n'

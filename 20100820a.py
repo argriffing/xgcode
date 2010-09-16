@@ -65,9 +65,10 @@ def process(args, raw_hud_lines):
     """
     out = StringIO()
     names, data = hud.decode(raw_hud_lines)
-    pcs = eigenpop.get_scaled_eigenvectors(data, args.diploid_and_biallelic)
+    C_full = np.array(data, dtype=float)
+    pcs = eigenpop.get_scaled_eigenvectors(C_full, args.diploid_and_biallelic)
     # check for sufficient number of eigenvectors
-    if len(evecs) < args.ncoords:
+    if len(pcs) < args.ncoords:
         msg_a = 'the number of requested principal components '
         msg_b = 'must be no more than the number of OTUs'
         raise ValueError(msg_a + msg_b)

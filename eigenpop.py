@@ -13,16 +13,15 @@ import numpy as np
 
 import EigUtil
 
-def get_scaled_eigenvectors(count_matrix, diploid_and_biallelic):
+def get_scaled_eigenvectors(C_full, diploid_and_biallelic):
     """
     Input rows are OTUs and columns are loci.
     Each element of the input data is a count.
-    @param count_matrix: matrix of counts where each row represents an OTU
+    @param C_full: matrix of float counts where each row represents an OTU
     @param diploid_and_biallelic: a flag
     @return: eigenvectors scaled by square roots of eigenvalues
     """
     # create the floating point count matrix
-    C_full = np.array(count_matrix, dtype=float)
     m_full, n_full = C_full.shape
     # check compatibility of counts and ploidy
     if diploid_and_biallelic:
