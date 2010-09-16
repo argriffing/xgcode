@@ -1,4 +1,4 @@
-"""Compute SNP correlations with principal components given a .hud file.
+"""Rank loci by their correlation with a given principal component. [unfinished]
 """
 
 from StringIO import StringIO
@@ -9,7 +9,6 @@ import numpy as np
 import argparse
 
 from SnippetUtil import HandlingError
-import Carbone
 import hud
 import EigUtil
 import Form
@@ -31,13 +30,20 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('hud',
-                'contents of a .hud file',
-                g_default_hud_string),
+                'contents of a .hud file', g_default_hud_string),
             Form.CheckGroup('input_options', 'input options', [
                 Form.CheckItem('diploid_and_biallelic',
                     'the data source is really diploid and biallelic', True)]),
-            Form.Integer('ncoords',
-                'show this many axes', 3),
+            Form.Integer('axis',
+                'rank by correlation with this axis (the first axis is 1)', 1),
+            Form.RadioGroup('locus_options', 'locus indexing output format', [
+                Form.RadioItem('locus_from_0', 'count loci from 0', True),
+                Form.RadioItem('locus_from_1', 'count loci from 1')])
+            Form.RadioGroup('rank_options', 'ranking output format', [
+                Form.RadioItem('rank_squared',
+                    'rank by decreasing squared correlation', True),
+                Form.RadioItem('rank_unsquared',
+                    'rank by decreasing correlation')])
             Form.ContentDisposition()]
     return form_objects
 

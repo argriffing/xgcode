@@ -11,6 +11,8 @@ import Carbone
 import hud
 import const
 
+g_tags = ['pca:misc']
+
 g_phy_lines = [
         '4 4',
         'IC31      AC1C',
