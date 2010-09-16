@@ -1,4 +1,4 @@
-"""Convert a .hud file to a .phy file by squishing the columns together.
+"""Convert a .hud file to an R table.
 """
 
 from SnippetUtil import HandlingError
@@ -28,5 +28,9 @@ def get_form_out():
 
 def get_response_content(fs):
     headers, data_rows = hud.decode(fs.table.splitlines())
-    sequences = [''.join(str(x) for x in row) for row in data_rows]
-    return Phylip.encode(headers, sequences)
+    rtable_header_line = '\t'.join(headers)
+    rows = []
+    for i, row in enumerate(zip(*data_rows)):
+        rows.append([i] + list(row))
+    rtable_data_lines = ['\t'.join(str(x) for x in row) for row in rows]
+    return '\n'.join([rtable_header_line] + rtable_data_lines) + '\n'
