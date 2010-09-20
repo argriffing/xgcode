@@ -1,8 +1,12 @@
 """
-Run an algorithm until one of three conditions happens.
+Run an algorithm until one of four conditions happens.
 First, the user could manually break out of the loop with ctrl-c.
 Second, the loop could hit a time limit.
 Third, the loop could hit a limit on the number of iterations.
+Fourth, the algorithm could terminate successfully.
+This framework is intended to support open ended computations.
+For example, the computation could look for a counterexample to a conjecture.
+Or it could compute a statistic on some arbitrarily large set of sampled data.
 """
 
 import time
@@ -36,7 +40,7 @@ class RunInfo(object):
 
 def combo_breaker(states, nseconds=None, niterations=None):
     """
-    Raise a ComboBreaker exception containing the final state.
+    Return a RunInfo object containing the final state.
     @param states: a state iterator, probably a generator object
     @param nseconds: a time limit
     @param niterations: a limit on the number of iterations
