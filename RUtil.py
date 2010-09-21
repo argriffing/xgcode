@@ -4,7 +4,6 @@ Utility functions for interfacing with R.
 
 import os
 import tempfile
-
 import unittest
 import subprocess
 
