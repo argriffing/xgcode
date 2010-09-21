@@ -4,8 +4,6 @@ This uses the R software.
 """
 
 from StringIO import StringIO
-import os
-import tempfile
 
 import argparse
 
@@ -66,36 +64,14 @@ def get_response_content(fs):
         msg_a = 'the dependent variable name '
         msg_b = 'was not found as a column in the data table'
         raise ValueError(msg_a + msg_b)
-    # define the temp table content
-    temp_table_content = fs.table
-    # Create a temporary data table file for R.
-    f_temp_table = tempfile.NamedTemporaryFile(delete=False)
-    f_temp_table.write(temp_table_content)
-    f_temp_table.close()
-    # Create a temporary pathname for the plot created by R.
-    temp_plot_name = Util.get_tmp_filename()
-    # Create a temporary R script file.
-    f_temp_script = tempfile.NamedTemporaryFile(delete=False)
-    script_content = get_script_content(f_temp_table.name, indep, dep)
-    f_temp_script.write(script_content)
-    f_temp_script.close()
-    # Call R.
-    retcode, r_out, r_err = RUtil.run(f_temp_script.name)
-    if retcode:
-        raise ValueError('R error:\n' + r_err)
-    # Delete the temporary data table file.
-    os.unlink(f_temp_table.name)
-    # Delete the temporary script file.
-    os.unlink(f_temp_script.name)
-    # Return the R stderr as a string.
-    return r_err
+    return RUtil.run_with_table(fs.table, (indep, dep), get_script_content)
 
-def get_script_content(temp_table_name, indep, dep):
+def get_script_content(data, temp_table_name):
     """
+    @param data: the (indep, dep) data pair
     @param temp_table_name: name of the temporary table file
-    @param indep: list of the independent variable names
-    @param dep: the dependent variable name
     """
+    indep, dep = data
     symbolic_indep_sum = ' + '.join('d$' + x for x in indep)
     lines = [
             'd <- read.table("%s")' % temp_table_name,

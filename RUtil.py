@@ -2,8 +2,13 @@
 Utility functions for interfacing with R.
 """
 
+import os
+import tempfile
+
 import unittest
 import subprocess
+
+import Util
 
 #TODO replace assert with exceptions
 #TODO move RTable into this module, with or without row headers
@@ -25,6 +30,35 @@ def run(pathname):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc_stdout, proc_stderr = proc.communicate()
     return proc.returncode, proc_stdout, proc_stderr
+
+def run_with_table(table, user_data, callback):
+    """
+    @param table: the table string
+    @param user_data: typically a fieldstorage-like object
+    @param callback: this callback is like f(user_data, table_filename)
+    @return: the R output as a string
+    """
+    # Create a temporary data table file for R.
+    f_temp_table = tempfile.NamedTemporaryFile(delete=False)
+    f_temp_table.write(table)
+    f_temp_table.close()
+    # Create a temporary pathname for the plot created by R.
+    temp_plot_name = Util.get_tmp_filename()
+    # Create a temporary R script file.
+    f_temp_script = tempfile.NamedTemporaryFile(delete=False)
+    script_content = callback(user_data, f_temp_table.name)
+    f_temp_script.write(script_content)
+    f_temp_script.close()
+    # Call R.
+    retcode, r_out, r_err = run(f_temp_script.name)
+    if retcode:
+        raise ValueError('R error:\n' + r_err)
+    # Delete the temporary data table file.
+    os.unlink(f_temp_table.name)
+    # Delete the temporary script file.
+    os.unlink(f_temp_script.name)
+    # Return the R stderr as a string.
+    return r_err
 
 def get_table_string(M, column_headers):
     """
