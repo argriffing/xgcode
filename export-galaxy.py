@@ -17,28 +17,6 @@ import mobyle
 import mobenv
 import Util
 
-#FIXME put mobyle functions called here into a non-mobyle and non-galaxy module
-
-class ImportedModuleInfo:
-    """
-    Info for one of many imported modules.
-    """
-    def __init__(self, usermod, identifier):
-        """
-        @param usermod: the imported module
-        @param identifier: a short identifier derived from the description
-        """
-        self.usermod = usermod
-        self.identifier = identifier
-    def get_usermod(self):
-        return self.usermod
-    def get_identifier(self):
-        return self.identifier
-    def get_name(self):
-        return self.usermod.__name__
-    def get_title(self):
-        return Util.get_stripped_lines(self.usermod.__doc__.splitlines())[0]
-
 def get_split_title(description, prefix_length=20):
     """
     Galaxy wants the description to be split up.
@@ -116,31 +94,6 @@ def get_xml(usermod, module_name, short_name):
     # serialize the xml
     return etree.tostring(etree.ElementTree(tool), pretty_print=True)
 
-def get_usermod_info(module_names, short_name_length):
-    """
-    @param module_names: generally uninformative names of modules
-    @param short_name_length: max length of unique short module names
-    @return: a list of module info, and a list of import errors
-    """
-    import_errors = []
-    # The modules need to be imported to get the unique short names.
-    usermods = []
-    for name in module_names:
-        try:
-            usermod = __import__(name, globals(), locals(), [], -1)
-        except ImportError as e:
-            import_errors.append(e)
-        usermods.append(usermod)
-    # Get all long titles.
-    titles = [meta.get_title(usermod) for usermod in usermods]
-    # Get corresponding unique short names.
-    identifiers = mobyle.get_short_titles(titles, short_name_length)
-    # Get info per module.
-    mod_infos = []
-    for usermod, identifier in zip(usermods, identifiers):
-        mod_infos.append(ImportedModuleInfo(usermod, identifier))
-    return mod_infos, import_errors
-
 def add_xml_files(galaxy_root, module_names, short_name_length, tools_subdir):
     """
     The XML files are added under two conditions.
@@ -157,7 +110,8 @@ def add_xml_files(galaxy_root, module_names, short_name_length, tools_subdir):
     @param tools_subdir: subdirectory of galaxy_root
     @return: a list of xml filenames, and a list of import errors
     """
-    mod_infos, import_errors = get_usermod_info(module_names, short_name_length)
+    mod_infos, import_errors = meta.get_usermod_info(
+            module_names, short_name_length)
     # Get the xmls.
     xml_filenames = []
     nsuccesses = 0
@@ -202,7 +156,8 @@ def add_xml_archive_files(module_names, short_name_length, archive):
     @param archive: the path to the output directory to be tarred
     @return: a list of added module infos, and a list of import errors
     """
-    mod_infos, import_errors = get_usermod_info(module_names, short_name_length)
+    mod_infos, import_errors = meta.get_usermod_info(
+            module_names, short_name_length)
     # Get the xmls.
     added_infos = []
     nsuccesses = 0

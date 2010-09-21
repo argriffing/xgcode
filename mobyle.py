@@ -16,57 +16,12 @@ from lxml import etree
 
 import Util
 import iterutils
+import meta
 
 
 class MobyleError(Exception): pass
 
 class FormOutError(MobyleError): pass
-
-def _get_transformed_title(title, length):
-    """
-    @param title: a long and poorly formatted title
-    @param length: target length of the shortened title
-    @return: a short and less interestingly formatted title
-    """
-    whitelist = set(string.letters + string.digits)
-    # change non-whitelist characters to space
-    t = ''.join(c if c in whitelist else ' ' for c in title)
-    # remove spaces from the ends and collapse duplicate spaces
-    t = '_'.join(t.split())
-    # trim to the target length
-    t = t[:length]
-    # return the lower cased string
-    return t.lower()
-
-def get_short_titles(titles, length):
-    """
-    @param titles: a sequence of titles
-    @param length: target length of shortened titles
-    @return: a sequence of unique shortened titles
-    """
-    whitelisted = [_get_transformed_title(x, length) for x in titles]
-    # if each string occurs only once then we are done
-    if len(whitelisted) == len(set(whitelisted)):
-        return whitelisted
-    # shorten the strings
-    maxtrim = len(str(len(titles)))
-    whitelisted = [s[:length-maxtrim] for s in whitelisted]
-    # get the number of occurrences of each string
-    dtotal = collections.defaultdict(int)
-    for s in whitelisted:
-        dtotal[s] += 1
-    # create the new strings
-    d = collections.defaultdict(int)
-    differentiated = []
-    for s in whitelisted:
-        if dtotal[s] > 1:
-            ntrim = len(str(dtotal[s]))
-            s_new = s + str(d[s]+1).zfill(ntrim)
-        else:
-            s_new = s
-        differentiated.append(s_new)
-        d[s] += 1
-    return differentiated
 
 def _add_redirection_parameter(parent, next_argpos):
     """
@@ -183,28 +138,17 @@ def add_xml_files(cat_info, env_info,
     @param module_names: generally uninformative names of modules
     @param short_name_length: max length of unique short module names
     @param local_xml_dir: usually the xml dir in env_info
-    @return: a list of import errors
+    @return: a list of identifiers and a list of import errors
     """
-    import_errors = []
-    # The modules need to be imported to get the unique short names.
-    usermods = []
-    for name in module_names:
-        try:
-            usermod = __import__(name, globals(), locals(), [], -1)
-        except ImportError as e:
-            import_errors.append(e)
-        usermods.append(usermod)
-    # Get all long titles.
-    titles = []
-    for usermod in usermods:
-        doc_lines = Util.get_stripped_lines(usermod.__doc__.splitlines())
-        titles.append(doc_lines[0])
-    # Get corresponding unique short names.
-    short_names = get_short_titles(titles, short_name_length)
+    mod_infos, import_errors = meta.get_usermod_info(
+            module_names, short_name_length)
     # Get the xmls.
     nsuccesses = 0
     nfailures = 0
-    for usermod, name, short_name in zip(usermods, module_names, short_names):
+    for info in mod_infos:
+        usermod = info.get_usermod()
+        name = info.get_name()
+        short_name = info.get_identifier()
         xml_content = None
         try:
             xml_content = get_xml(
@@ -222,44 +166,9 @@ def add_xml_files(cat_info, env_info,
     print >> sys.stderr, len(import_errors), 'import errors'
     print >> sys.stderr, nfailures, 'failures to create an xml'
     print >> sys.stderr, nsuccesses, 'successfully created xmls'
-    return import_errors
+    return [x.get_identifier() for x in mod_infos], import_errors
 
 class TestMobyle(unittest.TestCase):
-
-    def test_get_short_titles_a(self):
-        titles = [
-                '  O   HAI!',
-                'this is too long and it is alpha',
-                'this is too long and it is beta']
-        target_length = 10
-        expected = [
-                'o_hai',
-                'this_is_t1',
-                'this_is_t2']
-        observed = get_short_titles(titles, target_length)
-        self.assertEqual(observed, expected)
-
-    def test_get_short_titles_b(self):
-        titles = ['foo']*20
-        expected = ['f%02d' % (x+1) for x in range(20)]
-        target_length = 3
-        observed = get_short_titles(titles, target_length)
-        self.assertEqual(observed, expected)
-
-    def test_get_short_titles_tricky(self):
-        titles = [
-                'asdf1',
-                'asdf1',
-                'asdf1',
-                'asdf2']
-        expected = [
-                'asdf1',
-                'asdf2',
-                'asdf3',
-                'asdf4']
-        target_length = 5
-        observed = get_short_titles(titles, target_length)
-        self.assertEqual(observed, expected)
-
+    pass
 if __name__ == '__main__':
     unittest.main()
