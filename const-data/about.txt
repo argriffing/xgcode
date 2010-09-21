@@ -221,3 +221,8 @@ An unrealistic fasta codon alignment.
 
 20100731c.dat
 An unrealistic fasta nucleotide alignment.
+
+20100720a.dat
+An R table with a subset of fungus data from Dr. Ignazio Carbone.
+Three of the columns define principal component eigenvectors.
+One of the column defines (bad) clusters.

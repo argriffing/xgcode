@@ -1,6 +1,7 @@
-"""Compute the variation explained by a linear model.
+"""Do some analysis of variance.
 
 This uses the R software.
+Also google for a pdf called Using R for an Analysis of Variance.
 """
 
 from StringIO import StringIO
@@ -19,11 +20,11 @@ import const
 
 g_tags = ['pca:compute']
 
-g_table = const.read('20100709a')
+g_table = const.read('20100920a')
 
-g_independent_names = ['temperature', 'precipitation']
+g_factor = 'cluster'
 
-g_dependent_name = 'pc1'
+g_variable = 'temperature'
 
 
 def get_form():
@@ -32,10 +33,8 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('table', 'R table', g_table),
-            Form.MultiLine('independent', 'names of independent variables',
-                '\n'.join(g_independent_names)),
-            Form.SingleLine('dependent', 'name of the dependent variable',
-                g_dependent_name),
+            Form.SingleLine('factor', 'factor name', g_factor),
+            Form.SingleLine('variable', 'variable name', g_variable),
             Form.ContentDisposition()]
     return form_objects
 
@@ -43,9 +42,6 @@ def get_form_out():
     return FormOut.Report()
 
 def get_response_content(fs):
-    # get the independent variable names
-    indep = Util.get_stripped_lines(fs.independent.splitlines())
-    dep = fs.dependent
     # get the r table
     rtable = Carbone.RTable(fs.table.splitlines())
     header_row = rtable.headers
@@ -56,16 +52,12 @@ def get_response_content(fs):
             msg = 'invalid column header: %s' % h
             raise ValueError(msg)
     # check requested variable names as column headers
-    bad_indep_names = set(indep) - set(header_row)
-    if bad_indep_names:
-        msg_a = 'these requested independent variable names '
-        msg_b = 'were not found as columns in the data table: '
-        msg_c = str(bad_indep_names)
-        raise ValueError(msg_a + msg_b + msg_c)
-    if dep not in header_row:
-        msg_a = 'the dependent variable name '
-        msg_b = 'was not found as a column in the data table'
-        raise ValueError(msg_a + msg_b)
+    if fs.variable not in header_row:
+        msg = 'the variable name was not found as a column in the data table'
+        raise ValueError(msg)
+    if fs.factor not in header_row:
+        msg = 'the factor name was not found as a column in the data table'
+        raise ValueError(msg)
     # define the temp table content
     temp_table_content = fs.table
     # Create a temporary data table file for R.
@@ -76,7 +68,8 @@ def get_response_content(fs):
     temp_plot_name = Util.get_tmp_filename()
     # Create a temporary R script file.
     f_temp_script = tempfile.NamedTemporaryFile(delete=False)
-    script_content = get_script_content(f_temp_table.name, indep, dep)
+    script_content = get_script_content(
+            f_temp_table.name, fs.factor, fs.variable)
     f_temp_script.write(script_content)
     f_temp_script.close()
     # Call R.
@@ -90,15 +83,17 @@ def get_response_content(fs):
     # Return the R stderr as a string.
     return r_err
 
-def get_script_content(temp_table_name, indep, dep):
+def get_script_content(temp_table_name, factor, variable):
     """
     @param temp_table_name: name of the temporary table file
-    @param indep: list of the independent variable names
-    @param dep: the dependent variable name
+    @param factor: a column name e.g. 'cluster'
+    @param variable: a column name e.g. 'temperature'
     """
-    symbolic_indep_sum = ' + '.join('d$' + x for x in indep)
     lines = [
             'd <- read.table("%s")' % temp_table_name,
-            'myfit <- lm(d$%s ~ %s)' % (dep, symbolic_indep_sum),
-            'summary(myfit)']
+            'data <- data.frame(y=d$%s, group=factor(d$%s))' % (
+                variable, factor),
+            'myfit <- lm(y ~ group, data)',
+            'anova(myfit)',
+            'TukeyHSD(aov(y ~ group, data))']
     return '\n'.join(lines) + '\n'
