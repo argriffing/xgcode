@@ -54,6 +54,7 @@ def get_xml(usermod, module_name, short_name):
     @param usermod: module object
     @param module_name: something like '20100707a'
     @param short_name: something like 'plot_pca_3d'
+    @return: contents of a galaxy XML interface file
     """
     # get module info
     form_objects = usermod.get_form()
@@ -71,7 +72,8 @@ def get_xml(usermod, module_name, short_name):
     cmd = make_command(module_name, form_objects)
     # build the xml
     desc_prefix, desc_suffix = get_split_title(doc_lines[0])
-    tool = etree.Element('tool', id=short_name, name=desc_prefix)
+    tool = etree.Element('tool',
+            id=short_name, name=desc_prefix, version='1.0.0')
     if desc_suffix:
         etree.SubElement(tool, 'description').text = desc_suffix
     etree.SubElement(tool, 'command', interpreter='python').text = cmd
