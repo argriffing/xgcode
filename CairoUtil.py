@@ -80,15 +80,36 @@ class CairoHelper:
         self.surface = None
         return image_string
 
+def create_test_image(image_format, width, height):
+    """
+    @param image_format: a string like an image extension
+    @param width: width in pixels
+    @param height: height in pixels
+    @return: the contents of the image as a string
+    """
+    # do some initialization
+    helper = CairoHelper(image_format)
+    surface = helper.create_surface(width, height)
+    context = cairo.Context(surface)
+    # draw an off-white background
+    context.save()
+    context.set_source_rgb(.9, .9, .9)
+    context.paint()
+    context.restore()
+    # get the contents of the image
+    return helper.get_image_string()
+
 
 class TestCairoUtil(unittest.TestCase):
-    def test_foo(self):
-        pass
-    def test_bar(self):
-        pass
+
+    def test_create_test_image(self):
+        width = 640
+        height = 480
+        for image_format in ('png', 'svg', 'ps', 'pdf'):
+            create_test_image(image_format, width, height)
 
 
-def main():
+def create_demo_files():
     """
     Create an example image in each of several formats.
     The example image is from U{cairographics.org/pycairo/}.
@@ -113,16 +134,4 @@ def main():
         print 'created', filename
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', help='output file')
-    parser.add_option('--test', action='store_true', dest='test', default=False)
-    options, args = parser.parse_args()
-    if options.test:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestCairoUtil)
-        unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        main()
-
-
+    unittest.main()

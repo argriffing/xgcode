@@ -42,25 +42,6 @@ def get_form():
 def get_form_out():
     return FormOut.Image('spectrogram')
 
-def create_test_image(image_format, width, height):
-    """
-    @param image_format: a string like an image extension
-    @param width: width in pixels
-    @param height: height in pixels
-    @return: the contents of the image as a string
-    """
-    # do some initialization
-    cairo_helper = CairoUtil.CairoHelper(image_format)
-    surface = cairo_helper.create_surface(width, height)
-    context = cairo.Context(surface)
-    # draw an off-white background
-    context.save()
-    context.set_source_rgb(.9, .9, .9)
-    context.paint()
-    context.restore()
-    # get the contents of the image
-    return cairo_helper.get_image_string()
-
 def get_response_content(fs):
     # define the requested physical size of the images (in pixels)
     physical_size = (640, 480)
