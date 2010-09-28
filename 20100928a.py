@@ -65,7 +65,7 @@ def get_response_content(fs):
     q = ntips
     N = fs.N
     aug_a = get_aug_a(D, p, q, N)
-    aug_b = get_aug_a(D, p, q, N)
+    aug_b = get_aug_b(D, p, q, N)
     # show the output
     out = StringIO()
     print >> out, "-(1/2)MEDE'M':"
