@@ -10,13 +10,8 @@ and a weighted centering matrix E (depends on N).
 
 
 from StringIO import StringIO
-import os
-import math
 
 import numpy as np
-import cairo
-import argparse
-import scipy
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -25,7 +20,6 @@ import FormOut
 import NewickIO
 import Euclid
 import FelTree
-import CairoUtil
 import const
 import MatrixUtil
 
