@@ -13,13 +13,32 @@ because it is required by Mobyle 0.98,
 but on the other hand the scripts need to be modified
 so that they use a custom written script which in turn calls bsub.
 
-Example usage, creating an installer for an environment without lxml.
+Example usage:
 python export-mob-project.py
 --make_installer=ztools --universal_category=ztools
 --mobyle_core=/home/mobyleuser/Mobyle96
 --python_path=/home/mobyleuser/install/bin/python
 --manifest=manifests/carbone.manifest --target=/home/mobyleuser/ztools
 """
+
+
+# The following is needed for the bsub hack inside the xmls
+"""
+<parameter ishidden="1">
+<name>bsubinit</name>
+<prompt lang="en">initiation</prompt>
+<type>
+<datatype>
+<class>String</class>
+</datatype>
+</type>
+<format>
+<code proglang="python">" -n 1 -W 720 -N -q dean -o genetree.out -e genetree.err __bsubArgsEnd__ genetreerunner "</code>
+</format>
+<argpos>0</argpos>
+<interface type="job_input"><xhtml:div xmlns:xhtml="http://www.w3.org/1999/xhtml" data-parametername="bsubinit"><xhtml:span class="prompt">initiation</xhtml:span></xhtml:div></interface></parameter>
+"""
+
 
 import re
 import os
@@ -99,7 +118,7 @@ def main(args):
             args.manifest, args.create_all, args.create_tagged)
     # define the environment on the target server
     auto_path = os.path.join(args.target, 'auto.py')
-    env_info = mobenv.EnvironmentInfo(
+    env_info = mobenv.create_environment_info(
             auto_path, args.python_path, args.mobyle_core)
     if args.make_installer:
         create_installer(args, cat_info, env_info, module_names)

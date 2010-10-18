@@ -42,7 +42,7 @@ def main(args):
     stage = os.path.dirname(__file__)
     with open(os.path.join(stage, 'install-mob-tools.conf')) as fin:
         env_dict = lines_to_env_dict(fin)
-    env_info = mobenv.EnvironmentInfo(
+    env_info = mobenv.create_environment_info(
             env_dict['auto_path'],
             env_dict['python_path'],
             env_dict['mob_core'])
