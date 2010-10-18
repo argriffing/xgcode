@@ -1,9 +1,19 @@
 """
 Put a project onto a Mobyle server.
+This was originally written to create XMLs and install
+onto a local installation of Mobyle 0.96.
+Since then, support has been added for the creation of XMLs 
+on a different machine than the target machine.
+This was added because there was some problem installing the lxml module
+on the machine which was serving Mobyle.
+This script is further evolving to support the installation of tools
+onto the development version of Mobyle 0.98 on LSF without using DRMAA.
+This new target platform is guaranteed to have lxml installed
+because it is required by Mobyle 0.98,
+but on the other hand the scripts need to be modified
+so that they use a custom written script which in turn calls bsub.
 
-Another usage is to create an installer
-for an environment without lxml.
-Example usage
+Example usage, creating an installer for an environment without lxml.
 python export-mob-project.py
 --make_installer=ztools --universal_category=ztools
 --mobyle_core=/home/mobyleuser/Mobyle96
