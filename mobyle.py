@@ -78,13 +78,14 @@ class CategoryInfo:
 
 
 
-def get_xml(cat_info, env_info, usermod, module_name, short_name):
+def get_xml(cat_info, env_info, usermod, module_name, short_name, runbsub):
     """
     @param cat_info: how xmls will be categorized
     @param env_info: relevant places in the filesystem
     @param usermod: module object
     @param module_name: something like '20100707a'
     @param short_name: something like 'plot_pca_3d'
+    @param runbsub: True if we want to run through a custom bsub script
     """
     # get module info
     form_objects = usermod.get_form()
@@ -109,7 +110,14 @@ def get_xml(cat_info, env_info, usermod, module_name, short_name):
     for cat in cat_info.gen_categories(tags, form_objects, form_out):
         etree.SubElement(head, 'category').text = cat
     command = etree.SubElement(head, 'command')
-    command.text = env_info.get_xml_command(module_name)
+    cmd_text = env_info.get_xml_command(module_name)
+    if runbsub:
+        bsub = ' '.join((
+            'runbsub', '-n 1', '-W 720', '-N', '-q dean',
+            '-o result.out', '-e result.err',
+            '__bsubArgsEnd__'))
+        cmd_text = bsub + cmd_text
+    command.text = cmd_text
     # add the head.doc subtree
     subtree_doc = etree.SubElement(head, 'doc')
     title = etree.SubElement(subtree_doc, 'title').text = short_name
@@ -131,13 +139,14 @@ def get_xml(cat_info, env_info, usermod, module_name, short_name):
             pretty_print=True)
 
 def add_xml_files(cat_info, env_info,
-        module_names, short_name_length, local_xml_dir):
+        module_names, short_name_length, local_xml_dir, runbsub):
     """
     @param cat_info: how xmls will be categorized
     @param env_info: relevant places in the filesystem
     @param module_names: generally uninformative names of modules
     @param short_name_length: max length of unique short module names
     @param local_xml_dir: usually the xml dir in env_info
+    #param runbsub: a flag
     @return: a list of identifiers and a list of import errors
     """
     mod_infos, import_errors = meta.get_usermod_info(
@@ -152,7 +161,7 @@ def add_xml_files(cat_info, env_info,
         xml_content = None
         try:
             xml_content = get_xml(
-                    cat_info, env_info, usermod, name, short_name)
+                    cat_info, env_info, usermod, name, short_name, runbsub)
             nsuccesses += 1
         except:
             error_message = str(sys.exc_info()[1])

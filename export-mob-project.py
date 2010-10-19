@@ -76,7 +76,8 @@ def create_installer(args, cat_info, env_info, module_names):
     identifiers, import_errors = mobyle.add_xml_files(
             cat_info, env_info,
             module_names, args.short_length,
-            os.path.join(stage, 'xml-files'))
+            os.path.join(stage, 'xml-files'),
+            args.runbsub)
     for e in import_errors:
         print e
     # copy the installer script
@@ -130,7 +131,8 @@ def main(args):
         # create the mobyle xml interface files
         import_errors = mobyle.add_xml_files(
                 cat_info, env_info,
-                module_names, args.short_length, env_info.get_xml_dir())
+                module_names, args.short_length, env_info.get_xml_dir(),
+                args.runbsub)
         for e in import_errors:
             print e
     if args.deploy:
@@ -148,6 +150,8 @@ if __name__ == '__main__':
     parser.add_argument('--mobyle_version', metavar='VER',
             choices=('0.96', '0.98'), default='0.96',
             help='the target Mobyle version')
+    parser.add_argument('--runbsub', action='store_true',
+            help='use a custom bsub script for lsf submission')
     parser.add_argument('--target', required=True,
             help='python files will be created in this directory')
     parser.add_argument('--python_path', default='python',

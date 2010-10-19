@@ -36,6 +36,13 @@ class EnvironmentInfo:
         """
         return [os.path.join(self.mob_core, 'Tools', 'mobdeploy'), 'deploy']
 
+    def get_xml_command(self, module_name):
+        """
+        Get the command string to invoke the snippet without any args.
+        @return: the command to be embedded into a Mobyle XML file
+        """
+        return ' '.join([self.python_path, self.auto_path, module_name])
+
 
 class EnvironmentInfo96(EnvironmentInfo):
 
@@ -48,13 +55,6 @@ class EnvironmentInfo96(EnvironmentInfo):
         """
         return os.path.join(self.mob_core, 'Local', 'Programs')
 
-    def get_xml_command(self, module_name):
-        """
-        Get the command string to invoke the snippet without any args.
-        @return: the command to be embedded into a Mobyle XML file
-        """
-        return ' '.join([self.python_path, self.auto_path, module_name])
-
 
 class EnvironmentInfo98(EnvironmentInfo):
 
@@ -66,14 +66,3 @@ class EnvironmentInfo98(EnvironmentInfo):
         @return: the directory where the xml files will go
         """
         return os.path.join(self.mob_core, 'Local', 'Services', 'Programs')
-
-    def get_xml_command(self, module_name):
-        """
-        Get the command string to invoke the snippet without any args.
-        @return: the command to be embedded into a Mobyle XML file
-        """
-        bsub = ' '.join((
-            'runbsub', '-n 1', '-W 720', '-N', '-q dean',
-            '-o result.out', '-e result.err',
-            '__bsubArgsEnd__'))
-        return ' '.join([bsub, self.python_path, self.auto_path, module_name])
