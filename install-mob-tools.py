@@ -45,7 +45,8 @@ def main(args):
     env_info = mobenv.create_environment_info(
             env_dict['auto_path'],
             env_dict['python_path'],
-            env_dict['mob_core'])
+            env_dict['mob_core'],
+            env_dict['mob_version'])
     install_xml_files(stage, env_info)
     install_python_subtree(stage, env_info)
     if args.deploy:

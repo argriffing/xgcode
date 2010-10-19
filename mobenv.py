@@ -7,37 +7,25 @@ because it is used on a target machine as part of the installation.
 import os
 
 
-def create_environment_info(auto_path, python_path, mob_core):
+def create_environment_info(auto_path, python_path, mob_core, mob_version):
     """
     This is a factory function.
+    @param auto_path: path to auto.py
+    @param python_path: path to the python executable
+    @param mob_core: mobyle core directory
+    @param mob_version: mobyle version as a string
     """
-    v = get_mobyle_version(mob_core)
-    if v == 98:
+    if mob_version == '0.98':
         klass = EnvironmentInfo98
-    elif v == 96:
+    elif mob_version == '0.96':
         klass = EnvironmentInfo96
     else:
-        raise ValueError('undetected mobyle version')
+        raise ValueError('unknown mobyle version ' + mob_version)
     return klass(auto_path, python_path, mob_core)
-
-
-def get_mobyle_version(mobyle_home):
-    set_98 = set(('Doc', 'Example', 'Local',
-        'Schema', 'Services', 'Src', 'Tools'))
-    if set(os.listdir(mobyle_home)) == set_98:
-        return 98
-    else:
-        return 96
-
 
 class EnvironmentInfo:
 
     def __init__(self, auto_path, python_path, mob_core):
-        """
-        @param auto_path: path to auto.py
-        @param python_path: path to the python executable
-        @param mob_core: mobyle core directory
-        """
         self.auto_path = auto_path
         self.python_path = python_path
         self.mob_core = mob_core
