@@ -12,6 +12,19 @@ import Util
 #TODO replace assert with exceptions
 #TODO move RTable into this module, with or without row headers
 
+#FIXME
+# This is a horrible hack.
+# It is a result of the intersection of two bad things.
+# First, there is no system-wide configuration file for the python scripts.
+# Second, the servbio hpc does not have R on the path
+# which is passed to the python script from the mobyle caller.
+# Note that I used to try to use
+# /usr/local/apps/R/xeon/2.9.0/bin/R
+# but this version connected to an invalid readline library.
+g_rlocations = (
+        'R',
+        '/usr/local/apps/R/em64t/R-2.11.1/bin/R')
+
 def run(pathname):
     """
     Run the R script.
@@ -21,12 +34,19 @@ def run(pathname):
     @param pathname: name of the R script
     @return: (returncode, r_stdout, r_stderr)
     """
-    cmd = [
-            'R', 'CMD', 'BATCH',
-            '--vanilla', '--silent', '--slave',
-            pathname, '/dev/stderr']
-    proc = subprocess.Popen(cmd,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    for rlocation in g_rlocations:
+        cmd = [
+                rlocation, 'CMD', 'BATCH',
+                '--vanilla', '--silent', '--slave',
+                pathname, '/dev/stderr']
+        try:
+            proc = subprocess.Popen(cmd,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except OSError as e:
+            continue
+        break
+    else:
+        raise ValueError('could not find R')
     proc_stdout, proc_stderr = proc.communicate()
     return proc.returncode, proc_stdout, proc_stderr
 

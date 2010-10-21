@@ -1,4 +1,8 @@
 """Scatter plot 3D given an R table with two categorical variables.
+
+Possibly allow multiple output types when run from the command line.
+For example it could write the R script to a user named file
+without running it.
 """
 
 from StringIO import StringIO

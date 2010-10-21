@@ -112,11 +112,11 @@ def get_xml(cat_info, env_info, usermod, module_name, short_name, runbsub):
     command = etree.SubElement(head, 'command')
     cmd_text = env_info.get_xml_command(module_name)
     if runbsub:
-        bsub = ' '.join((
-            'runbsub', '-n 1', '-W 720', '-N', '-q dean',
+        # the option -N was removed because it was eating error messages
+        cmd_text = ' '.join((
+            'runbsub', '-n 1', '-W 720', '-q dean',
             '-o result.out', '-e result.err',
-            '__bsubArgsEnd__'))
-        cmd_text = bsub + cmd_text
+            '__bsubArgsEnd__', cmd_text))
     command.text = cmd_text
     # add the head.doc subtree
     subtree_doc = etree.SubElement(head, 'doc')
