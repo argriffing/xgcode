@@ -85,7 +85,7 @@ def get_xml(cat_info, env_info, usermod, module_name, short_name, runbsub):
     @param usermod: module object
     @param module_name: something like '20100707a'
     @param short_name: something like 'plot_pca_3d'
-    @param runbsub: True if we want to run through a custom bsub script
+    @param runbsub: a path to a python script
     """
     # get module info
     form_objects = usermod.get_form()
@@ -112,11 +112,7 @@ def get_xml(cat_info, env_info, usermod, module_name, short_name, runbsub):
     command = etree.SubElement(head, 'command')
     cmd_text = env_info.get_xml_command(module_name)
     if runbsub:
-        # the option -N was removed because it was eating error messages
-        cmd_text = ' '.join((
-            'runbsub', '-n 1', '-W 720', '-q dean',
-            '-o result.out', '-e result.err',
-            '__bsubArgsEnd__', cmd_text))
+        cmd_text = ' '.join((env_info.python_path, runbsub, cmd_text))
     command.text = cmd_text
     # add the head.doc subtree
     subtree_doc = etree.SubElement(head, 'doc')
@@ -146,7 +142,7 @@ def add_xml_files(cat_info, env_info,
     @param module_names: generally uninformative names of modules
     @param short_name_length: max length of unique short module names
     @param local_xml_dir: usually the xml dir in env_info
-    #param runbsub: a flag
+    #param runbsub: a path to a python script
     @return: a list of identifiers and a list of import errors
     """
     mod_infos, import_errors = meta.get_usermod_info(
