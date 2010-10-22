@@ -642,7 +642,7 @@ class SingleLine:
         """
         mobyle_class = 'String'
         vdef_text = cgi.escape(self.default_line)
-        meta_code = '" --%s=\'" + str(value) + "\'"' % self.label
+        meta_code = '" --%s=" + str(value)' % self.label
         parameter = etree.SubElement(
                 parent, 'parameter', ismandatory='1', issimple='1')
         etree.SubElement(parameter, 'name').text = self.label
