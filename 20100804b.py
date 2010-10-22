@@ -30,9 +30,9 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('table', 'R table', g_default),
-            Form.SingleLine('axes',
+            Form.Sequence('axes',
                 'numerical variables defining axes of the plot',
-                ' '.join(('pc1', 'pc2'))),
+                ('pc1', 'pc2')),
             Form.SingleLine('shape',
                 'categorical variable defining the shape of a dot',
                 'species'),
@@ -40,8 +40,8 @@ def get_form():
                 'numerical variable defining the color of a dot',
                 'temperature'),
             Form.Float('size', 'size of a plotted point', '1.5'),
-            Form.SingleLine('legend_pos', 'position of the symbol legend',
-                '0 -1'),
+            Form.Sequence('legend_pos', 'position of the symbol legend',
+                ('0', '-1')),
             Form.CheckGroup('pixel_options', 'more plotting details', [
                 Form.CheckItem('endpoint_ticks',
                     'add ticks to the endpoints of the colorbar', True)]),
@@ -107,7 +107,7 @@ class PlotInfo:
 
     def _init_axes(self, args, headers, data):
         # read the axes
-        self.axis_headers = args.axes.split()
+        self.axis_headers = args.axes
         # verify the number of axis headers
         if len(self.axis_headers) != 2:
             raise ValueError('expected two axis column headers')
@@ -181,9 +181,11 @@ class PlotInfo:
         @param temp_table_name: a pathname
         """
         # get the symbol legend location
-        legend_pos = tuple(float(x) for x in args.legend_pos.split())
-        if len(legend_pos) != 2:
-            raise ValueError('invalid legend position: %s' % args.legend_pos)
+        try:
+            legend_pos = Util.get_coordinate_pair(args.legend_pos)
+        except Util.CoordinatePairError as e:
+            msg = 'legend position error: ' + str(e)
+            raise ValueError(msg)
         # get the unique locations and species
         symbol_legend_string = ', '.join("'%s'" % x for x in self.unique_shapes)
         color_legend_string = self.color_header

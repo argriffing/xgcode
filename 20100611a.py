@@ -38,10 +38,10 @@ def get_form():
     form_objects = [
             Form.MultiLine('info', 'amdS_PCA_Info.csv lines',
                 '\n'.join(g_info_lines)),
-            Form.MultiLine('input_headers', 'renamed column headers',
-                '\n'.join(g_input_headers)),
-            Form.MultiLine('output_headers', 'ordered output headers',
-                '\n'.join(g_output_headers)),
+            Form.Sequence('input_headers', 'renamed column headers',
+                g_input_headers),
+            Form.Sequence('output_headers', 'ordered output headers',
+                g_output_headers),
             Form.RadioGroup('mdefgroup', 'missing input data', [
                 Form.RadioItem('star_missing_in',
                     '* is interpreted as missing data', True),
@@ -66,10 +66,10 @@ def get_form_out():
     return FormOut.RTable('out')
 
 def get_response_content(fs):
-    return process(fs, fs.info.splitlines(), fs.input_headers.splitlines(),
-            fs.output_headers.splitlines()) + '\n'
+    return process(fs, fs.info.splitlines(), fs.input_headers,
+            fs.output_headers) + '\n'
 
-def process(args, raw_info_lines, raw_input_headers, raw_output_headers):
+def process(args, raw_info_lines, input_headers, output_headers):
     info_lines = Util.get_stripped_lines(raw_info_lines)
     # extract info from the .csv file
     rows = list(csv.reader(info_lines))
@@ -85,7 +85,6 @@ def process(args, raw_info_lines, raw_input_headers, raw_output_headers):
     elif args.NULL_missing_in:
         data_rows = [[None if v=='NULL' else v for v in r] for r in data_rows]
     # define the renamed input headers
-    input_headers = Util.get_stripped_lines(raw_input_headers)
     if len(input_headers) < len(header):
         msg = 'each input header should be explicitly (re)named'
         raise ValueError(msg)
@@ -100,7 +99,6 @@ def process(args, raw_info_lines, raw_input_headers, raw_output_headers):
     if args.clean_isolates:
         data_rows = Carbone.clean_isolate_table(data_rows)
     # define the ordered output headers
-    output_headers = Util.get_stripped_lines(raw_output_headers)
     bad_output_headers = set(output_headers) - set(input_headers)
     if bad_output_headers:
         msg_a = 'unrecognized output column headers: '

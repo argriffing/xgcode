@@ -1166,6 +1166,9 @@ class MultiLine:
         self.description = description
         self.default_string = default_string
 
+    def get_default_string(self):
+        return self.default_string
+
     def web_only(self):
         return False
 
@@ -1189,7 +1192,7 @@ class MultiLine:
         @return: the number of args added on the command line
         """
         mobyle_class = 'Text'
-        example_text = cgi.escape(self.default_string)
+        example_text = cgi.escape(self.get_default_string())
         meta_code = '" --%s=" + str(value)' % self.label
         parameter = etree.SubElement(
                 parent, 'parameter', ismandatory='1', issimple='1')
@@ -1216,13 +1219,13 @@ class MultiLine:
         @return: the list of lines of html text
         """
         # get the number of rows to use for the textarea
-        sio = StringIO(self.default_string)
+        sio = StringIO(self.get_default_string())
         nrows = len(list(sio.readlines())) + 1
         nrows = min(nrows, 12)
         # get escaped values
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
-        esc_default_string = cgi.escape(self.default_string)
+        esc_default_string = cgi.escape(self.get_default_string())
         lines = [
                 # add the label line followed by a line break
                 _get_colon_label_line(esc_label, esc_description),
@@ -1237,7 +1240,7 @@ class MultiLine:
     def process_cmdline_dict(self, d_in, d_out):
         filename = d_in.get(self.label, None)
         if filename is None:
-            value = self.default_string
+            value = self.get_default_string()
         else:
             with open(filename) as fin:
                 value = fin.read()
@@ -1262,6 +1265,63 @@ class MultiLine:
             raise FormError(msg)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
+
+
+class Sequence(MultiLine):
+    """
+    This represents a tuple of strings.
+    It is not supposed to be a DNA sequence or something.
+    Whitespace at either end of a string is ignored.
+    Strings consisting entirely of whitespace are ignored.
+    """
+
+    def __init__(self, label, description, default_list):
+        """
+        @param label: something like a variable name
+        @param description: a single line description of the item
+        @param default_list: the default list of strings
+        """
+        self.label = label
+        self.description = description
+        self.default_list = tuple(self._gen_reduced(default_list))
+
+    def _gen_reduced(self, arr):
+        for s in arr:
+            rs = s.strip()
+            if rs:
+                yield rs
+
+    def get_default_string(self):
+        return '\n'.join(self.default_list)
+
+    def process_cmdline_dict(self, d_in, d_out):
+        filename = d_in.get(self.label, None)
+        if filename is None:
+            value = self.default_list
+        else:
+            with open(filename) as fin:
+                value = tuple(self._gen_reduced(fin.readlines()))
+        _set_unique(d_out, self.label, value)
+
+    def process_fieldstorage(self, fs):
+        """
+        @param fs: a FieldStorage object to be decorated with extra attributes
+        """
+        # verify that the attribute is not already taken
+        if hasattr(fs, self.label):
+            msg = 'the object already has the attribute "%s"' % self.label
+            raise FormError(msg)
+        # read the attribute value from the fieldstorage object
+        values = fs.getlist(self.label)
+        if not values:
+            value = ''
+        elif len(values) == 1:
+            value = values[0]
+        elif len(values) > 2:
+            msg = 'the value for the field "%s" is ambiguous' % self.label
+            raise FormError(msg)
+        # set the value for the attribute in the fieldstorage object
+        setattr(fs, self.label, tuple(self._gen_reduced(value.splitlines())))
 
 
 class ContentDisposition(RadioGroup):

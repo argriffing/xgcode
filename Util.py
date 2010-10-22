@@ -9,6 +9,29 @@ import os
 
 import iterutils
 
+class CoordinatePairError(Exception): pass
+
+class CoordinateTripleError(Exception): pass
+
+def get_coordinate_pair(string_pair):
+    if len(string_pair) != 2:
+        raise CoordinatePairError('expected a pair of coordinates')
+    try:
+        coord_pair = tuple(float(v) for v in string_pair)
+    except ValueError as e:
+        raise CoordinatePairError('a coordinate was not a valid number')
+    return coord_pair
+
+def get_coordinate_triple(string_triple):
+    if len(string_triple) != 3:
+        raise CoordinateTripleError('expected three coordinates')
+    try:
+        coord_triple = tuple(float(v) for v in string_triple)
+    except ValueError as e:
+        raise CoordinateTripleError('a coordinate was not a valid number')
+    return coord_triple
+
+
 def list_starts_with(mylist, prefix):
     return mylist[:len(prefix)] == prefix
 

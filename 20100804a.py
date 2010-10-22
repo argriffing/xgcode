@@ -56,9 +56,9 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('table', 'R table', g_default),
-            Form.SingleLine('axes',
+            Form.Sequence('axes',
                 'numerical variables defining axes of the scatter plot',
-                ' '.join(('pc1', 'pc2'))),
+                ('pc1', 'pc2')),
             Form.SingleLine('shape',
                 'categorical variable defining the shape of a dot',
                 'species'),
@@ -66,12 +66,12 @@ def get_form():
                 'categorical variable defining the color of a dot',
                 'location'),
             Form.Float('size', 'size of a plotted point', '1.5'),
-            Form.SingleLine('symbol_legend_pos',
+            Form.Sequence('symbol_legend_pos',
                 'position of the symbol legend',
-                '-10 -1'),
-            Form.SingleLine('color_legend_pos',
+                ('-10', '-1')),
+            Form.Sequence('color_legend_pos',
                 'position of the color legend',
-                '0 -1'),
+                ('0', '-1')),
             Form.ImageFormat(),
             #Form.RadioGroup('out_type', 'output type', [
                 #Form.RadioItem('show_image', 'image', True),
@@ -116,29 +116,6 @@ def get_response_content(fs):
             filename = 'script.R'
     """
     return content
-
-class LegendPositionError(Exception): pass
-
-def get_legend_position(legend_position_string):
-    """
-    @param legend_position_string: something like '10 -3.2'
-    @return: something like (10.0, -3.2)
-    """
-    if not legend_position_string:
-        msg = 'expected some coordinates'
-        raise LegendPositionError(msg)
-    pair = []
-    for s in legend_position_string.split():
-        try:
-            x = float(s)
-        except ValueError:
-            msg = 'expected a number but got "%s"' % s
-            raise LegendPositionError(msg)
-        pair.append(x)
-    if len(pair) != 2:
-        msg = 'expected two whitespace separated coordinates'
-        raise LegendPositionError(msg)
-    return tuple(pair)
 
 class ColorInfo:
     def __init__(self, header, column):
@@ -214,7 +191,7 @@ class PlotInfo:
 
     def _init_axes(self, args, headers, data):
         # read the axes
-        self.axis_headers = args.axes.split()
+        self.axis_headers = args.axes
         # verify the number of axis headers
         if len(self.axis_headers) != 2:
             raise ValueError('expected two axis column headers')
@@ -279,18 +256,16 @@ class PlotInfo:
         """
         # get the symbol legend location
         try:
-            symbol_legend_pos = get_legend_position(args.symbol_legend_pos)
-        except LegendPositionError as e:
-            msg_a = 'symbol legend position error for '
-            msg_b = '"%s" : %s' % (args.symbol_legend_pos, e)
-            raise ValueError(msg_a + msg_b)
+            symbol_legend_pos = Util.get_coordinate_pair(args.symbol_legend_pos)
+        except Util.CoordinatePairError as e:
+            msg = 'symbol legend position error: ' + str(e)
+            raise ValueError(msg)
         # get the color legend location
         try:
-            color_legend_pos = get_legend_position(args.color_legend_pos)
-        except LegendPositionError as e:
-            msg_a = 'color legend position error for '
-            msg_b = '"%s" : %s' % (args.symbol_legend_pos, e)
-            raise ValueError(msg_a + msg_b)
+            color_legend_pos = Util.get_coordinate_pair(args.color_legend_pos)
+        except Util.CoordinatePairError as e:
+            msg = 'color legend position error: ' + str(e)
+            raise ValueError(msg)
         # get the image function
         image_function = Form.g_imageformat_to_r_function[args.imageformat]
         # get the R codes

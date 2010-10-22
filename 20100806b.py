@@ -34,8 +34,8 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('table', 'R table', g_default),
-            Form.SingleLine('axes', 'column labels of Euclidean axes',
-                ' '.join(('pc1', 'pc2', 'pc3'))),
+            Form.Sequence('axes', 'column labels of Euclidean axes',
+                ('pc1', 'pc2', 'pc3')),
             Form.Integer('nsamples',
                 'use this many samples for the null distribution', 10),
             Form.CheckGroup('options', 'more options', [
@@ -120,7 +120,7 @@ def get_response_content(fs):
     Carbone.validate_headers(header_row)
     # get the numpy array of conformant points
     h_to_i = dict((h, i+1) for i, h in enumerate(header_row))
-    axis_headers = fs.axes.split()
+    axis_headers = fs.axes
     if not axis_headers:
         raise ValueError('no Euclidean axes were provided')
     axis_set = set(axis_headers)

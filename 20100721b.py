@@ -35,8 +35,8 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('table', 'R table', '\n'.join(g_default_lines)),
-            Form.SingleLine('axes', 'column labels of Euclidean axes',
-                ' '.join(('p1', 'p2'))),
+            Form.Sequence('axes', 'column labels of Euclidean axes',
+                ('p1', 'p2')),
             Form.Integer('k', 'maximum number of clusters',
                 2, low=2)]
     return form_objects
@@ -44,11 +44,11 @@ def get_form():
 def get_form_out():
     return FormOut.RTable('out')
 
-def get_rtable_info(rtable, cluster_header, axes_string):
+def get_rtable_info(rtable, cluster_header, axis_headers):
     """
     @param rtable: a Carbone.RTable object
     @param cluster_header: header of the new column to add
-    @param axes_string: something like "pc1 pc2 pc2" with column headers
+    @param axis_headers: tuple of column headers
     @return: points as rows in a numpy array
     """
     header_row = rtable.headers
@@ -62,7 +62,6 @@ def get_rtable_info(rtable, cluster_header, axes_string):
         raise ValueError(msg)
     # get the numpy array of conformant points
     h_to_i = dict((h, i+1) for i, h in enumerate(header_row))
-    axis_headers = axes_string.split()
     if not axis_headers:
         raise ValueError('no Euclidean axes were provided')
     axis_set = set(axis_headers)
