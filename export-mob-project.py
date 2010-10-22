@@ -151,7 +151,7 @@ if __name__ == '__main__':
             choices=('0.96', '0.98'), default='0.96',
             help='the target Mobyle version')
     parser.add_argument('--runbsub',
-            help='use this python script for submission to the lsf queue')
+            help='use this command for submission to the lsf queue')
     parser.add_argument('--target', required=True,
             help='python files will be created in this directory')
     parser.add_argument('--python_path', default='python',
