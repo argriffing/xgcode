@@ -33,6 +33,16 @@ IC33 1 0 1 1
 IC34 0 0 1 0
 """.strip()
 
+"""
+Form.RadioGroup('scaling', 'PC scaling', [
+    Form.RadioItem('scale_none',
+        'use orthonormal eigenvectors', True),
+    Form.RadioItem('scale_sqrt',
+        'scale by the square root of the eigenvalue'),
+    Form.RadioItem('scale_eigenvalue',
+        'scale by the eigenvalue')]),
+"""
+
 def get_form():
     """
     @return: the body of a form
