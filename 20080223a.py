@@ -1,8 +1,6 @@
 """Visualize a codon rate matrix as a heat map.
 """
 
-import numpy as np
-
 from SnippetUtil import HandlingError
 import SnippetUtil
 import MatrixUtil
@@ -12,8 +10,6 @@ import Codon
 import Form
 import FormOut
 
-#FIXME numpy may not be necessary
-
 def get_form():
     """
     @return: the body of a form
@@ -22,7 +18,6 @@ def get_form():
     dictionary_rate_matrix = RateMatrix.get_sample_codon_rate_matrix()
     labels = Codon.g_sorted_non_stop_codons
     R = MatrixUtil.dict_to_row_major(dictionary_rate_matrix, labels, labels)
-    R = np.array(R)
     # define the form objects
     form_objects = [
             Form.Matrix('matrix', 'codon rate matrix',
