@@ -211,7 +211,7 @@ class CodonRateMatrix(FormOut):
 class Html(FormOut):
     def __init__(self, fmt='out', ext='html', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
-    def get_contenttype_type(self, fs):
+    def get_contenttype(self, fs):
         return 'text/html'
 
 class RateMatrix(FormOut):
