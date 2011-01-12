@@ -1,4 +1,4 @@
-"""Create a tree MDS animation in 3D. [UNFINISHED]
+"""Draw an MDS with imputed internal nodes with the equations in the proposal.
 
 Create a tree MDS animation
 showing progressive downweighting of internal nodes.
@@ -75,21 +75,21 @@ def get_response_content(fs):
     index_edges = get_index_edges(tree, ordered_ids)
     # Create the reference points so that the video frames
     # are not reflected arbitrarily.
-    reference_points = Euclid.edm_to_points(D).T[:3].T
+    reference_points = Euclid.edm_to_points(D).T[:2].T
     # draw the image
     ext = Form.g_imageformat_to_ext[fs.imageformat]
     mass_vector = get_mass_vector(nvertices, nleaves, fs.progress)
-    points = get_canonical_3d_mds(D, mass_vector, reference_points)
+    points = get_canonical_2d_mds(D, mass_vector, reference_points)
     return get_animation_frame(ext, physical_size, fs.scale,
             mass_vector, index_edges, points)
 
 def reflect_to_reference(points, reference_points):
     """
-    For 3D points, try each combination of reflections across the axes.
-    There are eight possible combinations of reflections.
+    For 2D points, try each combination of reflections across the axes.
+    There are four possible combinations of reflections.
     Use the reflection that gives points closest to the reference points.
-    @param points: rows are 3D points
-    @param reference_points: rows are 3D points
+    @param points: rows are 2D points
+    @param reference_points: rows are 2D points
     @return: 
     """
     if points.shape != reference_points.shape:
@@ -99,9 +99,9 @@ def reflect_to_reference(points, reference_points):
     if len(points.shape) != 2:
         msg = 'the points argument should be a matrix-like numpy array'
         raise ValueError(msg)
-    if points.shape[1] != 3:
-        raise ValueError('the points should be in 3D space')
-    reflectors = np.array(list(product((-1,1), repeat=3)))
+    if points.shape[1] != 2:
+        raise ValueError('the points should be in 2D space')
+    reflectors = np.array(list(product((-1,1), repeat=2)))
     best_error, best_reflector = min((np.linalg.norm(
         points*r - reference_points), r) for r in reflectors)
     return points * best_reflector
@@ -139,20 +139,19 @@ def get_mass_vector(nvertices, nleaves, progress):
         mass_vector[i] = 1-progress
     return mass_vector / sum(mass_vector)
 
-def get_canonical_3d_mds(D, m, reference_points):
+def get_canonical_2d_mds(D, m, reference_points):
     """
     This function is about projecting the points.
     It is like MDS except the reflections across the axes are not arbitrary.
-    Also it only uses the first three axes.
+    Also it only uses the first two axes.
     @param D: the full distance matrix
     @param m: the mass vector
-    @param reference_points: a 3D reference projection of vertices of the tree
+    @param reference_points: a 2D reference projection of vertices of the tree
     @return: the weighted MDS points as a numpy matrix
     """
     X = Euclid.edm_to_weighted_points(D, m)
-    return reflect_to_reference(X.T[:3].T, reference_points)
+    return reflect_to_reference(X.T[:2].T, reference_points)
 
-#FIXME
 def get_animation_frame(
         image_format, physical_size, scale, mass_vector, index_edges, points):
     """
@@ -162,7 +161,7 @@ def get_animation_frame(
     @param scale: a scaling factor
     @param mass_vector: use this for visualizing the weights of the vertices
     @param index_edges: defines the connectivity of the tree
-    @param points: an array of 3D points, the first few of which are leaves
+    @param points: an array of 2D points, the first few of which are leaves
     @return: the animation frame as an image as a string
     """
     # before we begin drawing we need to create the cairo surface and context
