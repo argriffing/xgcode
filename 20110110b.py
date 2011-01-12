@@ -167,10 +167,10 @@ def get_crossings(index_edges, points):
             raise ValueError('a vertex intersects the xy plane')
         if az*bz < 0:
             t = abs(az) / abs(bz - az)
-        cx = (1-t)*ax + t*bx
-        cy = (1-t)*ay + t*by
-        cz = 0
-        crossings.append(np.array([cx, cy, cz]))
+            cx = (1-t)*ax + t*bx
+            cy = (1-t)*ay + t*by
+            cz = 0
+            crossings.append(np.array([cx, cy, cz]))
     return crossings
 
 def get_animation_frame(
@@ -216,8 +216,8 @@ def get_animation_frame(
     context.set_source_rgb(.8, .8, .8)
     for edge in index_edges:
         ai, bi = tuple(edge)
-        ax, ay = points[ai].tolist()
-        bx, by = points[bi].tolist()
+        ax, ay, az = points[ai].tolist()
+        bx, by, bz = points[bi].tolist()
         context.move_to(x0 + ax*scale, y0 + ay*scale)
         context.line_to(x0 + bx*scale, y0 + by*scale)
         context.stroke()
