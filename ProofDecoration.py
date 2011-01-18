@@ -41,7 +41,7 @@ g_tree_string = const.read('20100730g').rstrip()
 
 
 ############################################################
-# helper functions
+# block matrix helper functions
 
 def hrep(M, N):
     """
@@ -118,6 +118,10 @@ class LFDM:
         self.q = q
         self.N = N
 
+
+############################################################
+# structured matrix conversion functions
+
 def LFDO_to_LFDM(lfdo, N):
     D, p, q = ldfo.M, ldfo.p, ldfo.q
     Q, X, XT, P = get_corners(D, q, p)
@@ -126,6 +130,26 @@ def LFDO_to_LFDM(lfdo, N):
     PX = P
     M = assemble_corners(QX, XX, XX.T, PX)
     return LFDM(M, p, q, N)
+
+def LDFM_to_LDFN(ldfm):
+    M, p, q, N = ldfm.M, ldfm.p, ldfm.q, ldfm.N
+    HMH = MatrixUtil.double_centered(M)
+    v = p + q
+    return LDFN(HMH[-v:, -v:], p, q, N)
+
+def LDFO_to_LDFN(ldfo, N):
+    D, p, q = ldfo.M, ldfo.p, ldfo.q
+    weighted_colsums = N*D[:q].sum(axis=0) + D[q:].sum(axis=0)
+    Q, X, XT, P = get_corners(D, q, p)
+    weighted_grand_sum = N*N*np.sum(Q) + 2*N*np.sum(X) + np.sum(P)
+    weighted_colmeans = weighted_colsums / float(p+N*q)
+    weighted_grand_mean = weighted_grand_sum / float(N*N*q*q + 2*N*p*q + p*p)
+    M = D.copy()
+    M -= weighted_colmeans
+    M = M.T
+    M -= weighted_colmeans
+    M += weighted_grand_mean
+    return LDFN(M, p, q, N)
 
 
 class DistanceModel:
@@ -144,6 +168,7 @@ class DistanceModel:
 
     def get_Dpq(self):
         return self.D, self.p, self.q
+
 def LF_get_big_D(D, q, N):
     """
     LF means leaf first.
