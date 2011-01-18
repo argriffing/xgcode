@@ -25,6 +25,7 @@ import EigUtil
 import FelTree
 import CairoUtil
 import Progress
+import ProofDecoration
 import const
 
 g_tree_string = const.read('20100730g').rstrip()
@@ -56,6 +57,9 @@ def get_response_content(fs):
     nleaves = len(list(tree.gen_tips()))
     # Get ordered ids with the leaves first,
     # and get the corresponding distance matrix.
+    lfdo = ProofDecoration.tree_string_to_LFDO(fs.tree_string)
+    lfdi = ProofDecoration.LFDO_to_LFDI(lfdo)
+
     ordered_ids = get_ordered_ids_internal_first(tree)
     D = np.array(tree.get_partial_distance_matrix(ordered_ids))
     index_edges = get_index_edges(tree, ordered_ids)

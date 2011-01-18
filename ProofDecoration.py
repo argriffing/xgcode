@@ -188,6 +188,12 @@ def LFDO_to_LFDI(lfdo):
 class ProofDecorationTest(unittest.TestCase):
 
     def test_lfdn_shortcut(self):
+        """
+        Check two ways of constructing blocks of a matrix.
+        The matrix in question is the centered finitely extended matrix.
+        One way is to construct the whole matrix and then take blocks.
+        The other way is to construct the blocks more directly.
+        """
         lfdo = tree_string_to_LFDO(g_tree_string)
         for N in (1, 5, 10):
             lfdn_a = LFDO_to_LFDN(lfdo, N)
@@ -196,6 +202,9 @@ class ProofDecorationTest(unittest.TestCase):
             self.assertTrue(np.allclose(lfdn_a.M, lfdn_b.M))
 
     def test_degenerate_lfdn(self):
+        """
+        Make sure that replication with a factor of 1 does not do anything.
+        """
         lfdo = tree_string_to_LFDO(g_tree_string)
         N = 1
         lfdn = LFDO_to_LFDN(lfdo, N)
@@ -224,6 +233,18 @@ class ProofDecorationTest(unittest.TestCase):
             # ea should be more than nine times as bad as eb
             self.assertTrue(ea / eb > 9)
 
+    def test_lfdi_submatrix(self):
+        """
+        Test a principal submatrix of the LFDI matrix.
+        The principal submatrix of the LFDI which corresponds to leaf vertices
+        should equal the centered leaf vertex distance matrix.
+        """
+        lfdo = tree_string_to_LFDO(g_tree_string)
+        q = lfdo.q
+        DQ = lfdo.M[:q, :q]
+        HDQH = MatrixUtil.double_centered(DQ)
+        lfdi = LFDO_to_LFDI(lfdo)
+        self.assertTrue(np.allclose(lfdi.M[:q, :q], HDQH))
 
 
 
