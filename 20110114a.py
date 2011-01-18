@@ -1,17 +1,15 @@
-"""Draw an MDS with imputed internal nodes with the equations in the proposal.
+"""Construct blocks of a limiting matrix. [UNFINISHED]
 
-This is a sanity check of the equations in the proposal.
+Construct various matrices given a tree.
+construct the blocks of the limiting matrix which would
 """
 
 
 from StringIO import StringIO
-import random
 import os
 import math
-from itertools import product
 
 import numpy as np
-import cairo
 import argparse
 
 from SnippetUtil import HandlingError
@@ -23,9 +21,7 @@ import Euclid
 import MatrixUtil
 import EigUtil
 import FelTree
-import CairoUtil
 import Progress
-import ProofDecoration
 import const
 
 g_tree_string = const.read('20100730g').rstrip()
@@ -37,63 +33,29 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            Form.MultiLine('tree_string', 'newick tree',
-                g_tree_string),
-            Form.Float('scale', 'scale the image of the tree by this factor',
-                200.0, low_exclusive=0.0),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.MultiLine('tree_string', 'newick tree', g_tree_string)]
     return form_objects
 
 def get_form_out():
-    return FormOut.Image('tree')
+    return FormOut.Report()
 
 def get_response_content(fs):
     # define the requested physical size of the images (in pixels)
     physical_size = (640, 480)
-    # construct the matrices to be used for the eigendecomposition
-    lfdo = ProofDecoration.tree_string_to_LFDO(fs.tree_string)
-    lfdi = ProofDecoration.LFDO_to_LFDI(lfdo)
-    # we need the ordered ids themselves to to construct the edges
+    # build the newick tree from the string
     tree = NewickIO.parse(fs.tree_string, FelTree.NewickTree)
-    ordered_ids = ProofDecoration.tree_to_leaf_first_ids(tree)
+    nvertices = len(list(tree.preorder()))
+    nleaves = len(list(tree.gen_tips()))
+    # Get ordered ids with the leaves first,
+    # and get the corresponding distance matrix.
+    ordered_ids = get_ordered_ids_internal_first(tree)
+    D = np.array(tree.get_partial_distance_matrix(ordered_ids))
     index_edges = get_index_edges(tree, ordered_ids)
-    # define the points
-    points = get_grant_proposal_points_b(lfdi)
     # draw the image
     ext = Form.g_imageformat_to_ext[fs.imageformat]
+    points = get_grant_proposal_points(D, nleaves)
     return get_animation_frame(ext, physical_size, fs.scale,
             index_edges, points)
-
-def get_grant_proposal_points_b(lfdi):
-    M, p, q = lfdi.M, lfdi.p, lfdi.q
-    G = -.5 * M
-    GQ, GX, GXT, GP = ProofDecoration.get_corners(G, q, p)
-    # Get the eigendecomposition of the leaf-only Gower matrix.
-    ws, vs = EigUtil.eigh(GQ)
-    S = np.diag(ws)
-    U = np.vstack(vs).T
-    USUT = np.dot(np.dot(U, S), U.T)
-    if not np.allclose(USUT, GQ):
-        raise ValueError('eigenfail')
-    S_sqrt = np.diag(np.sqrt(ws))
-    X = np.dot(U, S_sqrt)
-    # Find the imputed internal points.
-    S_sqrt_pinv = np.linalg.pinv(S_sqrt)
-    #W = np.dot(np.dot(S_sqrt_pinv, GX.T), U)
-    try:
-        W = np.dot(np.dot(GX.T, U), S_sqrt_pinv)
-    except ValueError as e:
-        arr = [
-                GX.shape,
-                U.shape,
-                S_sqrt_pinv.shape]
-        msg = ', '.join(str(x) for x in arr)
-        raise ValueError(msg)
-    # put them together and get only the first coordinates
-    full_points = np.vstack([X, W])
-    points = full_points.T[:2].T
-    return points
 
 def get_grant_proposal_points(D, nleaves):
     """
