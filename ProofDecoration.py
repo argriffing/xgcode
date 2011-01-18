@@ -35,6 +35,7 @@ import Euclid
 import MatrixUtil
 import EigUtil
 import FelTree
+import iterutils
 import const
 
 g_tree_string = const.read('20100730g').rstrip()
@@ -88,6 +89,12 @@ def assemble_corners(A, B, C, D):
         msg = ', '.join(str(x) for x in arr)
         raise ValueError(msg)
 
+def tree_to_leaf_first_ids(tree):
+    ordered_ids = []
+    ordered_ids.extend(id(node) for node in tree.gen_tips())
+    ordered_ids.extend(id(node) for node in tree.gen_internal_nodes())
+    return ordered_ids
+
 
 ############################################################
 # structured matrix definitions
@@ -120,10 +127,20 @@ class LFDM:
 
 
 ############################################################
-# structured matrix conversion functions
+# structured matrix initialisation and conversion functions
+
+def tree_string_to_LFDO(tree_string):
+    tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+    nvertices = len(list(tree.preorder()))
+    nleaves = len(list(tree.gen_tips()))
+    ordered_ids = tree_to_leaf_first_ids(tree)
+    D = np.array(tree.get_partial_distance_matrix(ordered_ids))
+    q = nleaves
+    p = nvertices - nleaves
+    return LFDO(D, p, q)
 
 def LFDO_to_LFDM(lfdo, N):
-    D, p, q = ldfo.M, ldfo.p, ldfo.q
+    D, p, q = lfdo.M, lfdo.p, lfdo.q
     Q, X, XT, P = get_corners(D, q, p)
     QX = vrep(hrep(Q, N), N)
     XX = vrep(X, N)
@@ -131,14 +148,14 @@ def LFDO_to_LFDM(lfdo, N):
     M = assemble_corners(QX, XX, XX.T, PX)
     return LFDM(M, p, q, N)
 
-def LDFM_to_LDFN(ldfm):
-    M, p, q, N = ldfm.M, ldfm.p, ldfm.q, ldfm.N
+def LFDM_to_LFDN(lfdm):
+    M, p, q, N = lfdm.M, lfdm.p, lfdm.q, lfdm.N
     HMH = MatrixUtil.double_centered(M)
     v = p + q
-    return LDFN(HMH[-v:, -v:], p, q, N)
+    return LFDN(HMH[-v:, -v:], p, q, N)
 
-def LDFO_to_LDFN(ldfo, N):
-    D, p, q = ldfo.M, ldfo.p, ldfo.q
+def LFDO_to_LFDN(lfdo, N):
+    D, p, q = lfdo.M, lfdo.p, lfdo.q
     weighted_colsums = N*D[:q].sum(axis=0) + D[q:].sum(axis=0)
     Q, X, XT, P = get_corners(D, q, p)
     weighted_grand_sum = N*N*np.sum(Q) + 2*N*np.sum(X) + np.sum(P)
@@ -149,7 +166,70 @@ def LDFO_to_LDFN(ldfo, N):
     M = M.T
     M -= weighted_colmeans
     M += weighted_grand_mean
-    return LDFN(M, p, q, N)
+    return LFDN(M, p, q, N)
+
+def LFDO_to_LFDI(lfdo):
+    D, p, q = lfdo.M, lfdo.p, lfdo.q
+    weighted_colmeans = D[:q].mean(axis=0)
+    Q, X, XT, P = get_corners(D, q, p)
+    weighted_grand_mean = np.mean(Q)
+    M = D.copy()
+    M -= weighted_colmeans
+    M = M.T
+    M -= weighted_colmeans
+    M += weighted_grand_mean
+    return LFDI(M, p, q)
+
+
+############################################################
+# test invariants
+# test shortcuts
+
+class ProofDecorationTest(unittest.TestCase):
+
+    def test_lfdn_shortcut(self):
+        lfdo = tree_string_to_LFDO(g_tree_string)
+        for N in (1, 5, 10):
+            lfdn_a = LFDO_to_LFDN(lfdo, N)
+            lfdm = LFDO_to_LFDM(lfdo, N)
+            lfdn_b = LFDM_to_LFDN(lfdm)
+            self.assertTrue(np.allclose(lfdn_a.M, lfdn_b.M))
+
+    def test_degenerate_lfdn(self):
+        lfdo = tree_string_to_LFDO(g_tree_string)
+        N = 1
+        lfdn = LFDO_to_LFDN(lfdo, N)
+        HDH = MatrixUtil.double_centered(lfdo.M)
+        self.assertTrue(np.allclose(lfdn.M, HDH))
+
+    def test_lfdi_approximation(self):
+        """
+        As N increases, the approximation should become closer.
+        More precisely, as N becomes large,
+        multiplying N by ten should
+        add one decimal place of accuracy to the approximation.
+        Where the accuracy of the approximation is taken
+        to be the frobenius norm of the error matrix.
+        """
+        lfdo = tree_string_to_LFDO(g_tree_string)
+        lfdi = LFDO_to_LFDI(lfdo)
+        # For these values of N,
+        # the error for N should be more than 9 times the error for 10N.
+        # When N is very large,
+        # the error for N should approach 10 times the error for 10N.
+        Ns = (10, 100, 1000, 10000)
+        lfdns = [LFDO_to_LFDN(lfdo, N) for N in Ns]
+        error_norms = [np.linalg.norm(lfdi.M - lfdn.M) for lfdn in lfdns]
+        for ea, eb in iterutils.pairwise(error_norms):
+            # ea should be more than nine times as bad as eb
+            self.assertTrue(ea / eb > 9)
+
+
+
+
+
+############################################################
+# FIXME old obsolete stuff that should be deleted
 
 
 class DistanceModel:
@@ -261,12 +341,6 @@ class InternalFirstModel(DistanceModel):
     def get_DX(self):
         D, p, q = self.get_Dpq()
         return D[:p, p:]
-
-
-class ProofDecorationTest(unittest.TestCase):
-
-    def test_default(self):
-        pass
 
 
 def get_grant_proposal_points(D, nleaves):
