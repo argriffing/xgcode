@@ -1,18 +1,30 @@
-"""Draw an MDS with imputed internal nodes with the equations in the proposal.
+"""
+Construct matrices related to a distance matrix.
 
-This is a sanity check of the equations in the proposal.
+The matrices constructed here
+are used in the proof of a theorem about partially supplied graphs.
+
+The following notation will be used.
+vertex counts and leaf multiplicity:
+    q: number of leaves
+    p: number of internal vertices
+    N: the multiplicity of leaf vertices
+vertex ordering abbreviation:
+    LF: vertex ordering with leaf vertices first
+    IF: vertex ordering with internal vertices first
+matrix contents abbreviation:
+    DO: original distance matrix (symmetric order p + q)
+    DM: the expanded matrix (symmetric order p + Nq)
+    DN: block of centered finitely expanded distance (symmetric order p + q)
+    DI: block of centered infinitely expanded distance (symmetric order p + q)
+matrix sub-block abbreviation:
+    Q: leaf vertex principal submatrix (symmetric order q)
+    P: internal vertex principal submatrix (symmetric order p)
+    X: off-diagonal upper right submatrix (pxq or qxp)
 """
 
-
-from StringIO import StringIO
-import random
-import os
-import math
-from itertools import product
-
+import unittest
 import numpy as np
-import cairo
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -23,47 +35,214 @@ import Euclid
 import MatrixUtil
 import EigUtil
 import FelTree
-import CairoUtil
-import Progress
 import const
 
 g_tree_string = const.read('20100730g').rstrip()
 
 
-def get_form():
-    """
-    @return: a list of form objects
-    """
-    # define the form objects
-    form_objects = [
-            Form.MultiLine('tree_string', 'newick tree',
-                g_tree_string),
-            Form.Float('scale', 'scale the image of the tree by this factor',
-                200.0, low_exclusive=0.0),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
-    return form_objects
+############################################################
+# helper functions
 
-def get_form_out():
-    return FormOut.Image('tree')
+def hrep(M, N):
+    """
+    Horizontally stack N copies of M.
+    @param M: a matrix
+    @param N: stack this many copies
+    """
+    return np.hstack([M]*N)
 
-def get_response_content(fs):
-    # define the requested physical size of the images (in pixels)
-    physical_size = (640, 480)
-    # build the newick tree from the string
-    tree = NewickIO.parse(fs.tree_string, FelTree.NewickTree)
-    nvertices = len(list(tree.preorder()))
-    nleaves = len(list(tree.gen_tips()))
-    # Get ordered ids with the leaves first,
-    # and get the corresponding distance matrix.
-    ordered_ids = get_ordered_ids_internal_first(tree)
-    D = np.array(tree.get_partial_distance_matrix(ordered_ids))
-    index_edges = get_index_edges(tree, ordered_ids)
-    # draw the image
-    ext = Form.g_imageformat_to_ext[fs.imageformat]
-    points = get_grant_proposal_points(D, nleaves)
-    return get_animation_frame(ext, physical_size, fs.scale,
-            index_edges, points)
+def vrep(M, N):
+    """
+    Vertically stack N copies of M.
+    @param M: a matrix
+    @param N: stack this many copies
+    """
+    return np.vstack([M]*N)
+
+def get_corners(M, a, b):
+    """
+    Returns four matrices.
+    The first is the top left axa matrix.
+    The second is the top right axb matrix.
+    The third is the bottom left bxa matrix.
+    The fourth is the bottom right bxb matrix.
+    @param M: a matrix
+    @param a: the order of the first principal submatrix
+    @param b: the order of the last principal submatrix
+    @return: four matrices
+    """
+    return M[:a, :a], M[:a, -b:], M[-b:, :a], M[-b:, -b:]
+
+def assemble_corners(A, B, C, D):
+    """
+    @param A: top left corner
+    @param B: top right corner
+    @param C: bottom left corner
+    @param D: bottom right corner
+    @return: an assembled matrix
+    """
+    try:
+        return np.vstack([np.hstack([A, B]), np.hstack([C, D])])
+    except ValueError as e:
+        arr = [A.shape, B.shape, C.shape, D.shape]
+        msg = ', '.join(str(x) for x in arr)
+        raise ValueError(msg)
+
+
+############################################################
+# structured matrix definitions
+
+class LFDO:
+    def __init__(self, M, p, q):
+        self.M = M
+        self.p = p
+        self.q = q
+
+class LFDN:
+    def __init__(self, M, p, q, N):
+        self.M = M
+        self.p = p
+        self.q = q
+        self.N = N
+
+class LFDI:
+    def __init__(self, M, p, q):
+        self.M = M
+        self.p = p
+        self.q = q
+
+class LFDM:
+    def __init__(self, M, p, q, N):
+        self.M = M
+        self.p = p
+        self.q = q
+        self.N = N
+
+def LFDO_to_LFDM(lfdo, N):
+    D, p, q = ldfo.M, ldfo.p, ldfo.q
+    Q, X, XT, P = get_corners(D, q, p)
+    QX = vrep(hrep(Q, N), N)
+    XX = vrep(X, N)
+    PX = P
+    M = assemble_corners(QX, XX, XX.T, PX)
+    return LFDM(M, p, q, N)
+
+
+class DistanceModel:
+    """
+    This is a pure base class.
+    """
+
+    def __init__(self, tree_string):
+        tree = NewickIO.parse(tree_string, FelTree.NewickTree)
+        nvertices = len(list(tree.preorder()))
+        nleaves = len(list(tree.gen_tips()))
+        ordered_ids = self.tree_to_ordered_ids(tree)
+        self.D = np.array(tree.get_partial_distance_matrix(ordered_ids))
+        self.q = nleaves
+        self.p = nvertices - nleaves
+
+    def get_Dpq(self):
+        return self.D, self.p, self.q
+def LF_get_big_D(D, q, N):
+    """
+    LF means leaf first.
+    Note that D should be returned for N=1.
+    @param D: a distance matrix with leaves first
+    @param q: the number of leaves
+    @param N: expansion factor
+    """
+    if N < 2:
+        return self.D
+    p = len(D) - q
+    DQ, DX, DXT, DP = get_corners(D, q, p)
+    DQ_exp = vrep(hrep(DQ, N), N)
+    DX_exp = vrep(DX, N)
+    DP_exp = DP
+    return assemble_corners(DQ_exp, DX_exp, DX_exp.T, DP_exp)
+
+class LeafFirstModel(DistanceModel):
+
+    def tree_to_ordered_ids(self, tree):
+        ordered_ids = []
+        ordered_ids.extend(id(node) for node in tree.gen_tips())
+        ordered_ids.extend(id(node) for node in tree.gen_internal_nodes())
+        return ordered_ids
+
+    def get_DQ(self):
+        D, p, q = self.get_Dpq()
+        return D[:q, :q]
+
+    def get_DP(self):
+        D, p, q = self.get_Dpq()
+        return D[q:, q:]
+
+    def get_DX(self):
+        D, p, q = self.get_Dpq()
+        return D[:q, q:]
+
+    def get_expanded_matrix(self, N):
+        """
+        Note that D should be returned for N=1.
+        @param N: the number of replicates
+        @return: a distance matrix
+        """
+        if N < 2:
+            return self.D
+        DQ, DP, DX = self.get_DQ(), self.get_DP(), self.get_DX()
+        DQ_exp = np.hstack([np.vstack([DQ]*N)]*N)
+        DX_exp = np.vstack([DX]*N)
+        DP_exp = DP
+        return hstack([vstack([DQ_exp, DX_exp.T]),
+            vstack([DX_exp, DP_exp])])
+
+    def get_centered_expanded_matrix(N):
+        DX = self.get_expanded_matrix(N)
+        return MatrixUtil.double_centered(DX)
+
+    def get_centered_expanded_DQ(N):
+        """
+        Get a block of the expanded and centered matrix.
+        """
+        p, q = self.p, self.q
+        D = get_centered_expanded_matrix(N)
+        return D[:q, :q]
+
+    def get_centered_expanded_DX(N):
+        """
+        Get a block of the expanded and centered matrix.
+        """
+        p, q = self.p, self.q
+        D = get_centered_expanded_matrix(N)
+        return D[:q, :-p]
+
+
+class InternalFirstModel(DistanceModel):
+
+    def tree_to_ordered_ids(self, tree):
+        ordered_ids = []
+        ordered_ids.extend(id(node) for node in tree.gen_internal_nodes())
+        ordered_ids.extend(id(node) for node in tree.gen_tips())
+        return ordered_ids
+
+    def get_DQ(self):
+        D, p, q = self.get_Dpq()
+        return D[p:, p:]
+
+    def get_DP(self):
+        D, p, q = self.get_Dpq()
+        return D[:p, :p]
+
+    def get_DX(self):
+        D, p, q = self.get_Dpq()
+        return D[:p, p:]
+
+
+class ProofDecorationTest(unittest.TestCase):
+
+    def test_default(self):
+        pass
+
 
 def get_grant_proposal_points(D, nleaves):
     """
@@ -175,16 +354,6 @@ def get_animation_frame(
     context.restore()
     # create the image
     return cairo_helper.get_image_string()
-
-def get_ordered_ids_internal_first(tree):
-    """
-    @param tree: a tree
-    @return: a list of ids
-    """
-    ordered_ids = []
-    ordered_ids.extend(id(node) for node in tree.gen_internal_nodes())
-    ordered_ids.extend(id(node) for node in tree.gen_tips())
-    return ordered_ids
 
 def D_to_DX_internal_first(D, q):
     """
@@ -304,28 +473,5 @@ def D_to_B_second(D, q):
         raise ValueError(msg)
     return B
 
-def main(args):
-    raise NotImplementedError('main does not do anything')
-
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--scale', type=float, default=1.0,
-            help='define the drawing scale') 
-    parser.add_argument('--physical_width', type=int, default=480,
-            help='width (pixels)') 
-    parser.add_argument('--physical_height', type=int, default=360,
-            help='height (pixels)') 
-    parser.add_argument('--tree', default=g_tree_string,
-            help='newick tree with branch lengths')
-    parser.add_argument('--image_format', default='png',
-            choices=('png', 'svg', 'ps', 'pdf'),
-            help='image format')
-    parser.add_argument('--nframes', type=int, default=100,
-            help='number of animation frames (image files) to create') 
-    parser.add_argument('--interpolation', default='sigmoid',
-            choices=('sigmoid', 'linear'),
-            help='weights change according to this function')
-    parser.add_argument('output_directory',
-            help='path to the output directory for .png frames')
-    main(parser.parse_args())
-
+    unittest.main()
