@@ -1,4 +1,4 @@
-"""Create a tree MDS animation in 3D.
+"""Create a tree MDS animation in 3D. [NOWEB]
 
 Create a tree MDS animation
 showing progressive downweighting of internal nodes.
