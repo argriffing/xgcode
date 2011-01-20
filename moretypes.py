@@ -16,7 +16,7 @@ def positive_float(x):
         x = float(x)
     except ValueError:
         raise TypeError
-    if x < 0:
+    if x <= 0:
         raise TypeError
     return x
 
