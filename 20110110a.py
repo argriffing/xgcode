@@ -1,4 +1,4 @@
-"""Create a tree MDS animation in 3D. [UNFINISHED]
+"""Create a tree MDS animation in 3D.
 
 Create a tree MDS animation
 showing progressive downweighting of internal nodes.
@@ -19,14 +19,12 @@ Resolutions preferred by YouTube are 640x360 and 480x360.
 
 
 from StringIO import StringIO
-import random
 import os
 import math
-from itertools import product
 
 import numpy as np
-import cairo
 import argparse
+from enthought.mayavi import mlab
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -37,10 +35,113 @@ import Euclid
 import FelTree
 import CairoUtil
 import Progress
+import MatrixUtil
+import ProofDecoration
 import const
+
+g_plane_opacity = 0.1
+g_crossing_opacity = 1.0
+g_crossing_radius = 0.1
 
 g_tree_string = const.read('20100730g').rstrip()
 
+############################################################
+# 3d drawing functions
+
+
+def add_yz_plane():
+    x = [0, 0, 0, 0]
+    y = [-1, -1, 1, 1]
+    z = [-1, 1, 1, -1]
+    tris = [(0, 3, 2), (2, 1, 0)]
+    mesh = mlab.triangular_mesh(x, y, z,
+            tris,
+            color=(1, 0, 0),
+            opacity=g_plane_opacity)
+
+def add_zx_plane():
+    y = [0, 0, 0, 0]
+    x = [-1, -1, 1, 1]
+    z = [-1, 1, 1, -1]
+    tris = [(0, 3, 2), (2, 1, 0)]
+    mesh = mlab.triangular_mesh(x, y, z,
+            tris,
+            color=(0, 1, 0),
+            opacity=g_plane_opacity)
+
+def add_xy_plane():
+    z = [0, 0, 0, 0]
+    x = [-1, -1, 1, 1]
+    y = [-1, 1, 1, -1]
+    tris = [(0, 3, 2), (2, 1, 0)]
+    mesh = mlab.triangular_mesh(x, y, z,
+            tris,
+            color=(0, 0, 1),
+            opacity=g_plane_opacity)
+
+def draw_3d_tree(X, Y, Z, index_edges):
+    for a, b in index_edges:
+        foo = mlab.plot3d(
+                [X[a], X[b]],
+                [Y[a], Y[b]],
+                [Z[a], Z[b]],
+                color=(.5, .5, .5))
+
+def gen_angles(n):
+    for i in range(n+1):
+        yield 2*math.pi*i/float(n)
+
+def draw_x_crossing(y, z):
+    angles = list(gen_angles(20))
+    ys = [y + g_crossing_radius*math.cos(a) for a in angles]
+    zs = [z + g_crossing_radius*math.sin(a) for a in angles]
+    xs = np.zeros_like(ys)
+    foo = mlab.plot3d(
+            xs, ys, zs,
+            color=(1, 0, 0),
+            opacity=g_crossing_opacity)
+
+def draw_y_crossing(x, z):
+    angles = list(gen_angles(20))
+    xs = [x + g_crossing_radius*math.cos(a) for a in angles]
+    zs = [z + g_crossing_radius*math.sin(a) for a in angles]
+    ys = np.zeros_like(xs)
+    foo = mlab.plot3d(
+            xs, ys, zs,
+            color=(0, 1, 0),
+            opacity=g_crossing_opacity)
+
+def draw_z_crossing(x, y):
+    angles = list(gen_angles(20))
+    xs = [x + g_crossing_radius*math.cos(a) for a in angles]
+    ys = [y + g_crossing_radius*math.sin(a) for a in angles]
+    zs = np.zeros_like(xs)
+    foo = mlab.plot3d(
+            xs, ys, zs,
+            color=(0, 0, 1),
+            opacity=g_crossing_opacity)
+
+def draw_crossings(X, Y, Z, index_edges):
+    for a, b in index_edges:
+        if X[a]*X[b] < 0:
+            t = abs(X[b]) / abs(X[b] - X[a])
+            draw_x_crossing(
+                    t*Y[a] + (1-t)*Y[b],
+                    t*Z[a] + (1-t)*Z[b])
+        if Y[a]*Y[b] < 0:
+            t = abs(Y[b]) / abs(Y[b] - Y[a])
+            draw_y_crossing(
+                    t*X[a] + (1-t)*X[b],
+                    t*Z[a] + (1-t)*Z[b])
+        if Z[a]*Z[b] < 0:
+            t = abs(Z[b]) / abs(Z[b] - Z[a])
+            draw_z_crossing(
+                    t*X[a] + (1-t)*X[b],
+                    t*Y[a] + (1-t)*Y[b])
+
+
+############################################################
+# everything else
 
 def get_form():
     """
@@ -80,31 +181,9 @@ def get_response_content(fs):
     ext = Form.g_imageformat_to_ext[fs.imageformat]
     mass_vector = get_mass_vector(nvertices, nleaves, fs.progress)
     points = get_canonical_3d_mds(D, mass_vector, reference_points)
+    crossings = get_crossings(index_edges, points)
     return get_animation_frame(ext, physical_size, fs.scale,
-            mass_vector, index_edges, points)
-
-def reflect_to_reference(points, reference_points):
-    """
-    For 3D points, try each combination of reflections across the axes.
-    There are eight possible combinations of reflections.
-    Use the reflection that gives points closest to the reference points.
-    @param points: rows are 3D points
-    @param reference_points: rows are 3D points
-    @return: 
-    """
-    if points.shape != reference_points.shape:
-        msg_a = 'the point array and the reference point array '
-        msg_b = 'should have the same shape'
-        raise ValueError(msg_a + msg_b)
-    if len(points.shape) != 2:
-        msg = 'the points argument should be a matrix-like numpy array'
-        raise ValueError(msg)
-    if points.shape[1] != 3:
-        raise ValueError('the points should be in 3D space')
-    reflectors = np.array(list(product((-1,1), repeat=3)))
-    best_error, best_reflector = min((np.linalg.norm(
-        points*r - reference_points), r) for r in reflectors)
-    return points * best_reflector
+            mass_vector, index_edges, points, crossings)
 
 def get_index_edges(tree, ordered_ids):
     """
@@ -150,11 +229,33 @@ def get_canonical_3d_mds(D, m, reference_points):
     @return: the weighted MDS points as a numpy matrix
     """
     X = Euclid.edm_to_weighted_points(D, m)
-    return reflect_to_reference(X.T[:3].T, reference_points)
+    X_3d = X.T[:3].T
+    sign_vector = MatrixUtil.get_best_reflection(X_3d, reference_points)
+    return X_3d * sign_vector
 
-#FIXME
+def get_crossings(index_edges, points):
+    """
+    @param index_edges: defines the connectivity of the tree
+    @param points: an array of 3D points, the first few of which are leaves
+    @return: an array of 3D points intersecting the xy plane
+    """
+    crossings = []
+    for a, b in index_edges:
+        ax, ay, az = points[a].tolist()
+        bx, by, bz = points[b].tolist()
+        if 0 in (az, bz):
+            raise ValueError('a vertex intersects the xy plane')
+        if az*bz < 0:
+            t = abs(az) / abs(bz - az)
+            cx = (1-t)*ax + t*bx
+            cy = (1-t)*ay + t*by
+            cz = 0
+            crossings.append(np.array([cx, cy, cz]))
+    return crossings
+
 def get_animation_frame(
-        image_format, physical_size, scale, mass_vector, index_edges, points):
+        image_format, physical_size, scale,
+        mass_vector, index_edges, points, crossings):
     """
     This function is about drawing the tree.
     @param image_format: the image extension
@@ -163,6 +264,7 @@ def get_animation_frame(
     @param mass_vector: use this for visualizing the weights of the vertices
     @param index_edges: defines the connectivity of the tree
     @param points: an array of 3D points, the first few of which are leaves
+    @param crossings: an array of 3D points intersecting the xy plane
     @return: the animation frame as an image as a string
     """
     # before we begin drawing we need to create the cairo surface and context
@@ -173,6 +275,7 @@ def get_animation_frame(
     x0 = physical_size[0] / 2.0
     y0 = physical_size[1] / 2.0
     npoints = len(points)
+    ncrossings = len(crossings)
     # draw an off-white background
     context.save()
     context.set_source_rgb(.9, .9, .9)
@@ -194,10 +297,21 @@ def get_animation_frame(
     for edge in index_edges:
         ai, bi = tuple(edge)
         ax, ay, az = points[ai].tolist()
-        bx, by, az = points[bi].tolist()
+        bx, by, bz = points[bi].tolist()
         context.move_to(x0 + ax*scale, y0 + ay*scale)
         context.line_to(x0 + bx*scale, y0 + by*scale)
         context.stroke()
+    context.restore()
+    # draw the xy plane crossings
+    context.save()
+    context.set_source_rgba(1.0, 0.2, 0.2, 0.5)
+    for point in crossings:
+        x, y, z, = point.tolist()
+        nx = x0 + x*scale
+        ny = y0 + y*scale
+        dot_radius = 2
+        context.arc(nx, ny, dot_radius, 0, 2*math.pi)
+        context.fill()
     context.restore()
     # Draw vertices as translucent circles
     # with radius defined by the mass vector.
@@ -247,7 +361,7 @@ def main(args):
     index_edges = get_index_edges(tree, ordered_ids)
     # Create the reference points
     # so that the video frames are not reflected arbitrarily.
-    reference_points = Euclid.edm_to_points(D).T[:2].T
+    reference_points = Euclid.edm_to_points(D).T[:3].T
     # create the animation frames and write them as image files
     pbar = Progress.Bar(args.nframes)
     for frame_index in range(args.nframes):
@@ -257,14 +371,21 @@ def main(args):
         else:
             progress = linear_progress
         mass_vector = get_mass_vector(nvertices, nleaves, progress)
-        points = get_canonical_2d_mds(D, mass_vector, reference_points)
-        image_string = get_animation_frame(
-                args.image_format, physical_size, args.scale,
-                mass_vector, index_edges, points)
+        points = get_canonical_3d_mds(D, mass_vector, reference_points)
+        crossings = get_crossings(index_edges, points)
+        # define the frame path name
         image_filename = 'frame-%04d.%s' % (frame_index, args.image_format)
         image_pathname = os.path.join(args.output_directory, image_filename)
-        with open(image_pathname, 'wb') as fout:
-            fout.write(image_string)
+        # clear the old figure and render the new figure
+        mlab.clf()
+        add_yz_plane()
+        add_zx_plane()
+        add_xy_plane()
+        X, Y, Z = points.T[0], points.T[1], points.T[2]
+        draw_3d_tree(X, Y, Z, index_edges)
+        draw_crossings(X, Y, Z, index_edges)
+        mlab.savefig(image_pathname, size=physical_size)
+        # update the progress bar
         pbar.update(frame_index+1)
     pbar.finish()
 
@@ -289,4 +410,5 @@ if __name__ == '__main__':
     parser.add_argument('output_directory',
             help='path to the output directory for .png frames')
     main(parser.parse_args())
+
 
