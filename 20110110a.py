@@ -193,8 +193,8 @@ def get_animation_frame(
     context.set_source_rgb(.8, .8, .8)
     for edge in index_edges:
         ai, bi = tuple(edge)
-        ax, ay = points[ai].tolist()
-        bx, by = points[bi].tolist()
+        ax, ay, az = points[ai].tolist()
+        bx, by, az = points[bi].tolist()
         context.move_to(x0 + ax*scale, y0 + ay*scale)
         context.line_to(x0 + bx*scale, y0 + by*scale)
         context.stroke()
@@ -205,7 +205,7 @@ def get_animation_frame(
     context.set_source_rgba(0.2, 0.2, 1.0, 0.5)
     for point, mass in zip(points, mass_vector):
         if mass:
-            x, y = point.tolist()
+            x, y, z = point.tolist()
             nx = x0 + x*scale
             ny = y0 + y*scale
             dot_radius = 3*mass*npoints
