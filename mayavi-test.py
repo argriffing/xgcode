@@ -184,11 +184,14 @@ def add_tree():
     draw_crossings(X, Y, Z, index_edges)
 
 
+# try to not pop up an annoying window
+mlab.options.offscreen = True
+
 add_yz_plane()
 add_zx_plane()
 add_xy_plane()
 add_tree()
 
 #mlab.show()
-#mlab.savefig('myfig.png', size=(640, 480))
-mlab.savefig('mymodel.vrml', size=(640, 480))
+mlab.savefig('myfig.png', size=(640, 480))
+#mlab.savefig('mymodel.vrml', size=(640, 480))
