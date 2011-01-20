@@ -1,5 +1,6 @@
 """Create a tree MDS animation in 2D with nodes for crossings in the xy plane.
 
+Red dots show intersections of the tree with the xy plane.
 Create a tree MDS animation
 showing progressive downweighting of internal nodes.
 A sequence of .png files should be written
@@ -19,10 +20,8 @@ Resolutions preferred by YouTube are 640x360 and 480x360.
 
 
 from StringIO import StringIO
-import random
 import os
 import math
-from itertools import product
 
 import numpy as np
 import cairo
@@ -37,6 +36,7 @@ import Euclid
 import FelTree
 import CairoUtil
 import Progress
+import MatrixUtil
 import const
 
 g_tree_string = const.read('20100730g').rstrip()
@@ -84,29 +84,6 @@ def get_response_content(fs):
     return get_animation_frame(ext, physical_size, fs.scale,
             mass_vector, index_edges, points, crossings)
 
-def reflect_to_reference(points, reference_points):
-    """
-    For 3D points, try each combination of reflections across the axes.
-    There are eight possible combinations of reflections.
-    Use the reflection that gives points closest to the reference points.
-    @param points: rows are 3D points
-    @param reference_points: rows are 3D points
-    @return: 
-    """
-    if points.shape != reference_points.shape:
-        msg_a = 'the point array and the reference point array '
-        msg_b = 'should have the same shape'
-        raise ValueError(msg_a + msg_b)
-    if len(points.shape) != 2:
-        msg = 'the points argument should be a matrix-like numpy array'
-        raise ValueError(msg)
-    if points.shape[1] != 3:
-        raise ValueError('the points should be in 3D space')
-    reflectors = np.array(list(product((-1,1), repeat=3)))
-    best_error, best_reflector = min((np.linalg.norm(
-        points*r - reference_points), r) for r in reflectors)
-    return points * best_reflector
-
 def get_index_edges(tree, ordered_ids):
     """
     Given a tree and some ordered ids, get edges defined on indices.
@@ -151,7 +128,9 @@ def get_canonical_3d_mds(D, m, reference_points):
     @return: the weighted MDS points as a numpy matrix
     """
     X = Euclid.edm_to_weighted_points(D, m)
-    return reflect_to_reference(X.T[:3].T, reference_points)
+    X_3d = X.T[:3].T
+    sign_vector = MatrixUtil.get_best_reflection(X_3d, reference_points)
+    return X_3d * sign_vector
 
 def get_crossings(index_edges, points):
     """
@@ -281,7 +260,7 @@ def main(args):
     index_edges = get_index_edges(tree, ordered_ids)
     # Create the reference points
     # so that the video frames are not reflected arbitrarily.
-    reference_points = Euclid.edm_to_points(D).T[:2].T
+    reference_points = Euclid.edm_to_points(D).T[:3].T
     # create the animation frames and write them as image files
     pbar = Progress.Bar(args.nframes)
     for frame_index in range(args.nframes):
@@ -291,10 +270,11 @@ def main(args):
         else:
             progress = linear_progress
         mass_vector = get_mass_vector(nvertices, nleaves, progress)
-        points = get_canonical_2d_mds(D, mass_vector, reference_points)
+        points = get_canonical_3d_mds(D, mass_vector, reference_points)
+        crossings = get_crossings(index_edges, points)
         image_string = get_animation_frame(
                 args.image_format, physical_size, args.scale,
-                mass_vector, index_edges, points)
+                mass_vector, index_edges, points, crossings)
         image_filename = 'frame-%04d.%s' % (frame_index, args.image_format)
         image_pathname = os.path.join(args.output_directory, image_filename)
         with open(image_pathname, 'wb') as fout:

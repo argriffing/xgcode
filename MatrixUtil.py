@@ -350,6 +350,34 @@ def varimax(M, eps=1e-5, itermax=200):
         d = d_next
     return R
 
+def get_best_reflection(A, B):
+    """
+    Find best {-1, +1} multiples of columns of A to approximate B.
+    That is, minimize the frobenius norm of AS - B
+    where S is a diagonal matrix with {-1, +1} diagonal entries.
+    The returned array has the diagonal elements of S.
+    A motivation for this function is for the rows of matrix A
+    to represent new points up to reflection across each axis,
+    whereas rows of matrix B represent old points.
+    If v is the output of this function then, using numpy notation,
+    A*v gives the canonically reflected points of A
+    that best map onto the points of B.
+    @param A: a matrix
+    @param B: a matrix
+    @return: a 1d array of {-1, +1} entries
+    """
+    assert_2d(A)
+    assert_2d(B)
+    if A.shape != B.shape:
+        raise MatrixError('the shapes of A and B should be the same')
+    nrows, ncols = A.shape
+    best_signs = np.ones(ncols)
+    for i in range(ncols):
+        pos_error = np.linalg.norm(A.T[i] - B.T[i])
+        neg_error = np.linalg.norm(-A.T[i] - B.T[i])
+        if neg_error < pos_error:
+            best_signs[i] = -1
+    return best_signs
 
 class TestMatrixUtil(unittest.TestCase):
 
@@ -361,7 +389,8 @@ class TestMatrixUtil(unittest.TestCase):
         row_major = [[1, 2, 3], [4, 5, 6]]
         row_labels = [0, 1]
         column_labels = [0, 1, 2]
-        self.assertEquals(dict_to_row_major(d, row_labels, column_labels), row_major)
+        self.assertEquals(
+                dict_to_row_major(d, row_labels, column_labels), row_major)
 
     def test_read_matrix_good(self):
         s = '1 2 3 \n 4 5 6'
