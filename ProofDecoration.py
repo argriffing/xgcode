@@ -26,12 +26,7 @@ matrix sub-block abbreviation:
 import unittest
 import numpy as np
 
-from SnippetUtil import HandlingError
-import SnippetUtil
-import Form
-import FormOut
 import NewickIO
-import Euclid
 import MatrixUtil
 import EigUtil
 import FelTree
