@@ -1,29 +1,22 @@
 """Draw an MDS with imputed internal nodes.
 
-This is a sanity check of some equations in a manuscript.
+The purpose is to double check some equations in a manuscript.
 """
 
 
 from StringIO import StringIO
-import os
 import math
-from itertools import product
 
 import numpy as np
 import cairo
-import argparse
 
-from SnippetUtil import HandlingError
-import SnippetUtil
 import Form
 import FormOut
 import NewickIO
-import Euclid
 import MatrixUtil
 import EigUtil
 import FelTree
 import CairoUtil
-import Progress
 import ProofDecoration
 import const
 
