@@ -1,8 +1,8 @@
-"""Plot the first few eigenfunctions of the Laplacian of a path.
-"""
+"""Plot the first few eigenvectors of the Laplacian of a path.
 
-from StringIO import StringIO
-from itertools import product
+The eigenvectors are plotted in a way
+that makes them look like eigenfunction approximations.
+"""
 
 import numpy as np
 import cairo
@@ -14,8 +14,6 @@ import Euclid
 import CairoUtil
 import iterutils
 
-g_naxes = 4
-
 def get_form():
     """
     @return: a list of form objects
@@ -23,7 +21,9 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.Integer('nvertices', 'use this many vertices',
-                20, low=g_naxes+1, high=100),
+                20, low=2, high=100),
+            Form.Integer('naxes', 'plot this many eigenvectors',
+                4, low=1),
             Form.RadioGroup('eigenvalue_option', 'eigenvalue usage', [
                 Form.RadioItem('eigenvalue_scaling',
                     'scale by square roots of eigenvalues', True),
@@ -56,6 +56,11 @@ def create_laplacian_matrix(nvertices):
     return L
 
 def get_response_content(fs):
+    # check input compatibility
+    if fs.nvertices < fs.naxes+1:
+        msg_a = 'attempting to plot too many eigenvectors '
+        msg_b = 'for the given number of vertices'
+        raise ValueError(msg_a + msg_b)
     # define the requested physical size of the images (in pixels)
     physical_size = (640, 480)
     # get the points
@@ -70,8 +75,8 @@ def get_response_content(fs):
         vectors = [np.array(v) for w, v in list(reversed(sorted(zip(np.sqrt(W), V))))[:-1]]
     X = np.array(zip(*vectors))
     # transform the points to eigenfunctions such that the first point is positive
-    F = X.T[:g_naxes]
-    for i in range(g_naxes):
+    F = X.T[:fs.naxes]
+    for i in range(fs.naxes):
         if F[i][0] < 0:
             F[i] *= -1
     # draw the image
@@ -122,7 +127,12 @@ def create_image_string(image_format, physical_size, F, xaxis_length):
     #F = np.vstack([F, np.sum(F, 0)])
     #colors.append((0.5, 0.5, 0.5))
     # draw the eigenfunctions
-    for color, v in zip(colors, F):
+    for i, v in enumerate(F):
+        # define the color
+        if i < len(colors):
+            color = colors[i]
+        else:
+            color = (0,0,0)
         # define the sequence of physical points
         seq = []
         for i, y in enumerate(v):
