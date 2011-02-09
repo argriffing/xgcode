@@ -166,9 +166,14 @@ def get_response_content(fs):
     h = 1/d
     # construct the studded tree Laplacian matrix
     if fs.sparse:
+        v0 = np.ones(N, dtype=float)
         L_csr = create_laplacian_csr_matrix(fs.lena, fs.lenb, fs.lenc)
+        arpack_k = fs.eigk+1
+        ncv = 3*arpack_k + 3
         ws, vs = scipy.sparse.linalg.eigen_symmetric(
-                L_csr, fs.eigk+1, which='SM', return_eigenvectors=True)
+                L_csr, arpack_k, which='SM',
+                v0=v0,
+                ncv=ncv, return_eigenvectors=True)
         ws = ws[1:]
         vs = vs.T[1:]
     else:
