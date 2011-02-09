@@ -6,12 +6,17 @@ All edge distances and weights will be 1,
 at least in the first version.
 To estimate first and second derivatives of eigenvectors on a branch,
 the branch must have length at least one or two respectively.
+Apparently the scipy sparse eigendecomposition is buggy.
+So if you use a sparse matrix representation
+then take the result with a grain of salt.
 """
 
 import math
 from StringIO import StringIO
 
 import numpy as np
+import scipy.sparse
+import scipy.sparse.linalg
 
 import Form
 import FormOut
@@ -31,16 +36,68 @@ def get_form():
                 7, low=0, high=400),
             Form.Integer('lenc', 'integer length of third branch',
                 13, low=0, high=400),
-            Form.Integer('eigk', 'show this eigenvector (Fiedler is 1)',
+            Form.Integer('eigk', 'use this eigenvector (Fiedler is 1)',
                 1, low=1),
             #Form.Integer('branchk', 'show this branch (first is 1)',
             #   1, low=1, high=3),
-            Form.CheckGroup('mycheck', 'extra output options', [
-                Form.CheckItem('showmatrix', 'show Laplacian', False)])]
+            Form.CheckGroup('mycheck', 'extra options', [
+                Form.CheckItem('sparse', 'use a sparse matrix format', True),
+                Form.CheckItem('showv', 'show the eigenpair', False),
+                Form.CheckItem('showmatrix', 'show the matrix', False)])]
     return form_objects
 
 def get_form_out():
     return FormOut.Report()
+
+def create_laplacian_csr_matrix(lena, lenb, lenc):
+    """
+    Create a sparse matrix.
+    Begin by creating the triangular matrix where nonzero elements
+    have row index less than column index.
+    Then add the opposite triangle to form a symmetric matrix.
+    Then add the diagonal elements.
+    @param lena: integer length of first branch.
+    @param lenb: integer length of second branch.
+    @param lenc: integer length of third branch.
+    """
+    # Initialize the triples: matrix element, row index, and column index.
+    drc_triples = []
+    # Initialize the data list, row index list, and column index list.
+    #d, r, c = []
+    # Initialize the number of vertices.
+    N = 1 + lena + lenb + lenc
+    # Add connections to the hub vertex.
+    if lena:
+        drc_triples.append((-1, 0, 1))
+    if lenb:
+        drc_triples.append((-1, 0, lena+1))
+    if lenc:
+        drc_triples.append((-1, 0, lena+lenb+1))
+    # Add connections on the first branch.
+    for i in range(lena-1):
+        j = i + 1
+        drc_triples.append((-1, j, j+1))
+    # Add connections on the second branch.
+    for i in range(lenb-1):
+        j = lena + i + 1
+        drc_triples.append((-1, j, j+1))
+    # Add connections on the second branch.
+    for i in range(lenc-1):
+        j = lena + lenb + i + 1
+        drc_triples.append((-1, j, j+1))
+    # Define the opposite triangle drc triples.
+    drc_opp = [(d, c, r) for d, r, c in drc_triples]
+    # Define the diagonal drc triples.
+    drc_diag_a = [(-d, c, c) for d, r, c in drc_triples]
+    drc_diag_b = [(-d, c, c) for d, r, c in drc_opp]
+    # Define the total drc triples.
+    drc_total = drc_triples + drc_opp + drc_diag_a + drc_diag_b
+    # Define the separate {d, r, c} lists.
+    vd, vr, vc = zip(*drc_total)
+    # Create the sparse coordinate format matrix.
+    S = scipy.sparse.coo_matrix((np.array(vd, dtype=float), (vr, vc)), (N, N))
+    # Return a more sophisticated compressed sparse row format matrix.
+    return S.tocsr()
 
 def create_laplacian_matrix(lena, lenb, lenc):
     """
@@ -97,23 +154,31 @@ def value_to_string(x):
 def get_response_content(fs):
     # define the number of nodes
     N = 1 + fs.lena + fs.lenb + fs.lenc
-    # define the total distance of the constructed tree
-    d = float(N-1)
-    h = 1/d
     # check input compatibility
     if not (fs.eigk+1 <= N):
         msg_a = 'attempting to find a too highly indexed eigenvector '
         msg_b = 'for the number of vertices in the graph'
         raise ValueError(msg_a + msg_b)
+    if N < 2:
+        raise ValueError('the tree has no length')
+    # define the total distance of the constructed tree
+    d = float(N-1)
+    h = 1/d
     # construct the studded tree Laplacian matrix
-    L = create_laplacian_matrix(fs.lena, fs.lenb, fs.lenc)
-    # compute the eigendecomposition
-    ws, vs = EigUtil.eigh(L)
-    # reorder the eigenvalues and eigenvectors
-    ws = ws[:-1][::-1]
-    vs = vs[:-1][::-1]
+    if fs.sparse:
+        L_csr = create_laplacian_csr_matrix(fs.lena, fs.lenb, fs.lenc)
+        ws, vs = scipy.sparse.linalg.eigen_symmetric(
+                L_csr, fs.eigk+1, which='SM', return_eigenvectors=True)
+        ws = ws[1:]
+        vs = vs.T[1:]
+    else:
+        L = create_laplacian_matrix(fs.lena, fs.lenb, fs.lenc)
+        ws, vs = EigUtil.eigh(L)
+        ws = ws[:-1][::-1]
+        vs = vs[:-1][::-1]
     scaling_factor = math.sqrt(N * 0.5)
     # get the eigenvector of interest
+    eigenvalue = ws[fs.eigk-1]
     v = vs[fs.eigk-1]
     # init the branch info
     binfos = [BranchInfo() for i in range(3)]
@@ -181,8 +246,20 @@ def get_response_content(fs):
             print >> out, "pendant  f'(x): ", value_to_string(binfo.q1)
             print >> out, "pendant  f''(x):", value_to_string(binfo.q2)
         print >> out
-    if fs.showmatrix:
-        print >> out, 'Laplacian matrix:'
-        print >> out, L
+    if fs.showv:
+        print >> out, 'the eigenvalue:'
+        print >> out, eigenvalue
         print >> out
+        print >> out, 'the whole eigenvector:'
+        print >> out, v
+        print >> out
+    if fs.showmatrix:
+        if fs.sparse:
+            print >> out, 'Laplacian matrix (from sparse internal repr):'
+            print >> out, L_csr.toarray()
+            print >> out
+        else:
+            print >> out, 'Laplacian matrix (from dense internal repr):'
+            print >> out, L
+            print >> out
     return out.getvalue()
