@@ -28,8 +28,11 @@ g_line_width_thick = 4.0
 
 g_color_dark = (0.0, 0.0, 0.0)
 g_color_light = (0.4, 0.4, 0.4)
+g_color_bad_edge = (1.0, 0, 0)
 
 g_barb_radius = 5.0
+
+g_min_valuation_radius = 1e-8
 
 
 def get_form():
@@ -44,9 +47,9 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.Integer('eig_idx1',
-                'first eigenfunction index (1 means Fiedler)', 1, low=1),
+                'first eigenfunction index (1 means Fiedler)', 1, low=0),
             Form.Integer('eig_idx2',
-                'second eigenfunction index (1 means Fiedler)', 2, low=1),
+                'second eigenfunction index (1 means Fiedler)', 2, low=0),
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -104,6 +107,14 @@ def get_response_content(fs):
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
 
+def is_bad_edge(node, child, v1, v2):
+    v1_pair = (v1[id(node)], v1[id(child)])
+    v2_pair = (v2[id(node)], v2[id(child)])
+    if max(abs(v) for v in v1_pair) < g_min_valuation_radius:
+        return True
+    if max(abs(v) for v in v2_pair) < g_min_valuation_radius:
+        return True
+    return False
 
 def get_tree_image(tree, max_size, image_format, v1, v2):
     """
@@ -132,13 +143,25 @@ def get_tree_image(tree, max_size, image_format, v1, v2):
     context.restore()
     # center on the tree
     context.translate(width/2.0, height/2.0)
+    # draw the bad branches
+    for node, child in tree.gen_directed_branches():
+        if is_bad_edge(node, child, v1, v2):
+            context.save()
+            psrc = tree._layout_to_display(node.location)
+            pdst = tree._layout_to_display(child.location)
+            context.set_source_rgb(*g_color_bad_edge)
+            context.move_to(*psrc)
+            context.line_to(*pdst)
+            context.stroke()
+            context.restore()
     # draw the directed branches
     for node, child in tree.gen_directed_branches():
+        if is_bad_edge(node, child, v1, v2):
+            continue
         context.save()
         context.set_source_rgb(*g_color_light)
         # Get the valuations and (x,y) points of each node.
-        vsrc = v1[id(node)]
-        vdst = v1[id(child)]
+        vsrc, vdst = v1[id(node)], v1[id(child)]
         psrc = tree._layout_to_display(node.location)
         pdst = tree._layout_to_display(child.location)
         if vsrc < 0 and vdst < 0:
@@ -174,10 +197,11 @@ def get_tree_image(tree, max_size, image_format, v1, v2):
         context.restore()
     # draw the v2 zero crossing ticks perpendicular to the edge
     for node, child in tree.gen_directed_branches():
+        if is_bad_edge(node, child, v1, v2):
+            continue
         context.save()
         # Get the valuations and (x,y) points of each node.
-        vsrc = v2[id(node)]
-        vdst = v2[id(child)]
+        vsrc, vdst = v2[id(node)], v2[id(child)]
         psrc = tree._layout_to_display(node.location)
         pdst = tree._layout_to_display(child.location)
         if vsrc * vdst < 0:
