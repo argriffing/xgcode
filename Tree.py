@@ -22,6 +22,17 @@ class Tree:
         return self.root.get_max_depth(0)
     def get_height(self):
         return self.get_max_depth()
+    def gen_directed_branches(self):
+        """This is untested."""
+        #FIXME add test
+        v = [self.get_root()]
+        while v:
+            nextv = []
+            for node in v:
+                for child in node.gen_children():
+                    yield node, child
+                    nextv.append(child)
+            v = nextv
     def breadth_first(self):
         if self.root:
             shell = self.root.children
@@ -111,10 +122,7 @@ class TreeNode:
     def get_parent(self):
         return self.parent
     def has_children(self):
-        if self.children:
-            return True
-        else:
-            return False
+        return any(self.children)
     def get_neighbor_count(self):
         count = self.get_child_count()
         if self.parent:

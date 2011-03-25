@@ -107,6 +107,15 @@ class NewickTree(Tree.Tree):
         yield 'the number of branches with zero length is %d' % len([node for node in self.gen_non_root_nodes() if node.blen == 0.0])
         yield 'the diameter of the tree is %f' % self.get_diameter()
 
+    def gen_directed_branches_with_length(self):
+        for node, child in self.gen_directed_branches():
+            yield node, child, child.blen
+
+    def gen_bidirected_branches_with_length(self):
+        for node, child in self.gen_directed_branches():
+            yield node, child, child.blen
+            yield child, node, child.blen
+
 
     def get_unique_node(self, name):
         valid_nodes = [node for node in self.preorder() if node.name == name]
