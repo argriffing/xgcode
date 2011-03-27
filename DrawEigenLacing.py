@@ -30,11 +30,11 @@ g_barb_radius = 5.0
 g_min_valuation_radius = 1e-8
 
 
-def wat(tree, eig_idx1, eig_idx2):
+def get_harmonic_valuations(tree, eig_idx):
     """
     @param tree: a SpatialTree
-    @param eig_idx1: first eigen index, 1 is Fiedler
-    @param eig_idx2: second eigen index, 1 is Fiedler
+    @param eig_idx: eigen index, 1 is Fiedler
+    @return: map from node id to harmonic valuation
     """
     # make the adjacency matrix
     ordered_tip_ids = [id(node) for node in tree.gen_tips()]
@@ -52,7 +52,7 @@ def wat(tree, eig_idx1, eig_idx2):
         A[idxa, idxb] = weight
     # check the requested indices
     eig_msg = 'eigenfunction indices must be less than the number of leaves'
-    if fs.eig_idx1 >= q or fs.eig_idx2 >= q:
+    if eig_idx >= q:
         raise ValueError(eig_msg)
     # define the Laplacian matrix and its pieces
     L = np.diag(np.sum(A, axis=0)) - A
@@ -60,21 +60,14 @@ def wat(tree, eig_idx1, eig_idx2):
     L12 = L[:q][:, -p:]
     L22 = L[-p:][:, -p:]
     L22_pinv = np.linalg.pinv(L22)
-    print L11.shape, L12.shape, L22.shape
     L_star = L11 - np.dot(L12, np.dot(L22_pinv, L12.T))
     W, V1 = scipy.linalg.eigh(L_star)
     V2 = -np.dot(np.dot(L22_pinv, L12.T), V1)
     V = np.vstack([V1, V2])
     # define the vertex valuations
-    id_to_v1 = dict((myid, V[i, fs.eig_idx1]) for i, myid in enumerate(
+    id_to_v = dict((myid, V[i, eig_idx]) for i, myid in enumerate(
         ordered_ids))
-    id_to_v2 = dict((myid, V[i, fs.eig_idx2]) for i, myid in enumerate(
-        ordered_ids))
-    # do the layout
-    layout = FastDaylightLayout.StraightBranchLayout()
-    layout.do_layout(tree)
-    # draw the tree
-    return get_tree_image(tree, (640, 480), ext, id_to_v1, id_to_v2)
+    return id_to_v
 
 def is_bad_edge(node, child, v1, v2):
     v1_pair = (v1[id(node)], v1[id(child)])
