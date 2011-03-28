@@ -1,4 +1,4 @@
-""" Draw a tree annotated with roots of eigenfunctions.
+""" Draw trees annotated with roots of eigenfunctions.
 
 Use the harmonic extensions of eigenvectors
 of the Schur complement Laplacian matrix.
@@ -25,10 +25,13 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.Integer('eig_idx1',
-                'first eigenfunction index (1 means Fiedler)', 1, low=0),
-            Form.Integer('eig_idx2',
-                'second eigenfunction index (1 means Fiedler)', 2, low=0),
+            Form.Integer('first_index',
+                'first eigenfunction index (1 means Fiedler)', 0, low=0),
+            Form.Integer('last_index',
+                'last eigenfunction index (1 means Fiedler)', 4, low=0),
+            Form.Integer('ncols', 'use this many columns', 1, low=1),
+            Form.CheckGroup('check_options', 'output options', [
+                Form.CheckItem('draw_background', 'draw background', True)]),
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -39,9 +42,13 @@ def get_form_out():
 def get_response_content(fs):
     # get a properly formatted newick tree with branch lengths
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
+    # check the indices
+    if fs.last_index <= fs.first_index:
+        msg = 'the last index should be greater than the first index'
+        raise ValueError(msg)
     # get the vertex valuations
-    id_to_v1 = DrawEigenLacing.get_harmonic_valuations(tree, fs.eig_idx1)
-    id_to_v2 = DrawEigenLacing.get_harmonic_valuations(tree, fs.eig_idx2)
+    valuations = [DrawEigenLacing.get_harmonic_valuations(
+        tree, i) for i in range(fs.first_index, fs.last_index+1)]
     # do the layout
     try:
         layout = FastDaylightLayout.StraightBranchLayout()
@@ -51,7 +58,8 @@ def get_response_content(fs):
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
-        return DrawEigenLacing.get_single_tree_image(
-                tree, (640, 480), ext, id_to_v1, id_to_v2)
+        return DrawEigenLacing.get_forest_image(
+                tree, (640, 480), ext, valuations,
+                fs.ncols, fs.draw_background)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)

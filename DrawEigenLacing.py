@@ -14,20 +14,25 @@ import Newick
 import SpatialTree
 import FastDaylightLayout
 import CairoUtil
+import iterutils
 
 
 g_line_width_thin = 1.0
 g_line_width_normal = 2.0
-g_line_width_thick = 4.0
+g_line_width_thick = 3.0
 
 g_color_background = (0.9, 0.9, 0.9)
 g_color_dark = (0.0, 0.0, 0.0)
 g_color_light = (0.6, 0.6, 0.6)
 g_color_bad_edge = (1.0, 0, 0)
 
-g_barb_radius = 5.0
+g_barb_radius = 4.0
 
 g_min_valuation_radius = 1e-8
+
+g_pixel_border = 10
+g_min_pane_width = 10
+g_min_pane_height = 10
 
 
 def get_harmonic_valuations(tree, eig_idx):
@@ -77,6 +82,69 @@ def is_bad_edge(node, child, v1, v2):
     if max(abs(v) for v in v2_pair) < g_min_valuation_radius:
         return True
     return False
+
+def get_forest_image(tree, max_size, image_format, vs, ncols, bdrawbackground):
+    """
+    Get the image of the tree.
+    This could be called from outside the module.
+    @param tree: something like a SpatialTree
+    @param max_size: (max_width, max_height)
+    @param image_format: a string that determines the image format
+    @param vs: sequence of maps from node id to valuation
+    @param ncols: use this many columns
+    @param bdrawbackground: whether or not to draw the background
+    @return: a string containing the image data
+    """
+    npairs = len(vs)-1
+    if npairs < 1:
+        raise ValueError('not enough valuation maps')
+    # get the number of rows
+    nrows, remainder = divmod(npairs, ncols)
+    if remainder:
+        nrows += 1
+    # get the max width and height per pane
+    max_width, max_height = max_size
+    max_pane_width = (max_width - g_pixel_border*(ncols+1))/ncols
+    max_pane_height = (max_height - g_pixel_border*(nrows+1))/nrows
+    if max_pane_width < g_min_pane_width:
+        raise ValueError('not enough room')
+    if max_pane_height < g_min_pane_height:
+        raise ValueError('not enough room')
+    max_pane_size = (max_pane_width, max_pane_height)
+    # rotate and center the tree on (0, 0)
+    tree.fit(max_pane_size)
+    # get the width and height of the tree image
+    xmin, ymin, xmax, ymax = tree.get_extents()
+    pane_width = xmax - xmin
+    pane_height = ymax - ymin
+    width = g_pixel_border + ncols*(pane_width + g_pixel_border)
+    height = g_pixel_border + nrows*(pane_height + g_pixel_border)
+    # create the surface
+    cairo_helper = CairoUtil.CairoHelper(image_format)
+    surface = cairo_helper.create_surface(width, height)
+    context = cairo.Context(surface)
+    # draw the background
+    if bdrawbackground:
+        context.save()
+        context.set_source_rgb(*g_color_background)
+        context.paint()
+        context.restore()
+    # draw the trees
+    context.translate(g_pixel_border + pane_width/2.0, 0)
+    context.translate(0, g_pixel_border + pane_height/2.0)
+    for i, (v1, v2) in enumerate(iterutils.pairwise(vs)):
+        # draw the tree into the context
+        draw_single_tree(tree, context, v1, v2)
+        # move the drawing position
+        if i % nrows == nrows - 1:
+            # move to the next column
+            context.translate(g_pixel_border + pane_width, 0)
+            # move to the first row
+            context.translate(0, -(nrows-1)*(g_pixel_border + pane_height))
+        else:
+            context.translate(0, g_pixel_border + pane_height)
+    # get the image string
+    return cairo_helper.get_image_string()
 
 def get_single_tree_image(tree, max_size, image_format, v1, v2):
     """
