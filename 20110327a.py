@@ -31,7 +31,9 @@ def get_form():
                 'last eigenfunction index (1 means Fiedler)', 4, low=0),
             Form.Integer('ncols', 'use this many columns', 1, low=1),
             Form.CheckGroup('check_options', 'output options', [
-                Form.CheckItem('draw_background', 'draw background', True)]),
+                Form.CheckItem('draw_background', 'draw background', True),
+                Form.CheckItem('draw_vertices', 'draw vertices'),
+                Form.CheckItem('draw_labels', 'draw labels', True)]),
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -59,7 +61,7 @@ def get_response_content(fs):
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return DrawEigenLacing.get_forest_image(
-                tree, (640, 480), ext, valuations,
-                fs.ncols, fs.draw_background)
+                tree, (640, 480), ext, valuations, fs.ncols, 
+                fs.draw_background, fs.draw_vertices, fs.draw_labels)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)

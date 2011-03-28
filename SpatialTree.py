@@ -41,12 +41,21 @@ class AngleInterval:
         """
         @return: the angle spanned by the interval
         """
-        return (self.high - self.low) % m2pi
+        mag = (self.high - self.low) % m2pi
+        return mag
+
+    def get_mid_angle(self):
+        """
+        @return: the mid angle
+        """
+        mid = (self.low + self.get_magnitude() / 2.0) % m2pi
+        return mid
 
     def update(self, other):
         """
         Modify the current interval by adding another interval.
-        The union of the ranges is assumed to be contiguous and to span less than 2*pi radians.
+        The union of the ranges
+        is assumed to be contiguous and to span less than 2*pi radians.
         """
         triples = []
         for low in (self.low, other.low):

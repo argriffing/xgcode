@@ -23,8 +23,6 @@ class Tree:
     def get_height(self):
         return self.get_max_depth()
     def gen_directed_branches(self):
-        """This is untested."""
-        #FIXME add test
         v = [self.get_root()]
         while v:
             nextv = []
@@ -33,6 +31,10 @@ class Tree:
                     yield node, child
                     nextv.append(child)
             v = nextv
+    def gen_bidirected_branches(self):
+        for a, b, in self.gen_directed_branches():
+            yield a, b
+            yield b, a
     def breadth_first(self):
         if self.root:
             shell = self.root.children
