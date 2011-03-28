@@ -5,6 +5,7 @@ of the Schur complement Laplacian matrix.
 """
 
 import math
+import string
 
 import cairo
 import numpy as np
@@ -31,7 +32,7 @@ g_barb_radius = 4.0
 g_min_valuation_radius = 1e-8
 
 g_border_outer = 15
-g_border_inner = 2*g_border_outer
+g_border_inner = 40
 g_min_pane_width = 10
 g_min_pane_height = 10
 
@@ -141,6 +142,23 @@ def get_forest_image(tree, max_size, image_format, vs, ncols,
         context.set_source_rgb(*g_color_background)
         context.paint()
         context.restore()
+        # draw rectangles for the panes
+        if False:
+            gap = g_border_inner - 2*g_border_outer
+            if gap > 0:
+                for row in range(nrows):
+                    for col in range(ncols):
+                        index = col*nrows + row
+                        if index < npairs:
+                            context.save()
+                            context.set_source_rgb(*g_color_background)
+                            x = col*(pane_width + g_border_inner)
+                            y = row*(pane_height + g_border_inner)
+                            w = 2*g_border_outer + pane_width
+                            h = 2*g_border_outer + pane_height
+                            context.rectangle(x, y, x+w, y+h)
+                            context.fill()
+                            context.restore()
     # draw the trees
     context.translate(g_border_outer + pane_width/2.0, 0)
     context.translate(0, g_border_outer + pane_height/2.0)
@@ -155,6 +173,20 @@ def get_forest_image(tree, max_size, image_format, vs, ncols,
             bgcolor = (1.0, 1.0, 1.0)
         draw_single_tree(tree, context, v1, v2, bgcolor,
                 bdrawvertices, bdrawlabels)
+        # draw the pane label into the context
+        # TODO conditional
+        if i < len(string.uppercase):
+            letter = string.uppercase[i]
+        else:
+            letter = '?'
+        context.save()
+        context.set_font_size(20.0)
+        xbear, ybear, w, h, xadv, yadv = context.text_extents(letter)
+        xtarget = -pane_width/2
+        ytarget = -pane_height/2 + h
+        context.move_to(xtarget, ytarget)
+        context.show_text(letter)
+        context.restore()
         # move the drawing position
         if i % nrows == nrows - 1:
             # move to the next column
