@@ -22,10 +22,6 @@ def get_angle(pa, pb):
     return math.atan2(by - ay, bx - ax)
 
 
-class AngleIntervalError(Exception):
-    pass
-
-
 class AngleInterval:
     """
     An angle interval is a (low, high) pair.
@@ -45,6 +41,7 @@ class AngleInterval:
 
     def get_mid_angle(self):
         """
+        This is useful for drawing internal node labels.
         @return: the mid angle
         """
         mid = (self.low + self.get_magnitude() / 2.0) % m2pi
@@ -53,8 +50,8 @@ class AngleInterval:
     def update(self, other):
         """
         Modify the current interval by adding another interval.
-        The union of the ranges
-        is assumed to be contiguous and to span less than 2*pi radians.
+        The union of the ranges is assumed to be contiguous
+        and to span less than 2*pi radians.
         """
         triples = []
         for low in (self.low, other.low):
@@ -75,8 +72,8 @@ class AngleInterval:
 
 def _get_scaling_factor(current_size, max_size):
     """
-    @param current_size: the width and height of the bounding box of the image we want to draw
-    @param max_size: the maximum allowed width and height
+    @param current_size: the width and height of the current bounding box
+    @param max_size: the width and height of the target bounding box
     @return: the amount by which the current size should be scaled
     """
     cwidth, cheight = current_size
@@ -105,7 +102,8 @@ class SpatialTreeNode(Newick.NewickNode):
         # theta is relative to the direction of the parent node
         # this is obsolescent
         self.theta = None
-        # location is with respect to the layout coordinate system not the display coordinate system
+        # The location is with respect to the layout coordinate system
+        # not the display coordinate system.
         self.location = None
 
     def set_location(self, location):
@@ -130,7 +128,8 @@ class SpatialTree(Newick.NewickTree):
 
     def __init__(self, root=None):
         """
-        The 2d transformation referred to here is for putting the tree into a box.
+        The tree is associated with a 2D transform.
+        The transform puts the tree into a box.
         """
         Newick.NewickTree.__init__(self, root)
         self.scale = 1
@@ -179,7 +178,8 @@ class SpatialTree(Newick.NewickTree):
         This call assumes that a layout has already been done.
         @return: (min(x), min(y), max(x), max(y))
         """
-        tip_locations = [self._layout_to_display(tip.location) for tip in self.gen_tips()]
+        tip_locations = [self._layout_to_display(
+            tip.location) for tip in self.gen_tips()]
         xs = [x for x, y in tip_locations]
         ys = [y for x, y in tip_locations]
         return (min(xs), min(ys), max(xs), max(ys))
@@ -190,9 +190,11 @@ class SpatialTree(Newick.NewickTree):
         Each node has a corresponding branch except for the root node.
         """
         for node in self.gen_non_root_nodes():
-            src_display_location = self._layout_to_display(node.parent.location)
+            src_display_location = self._layout_to_display(
+                    node.parent.location)
             dst_display_location = self._layout_to_display(node.location)
-            yield SpatialTreeBranch(src_display_location, dst_display_location, node)
+            yield SpatialTreeBranch(
+                    src_display_location, dst_display_location, node)
 
     def insert_node(self, node, parent, child, fraction):
         """
@@ -200,7 +202,7 @@ class SpatialTree(Newick.NewickTree):
         @param node: the new node to be inserted
         @param parent: the parent of the new node
         @param child: the child of the new node
-        @param fraction: a number between 0 and 1 that is small when the inserted node is closer to the parent
+        @param fraction: a proportion, small when inserted node is near parent
         """
         Newick.NewickTree.insert_node(self, node, parent, child, fraction)
         if parent.location and child.location:
