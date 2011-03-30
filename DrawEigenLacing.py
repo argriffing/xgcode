@@ -91,6 +91,114 @@ def is_bad_edge(node, child, v1, v2):
         return True
     return False
 
+def get_eg2_image(tree, max_size, image_format, v1, v2s,
+        bdrawbackground, bdrawvertices, bdrawlabels):
+    """
+    Get the image of the tree.
+    This could be called from outside the module.
+    @param tree: something like a SpatialTree
+    @param max_size: (max_width, max_height)
+    @param image_format: a string that determines the image format
+    @param v1: a valuation dictionary
+    @param v2s: fourteen valuation dictionaries
+    @param bdrawbackground: flag to draw the background
+    @param bdrawvertices: flag to draw vertices
+    @param bdrawlabels: flag to draw labels
+    @return: a string containing the image data
+    """
+    # Define the number of columns and the number of rows.
+    # Note that there is raggedness.
+    ncols = 3
+    nrows = 5
+    # hardcoded
+    # TODO change the npairs name as it is not applicable
+    npairs = 14
+    # get the max width and height per pane
+    max_width, max_height = max_size
+    max_pane_width = (
+            max_width - 2*g_border_outer - g_border_inner*(ncols-1))/ncols
+    max_pane_height = (
+            max_height - 2*g_border_outer - g_border_inner*(nrows-1))/nrows
+    if max_pane_width < g_min_pane_width:
+        raise ValueError('not enough room')
+    if max_pane_height < g_min_pane_height:
+        raise ValueError('not enough room')
+    max_pane_size = (max_pane_width, max_pane_height)
+    # rotate and center the tree on (0, 0)
+    tree.fit(max_pane_size)
+    # get the width and height of the tree image
+    xmin, ymin, xmax, ymax = tree.get_extents()
+    pane_width = xmax - xmin
+    pane_height = ymax - ymin
+    width = 2*g_border_outer + (ncols-1)*g_border_inner + ncols*pane_width
+    height = 2*g_border_outer + (nrows-1)*g_border_inner + nrows*pane_height
+    # create the surface
+    cairo_helper = CairoUtil.CairoHelper(image_format)
+    surface = cairo_helper.create_surface(width, height)
+    context = cairo.Context(surface)
+    # draw the background
+    if bdrawbackground:
+        context.save()
+        context.set_source_rgb(*g_color_background)
+        context.paint()
+        context.restore()
+        # draw rectangles for the panes
+        if False:
+            gap = g_border_inner - 2*g_border_outer
+            if gap > 0:
+                for row in range(nrows):
+                    for col in range(ncols):
+                        index = col*nrows + row
+                        if index < npairs:
+                            context.save()
+                            context.set_source_rgb(*g_color_background)
+                            x = col*(pane_width + g_border_inner)
+                            y = row*(pane_height + g_border_inner)
+                            w = 2*g_border_outer + pane_width
+                            h = 2*g_border_outer + pane_height
+                            context.rectangle(x, y, x+w, y+h)
+                            context.fill()
+                            context.restore()
+    # draw the trees
+    context.translate(g_border_outer + pane_width/2.0, 0)
+    context.translate(0, g_border_outer + pane_height/2.0)
+    for i, v2 in enumerate(v2s):
+        # draw the tree into the context
+        if bdrawbackground:
+            bgcolor = g_color_background
+        else:
+            # Pretend that if there is not a background color
+            # then the background color is white.
+            # FIXME
+            bgcolor = (1.0, 1.0, 1.0)
+        draw_single_tree(tree, context, v1, v2, bgcolor,
+                bdrawvertices, bdrawlabels)
+        # draw the pane label into the context
+        # TODO conditional
+        if False:
+            if i < len(string.uppercase):
+                letter = string.uppercase[i]
+            else:
+                letter = '?'
+            context.save()
+            context.set_font_size(20.0)
+            xbear, ybear, w, h, xadv, yadv = context.text_extents(letter)
+            xtarget = -pane_width/2
+            ytarget = -pane_height/2 + h
+            context.move_to(xtarget, ytarget)
+            context.show_text(letter)
+            context.restore()
+        # move the drawing position
+        if i % nrows == nrows - 1:
+            # move to the next column
+            context.translate(g_border_inner + pane_width, 0)
+            # move to the first row
+            context.translate(0, -(nrows-1)*(g_border_inner + pane_height))
+        else:
+            context.translate(0, g_border_inner + pane_height)
+    # get the image string
+    return cairo_helper.get_image_string()
+
 def get_forest_image(tree, max_size, image_format, vs, ncols,
         bdrawbackground, bdrawvertices, bdrawlabels):
     """
