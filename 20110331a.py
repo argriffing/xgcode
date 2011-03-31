@@ -95,7 +95,7 @@ def rec_internal(
         if is_branch_compat(nsame_next, ndifferent_next, ntarget, nbranches):
             id_to_val[idcur] = value
             if depth == len(internals) - 1:
-                yield id_to_val
+                yield dict(id_to_val)
             else:
                 for v in rec_internal(
                         id_to_adj, id_to_val,
@@ -130,19 +130,47 @@ def rec_eigen():
     """
     pass
 
+def get_leaf_set(id_to_adj):
+    return set(v for v, d in id_to_adj.items() if len(d) == 1)
+
+def is_sign_harmonic(id_to_adj, id_to_val):
+    """
+    Sign harmonic will mean that each strong sign graph has a leaf.
+    Assume all values are either +1 or -1.
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_val: maps an id to a value
+    """
+    leaves = get_leaf_set(id_to_adj)
+    visited = set(leaves)
+    shell = set(leaves)
+    while shell:
+        next_shell = set()
+        for v in shell:
+            v_val = id_to_val[v]
+            for u in id_to_adj[v]:
+                u_val = id_to_val[u]
+                if u_val == v_val and u not in visited:
+                    visited.add(u)
+                    next_shell.add(u)
+        shell = next_shell
+    nvertices = len(id_to_adj)
+    nvisited = len(visited)
+    return nvertices == nvisited
+
+
+g_test_id_to_adj = {
+        1 : [6],
+        2 : [6],
+        3 : [8],
+        4 : [7],
+        5 : [7],
+        6 : [1, 2, 8],
+        7 : [4, 5, 8],
+        8 : [3, 6, 7]}
 
 class TestThis(unittest.TestCase):
 
     def test_gen_internal_assignments(self):
-        id_to_adj = {
-                1 : [6],
-                2 : [6],
-                3 : [8],
-                4 : [7],
-                5 : [7],
-                6 : [1, 2, 8],
-                7 : [4, 5, 8],
-                8 : [3, 6, 7]}
         id_to_val = {
                 1 : 1,
                 2 : 1,
@@ -157,7 +185,7 @@ class TestThis(unittest.TestCase):
         internals = [6, 7, 8]
         # Get the list of observed compatible assignments.
         ds = list(gen_assignments(
-                id_to_adj, id_to_val,
+                g_test_id_to_adj, id_to_val,
                 ntarget, nbranches, internals))
         # Define the only true compatible assignment.
         d = {1: 1, 2: 1, 3: 1, 4: 1, 5: -1, 6: 1, 7: -1, 8: 1}
@@ -165,6 +193,26 @@ class TestThis(unittest.TestCase):
         self.assertEqual(len(ds), 1)
         self.assertEqual(ds[0], d)
 
+    def test_sign_harmonic_a(self):
+        id_to_val = {
+                1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1, 8:1}
+        observed = is_sign_harmonic(g_test_id_to_adj, id_to_val)
+        expected = True
+        self.assertEqual(observed, expected)
+
+    def test_sign_harmonic_b(self):
+        id_to_val = {
+                1:-1, 2:-1, 3:1, 4:1, 5:1, 6:-1, 7:1, 8:1}
+        observed = is_sign_harmonic(g_test_id_to_adj, id_to_val)
+        expected = True
+        self.assertEqual(observed, expected)
+
+    def test_sign_harmonic_c(self):
+        id_to_val = {
+                1:1, 2:1, 3:1, 4:1, 5:1, 6:-1, 7:1, 8:-1}
+        observed = is_sign_harmonic(g_test_id_to_adj, id_to_val)
+        expected = False
+        self.assertEqual(observed, expected)
 
 
 if __name__ == '__main__':
