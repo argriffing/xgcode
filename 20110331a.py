@@ -12,18 +12,6 @@ Both trees should have named leaves,
 and the set of names should be the same.
 The first input tree should have branch lengths.
 The second input tree should have named internal vertices.
-The following pair of trees should show a difference
-in power between the two interlacing conditions.
-True tree:
-(f:0.591193345089, h:1.57605191914, (e:0.750243005214,
-((d:0.496115520823, (c:2.68037788672,
-b:0.76093128912):0.324075331796):2.5059101047, (a:1.14799506243,
-g:1.45272990456):0.731915700424):0.376369087037):0.392866293805);
-Test tree:
-(b:0.550310272598, c:1.16962862638, (d:4.75324051473,
-(((f:5.88452092355, e:0.608632268794):1.8195499059,
-h:0.0997247308189):0.962418679655, (a:0.5662859546,
-g:0.87943036548):3.07343504802):1.37087427613):0.652254655969);
 """
 
 from StringIO import StringIO
@@ -41,12 +29,14 @@ def get_form():
     @return: the body of a form
     """
     # define default tree strings
-    true_tree_string = '((a:1, b:2):3, (c:4, d:5):6, e:7);'
-    test_tree_string = '((a, b)x, (c, e)y, d)z;'
+    #true_tree_string = '((a:1, b:2):3, (c:4, d:5):6, e:7);'
+    true_s = '(a:1.049, (b:0.189, (c:1.642, d:0.760):2.437):0.742, e:0.006);'
+    #test_tree_string = '((a, b)x, (c, e)y, d)z;'
+    test_s = '(a, (c, d)x, (b, e)y)z;'
     # define the form objects
     form_objects = [
-            Form.MultiLine('true_tree', 'true tree', true_tree_string),
-            Form.MultiLine('test_tree', 'test topology', test_tree_string),
+            Form.MultiLine('true_tree', 'true tree', true_s),
+            Form.MultiLine('test_tree', 'test topology', test_s),
             Form.RadioGroup('power_level', 'interlacing condition', [
                 Form.RadioItem('power_level_high',
                     'pairwise sign graph connectivity (higher power)', True),
@@ -130,7 +120,13 @@ def get_response_content(fs):
             d[x] = None
         id_to_val_list.append(d)
     id_to_list_val = {}
-    id_to_vals = rec_eigen_strong(
+    # Choose the power level.
+    if fs.power_level_high:
+        method = rec_eigen_strong
+    else:
+        method = rec_eigen_weak
+    # Attempt to find a sign assignment.
+    id_to_vals = method(
             test_id_to_adj, id_to_val_list, id_to_list_val, 0)
     # Reorder the leaf and the internal node ids according to name order.
     leaf_pair = sorted(
@@ -558,6 +554,12 @@ class TestThis(unittest.TestCase):
                 g_test_id_to_adj, id_to_val_list, id_to_list_val, 0)
         expected = None
         self.assertEqual(observed, expected)
+
+    def test_rec_eigen_strong_a(self):
+        # the following commented out pair shows differential rejection
+        #true_s = '(a:1.049,(b:0.189,(c:1.642,d:0.760):2.437):0.742,e:0.006);'
+        #test_s = '(a, (c, d)x, (b, e)y)z;'
+        pass
 
 
 if __name__ == '__main__':

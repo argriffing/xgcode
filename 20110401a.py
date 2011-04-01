@@ -27,7 +27,12 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            ]
+            Form.Integer('nleaves', 'use this many leaves', 5, low=4, high=20),
+            Form.RadioGroup('search_type', 'search mode', [
+                Form.RadioItem('search_different',
+                    'seek a pair which shows a rejection difference', True),
+                Form.RadioItem('search_same',
+                    'test that the true topology is not rejected')])]
     return form_objects
 
 def get_form_out():
@@ -95,7 +100,6 @@ class CheckTreeData:
         self.nerrors += 1
 
 
-# TODO finish this key function
 def check_tree_pair(true_tree, test_tree, data):
     """
     Do this for every pair of sampled trees.
@@ -142,7 +146,8 @@ def check_tree_pair(true_tree, test_tree, data):
                 test_id_to_adj, id_to_val_list, id_to_list_val, 0)
         acceptance_pair.append(1 if id_to_vals else 0)
     data.add_acceptances(acceptance_pair)
-    if (data.report is None) and (acceptance_pair[0] != acceptance_pair[1]):
+    found_example = acceptance_pair[0] != acceptance_pair[1]
+    if found_example and (data.report is None):
         s = StringIO()
         print >> s, 'true tree:'
         print >> s, true_tree.get_newick_string()
@@ -150,24 +155,27 @@ def check_tree_pair(true_tree, test_tree, data):
         print >> s, 'test tree:'
         print >> s, test_tree.get_newick_string()
         data.report = s.getvalue()
+    return found_example
 
 def get_response_content(fs):
     method_pair = (rec_eigen_weak, rec_eigen_strong)
     data = CheckTreeData(method_pair)
-    nleaves = 8
-    nseconds = 2
+    nseconds = 5
     tm = time.time()
     while time.time() < tm + nseconds:
         # Sample a pair of Newick trees.
-        true_f = TreeSampler.sample_tree(nleaves, 0, 1.0)
-        test_f = TreeSampler.sample_tree(nleaves, 0, 1.0)
+        true_f = TreeSampler.sample_tree(fs.nleaves, 0, 1.0)
+        test_f = TreeSampler.sample_tree(fs.nleaves, 0, 1.0)
         true_s = NewickIO.get_newick_string(true_f)
         test_s = NewickIO.get_newick_string(test_f)
         true_tree = Newick.parse(true_s, Newick.NewickTree)
         test_tree = Newick.parse(test_s, Newick.NewickTree)
         # Add the pairwise check to the data borg.
         try:
-            success = check_tree_pair(true_tree, test_tree, data)
+            if fs.search_different:
+                success = check_tree_pair(true_tree, test_tree, data)
+            else:
+                success = check_tree_pair(true_tree, true_tree, data)
         except CheckTreeError as e:
             data.add_error(e)
         # Break if we have found a success.
@@ -180,13 +188,16 @@ def get_response_content(fs):
         print >> out
         print >> out, data.report
         print >> out
-        print >> out, 'search summary:'
-        m = data.acceptance_matrix
-        print >> out, 'A reject, B reject:', m[0, 0]
-        print >> out, 'A reject, B accept:', m[0, 1]
-        print >> out, 'A accept, B reject:', m[1, 0]
-        print >> out, 'A accept, B accept:', m[1, 1]
-        print >> out, data.nerrors, 'tree symmetry errors'
+    else:
+        print >> out, 'failed to find a difference in rejection power'
+        print >> out
+    print >> out, 'search summary:'
+    m = data.acceptance_matrix
+    print >> out, 'A reject, B reject:', m[0, 0]
+    print >> out, 'A reject, B accept:', m[0, 1]
+    print >> out, 'A accept, B reject:', m[1, 0]
+    print >> out, 'A accept, B accept:', m[1, 1]
+    print >> out, data.nerrors, 'tree symmetry errors'
     return out.getvalue()
 
 
