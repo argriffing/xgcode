@@ -133,6 +133,40 @@ def rec_eigen():
 def get_leaf_set(id_to_adj):
     return set(v for v, d in id_to_adj.items() if len(d) == 1)
 
+def get_regions(id_to_adj, id_to_val):
+    """
+    Find connected regions with uniform value.
+    Assume a tree topology.
+    Each region will get an arbitrary color.
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_val: maps an id to a value
+    @return: a map from id to region
+    """
+    # begin with the min id for determinism for testing
+    x = min(id_to_adj)
+    id_to_region = {x : 0}
+    nregions = 1
+    shell = set([x])
+    visited = set([x])
+    while shell:
+        next_shell = set()
+        for v in shell:
+            v_val = id_to_val[v]
+            v_region = id_to_region[v]
+            # sort for determinism for testing
+            for u in sorted(id_to_adj[v]):
+                if u not in visited:
+                    u_val = id_to_val[u]
+                    if u_val == v_val:
+                        id_to_region[u] = v_region
+                    else:
+                        id_to_region[u] = nregions
+                        nregions += 1
+                    visited.add(u)
+                    next_shell.add(u)
+        shell = next_shell
+    return id_to_region
+
 def is_sign_harmonic(id_to_adj, id_to_val):
     """
     Sign harmonic will mean that each strong sign graph has a leaf.
@@ -148,10 +182,11 @@ def is_sign_harmonic(id_to_adj, id_to_val):
         for v in shell:
             v_val = id_to_val[v]
             for u in id_to_adj[v]:
-                u_val = id_to_val[u]
-                if u_val == v_val and u not in visited:
-                    visited.add(u)
-                    next_shell.add(u)
+                if u not in visited:
+                    u_val = id_to_val[u]
+                    if u_val == v_val:
+                        visited.add(u)
+                        next_shell.add(u)
         shell = next_shell
     nvertices = len(id_to_adj)
     nvisited = len(visited)
@@ -212,6 +247,20 @@ class TestThis(unittest.TestCase):
                 1:1, 2:1, 3:1, 4:1, 5:1, 6:-1, 7:1, 8:-1}
         observed = is_sign_harmonic(g_test_id_to_adj, id_to_val)
         expected = False
+        self.assertEqual(observed, expected)
+
+    def test_get_regions_a(self):
+        id_to_val = {
+                1:1, 2:1, 3:1, 4:1, 5:1, 6:-1, 7:1, 8:-1}
+        observed = get_regions(g_test_id_to_adj, id_to_val)
+        expected = {1:0, 6:1, 2:2, 8:1, 3:3, 7:4, 5:4, 4:4}
+        self.assertEqual(observed, expected)
+
+    def test_get_regions_b(self):
+        id_to_val = {
+                1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1, 8:1}
+        observed = get_regions(g_test_id_to_adj, id_to_val)
+        expected = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0}
         self.assertEqual(observed, expected)
 
 
