@@ -4,6 +4,10 @@ Do an exhaustive search of internal vertex sign assignments.
 
 import unittest
 from collections import defaultdict
+import itertools
+
+import iterutils
+
 
 def is_branch_compat(nsame, ndifferent, ntarget, nbranches):
     """
@@ -90,6 +94,24 @@ def gen_assignments(
     # return the generator object
     return obj
 
+def gen_assignments_brute(
+        id_to_adj, id_to_val,
+        ntarget, nbranches, internals):
+    """
+    This is like gen_assignments except it is slow.
+    This is for testing.
+    """
+    ninternals = len(internals)
+    for values in itertools.product((-1, 1), repeat=ninternals):
+        for x, value in zip(internals, values):
+            id_to_val[x] = value
+        id_to_region = get_regions(id_to_adj, id_to_val)
+        nregions = len(set(id_to_region.values()))
+        if nregions == ntarget + 1:
+            yield dict(id_to_val)
+    for x in internals:
+        id_to_val[x] = None
+
 def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val, depth):
     """
     This is a recursive function.
@@ -125,9 +147,11 @@ def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val, depth):
                 if depth == len(id_to_val_list) - 1:
                     return id_to_list_next
                 else:
-                    return rec_eigen_weak(
+                    result = rec_eigen_weak(
                             id_to_adj, id_to_val_list, id_to_list_next,
                             depth + 1)
+                    if result:
+                        return result
 
 def rec_eigen_strong(id_to_adj, id_to_val_list, id_to_list_val, depth):
     """
@@ -159,26 +183,33 @@ def rec_eigen_strong(id_to_adj, id_to_val_list, id_to_list_val, depth):
             for x in ids:
                 v = id_to_list_val.get(x, [])
                 id_to_list_next[x] = tuple(list(v) + [d[x]])
-            # Require the cumulative assignment to meet
-            # the sequential sign graph connectivity criterion.
-            #
-            # First get the regions
-            # defined by the previous valuation if any.
+            # get the valuation at the previous depth
             if depth:
                 d_prev = dict((x, id_to_list_val[x][-1]) for x in ids)
             else:
-                d_prev = dict((x, 0) for x in ids)
-            id_to_region = get_regions(id_to_adj, d_prev)
-            # Get a map from id to (prev_region, current_sign).
-            id_to_pair = dict((x, (id_to_region[x], d[x])) for x in ids)
-            # Require pair connectivity using this criterion.
-            if is_value_connected(id_to_adj, id_to_pair):
+                d_prev = dict((x, 1) for x in ids)
+            # Check the pairwise sign lacing condition.
+            if check_sign_lacing(id_to_adj, d_prev, d):
                 if depth == len(id_to_val_list) - 1:
                     return id_to_list_next
                 else:
-                    return rec_eigen_strong(
+                    result = rec_eigen_strong(
                             id_to_adj, id_to_val_list, id_to_list_next,
                             depth + 1)
+                    if result:
+                        return result
+
+def check_sign_lacing(id_to_adj, id_to_va, id_to_vb):
+    """
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_va: map id to sign valuation k
+    @param id_to_vb: map id to sign valuation k+1
+    @return: True if the interlacing is compatible
+    """
+    ids = set(id_to_adj)
+    id_to_region = get_regions(id_to_adj, id_to_va)
+    id_to_pair = dict((x, (id_to_region[x], id_to_vb[x])) for x in ids)
+    return is_value_connected(id_to_adj, id_to_pair)
 
 def get_internal_set(id_to_adj):
     return set(v for v, d in id_to_adj.items() if len(d) > 1)
@@ -318,18 +349,17 @@ g_test_id_to_adj = {
         7 : [4, 5, 8],
         8 : [3, 6, 7]}
 
+def d_to_fset_of_pairs(d):
+    """
+    @param d: a dict
+    @return: a frozenset of pairs
+    """
+    return frozenset((k, v) for k, v in d.items())
+
 class TestThis(unittest.TestCase):
 
-    def test_gen_internal_assignments(self):
-        id_to_val = {
-                1 : 1,
-                2 : 1,
-                3 : 1,
-                4 : 1,
-                5 : -1,
-                6 : None,
-                7 : None,
-                8 : None}
+    def test_gen_assignments_a(self):
+        id_to_val = {1: 1, 2: 1, 3: 1, 4: 1, 5: -1, 6: None, 7: None, 8: None}
         ntarget = 2
         nbranches = 7
         internals = [6, 7, 8]
@@ -342,6 +372,38 @@ class TestThis(unittest.TestCase):
         # Compare the observed and expected assignments.
         self.assertEqual(len(ds), 1)
         self.assertEqual(ds[0], d)
+
+    def test_gen_assignments_b(self):
+        id_to_adj = {
+                1: [5],
+                2: [5],
+                3: [6],
+                4: [6],
+                5: [1, 2, 6],
+                6: [3, 4, 5]}
+        id_to_val_list = [
+                {1:-1, 2:-1, 3:1, 4:1, 5:None, 6:None},
+                {1:-1, 2:1, 3:1, 4:-1, 5:None, 6:None},
+                {1:-1, 2:-1, 3:1, 4:-1, 5:None, 6:None}]
+        for i, id_to_val in enumerate(id_to_val_list):
+            ntarget = i + 1
+            nbranches = 5
+            internals = [5, 6]
+            fast_list_of_dicts = list(gen_assignments(
+                id_to_adj, id_to_val,
+                ntarget, nbranches, internals))
+            slow_list_of_dicts = list(gen_assignments_brute(
+                id_to_adj, id_to_val,
+                ntarget, nbranches, internals))
+            fast_frozensets = set(
+                    d_to_fset_of_pairs(d) for d in fast_list_of_dicts)
+            slow_frozensets = set(
+                    d_to_fset_of_pairs(d) for d in slow_list_of_dicts)
+            # The sets should not be empty.
+            self.assertTrue(len(fast_frozensets) > 0)
+            self.assertTrue(len(slow_frozensets) > 0)
+            # The sets should be equal.
+            self.assertEqual(fast_frozensets, slow_frozensets)
 
     def test_sign_harmonic_a(self):
         id_to_val = {
@@ -434,6 +496,63 @@ class TestThis(unittest.TestCase):
         expected = None
         self.assertEqual(observed, expected)
 
+    def test_rec_eigen_strong(self):
+        id_to_adj = {
+                1: [5],
+                2: [5],
+                3: [6],
+                4: [6],
+                5: [1, 2, 6],
+                6: [3, 4, 5]}
+        id_to_val_list = [
+                {1:-1, 2:-1, 3:1, 4:1, 5:None, 6:None},
+                {1:-1, 2:1, 3:1, 4:-1, 5:None, 6:None},
+                {1:-1, 2:-1, 3:1, 4:-1, 5:None, 6:None}]
+        id_to_list_val = {}
+        observed = rec_eigen_strong(
+                id_to_adj, id_to_val_list, id_to_list_val, 0)
+        expected = {
+                1: (-1, -1, -1),
+                2: (-1, 1, -1),
+                3: (1, 1, 1),
+                4: (1, -1, -1),
+                5: (-1, 1, 1),
+                6: (1, 1, 1)}
+        self.assertEqual(observed, expected)
+
+    def test_check_sign_lacing_true(self):
+        id_to_adj = {
+                1: [5],
+                2: [5],
+                3: [6],
+                4: [6],
+                5: [1, 2, 6],
+                6: [3, 4, 5]}
+        vs = [
+                {1:1, 2:1, 3:1, 4:1, 5:1, 6:1},
+                {1:-1, 2:-1, 3:1, 4:1, 5:-1, 6:1},
+                {1:-1, 2:1, 3:1, 4:-1, 5:1, 6:1},
+                {1:-1, 2:-1, 3:1, 4:-1, 5:1, 6:1}]
+        for va, vb in iterutils.pairwise(vs):
+            observed = check_sign_lacing(id_to_adj, va, vb)
+            expected = True
+            self.assertEqual(observed, expected)
+
+    def test_check_sign_lacing_false(self):
+        id_to_adj = {
+                1: [5],
+                2: [5],
+                3: [6],
+                4: [6],
+                5: [1, 2, 6],
+                6: [3, 4, 5]}
+        va = {1:-1, 2:1, 3:1, 4:-1, 5:1, 6:1}
+        vb = {1:-1, 2:1, 3:1, 4:-1, 5:1, 6:-1}
+        observed = check_sign_lacing(id_to_adj, va, vb)
+        expected = False
+        self.assertEqual(observed, expected)
+
 
 if __name__ == '__main__':
     unittest.main()
+
