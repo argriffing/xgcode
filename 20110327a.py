@@ -12,6 +12,7 @@ import Form
 import FormOut
 import CairoUtil
 import DrawEigenLacing
+import Harmonic
 
 
 def get_form():
@@ -49,7 +50,7 @@ def get_response_content(fs):
         msg = 'the last index should be greater than the first index'
         raise ValueError(msg)
     # get the vertex valuations
-    valuations = [DrawEigenLacing.get_harmonic_valuations(
+    valuations = [Harmonic.get_harmonic_valuations(
         tree, i) for i in range(fs.first_index, fs.last_index+1)]
     # do the layout
     try:

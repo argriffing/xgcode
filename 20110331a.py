@@ -21,7 +21,7 @@ from collections import defaultdict
 import Newick
 import Form
 import FormOut
-import DrawEigenLacing
+import Harmonic
 
 
 def get_form():
@@ -89,7 +89,7 @@ def get_response_content(fs):
     # Get a list of maps from node id to harmonic extension.
     true_tree_leaf_ids = set(id(x) for x in true_tree.gen_tips())
     nleaves = len(true_tree_leaf_ids)
-    id_to_full_val_list = [DrawEigenLacing.get_harmonic_valuations(
+    id_to_full_val_list = [Harmonic.get_harmonic_valuations(
         true_tree, i) for i in range(1, nleaves)]
     id_map =  get_true_leaf_id_to_test_leaf_id(true_tree, test_tree)
     test_id_to_adj = get_id_to_adj(test_tree)
@@ -113,7 +113,8 @@ def get_response_content(fs):
             d[x] = None
         id_to_val_list.append(d)
     id_to_list_val = {}
-    id_to_vals = rec_eigen(test_id_to_adj, id_to_val_list, id_to_list_val, 0)
+    id_to_vals = rec_eigen_strong(
+            test_id_to_adj, id_to_val_list, id_to_list_val, 0)
     # Reorder the leaf and the internal node ids according to name order.
     leaf_pair = sorted(
             (test_id_to_name[x], x) for x in test_tree_leaf_ids)
@@ -220,10 +221,11 @@ def gen_assignments(
     # return the generator object
     return obj
 
-def rec_eigen(id_to_adj, id_to_val_list, id_to_list_val, depth):
+def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val, depth):
     """
     This is a recursive function.
     Each level corresponds to an eigenvector.
+    This uses the relatively weak condition of principal orthant connectivity.
     @param id_to_adj: maps an id to a list of adjacent ids
     @param id_to_val_list: a list of k partial valuation maps
     @param id_to_list_val: maps an id to a list of values
@@ -250,11 +252,62 @@ def rec_eigen(id_to_adj, id_to_val_list, id_to_list_val, depth):
                 v = id_to_list_val.get(x, [])
                 id_to_list_next[x] = tuple(list(v) + [d[x]])
             # Require the cumulative assignment to meet orthant connectivity.
-            if is_orthant_connected(id_to_adj, id_to_list_next):
+            if is_value_connected(id_to_adj, id_to_list_next):
                 if depth == len(id_to_val_list) - 1:
                     return id_to_list_next
                 else:
-                    return rec_eigen(
+                    return rec_eigen_weak(
+                            id_to_adj, id_to_val_list, id_to_list_next,
+                            depth + 1)
+
+def rec_eigen_strong(id_to_adj, id_to_val_list, id_to_list_val, depth):
+    """
+    This is a recursive function.
+    Each level corresponds to an eigenvector.
+    This uses the stronger condition relating sign graphs.
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_val_list: a list of k partial valuation maps
+    @param id_to_list_val: maps an id to a list of values
+    @param depth: zero corresponds to fiedler depth
+    @return: None or a valid map
+    """
+    # Define the set of ids.
+    ids = set(id_to_adj)
+    # Define the requested number of cut branches at this depth.
+    ntarget = depth + 1
+    # Get the number of branches in the tree.
+    nbranches = sum(len(v) for v in id_to_adj.values()) / 2
+    # Get the list of internal ids.
+    internals = sorted(get_internal_set(id_to_adj))
+    # Consider each assignment at this level that satisfies ntarget.
+    for d in gen_assignments(
+            id_to_adj, id_to_val_list[depth],
+            ntarget, nbranches, internals):
+        # Require the assignment to satisfy sign harmonicity.
+        if is_sign_harmonic(id_to_adj, d):
+            # make the putative next cumulative valuation
+            id_to_list_next = {}
+            for x in ids:
+                v = id_to_list_val.get(x, [])
+                id_to_list_next[x] = tuple(list(v) + [d[x]])
+            # Require the cumulative assignment to meet
+            # the sequential sign graph connectivity criterion.
+            #
+            # First get the regions
+            # defined by the previous valuation if any.
+            if depth:
+                d_prev = dict((x, id_to_list_val[x][-1]) for x in ids)
+            else:
+                d_prev = dict((x, 0) for x in ids)
+            id_to_region = get_regions(id_to_adj, d_prev)
+            # Get a map from id to (prev_region, current_sign).
+            id_to_pair = dict((x, (id_to_region[x], d[x])) for x in ids)
+            # Require pair connectivity using this criterion.
+            if is_value_connected(id_to_adj, id_to_pair):
+                if depth == len(id_to_val_list) - 1:
+                    return id_to_list_next
+                else:
+                    return rec_eigen_strong(
                             id_to_adj, id_to_val_list, id_to_list_next,
                             depth + 1)
 
@@ -278,9 +331,20 @@ def get_leaf_lists(id_to_adj, id_to_val):
         value_to_set[val].add(leaf)
     return [list(s) for s in value_to_set.values()]
 
-def is_orthant_connected(id_to_adj, id_to_val):
+def is_value_connected(id_to_adj, id_to_val):
     """
     Note that in this case the value can be a tuple of values.
+    This function checks that in the tree,
+    elements with the same values are connected.
+    Note that id_to_adj is assumed to be a tree,
+    and the values in id_to_val must be hashable.
+    Here are two usage examples.
+    The first usage example is to check principal orthant connectivity
+    by looking at the tuple of the first k valuations.
+    The second usage example is to check a stronger
+    connectivity criterion by looking at the pair
+    such that the first element is a region index for the kth valuation
+    and where the second element is the (k+1)st valuation itself.
     @param id_to_adj: maps an id to a list of adjacent ids
     @param id_to_val: maps an id to a value
     """
@@ -432,7 +496,7 @@ class TestThis(unittest.TestCase):
                 6 : (1, 1),
                 7 : (-1, -1),
                 8 : (-1, -1)}
-        observed = is_orthant_connected(g_test_id_to_adj, id_to_val)
+        observed = is_value_connected(g_test_id_to_adj, id_to_val)
         expected = True
         self.assertEqual(observed, expected)
 
@@ -446,16 +510,16 @@ class TestThis(unittest.TestCase):
                 6 : (1, 1),
                 7 : (-1, 1),
                 8 : (-1, -1)}
-        observed = is_orthant_connected(g_test_id_to_adj, id_to_val)
+        observed = is_value_connected(g_test_id_to_adj, id_to_val)
         expected = False
         self.assertEqual(observed, expected)
 
-    def test_rec_eigen_a(self):
+    def test_rec_eigen_weak_a(self):
         id_to_val_list = [
                 {1:1, 2:1, 3:-1, 4:-1, 5:-1, 6:None, 7:None, 8:None},
                 {1:1, 2:1, 3:-1, 4:1, 5:1, 6:None, 7:None, 8:None}]
         id_to_list_val = {}
-        observed = rec_eigen(
+        observed = rec_eigen_weak(
                 g_test_id_to_adj, id_to_val_list, id_to_list_val, 0)
         expected = {
                 1: (1, 1),
@@ -468,12 +532,12 @@ class TestThis(unittest.TestCase):
                 8: (-1, -1)}
         self.assertEqual(observed, expected)
 
-    def test_rec_eigen_a(self):
+    def test_rec_eigen_weak_b(self):
         id_to_val_list = [
                 {1:1, 2:1, 3:-1, 4:-1, 5:-1, 6:None, 7:None, 8:None},
                 {1:1, 2:1, 3:1, 4:1, 5:-1, 6:None, 7:None, 8:None}]
         id_to_list_val = {}
-        observed = rec_eigen(
+        observed = rec_eigen_weak(
                 g_test_id_to_adj, id_to_val_list, id_to_list_val, 0)
         expected = None
         self.assertEqual(observed, expected)

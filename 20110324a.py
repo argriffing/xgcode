@@ -12,6 +12,7 @@ import Form
 import FormOut
 import CairoUtil
 import DrawEigenLacing
+import Harmonic
 
 
 def get_form():
@@ -40,8 +41,8 @@ def get_response_content(fs):
     # get a properly formatted newick tree with branch lengths
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     # get the vertex valuations
-    id_to_v1 = DrawEigenLacing.get_harmonic_valuations(tree, fs.eig_idx1)
-    id_to_v2 = DrawEigenLacing.get_harmonic_valuations(tree, fs.eig_idx2)
+    id_to_v1 = Harmonic.get_harmonic_valuations(tree, fs.eig_idx1)
+    id_to_v2 = Harmonic.get_harmonic_valuations(tree, fs.eig_idx2)
     # do the layout
     try:
         layout = FastDaylightLayout.StraightBranchLayout()
