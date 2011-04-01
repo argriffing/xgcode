@@ -8,6 +8,7 @@ which satisfies certain interlacing criteria.
 
 from StringIO import StringIO
 import unittest
+from collections import defaultdict
 
 import Newick
 import Form
@@ -132,6 +133,34 @@ def rec_eigen():
 
 def get_leaf_set(id_to_adj):
     return set(v for v, d in id_to_adj.items() if len(d) == 1)
+
+def get_leaf_lists(id_to_adj, id_to_val):
+    """
+    Find leaf ids with common values.
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_val: maps an id to a value
+    @return: a list of lists of leaf ids
+    """
+    value_to_set = defaultdict(set)
+    leaves = get_leaf_set(id_to_adj)
+    for leaf in leaves:
+        val = id_to_val[leaf]
+        value_to_set[val].add(leaf)
+    return [list(s) for s in value_to_set.values()]
+
+def is_orthant_connected(id_to_adj, id_to_val):
+    """
+    Note that in this case the value can be a tuple of values.
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_val: maps an id to a value
+    """
+    leaf_lists = get_leaf_lists(id_to_adj, id_to_val)
+    id_to_region = get_regions(id_to_adj, id_to_val)
+    for leaf_list in leaf_lists:
+        regions = set(id_to_region[leaf] for leaf in leaf_list)
+        if len(regions) > 1:
+            return False
+    return True
 
 def get_regions(id_to_adj, id_to_val):
     """
@@ -261,6 +290,34 @@ class TestThis(unittest.TestCase):
                 1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1, 8:1}
         observed = get_regions(g_test_id_to_adj, id_to_val)
         expected = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0}
+        self.assertEqual(observed, expected)
+
+    def test_orthant_connected_a(self):
+        id_to_val = {
+                1 : (1, 1),
+                2 : (1, 1),
+                3 : (-1, -1),
+                4 : (-1, -1),
+                5 : (-1, 1),
+                6 : (1, 1),
+                7 : (-1, -1),
+                8 : (-1, -1)}
+        observed = is_orthant_connected(g_test_id_to_adj, id_to_val)
+        expected = True
+        self.assertEqual(observed, expected)
+
+    def test_orthant_connected_b(self):
+        id_to_val = {
+                1 : (1, 1),
+                2 : (1, 1),
+                3 : (-1, -1),
+                4 : (-1, -1),
+                5 : (-1, 1),
+                6 : (1, 1),
+                7 : (-1, 1),
+                8 : (-1, -1)}
+        observed = is_orthant_connected(g_test_id_to_adj, id_to_val)
+        expected = False
         self.assertEqual(observed, expected)
 
 
