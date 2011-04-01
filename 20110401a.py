@@ -8,11 +8,16 @@ and the pairwise connectivity (strong).
 from StringIO import StringIO
 import unittest
 from collections import defaultdict
+import numpy as np
+import time
 
 import Newick
 import Form
 import FormOut
 import Harmonic
+import TreeSampler
+import NewickIO
+import Newick
 
 #TODO Move common functions with the previous snippet into a module.
 
@@ -70,10 +75,39 @@ def get_true_leaf_id_to_test_leaf_id(true_tree, test_tree):
 def get_sign_string(arr):
     return ' '.join('+' if x > 0 else '-' for x in arr)
 
-def get_response_content(fs):
-    # Read the newick trees.
-    true_tree = Newick.parse(fs.true_tree, Newick.NewickTree)
-    test_tree = Newick.parse(fs.test_tree, Newick.NewickTree)
+class CheckTreeError(Exception): pass
+
+
+class CheckTreeData:
+
+    def __init__(self, method_pair):
+        self.method_pair = method_pair
+        self.acceptance_matrix = np.zeros((2,2))
+        self.nerrors = 0
+        self.report = None
+
+    def add_acceptances(self, acceptances):
+        m = np.zeros_like(self.acceptance_matrix)
+        m[acceptances[0]][acceptances[1]] = 1
+        self.acceptance_matrix += m
+
+    def add_error(self, e):
+        self.nerrors += 1
+
+
+# TODO finish this key function
+def check_tree_pair(true_tree, test_tree, data):
+    """
+    Do this for every pair of sampled trees.
+    The returned array has three zeros and a one.
+    The position of the one shows
+    whether the test tree was accepted or rejected
+    with respect to the true tree
+    for the pair of methods.
+    @param true_tree: a true Newick tree
+    @param test_tree: a test Newick tree
+    @param data: keeps some running data about the search
+    """
     # Get a list of maps from node id to harmonic extension.
     true_tree_leaf_ids = set(id(x) for x in true_tree.gen_tips())
     nleaves = len(true_tree_leaf_ids)
@@ -85,44 +119,77 @@ def get_response_content(fs):
     # Get the list of id to val maps with respect to leaf ids of the test tree.
     test_tree_internal_ids = set(id(x) for x in test_tree.gen_internal_nodes())
     test_tree_leaf_ids = set(id(x) for x in test_tree.gen_tips())
-    id_to_val_list = []
-    for id_to_full_val in id_to_full_val_list:
-        d = {}
-        for x in true_tree_leaf_ids:
-            value = id_to_full_val[x]
-            if abs(value) < 1e-8:
-                raise ValueError('the true tree is too symmetric')
-            elif value < 0:
-                s = -1
-            else:
-                s = 1
-            d[id_map[x]] = s
-        for x in test_tree_internal_ids:
-            d[x] = None
-        id_to_val_list.append(d)
-    id_to_list_val = {}
-    id_to_vals = rec_eigen_strong(
-            test_id_to_adj, id_to_val_list, id_to_list_val, 0)
-    # Reorder the leaf and the internal node ids according to name order.
-    leaf_pair = sorted(
-            (test_id_to_name[x], x) for x in test_tree_leaf_ids)
-    internal_pair = sorted(
-            (test_id_to_name[x], x) for x in test_tree_internal_ids)
-    reordered_leaf_ids = zip(*leaf_pair)[1]
-    reordered_internal_ids = zip(*internal_pair)[1]
-    # Check for a failure to find a certificate.
-    if not id_to_vals:
-        return 'no non-rejection certificate was found'
-    # Start writing the response.
+    # Fill out the acceptance pair.
+    acceptance_pair = []
+    for i, method in enumerate(data.method_pair):
+        id_to_val_list = []
+        for id_to_full_val in id_to_full_val_list:
+            d = {}
+            for x in true_tree_leaf_ids:
+                value = id_to_full_val[x]
+                if abs(value) < 1e-8:
+                    raise CheckTreeError('the true tree is too symmetric')
+                elif value < 0:
+                    s = -1
+                else:
+                    s = 1
+                d[id_map[x]] = s
+            for x in test_tree_internal_ids:
+                d[x] = None
+            id_to_val_list.append(d)
+        id_to_list_val = {}
+        id_to_vals = method(
+                test_id_to_adj, id_to_val_list, id_to_list_val, 0)
+        acceptance_pair.append(1 if id_to_vals else 0)
+    data.add_acceptances(acceptance_pair)
+    if (data.report is None) and (acceptance_pair[0] != acceptance_pair[1]):
+        s = StringIO()
+        print >> s, 'true tree:'
+        print >> s, true_tree.get_newick_string()
+        print >> s
+        print >> s, 'test tree:'
+        print >> s, test_tree.get_newick_string()
+        data.report = s.getvalue()
+
+def get_response_content(fs):
+    method_pair = (rec_eigen_weak, rec_eigen_strong)
+    data = CheckTreeData(method_pair)
+    nleaves = 8
+    nseconds = 2
+    tm = time.time()
+    while time.time() < tm + nseconds:
+        # Sample a pair of Newick trees.
+        true_f = TreeSampler.sample_tree(nleaves, 0, 1.0)
+        test_f = TreeSampler.sample_tree(nleaves, 0, 1.0)
+        true_s = NewickIO.get_newick_string(true_f)
+        test_s = NewickIO.get_newick_string(test_f)
+        true_tree = Newick.parse(true_s, Newick.NewickTree)
+        test_tree = Newick.parse(test_s, Newick.NewickTree)
+        # Add the pairwise check to the data borg.
+        try:
+            success = check_tree_pair(true_tree, test_tree, data)
+        except CheckTreeError as e:
+            data.add_error(e)
+        # Break if we have found a success.
+        if success:
+            break
+    # make the report
     out = StringIO()
-    print >> out, 'leaf sign valuations:'
-    for x in reordered_leaf_ids:
-        print >> out, test_id_to_name[x], get_sign_string(id_to_vals[x])
-    print >> out
-    print >> out, 'vertex sign compatible internal vertex valuations:'
-    for x in reordered_internal_ids:
-        print >> out, test_id_to_name[x], get_sign_string(id_to_vals[x])
+    if data.report:
+        print >> out, 'found a difference in rejection power'
+        print >> out
+        print >> out, data.report
+        print >> out
+        print >> out, 'search summary:'
+        m = data.acceptance_matrix
+        print >> out, 'A reject, B reject:', m[0, 0]
+        print >> out, 'A reject, B accept:', m[0, 1]
+        print >> out, 'A accept, B reject:', m[1, 0]
+        print >> out, 'A accept, B accept:', m[1, 1]
+        print >> out, data.nerrors, 'tree symmetry errors'
     return out.getvalue()
+
+
 
 def is_branch_compat(nsame, ndifferent, ntarget, nbranches):
     """

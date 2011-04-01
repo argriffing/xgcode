@@ -5,13 +5,25 @@ then provide a certificate of non-rejection.
 This is a sequence of internal vertex valuation signs
 which satisfies certain interlacing criteria.
 These criteria are
-pairwise orthant connectivity,
+an interlacing criterion,
 sign harmonicity,
 and k-cut.
 Both trees should have named leaves,
 and the set of names should be the same.
 The first input tree should have branch lengths.
 The second input tree should have named internal vertices.
+The following pair of trees should show a difference
+in power between the two interlacing conditions.
+True tree:
+(f:0.591193345089, h:1.57605191914, (e:0.750243005214,
+((d:0.496115520823, (c:2.68037788672,
+b:0.76093128912):0.324075331796):2.5059101047, (a:1.14799506243,
+g:1.45272990456):0.731915700424):0.376369087037):0.392866293805);
+Test tree:
+(b:0.550310272598, c:1.16962862638, (d:4.75324051473,
+(((f:5.88452092355, e:0.608632268794):1.8195499059,
+h:0.0997247308189):0.962418679655, (a:0.5662859546,
+g:0.87943036548):3.07343504802):1.37087427613):0.652254655969);
 """
 
 from StringIO import StringIO
@@ -34,7 +46,12 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('true_tree', 'true tree', true_tree_string),
-            Form.MultiLine('test_tree', 'test topology', test_tree_string)]
+            Form.MultiLine('test_tree', 'test topology', test_tree_string),
+            Form.RadioGroup('power_level', 'interlacing condition', [
+                Form.RadioItem('power_level_high',
+                    'pairwise sign graph connectivity (higher power)', True),
+                Form.RadioItem('power_level_low',
+                    'principal orthant connectivity (lower power)')])]
     return form_objects
 
 def get_form_out():
