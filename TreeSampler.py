@@ -16,7 +16,8 @@ def sample_agglomerated_tree(ntaxa):
     """
     Sample a weighted phylogenetic xtree.
     All of the branch lengths will be default lengths.
-    This method follows the simulation method used in "Why neighbor-joining works".
+    This method follows the simulation method
+    Used in "Why neighbor-joining works".
     It agglomerates subtrees at random.
     @param ntaxa: the number of leaves in the tree
     @return: the root of a weighted phylogenetic xtree
@@ -68,7 +69,8 @@ def sample_tree(n_base_leaves, n_expected_extra_leaves, expected_branch_length):
         leaf.add_name(name)
         # add the leaf to the pool
         pool.append(leaf)
-    # repeatedly take two subtrees from the pool and replace them with a single subtree
+    # Repeatedly take two subtrees from the pool
+    # and replace them with a single subtree.
     while len(pool) > 1:
         root = FelTree.NewickNode()
         for i in range(2):
@@ -77,7 +79,8 @@ def sample_tree(n_base_leaves, n_expected_extra_leaves, expected_branch_length):
         pool.append(root)
     # the tree should be unrooted instead of rooted
     tree = FelTree.NewickTree(pool[0])
-    new_root = max((node.get_neighbor_count(), node) for node in tree.preorder())[1]
+    new_root = max(
+            (node.get_neighbor_count(), node) for node in tree.preorder())[1]
     old_root = tree.get_root()
     tree.set_root(new_root)
     tree.remove_node(old_root)
@@ -96,7 +99,8 @@ class TestTreeSampler(unittest.TestCase):
         n_base_leaves = 4
         n_expected_extra_leaves = 1
         expected_branch_length = 1
-        tree = sample_tree(n_base_leaves, n_expected_extra_leaves, expected_branch_length)
+        tree = sample_tree(
+                n_base_leaves, n_expected_extra_leaves, expected_branch_length)
 
     def test_xtree_sampler(self):
         ntaxa = 20
