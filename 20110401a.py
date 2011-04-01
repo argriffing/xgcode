@@ -1,17 +1,8 @@
-""" Look for a certificate of non-rejection of a topological alternative.
+""" Seek a pair of true and test trees showing a rejection power difference.
 
-If the tree topology could not be rejected,
-then provide a certificate of non-rejection.
-This is a sequence of internal vertex valuation signs
-which satisfies certain interlacing criteria.
-These criteria are
-pairwise orthant connectivity,
-sign harmonicity,
-and k-cut.
-Both trees should have named leaves,
-and the set of names should be the same.
-The first input tree should have branch lengths.
-The second input tree should have named internal vertices.
+The methods used for rejection are
+the principal orthant connectivity (weak)
+and the pairwise connectivity (strong).
 """
 
 from StringIO import StringIO
@@ -23,18 +14,15 @@ import Form
 import FormOut
 import Harmonic
 
+#TODO Move common functions with the previous snippet into a module.
 
 def get_form():
     """
     @return: the body of a form
     """
-    # define default tree strings
-    true_tree_string = '((a:1, b:2):3, (c:4, d:5):6, e:7);'
-    test_tree_string = '((a, b)x, (c, e)y, d)z;'
     # define the form objects
     form_objects = [
-            Form.MultiLine('true_tree', 'true tree', true_tree_string),
-            Form.MultiLine('test_tree', 'test topology', test_tree_string)]
+            ]
     return form_objects
 
 def get_form_out():
