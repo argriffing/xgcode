@@ -29,10 +29,8 @@ def get_form():
     @return: the body of a form
     """
     # define default tree strings
-    #true_tree_string = '((a:1, b:2):3, (c:4, d:5):6, e:7);'
-    true_s = '(a:1.049, (b:0.189, (c:1.642, d:0.760):2.437):0.742, e:0.006);'
-    #test_tree_string = '((a, b)x, (c, e)y, d)z;'
-    test_s = '(a, (c, d)x, (b, e)y)z;'
+    true_s = '(b:2.622, d:1.013, (e:1.496, (a:2.749, c:0.338):1.474):0.889);'
+    test_s = '(e, ((c, a)x, d)y, b)z;'
     # define the form objects
     form_objects = [
             Form.MultiLine('true_tree', 'true tree', true_s),
