@@ -124,12 +124,46 @@ def gen_assignments(
     # return the generator object
     return obj
 
-def rec_eigen():
+def rec_eigen(id_to_adj, id_to_val_list, id_to_list_val, depth):
     """
     This is a recursive function.
     Each level corresponds to an eigenvector.
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_val_list: a list of k partial valuation maps
+    @param id_to_list_val: maps an id to a list of values
+    @param depth: zero corresponds to fiedler depth
+    @return: None or a valid map
     """
-    pass
+    # Define the set of ids.
+    ids = set(id_to_adj)
+    # Define the requested number of cut branches at this depth.
+    ntarget = depth + 1
+    # Get the number of branches in the tree.
+    nbranches = sum(len(v) for v in id_to_adj.values()) / 2
+    # Get the list of internal ids.
+    internals = sorted(get_internal_set(id_to_adj))
+    # Consider each assignment at this level that satisfies ntarget.
+    for d in gen_assignments(
+            id_to_adj, id_to_val_list[depth],
+            ntarget, nbranches, internals):
+        # Require the assignment to satisfy sign harmonicity.
+        if is_sign_harmonic(id_to_adj, d):
+            # make the putative next cumulative valuation
+            id_to_list_next = {}
+            for x in ids:
+                v = id_to_list_val.get(x, [])
+                id_to_list_next[x] = tuple(list(v) + [d[x]])
+            # Require the cumulative assignment to meet orthant connectivity.
+            if is_orthant_connected(id_to_adj, id_to_list_next):
+                if depth == len(id_to_val_list) - 1:
+                    return id_to_list_next
+                else:
+                    return rec_eigen(
+                            id_to_adj, id_to_val_list, id_to_list_next,
+                            depth + 1)
+
+def get_internal_set(id_to_adj):
+    return set(v for v, d in id_to_adj.items() if len(d) > 1)
 
 def get_leaf_set(id_to_adj):
     return set(v for v, d in id_to_adj.items() if len(d) == 1)
@@ -318,6 +352,34 @@ class TestThis(unittest.TestCase):
                 8 : (-1, -1)}
         observed = is_orthant_connected(g_test_id_to_adj, id_to_val)
         expected = False
+        self.assertEqual(observed, expected)
+
+    def test_rec_eigen_a(self):
+        id_to_val_list = [
+                {1:1, 2:1, 3:-1, 4:-1, 5:-1, 6:None, 7:None, 8:None},
+                {1:1, 2:1, 3:-1, 4:1, 5:1, 6:None, 7:None, 8:None}]
+        id_to_list_val = {}
+        observed = rec_eigen(
+                g_test_id_to_adj, id_to_val_list, id_to_list_val, 0)
+        expected = {
+                1: (1, 1),
+                2: (1, 1),
+                3: (-1, -1),
+                4: (-1, 1),
+                5: (-1, 1),
+                6: (1, 1),
+                7: (-1, 1),
+                8: (-1, -1)}
+        self.assertEqual(observed, expected)
+
+    def test_rec_eigen_a(self):
+        id_to_val_list = [
+                {1:1, 2:1, 3:-1, 4:-1, 5:-1, 6:None, 7:None, 8:None},
+                {1:1, 2:1, 3:1, 4:1, 5:-1, 6:None, 7:None, 8:None}]
+        id_to_list_val = {}
+        observed = rec_eigen(
+                g_test_id_to_adj, id_to_val_list, id_to_list_val, 0)
+        expected = None
         self.assertEqual(observed, expected)
 
 
