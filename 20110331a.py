@@ -39,7 +39,10 @@ def get_form():
                 Form.RadioItem('power_level_high',
                     'pairwise sign graph connectivity (higher power)', True),
                 Form.RadioItem('power_level_low',
-                    'principal orthant connectivity (lower power)')])]
+                    'principal orthant connectivity (lower power)')]),
+            Form.CheckGroup('search_options', 'search options', [
+                Form.CheckItem('require_sign_harmonicity',
+                    'require sign harmonicity', True)])]
     return form_objects
 
 def get_form_out():
@@ -125,7 +128,8 @@ def get_response_content(fs):
         method = SeekEigenLacing.rec_eigen_weak
     # Attempt to find a sign assignment.
     id_to_vals = method(
-            test_id_to_adj, id_to_val_list, id_to_list_val, 0)
+            test_id_to_adj, id_to_val_list, id_to_list_val,
+            0, fs.require_sign_harmonicity)
     # Reorder the leaf and the internal node ids according to name order.
     leaf_pair = sorted(
             (test_id_to_name[x], x) for x in test_tree_leaf_ids)

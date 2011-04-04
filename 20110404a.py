@@ -1,4 +1,4 @@
-""" Seek a pair of true and test trees showing a rejection power difference.
+""" Another test of a tree topology rejection power difference.
 
 The methods used for rejection are
 the principal orthant connectivity (weak)
@@ -28,15 +28,22 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            Form.Integer('nleaves', 'use this many leaves', 5, low=4, high=20),
-            Form.RadioGroup('search_type', 'search mode', [
-                Form.RadioItem('search_different',
-                    'seek a pair which shows a rejection difference', True),
-                Form.RadioItem('search_same',
-                    'test that the true topology is not rejected')]),
-            Form.CheckGroup('search_options', 'search options', [
-                Form.CheckItem('require_sign_harmonicity',
-                    'require sign harmonicity', True)])]
+            Form.Integer('nleaves', 'use this many leaves', 5, low=4, high=10),
+            Form.CheckGroup('filter_a', 'Filter A:', [
+                Form.CheckItem('vertex_interlacing_a',
+                    'vertex interlacing (unchecked for orthant connectivity)',
+                    True),
+                Form.CheckItem('sign_harmonicity_a',
+                    'require sign harmonicity', True)]),
+            Form.CheckGroup('filter_b', 'Filter B:', [
+                Form.CheckItem('vertex_interlacing_b',
+                    'vertex interlacing (unchecked for orthant connectivity)',
+                    True),
+                Form.CheckItem('sign_harmonicity_b',
+                    'require sign harmonicity', False)]),
+            Form.CheckGroup('search_options', 'search options:', [
+                Form.CheckItem('halt_on_difference',
+                    'stop the search when a difference is found', True)])]
     return form_objects
 
 def get_form_out():
@@ -89,10 +96,10 @@ class CheckTreeError(Exception): pass
 
 class CheckTreeData:
 
-    def __init__(self, method_pair, require_sign_harmonicity):
+    def __init__(self, method_pair, harmonicity_pair):
         # store the search parameters
         self.method_pair = method_pair
-        self.require_sign_harmonicity = require_sign_harmonicity
+        self.harmonicity_pair = harmonicity_pair
         # initialize the search results
         self.acceptance_matrix = np.zeros((2,2))
         self.nerrors = 0
@@ -132,7 +139,8 @@ def check_tree_pair(true_tree, test_tree, data):
     test_tree_leaf_ids = set(id(x) for x in test_tree.gen_tips())
     # Fill out the acceptance pair.
     acceptance_pair = []
-    for i, method in enumerate(data.method_pair):
+    for i, (method, harmonicity) in enumerate(
+            zip(data.method_pair, data.harmonicity_pair)):
         id_to_val_list = []
         for id_to_full_val in id_to_full_val_list:
             d = {}
@@ -151,7 +159,7 @@ def check_tree_pair(true_tree, test_tree, data):
         id_to_list_val = {}
         id_to_vals = method(
                 test_id_to_adj, id_to_val_list, id_to_list_val,
-                0, data.require_sign_harmonicity)
+                0, harmonicity)
         acceptance_pair.append(1 if id_to_vals else 0)
     data.add_acceptances(acceptance_pair)
     found_example = acceptance_pair[0] != acceptance_pair[1]
@@ -165,11 +173,29 @@ def check_tree_pair(true_tree, test_tree, data):
         data.report = s.getvalue()
     return found_example
 
+
 def get_response_content(fs):
-    method_pair = (
-            SeekEigenLacing.rec_eigen_weak,
-            SeekEigenLacing.rec_eigen_strong)
-    data = CheckTreeData(method_pair, fs.require_sign_harmonicity)
+    # define the harmonicity pair based on the user choices
+    harmonicity_pair = []
+    if fs.sign_harmonicity_a:
+        harmonicity_pair.append(True)
+    else:
+        harmonicity_pair.append(False)
+    if fs.sign_harmonicity_b:
+        harmonicity_pair.append(True)
+    else:
+        harmonicity_pair.append(False)
+    # define the method pair based on the user choices
+    method_pair = []
+    if fs.vertex_interlacing_a:
+        method_pair.append(SeekEigenLacing.rec_eigen_strong)
+    else:
+        method_pair.append(SeekEigenLacing.rec_eigen_weak)
+    if fs.vertex_interlacing_b:
+        method_pair.append(SeekEigenLacing.rec_eigen_strong)
+    else:
+        method_pair.append(SeekEigenLacing.rec_eigen_weak)
+    data = CheckTreeData(method_pair, harmonicity_pair)
     nseconds = 5
     tm = time.time()
     while time.time() < tm + nseconds:
@@ -182,14 +208,11 @@ def get_response_content(fs):
         test_tree = Newick.parse(test_s, Newick.NewickTree)
         # Add the pairwise check to the data borg.
         try:
-            if fs.search_different:
-                success = check_tree_pair(true_tree, test_tree, data)
-            else:
-                success = check_tree_pair(true_tree, true_tree, data)
+            found_difference = check_tree_pair(true_tree, test_tree, data)
         except CheckTreeError as e:
             data.add_error(e)
-        # Break if we have found a success.
-        if success:
+        # Check to see if we should stop early.
+        if found_difference and fs.halt_on_difference:
             break
     # make the report
     out = StringIO()

@@ -112,7 +112,8 @@ def gen_assignments_brute(
     for x in internals:
         id_to_val[x] = None
 
-def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val, depth):
+def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val,
+        depth, require_sign_harmonicity):
     """
     This is a recursive function.
     Each level corresponds to an eigenvector.
@@ -121,6 +122,7 @@ def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val, depth):
     @param id_to_val_list: a list of k partial valuation maps
     @param id_to_list_val: maps an id to a list of values
     @param depth: zero corresponds to fiedler depth
+    @param require_sign_harmonicity: True if sign harmonicity is required
     @return: None or a valid map
     """
     # Define the set of ids.
@@ -135,25 +137,28 @@ def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val, depth):
     for d in gen_assignments(
             id_to_adj, id_to_val_list[depth],
             ntarget, nbranches, internals):
-        # Require the assignment to satisfy sign harmonicity.
-        if is_sign_harmonic(id_to_adj, d):
-            # make the putative next cumulative valuation
-            id_to_list_next = {}
-            for x in ids:
-                v = id_to_list_val.get(x, [])
-                id_to_list_next[x] = tuple(list(v) + [d[x]])
-            # Require the cumulative assignment to meet orthant connectivity.
-            if is_value_connected(id_to_adj, id_to_list_next):
-                if depth == len(id_to_val_list) - 1:
-                    return id_to_list_next
-                else:
-                    result = rec_eigen_weak(
-                            id_to_adj, id_to_val_list, id_to_list_next,
-                            depth + 1)
-                    if result:
-                        return result
+        # Check sign harmonicity if requested.
+        if require_sign_harmonicity:
+            if not is_sign_harmonic(id_to_adj, d):
+                continue
+        # make the putative next cumulative valuation
+        id_to_list_next = {}
+        for x in ids:
+            v = id_to_list_val.get(x, [])
+            id_to_list_next[x] = tuple(list(v) + [d[x]])
+        # Require the cumulative assignment to meet orthant connectivity.
+        if is_value_connected(id_to_adj, id_to_list_next):
+            if depth == len(id_to_val_list) - 1:
+                return id_to_list_next
+            else:
+                result = rec_eigen_weak(
+                        id_to_adj, id_to_val_list, id_to_list_next,
+                        depth + 1, require_sign_harmonicity)
+                if result:
+                    return result
 
-def rec_eigen_strong(id_to_adj, id_to_val_list, id_to_list_val, depth):
+def rec_eigen_strong(id_to_adj, id_to_val_list, id_to_list_val,
+        depth, require_sign_harmonicity):
     """
     This is a recursive function.
     Each level corresponds to an eigenvector.
@@ -162,6 +167,7 @@ def rec_eigen_strong(id_to_adj, id_to_val_list, id_to_list_val, depth):
     @param id_to_val_list: a list of k partial valuation maps
     @param id_to_list_val: maps an id to a list of values
     @param depth: zero corresponds to fiedler depth
+    @param require_sign_harmonicity: True if sign harmonicity is required
     @return: None or a valid map
     """
     # Define the set of ids.
@@ -176,28 +182,30 @@ def rec_eigen_strong(id_to_adj, id_to_val_list, id_to_list_val, depth):
     for d in gen_assignments(
             id_to_adj, id_to_val_list[depth],
             ntarget, nbranches, internals):
-        # Require the assignment to satisfy sign harmonicity.
-        if is_sign_harmonic(id_to_adj, d):
-            # make the putative next cumulative valuation
-            id_to_list_next = {}
-            for x in ids:
-                v = id_to_list_val.get(x, [])
-                id_to_list_next[x] = tuple(list(v) + [d[x]])
-            # get the valuation at the previous depth
-            if depth:
-                d_prev = dict((x, id_to_list_val[x][-1]) for x in ids)
+        # Check sign harmonicity if requested.
+        if require_sign_harmonicity:
+            if not is_sign_harmonic(id_to_adj, d):
+                continue
+        # make the putative next cumulative valuation
+        id_to_list_next = {}
+        for x in ids:
+            v = id_to_list_val.get(x, [])
+            id_to_list_next[x] = tuple(list(v) + [d[x]])
+        # get the valuation at the previous depth
+        if depth:
+            d_prev = dict((x, id_to_list_val[x][-1]) for x in ids)
+        else:
+            d_prev = dict((x, 1) for x in ids)
+        # Check the pairwise sign lacing condition.
+        if check_sign_lacing(id_to_adj, d_prev, d):
+            if depth == len(id_to_val_list) - 1:
+                return id_to_list_next
             else:
-                d_prev = dict((x, 1) for x in ids)
-            # Check the pairwise sign lacing condition.
-            if check_sign_lacing(id_to_adj, d_prev, d):
-                if depth == len(id_to_val_list) - 1:
-                    return id_to_list_next
-                else:
-                    result = rec_eigen_strong(
-                            id_to_adj, id_to_val_list, id_to_list_next,
-                            depth + 1)
-                    if result:
-                        return result
+                result = rec_eigen_strong(
+                        id_to_adj, id_to_val_list, id_to_list_next,
+                        depth + 1, require_sign_harmonicity)
+                if result:
+                    return result
 
 def check_sign_lacing(id_to_adj, id_to_va, id_to_vb):
     """
@@ -230,32 +238,6 @@ def get_leaf_lists(id_to_adj, id_to_val):
         val = id_to_val[leaf]
         value_to_set[val].add(leaf)
     return [list(s) for s in value_to_set.values()]
-
-# FIXME this function does not match its description
-def bad_is_value_connected(id_to_adj, id_to_val):
-    """
-    Note that in this case the value can be a tuple of values.
-    This function checks that in the tree,
-    elements with the same values are connected.
-    Note that id_to_adj is assumed to be a tree,
-    and the values in id_to_val must be hashable.
-    Here are two usage examples.
-    The first usage example is to check principal orthant connectivity
-    by looking at the tuple of the first k valuations.
-    The second usage example is to check a stronger
-    connectivity criterion by looking at the pair
-    such that the first element is a region index for the kth valuation
-    and where the second element is the (k+1)st valuation itself.
-    @param id_to_adj: maps an id to a list of adjacent ids
-    @param id_to_val: maps an id to a value
-    """
-    leaf_lists = get_leaf_lists(id_to_adj, id_to_val)
-    id_to_region = get_regions(id_to_adj, id_to_val)
-    for leaf_list in leaf_lists:
-        regions = set(id_to_region[leaf] for leaf in leaf_list)
-        if len(regions) > 1:
-            return False
-    return True
 
 def is_value_connected(id_to_adj, id_to_val):
     """
@@ -474,7 +456,8 @@ class TestThis(unittest.TestCase):
                 {1:1, 2:1, 3:-1, 4:1, 5:1, 6:None, 7:None, 8:None}]
         id_to_list_val = {}
         observed = rec_eigen_weak(
-                g_test_id_to_adj, id_to_val_list, id_to_list_val, 0)
+                g_test_id_to_adj, id_to_val_list, id_to_list_val,
+                0, True)
         expected = {
                 1: (1, 1),
                 2: (1, 1),
@@ -492,7 +475,8 @@ class TestThis(unittest.TestCase):
                 {1:1, 2:1, 3:1, 4:1, 5:-1, 6:None, 7:None, 8:None}]
         id_to_list_val = {}
         observed = rec_eigen_weak(
-                g_test_id_to_adj, id_to_val_list, id_to_list_val, 0)
+                g_test_id_to_adj, id_to_val_list, id_to_list_val,
+                0, True)
         expected = None
         self.assertEqual(observed, expected)
 
@@ -510,7 +494,8 @@ class TestThis(unittest.TestCase):
                 {1:-1, 2:-1, 3:1, 4:-1, 5:None, 6:None}]
         id_to_list_val = {}
         observed = rec_eigen_strong(
-                id_to_adj, id_to_val_list, id_to_list_val, 0)
+                id_to_adj, id_to_val_list, id_to_list_val,
+                0, True)
         expected = {
                 1: (-1, -1, -1),
                 2: (-1, 1, -1),
