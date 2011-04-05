@@ -1,5 +1,24 @@
 """
 Do an exhaustive search of internal vertex sign assignments.
+
+The tree rejection criteria based on sign assignments
+can be broken into three categories.
+First is the class that looks only at a single valuation per vertex.
+An example of a criterion in this first class
+is that the kth valuation must cut the tree into k strong sign graphs.
+Second is the class that looks at sequential pairs of valuations per vertex.
+Another example of a criterion in the first class
+is the requirement that each strong sign graph must contain a leaf.
+An example of a criterion in this second class
+is that the k+1 valuation cannot break a strong k sign graph
+into more than two pieces.
+Another example of a criterion in the second class
+is that a strong k sign graph must have at least one vertex x
+with a neighbor y so that the k+1 valuations of x and y are opposite sign.
+Third is the class that looks at all valuations less than or equal to k
+for all vertices of the tree.
+An example of a criterion in this third class
+is principal orthant connectivity.
 """
 
 import unittest
@@ -8,6 +27,11 @@ import itertools
 
 import iterutils
 
+ALWAYS_REJECT = 'always reject'
+SIGN_HARMONICITY = 'sign harmonicity'
+VERTEX_INTERLACING = 'vertex interlacing'
+CUT_POTENTIAL = 'cut potential'
+ORTHANT_CONNECTIVITY = 'orthant connectivity'
 
 def is_branch_compat(nsame, ndifferent, ntarget, nbranches):
     """
@@ -112,8 +136,10 @@ def gen_assignments_brute(
     for x in internals:
         id_to_val[x] = None
 
-def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val,
-        depth, require_sign_harmonicity):
+def has_pairwise_criteria(flags):
+    return True if set([VERTEX_INTERLACING, CUT_POTENTIAL]) & flags else False
+
+def rec_eigen(id_to_adj, id_to_val_list, id_to_list_val, depth, flags):
     """
     This is a recursive function.
     Each level corresponds to an eigenvector.
@@ -122,7 +148,7 @@ def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val,
     @param id_to_val_list: a list of k partial valuation maps
     @param id_to_list_val: maps an id to a list of values
     @param depth: zero corresponds to fiedler depth
-    @param require_sign_harmonicity: True if sign harmonicity is required
+    @param flags: set of search flags
     @return: None or a valid map
     """
     # Define the set of ids.
@@ -137,78 +163,74 @@ def rec_eigen_weak(id_to_adj, id_to_val_list, id_to_list_val,
     for d in gen_assignments(
             id_to_adj, id_to_val_list[depth],
             ntarget, nbranches, internals):
-        # Check sign harmonicity if requested.
-        if require_sign_harmonicity:
+        # Check single valuation criteria.
+        if SIGN_HARMONICITY in flags:
             if not is_sign_harmonic(id_to_adj, d):
                 continue
-        # make the putative next cumulative valuation
-        id_to_list_next = {}
-        for x in ids:
-            v = id_to_list_val.get(x, [])
-            id_to_list_next[x] = tuple(list(v) + [d[x]])
-        # Require the cumulative assignment to meet orthant connectivity.
-        if is_value_connected(id_to_adj, id_to_list_next):
-            if depth == len(id_to_val_list) - 1:
-                return id_to_list_next
+        # Check pairwise valuation criteria.
+        if has_pairwise_criteria(flags):
+            # get the valuation at the previous depth
+            if depth:
+                d_prev = dict((x, id_to_list_val[x][-1]) for x in ids)
             else:
-                result = rec_eigen_weak(
-                        id_to_adj, id_to_val_list, id_to_list_next,
-                        depth + 1, require_sign_harmonicity)
-                if result:
-                    return result
-
-def rec_eigen_strong(id_to_adj, id_to_val_list, id_to_list_val,
-        depth, require_sign_harmonicity):
-    """
-    This is a recursive function.
-    Each level corresponds to an eigenvector.
-    This uses the stronger condition relating sign graphs.
-    @param id_to_adj: maps an id to a list of adjacent ids
-    @param id_to_val_list: a list of k partial valuation maps
-    @param id_to_list_val: maps an id to a list of values
-    @param depth: zero corresponds to fiedler depth
-    @param require_sign_harmonicity: True if sign harmonicity is required
-    @return: None or a valid map
-    """
-    # Define the set of ids.
-    ids = set(id_to_adj)
-    # Define the requested number of cut branches at this depth.
-    ntarget = depth + 1
-    # Get the number of branches in the tree.
-    nbranches = sum(len(v) for v in id_to_adj.values()) / 2
-    # Get the list of internal ids.
-    internals = sorted(get_internal_set(id_to_adj))
-    # Consider each assignment at this level that satisfies ntarget.
-    for d in gen_assignments(
-            id_to_adj, id_to_val_list[depth],
-            ntarget, nbranches, internals):
-        # Check sign harmonicity if requested.
-        if require_sign_harmonicity:
-            if not is_sign_harmonic(id_to_adj, d):
-                continue
-        # make the putative next cumulative valuation
+                d_prev = dict((x, 1) for x in ids)
+            # check the conditions
+            if CUT_POTENTIAL in flags:
+                if not check_domain_cut_potential(id_to_adj, d_prev, d):
+                    continue
+            if VERTEX_INTERLACING in flags:
+                if not check_sign_lacing(id_to_adj, d_prev, d):
+                    continue
+        # Make the putative next cumulative valuation.
         id_to_list_next = {}
         for x in ids:
             v = id_to_list_val.get(x, [])
             id_to_list_next[x] = tuple(list(v) + [d[x]])
-        # get the valuation at the previous depth
-        if depth:
-            d_prev = dict((x, id_to_list_val[x][-1]) for x in ids)
+        # Check cumulative valuation criteria.
+        if ORTHANT_CONNECTIVITY in flags:
+            if not is_value_connected(id_to_adj, id_to_list_next):
+                continue
+        # Check a final debug criterion.
+        if ALWAYS_REJECT in flags:
+            continue
+        # At this point all criteria are satisfied to the current depth.
+        if depth == len(id_to_val_list) - 1:
+            return id_to_list_next
         else:
-            d_prev = dict((x, 1) for x in ids)
-        # Check the pairwise sign lacing condition.
-        if check_sign_lacing(id_to_adj, d_prev, d):
-            if depth == len(id_to_val_list) - 1:
-                return id_to_list_next
-            else:
-                result = rec_eigen_strong(
-                        id_to_adj, id_to_val_list, id_to_list_next,
-                        depth + 1, require_sign_harmonicity)
-                if result:
-                    return result
+            result = rec_eigen(id_to_adj, id_to_val_list, id_to_list_next,
+                    depth + 1, flags)
+            if result:
+                return result
+
+def check_domain_cut_potential(id_to_adj, id_to_va, id_to_vb):
+    """
+    This checks an interlacing condition on strong sign graphs.
+    It checks that every k nodal domain
+    has the potential to be cut somewhere,
+    possibly inside the corresponding strong sign graph
+    or possible somewhere on the boundary of the strong sign graph.
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_va: map id to sign valuation k
+    @param id_to_vb: map id to sign valuation k+1
+    @return: True if the interlacing is compatible
+    """
+    ids = set(id_to_adj)
+    potentially_cut_regions = set()
+    id_to_region = get_regions(id_to_adj, id_to_va)
+    for a, bs in id_to_adj.items():
+        a_region = id_to_region[a]
+        for b in bs:
+            if id_to_vb[a] * id_to_vb[b] < 0:
+                potentially_cut_regions.add(a_region)
+    nregions = len(set(id_to_region.values()))
+    npotentially_cut_regions = len(potentially_cut_regions)
+    return npotentially_cut_regions == nregions
 
 def check_sign_lacing(id_to_adj, id_to_va, id_to_vb):
     """
+    This checks an interlacing condition on strong sign graphs.
+    It checks that no strong k sign graph
+    is cut into more than two pieces by the k+1 valuation.
     @param id_to_adj: maps an id to a list of adjacent ids
     @param id_to_va: map id to sign valuation k
     @param id_to_vb: map id to sign valuation k+1
@@ -455,9 +477,9 @@ class TestThis(unittest.TestCase):
                 {1:1, 2:1, 3:-1, 4:-1, 5:-1, 6:None, 7:None, 8:None},
                 {1:1, 2:1, 3:-1, 4:1, 5:1, 6:None, 7:None, 8:None}]
         id_to_list_val = {}
-        observed = rec_eigen_weak(
-                g_test_id_to_adj, id_to_val_list, id_to_list_val,
-                0, True)
+        flags = set([SIGN_HARMONICITY, ORTHANT_CONNECTIVITY])
+        observed = rec_eigen(
+                g_test_id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
         expected = {
                 1: (1, 1),
                 2: (1, 1),
@@ -474,9 +496,9 @@ class TestThis(unittest.TestCase):
                 {1:1, 2:1, 3:-1, 4:-1, 5:-1, 6:None, 7:None, 8:None},
                 {1:1, 2:1, 3:1, 4:1, 5:-1, 6:None, 7:None, 8:None}]
         id_to_list_val = {}
-        observed = rec_eigen_weak(
-                g_test_id_to_adj, id_to_val_list, id_to_list_val,
-                0, True)
+        flags = set([SIGN_HARMONICITY, ORTHANT_CONNECTIVITY])
+        observed = rec_eigen(
+                g_test_id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
         expected = None
         self.assertEqual(observed, expected)
 
@@ -493,9 +515,9 @@ class TestThis(unittest.TestCase):
                 {1:-1, 2:1, 3:1, 4:-1, 5:None, 6:None},
                 {1:-1, 2:-1, 3:1, 4:-1, 5:None, 6:None}]
         id_to_list_val = {}
-        observed = rec_eigen_strong(
-                id_to_adj, id_to_val_list, id_to_list_val,
-                0, True)
+        flags = set([SIGN_HARMONICITY, VERTEX_INTERLACING])
+        observed = rec_eigen(
+                id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
         expected = {
                 1: (-1, -1, -1),
                 2: (-1, 1, -1),

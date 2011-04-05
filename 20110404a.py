@@ -1,11 +1,4 @@
-""" Another test of a tree topology rejection power difference.
-
-The methods used for rejection are
-the principal orthant connectivity (weak)
-and the pairwise connectivity (strong).
-Also the requirement or non-requirement of sign harmonicity.
-Sign harmonicity in this context means that
-each strong sign graph includes at least one leaf.
+""" Look for tree topology rejection power differences.
 """
 
 from StringIO import StringIO
@@ -29,19 +22,29 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.Integer('nleaves', 'use this many leaves', 5, low=4, high=10),
-            Form.CheckGroup('filter_a', 'Filter A:', [
-                Form.CheckItem('vertex_interlacing_a',
-                    'vertex interlacing (unchecked for orthant connectivity)',
-                    True),
+            Form.CheckGroup('filter_a', 'filter A', [
+                Form.CheckItem('always_reject_a',
+                    'always reject', False),
                 Form.CheckItem('sign_harmonicity_a',
-                    'require sign harmonicity', True)]),
-            Form.CheckGroup('filter_b', 'Filter B:', [
-                Form.CheckItem('vertex_interlacing_b',
-                    'vertex interlacing (unchecked for orthant connectivity)',
-                    True),
+                    'sign harmonicity', True),
+                Form.CheckItem('vertex_interlacing_a',
+                    'vertex interlacing', True),
+                Form.CheckItem('cut_potential_a',
+                    'nodal domain cut potential', True),
+                Form.CheckItem('orthant_connectivity_a',
+                    'orthant connectivity', False)]),
+            Form.CheckGroup('filter_b', 'filter B', [
+                Form.CheckItem('always_reject_b',
+                    'always reject', False),
                 Form.CheckItem('sign_harmonicity_b',
-                    'require sign harmonicity', False)]),
-            Form.CheckGroup('search_options', 'search options:', [
+                    'sign harmonicity', True),
+                Form.CheckItem('vertex_interlacing_b',
+                    'vertex interlacing', True),
+                Form.CheckItem('cut_potential_b',
+                    'nodal domain cut potential', False),
+                Form.CheckItem('orthant_connectivity_b',
+                    'orthant connectivity', False)]),
+            Form.CheckGroup('search_options', 'search options', [
                 Form.CheckItem('halt_on_difference',
                     'stop the search when a difference is found', True)])]
     return form_objects
@@ -96,10 +99,10 @@ class CheckTreeError(Exception): pass
 
 class CheckTreeData:
 
-    def __init__(self, method_pair, harmonicity_pair):
+    def __init__(self, flags_a, flags_b):
         # store the search parameters
-        self.method_pair = method_pair
-        self.harmonicity_pair = harmonicity_pair
+        self.flags_a = flags_a
+        self.flags_b = flags_b
         # initialize the search results
         self.acceptance_matrix = np.zeros((2,2))
         self.nerrors = 0
@@ -139,8 +142,7 @@ def check_tree_pair(true_tree, test_tree, data):
     test_tree_leaf_ids = set(id(x) for x in test_tree.gen_tips())
     # Fill out the acceptance pair.
     acceptance_pair = []
-    for i, (method, harmonicity) in enumerate(
-            zip(data.method_pair, data.harmonicity_pair)):
+    for i, flags in enumerate((data.flags_a, data.flags_b)):
         id_to_val_list = []
         for id_to_full_val in id_to_full_val_list:
             d = {}
@@ -157,9 +159,8 @@ def check_tree_pair(true_tree, test_tree, data):
                 d[x] = None
             id_to_val_list.append(d)
         id_to_list_val = {}
-        id_to_vals = method(
-                test_id_to_adj, id_to_val_list, id_to_list_val,
-                0, harmonicity)
+        id_to_vals = SeekEigenLacing.rec_eigen(
+                test_id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
         acceptance_pair.append(1 if id_to_vals else 0)
     data.add_acceptances(acceptance_pair)
     found_example = acceptance_pair[0] != acceptance_pair[1]
@@ -173,29 +174,44 @@ def check_tree_pair(true_tree, test_tree, data):
         data.report = s.getvalue()
     return found_example
 
+def get_flags_a(fs):
+    """
+    @return: a set of search criterion flags
+    """
+    flags = set([])
+    if fs.always_reject_a:
+        flags.add(SeekEigenLacing.ALWAYS_REJECT)
+    if fs.sign_harmonicity_a:
+        flags.add(SeekEigenLacing.SIGN_HARMONICITY)
+    if fs.vertex_interlacing_a:
+        flags.add(SeekEigenLacing.VERTEX_INTERLACING)
+    if fs.cut_potential_a:
+        flags.add(SeekEigenLacing.CUT_POTENTIAL)
+    if fs.orthant_connectivity_a:
+        flags.add(SeekEigenLacing.ORTHANT_CONNECTIVITY)
+    return flags
+
+def get_flags_b(fs):
+    """
+    @return: a set of search criterion flags
+    """
+    flags = set([])
+    if fs.always_reject_b:
+        flags.add(SeekEigenLacing.ALWAYS_REJECT)
+    if fs.sign_harmonicity_b:
+        flags.add(SeekEigenLacing.SIGN_HARMONICITY)
+    if fs.vertex_interlacing_b:
+        flags.add(SeekEigenLacing.VERTEX_INTERLACING)
+    if fs.cut_potential_b:
+        flags.add(SeekEigenLacing.CUT_POTENTIAL)
+    if fs.orthant_connectivity_b:
+        flags.add(SeekEigenLacing.ORTHANT_CONNECTIVITY)
+    return flags
 
 def get_response_content(fs):
-    # define the harmonicity pair based on the user choices
-    harmonicity_pair = []
-    if fs.sign_harmonicity_a:
-        harmonicity_pair.append(True)
-    else:
-        harmonicity_pair.append(False)
-    if fs.sign_harmonicity_b:
-        harmonicity_pair.append(True)
-    else:
-        harmonicity_pair.append(False)
-    # define the method pair based on the user choices
-    method_pair = []
-    if fs.vertex_interlacing_a:
-        method_pair.append(SeekEigenLacing.rec_eigen_strong)
-    else:
-        method_pair.append(SeekEigenLacing.rec_eigen_weak)
-    if fs.vertex_interlacing_b:
-        method_pair.append(SeekEigenLacing.rec_eigen_strong)
-    else:
-        method_pair.append(SeekEigenLacing.rec_eigen_weak)
-    data = CheckTreeData(method_pair, harmonicity_pair)
+    flags_a = get_flags_a(fs)
+    flags_b = get_flags_b(fs)
+    data = CheckTreeData(flags_a, flags_b)
     nseconds = 5
     tm = time.time()
     while time.time() < tm + nseconds:

@@ -35,14 +35,15 @@ def get_form():
     form_objects = [
             Form.MultiLine('true_tree', 'true tree', true_s),
             Form.MultiLine('test_tree', 'test topology', test_s),
-            Form.RadioGroup('power_level', 'interlacing condition', [
-                Form.RadioItem('power_level_high',
-                    'pairwise sign graph connectivity (higher power)', True),
-                Form.RadioItem('power_level_low',
-                    'principal orthant connectivity (lower power)')]),
-            Form.CheckGroup('search_options', 'search options', [
-                Form.CheckItem('require_sign_harmonicity',
-                    'require sign harmonicity', True)])]
+            Form.CheckGroup('search_options', 'search criteria', [
+                Form.CheckItem('sign_harmonicity',
+                    'sign harmonicity', True),
+                Form.CheckItem('vertex_interlacing',
+                    'vertex interlacing', True),
+                Form.CheckItem('cut_potential',
+                    'nodal domain cut potential', True),
+                Form.CheckItem('orthant_connectivity',
+                    'orthant connectivity', True)])]
     return form_objects
 
 def get_form_out():
@@ -90,10 +91,26 @@ def get_true_leaf_id_to_test_leaf_id(true_tree, test_tree):
 def get_sign_string(arr):
     return ' '.join('+' if x > 0 else '-' for x in arr)
 
+def get_flags(fs):
+    """
+    @return: a set of search criterion flags
+    """
+    flags = set([])
+    if fs.sign_harmonicity:
+        flags.add(SeekEigenLacing.SIGN_HARMONICITY)
+    if fs.vertex_interlacing:
+        flags.add(SeekEigenLacing.VERTEX_INTERLACING)
+    if fs.cut_potential:
+        flags.add(SeekEigenLacing.CUT_POTENTIAL)
+    if fs.orthant_connectivity:
+        flags.add(SeekEigenLacing.ORTHANT_CONNECTIVITY)
+    return flags
+
 def get_response_content(fs):
     # Read the newick trees.
     true_tree = Newick.parse(fs.true_tree, Newick.NewickTree)
     test_tree = Newick.parse(fs.test_tree, Newick.NewickTree)
+    flags = get_flags(fs)
     # Get a list of maps from node id to harmonic extension.
     true_tree_leaf_ids = set(id(x) for x in true_tree.gen_tips())
     nleaves = len(true_tree_leaf_ids)
@@ -121,15 +138,9 @@ def get_response_content(fs):
             d[x] = None
         id_to_val_list.append(d)
     id_to_list_val = {}
-    # Choose the power level.
-    if fs.power_level_high:
-        method = SeekEigenLacing.rec_eigen_strong
-    else:
-        method = SeekEigenLacing.rec_eigen_weak
     # Attempt to find a sign assignment.
-    id_to_vals = method(
-            test_id_to_adj, id_to_val_list, id_to_list_val,
-            0, fs.require_sign_harmonicity)
+    id_to_vals = SeekEigenLacing.rec_eigen(
+            test_id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
     # Reorder the leaf and the internal node ids according to name order.
     leaf_pair = sorted(
             (test_id_to_name[x], x) for x in test_tree_leaf_ids)
