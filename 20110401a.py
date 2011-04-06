@@ -111,9 +111,8 @@ def get_response_content(fs):
         # Define the topology in a different format.
         id_to_adj = get_id_to_adj(true_tree)
         # Check the tree for self-compatibility under the given conditions.
-        id_to_list_val = {}
         id_to_vals = SeekEigenLacing.rec_eigen(
-            id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
+                id_to_adj, id_to_val_list, flags)
         if not id_to_vals:
             rejected_s = true_s
     # make the report

@@ -139,11 +139,22 @@ def gen_assignments_brute(
 def has_pairwise_criteria(flags):
     return True if set([VERTEX_INTERLACING, CUT_POTENTIAL]) & flags else False
 
-def rec_eigen(id_to_adj, id_to_val_list, id_to_list_val, depth, flags):
+def rec_eigen(id_to_adj, id_to_val_list, flags):
+    """
+    @param id_to_adj: maps an id to a list of adjacent ids
+    @param id_to_val_list: a list of k partial valuation maps
+    @param flags: set of search flags
+    @return: None or a valid map
+    """
+    id_to_list_val = {}
+    id_to_vals = _rec_eigen_inner(
+            id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
+    return id_to_vals
+
+def _rec_eigen_inner(id_to_adj, id_to_val_list, id_to_list_val, depth, flags):
     """
     This is a recursive function.
     Each level corresponds to an eigenvector.
-    This uses the relatively weak condition of principal orthant connectivity.
     @param id_to_adj: maps an id to a list of adjacent ids
     @param id_to_val_list: a list of k partial valuation maps
     @param id_to_list_val: maps an id to a list of values
@@ -197,7 +208,8 @@ def rec_eigen(id_to_adj, id_to_val_list, id_to_list_val, depth, flags):
         if depth == len(id_to_val_list) - 1:
             return id_to_list_next
         else:
-            result = rec_eigen(id_to_adj, id_to_val_list, id_to_list_next,
+            result = _rec_eigen_inner(
+                    id_to_adj, id_to_val_list, id_to_list_next,
                     depth + 1, flags)
             if result:
                 return result
@@ -476,10 +488,8 @@ class TestThis(unittest.TestCase):
         id_to_val_list = [
                 {1:1, 2:1, 3:-1, 4:-1, 5:-1, 6:None, 7:None, 8:None},
                 {1:1, 2:1, 3:-1, 4:1, 5:1, 6:None, 7:None, 8:None}]
-        id_to_list_val = {}
         flags = set([SIGN_HARMONICITY, ORTHANT_CONNECTIVITY])
-        observed = rec_eigen(
-                g_test_id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
+        observed = rec_eigen(g_test_id_to_adj, id_to_val_list, flags)
         expected = {
                 1: (1, 1),
                 2: (1, 1),
@@ -495,10 +505,8 @@ class TestThis(unittest.TestCase):
         id_to_val_list = [
                 {1:1, 2:1, 3:-1, 4:-1, 5:-1, 6:None, 7:None, 8:None},
                 {1:1, 2:1, 3:1, 4:1, 5:-1, 6:None, 7:None, 8:None}]
-        id_to_list_val = {}
         flags = set([SIGN_HARMONICITY, ORTHANT_CONNECTIVITY])
-        observed = rec_eigen(
-                g_test_id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
+        observed = rec_eigen(g_test_id_to_adj, id_to_val_list, flags)
         expected = None
         self.assertEqual(observed, expected)
 
@@ -514,10 +522,8 @@ class TestThis(unittest.TestCase):
                 {1:-1, 2:-1, 3:1, 4:1, 5:None, 6:None},
                 {1:-1, 2:1, 3:1, 4:-1, 5:None, 6:None},
                 {1:-1, 2:-1, 3:1, 4:-1, 5:None, 6:None}]
-        id_to_list_val = {}
         flags = set([SIGN_HARMONICITY, VERTEX_INTERLACING])
-        observed = rec_eigen(
-                id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
+        observed = rec_eigen(id_to_adj, id_to_val_list, flags)
         expected = {
                 1: (-1, -1, -1),
                 2: (-1, 1, -1),

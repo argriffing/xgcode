@@ -137,10 +137,9 @@ def get_response_content(fs):
         for x in test_tree_internal_ids:
             d[x] = None
         id_to_val_list.append(d)
-    id_to_list_val = {}
     # Attempt to find a sign assignment.
     id_to_vals = SeekEigenLacing.rec_eigen(
-            test_id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
+            test_id_to_adj, id_to_val_list, flags)
     # Reorder the leaf and the internal node ids according to name order.
     leaf_pair = sorted(
             (test_id_to_name[x], x) for x in test_tree_leaf_ids)

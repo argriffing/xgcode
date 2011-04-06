@@ -158,9 +158,8 @@ def check_tree_pair(true_tree, test_tree, data):
             for x in test_tree_internal_ids:
                 d[x] = None
             id_to_val_list.append(d)
-        id_to_list_val = {}
         id_to_vals = SeekEigenLacing.rec_eigen(
-                test_id_to_adj, id_to_val_list, id_to_list_val, 0, flags)
+                test_id_to_adj, id_to_val_list, flags)
         acceptance_pair.append(1 if id_to_vals else 0)
     data.add_acceptances(acceptance_pair)
     found_example = acceptance_pair[0] != acceptance_pair[1]
