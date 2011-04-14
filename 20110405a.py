@@ -62,17 +62,20 @@ def get_response_content(fs):
     internal_ids = zip(*internal_pair)[1]
     # compute the harmonic extensions
     id_to_val_list = []
+    eigenvalues = []
     for i in range(nleaves-1):
         index = i+1
-        id_to_val = Harmonic.get_harmonic_valuations(tree, index)
-        id_to_val_list.append(id_to_val)
+        w, d = Harmonic.get_eigenvalue_and_harmonic_valuations(tree, index)
+        id_to_val_list.append(d)
+        eigenvalues.append(w)
     # write the report
     out = StringIO()
     print >> out, 'valuations:'
     print >> out
-    for i, id_to_val in enumerate(id_to_val_list):
+    for i, (w, id_to_val) in enumerate(zip(eigenvalues, id_to_val_list)):
         index = i+1
         print >> out, index, '(1 is Fiedler)'
+        print >> out, 'eigenvalue:', w
         print >> out, 'leaves:'
         for x in leaf_ids:
             print >> out, id_to_name[x], id_to_val[x]

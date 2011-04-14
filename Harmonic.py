@@ -18,6 +18,15 @@ def get_harmonic_valuations(tree, eig_idx):
     @param eig_idx: eigen index, 1 is Fiedler
     @return: map from node id to harmonic valuation
     """
+    w, id_to_v = get_eigenvalue_and_harmonic_valuations(tree, eig_idx)
+    return id_to_v
+
+def get_eigenvalue_and_harmonic_valuations(tree, eig_idx):
+    """
+    @param tree: a Newick tree
+    @param eig_idx: eigen index, 1 is Fiedler
+    @return: eigenvalue, map from node id to harmonic valuation
+    """
     # make the adjacency matrix
     ordered_tip_ids = [id(node) for node in tree.gen_tips()]
     ordered_internal_ids = [id(node) for node in tree.gen_internal_nodes()]
@@ -44,7 +53,7 @@ def get_harmonic_valuations(tree, eig_idx):
     # define the vertex valuations
     id_to_v = dict((myid, V[i, eig_idx]) for i, myid in enumerate(
         ordered_ids))
-    return id_to_v
+    return W[eig_idx], id_to_v
 
 def get_laplacian(tree, id_to_idx, q, p):
     """
