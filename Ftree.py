@@ -26,6 +26,12 @@ import numpy as np
 
 import MatrixUtil
 
+def invseq(seq):
+    """
+    @param seq: an iterable
+    @return: a map from the value to the sequence index
+    """
+    return dict((v, i) for i, v in enumerate(seq))
 
 def mkedge(a, b):
     """
@@ -175,7 +181,7 @@ def RB_to_D(R, B, vertices):
     # Convert this intermediate representation
     # to the requested distance matrix.
     N = len(vertices)
-    v_to_index = dict((v, i) for i, v in enumerate(vertices))
+    v_to_index = invseq(vertices)
     D = np.zeros((N, N))
     for (a, b), d in edge_to_distance.items():
         if (a in v_to_index) and (b in v_to_index):
@@ -187,6 +193,105 @@ def RB_to_D(R, B, vertices):
 
 
 # In this section we define functions on undirected trees.
+
+def T_to_v_to_centrality(T):
+    """
+    Get a certain kind of centrality for each vertex.
+    The particular kind of centerality for this function
+    is the number of times that you have to
+    strip off the terminal branches of the tree before
+    the vertex of interest has degree one.
+    So a leaf of the tree has zero centrality.
+    """
+    v_to_cent = {}
+    v_to_neighbors = T_to_v_to_neighbors(T)
+    cent = 0
+    # The shell is the set of leaves at the current centrality.
+    shell = set(T_to_leaves(T))
+    while shell:
+        # mark the centrality for the given shell
+        for v in shell:
+            v_to_cent[v] = cent
+        cent += 1
+        # Get all vertices which are candidates for the next shell.
+        next_possible_shell = set()
+        for v in shell:
+            for adj in v_to_neighbors[v]:
+                if adj not in v_to_cent:
+                    next_possible_shell.add(adj)
+        # Find the next shell vertices adjacent to at most
+        # a single vertex whose centrality is unknown.
+        shell = set()
+        for p in next_possible_shell:
+            nfree = sum(1 for a in v_to_neighbors[p] if a not in v_to_cent)
+            if nfree < 2:
+                shell.add(p)
+    return v_to_cent
+
+def T_to_outside_in_edges(T):
+    """
+    @param T: a topology
+    @return: an ordered list of directed edges
+    """
+    edges = []
+    vertices = T_to_outside_in(T)
+    v_to_cent = T_to_v_to_centrality(T)
+    v_to_neighbors = T_to_v_to_neighbors(T)
+    for v in vertices[:-1]:
+        max_cent, best_adj = max((v_to_cent[x], x) for x in v_to_neighbors[v])
+        edges.append((v, best_adj))
+    return edges
+
+def T_to_incidence_matrix(T, vertices):
+    """
+    The order and signs of edges is defined by the outside in edges function.
+    @param T: a topology
+    @param vertices: ordered vertices
+    @return: an unweighted incidence matrix
+    """
+    edges = T_to_outside_in_edges(T)
+    nrows = len(edges) + 1
+    ncols = len(edges)
+    v_to_index = invseq(vertices)
+    C = np.zeros((nrows, ncols))
+    for i, (x, y) in enumerate(edges):
+        a = v_to_index[x]
+        b = v_to_index[y]
+        C[a, i] = 1
+        C[b, i] = -1
+    return C
+
+def TB_to_weight_matrix(T, B):
+    """
+    The order of edges is defined by the outside in edges function.
+    @param T: a topology
+    @param B: branch lengths
+    @return: a diagonal weight matrix
+    """
+    edges = T_to_outside_in_edges(T)
+    w = [1.0 / B[frozenset(e)] for e in edges]
+    return np.diag(w)
+
+def T_to_outside_in(T):
+    """
+    Get an ordered sequence of vertices.
+    This is according to a certain notion of centrality.
+    The leaves are guaranteed to be first.
+    @return: a list of ordered vertices
+    """
+    v_to_cent = T_to_v_to_centrality(T)
+    pairs = sorted((c, v) for v, c in v_to_cent.items())
+    return [v for c, v in pairs]
+
+def T_to_inside_out(T):
+    """
+    Get an ordered sequence of vertices.
+    This is according to a certain notion of centrality.
+    The initial subsequences are guaranteed to induce connected graphs.
+    The leaves are guaranteed to be last.
+    @return: a list of ordered vertices
+    """
+    return list(reversed(T_to_outside_in(T)))
 
 def T_to_order(T):
     """
@@ -218,8 +323,8 @@ def TB_to_L_block(T, B, row_vertices, col_vertices):
     """
     L_part = np.zeros((len(row_vertices), len(col_vertices)))
     v_to_degree = TB_to_v_to_degree(T, B)
-    for i, v_row in row_vertices:
-        for j, v_col in col_vertices:
+    for i, v_row in enumerate(row_vertices):
+        for j, v_col in enumerate(col_vertices):
             if v_row == v_col:
                 L_part[i, j] = v_to_degree[v_row]
             else:
@@ -398,6 +503,51 @@ class TestFtree(unittest.TestCase):
             [4, 0, 7],
             [3, 7, 0]], dtype=float)
         self.assertTrue(np.allclose(observed, expected))
+
+    def test_tree_centrality(self):
+        observed = T_to_outside_in(g_example_T)
+        expected = [1, 4, 5, 7, 2, 6, 3]
+        self.assertEqual(observed, expected)
+
+    def test_incidence_decomposition(self):
+        vertices = T_to_outside_in(g_example_T)
+        B = T_to_incidence_matrix(g_example_T, vertices)
+        W = TB_to_weight_matrix(g_example_T, g_example_B)
+        observed = np.dot(B, np.dot(W, B.T))
+        expected = TB_to_L_principal(g_example_T, g_example_B, vertices)
+        self.assertTrue(np.allclose(observed, expected))
+
+    def test_schur_to_distance(self):
+        leaves = T_to_leaves(g_example_T)
+        internal = T_to_internal_vertices(g_example_T)
+        Lpp = TB_to_L_block(g_example_T, g_example_B, leaves, leaves)
+        Lpr = TB_to_L_block(g_example_T, g_example_B, leaves, internal)
+        Lrp = TB_to_L_block(g_example_T, g_example_B, internal, leaves)
+        Lrr = TB_to_L_block(g_example_T, g_example_B, internal, internal)
+        # Compute the Schur complement Laplacian and the leaf distance matrix.
+        L_schur = Lpp - np.dot(Lpr, np.dot(np.linalg.pinv(Lrr), Lrp))
+        Dpp_direct = TB_to_D(g_example_T, g_example_B, leaves)
+        # Compute one from the other.
+        HDppH_schur = -2*np.linalg.pinv(L_schur)
+        d = np.diag(HDppH_schur)
+        e = np.ones_like(d)
+        Dpp_schur = HDppH_schur - 0.5*(np.outer(d,e) + np.outer(e,d))
+        self.assertTrue(np.allclose(Dpp_schur, Dpp_direct))
+
+    def test_distance_to_schur(self):
+        leaves = T_to_leaves(g_example_T)
+        internal = T_to_internal_vertices(g_example_T)
+        Lpp = TB_to_L_block(g_example_T, g_example_B, leaves, leaves)
+        Lpr = TB_to_L_block(g_example_T, g_example_B, leaves, internal)
+        Lrp = TB_to_L_block(g_example_T, g_example_B, internal, leaves)
+        Lrr = TB_to_L_block(g_example_T, g_example_B, internal, internal)
+        # Compute the Schur complement Laplacian and the leaf distance matrix.
+        L_schur = Lpp - np.dot(Lpr, np.dot(np.linalg.pinv(Lrr), Lrp))
+        Dpp_direct = TB_to_D(g_example_T, g_example_B, leaves)
+        # Compute one from the other.
+        HDppH = MatrixUtil.double_centered(Dpp_direct)
+        L_schur_estimate = np.linalg.pinv(-0.5*HDppH)
+        self.assertTrue(np.allclose(L_schur_estimate, L_schur))
 
 
 if __name__ == '__main__':
