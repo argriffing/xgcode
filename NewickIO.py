@@ -1,6 +1,9 @@
 """
-This module reads and writes Newick data in a way that does not depend much on the underlying tree representation.
-It is closely related to the Newick module which imports many of these functions.
+Read Newick data.
+This module reads and writes Newick data
+in a way that does not depend much on the underlying tree representation.
+It is closely related to the Newick module
+which imports many of these functions.
 """
 
 import unittest
@@ -44,8 +47,11 @@ def _lex_newick_raw(s):
 
 def _lex_newick(s):
     """
-    Split a newick string into meaningful symbols separated by punctuation / non-punctuation boundaries.
-    Note that this method allows whitespace inside node names but not leading or terminal whitespace.
+    Split a newick string.
+    Split a newick string into meaningful symbols
+    separated by punctuation / non-punctuation boundaries.
+    Note that this method allows whitespace inside node names
+    but not leading or terminal whitespace.
     Also this function removes bracketed symbols.
     """
     bracket_depth = 0
@@ -73,7 +79,8 @@ def _parse_newick_helper_blen(symbols, index, node):
     try:
         branch_length = float(blen_str)
     except ValueError:
-        raise NewickSyntaxError('found "%s" instead of a branch length' % blen_str)
+        msg = 'found "%s" instead of a branch length' % blen_str
+        raise NewickSyntaxError(msg)
     node.set_branch_length(branch_length)
     return index+2
 
@@ -86,22 +93,29 @@ def _parse_newick_helper(symbols, node_factory, index):
     @return: (root node, next index)
     """
     if symbols[-1] != ';':
-        raise NewickSyntaxError('the newick symbol list should end with a semicolon')
+        msg = 'the newick symbol list should end with a semicolon'
+        raise NewickSyntaxError(msg)
     if index >= len(symbols):
         raise NewickSyntaxError('premature string termination')
     root = node_factory()
     if symbols[index] == ',':
-        # hitting this symbol when we expect a new node means that an unnamed node with no branch length was found
+        # Hitting this symbol when we expect a new node means that
+        # an unnamed node with no branch length was found.
         return (root, index)
     elif symbols[index] == ')':
-        # hitting this symbol when we expect a new node means that an unnamed node with no branch length was found and that the list terminates
+        # Hitting this symbol when we expect a new node means that
+        # an unnamed node with no branch length was found
+        # and that the list terminates.
         return (root, index)
     elif symbols[index] == ':':
-        # hitting this symbol when we expect a new node means that an unnamed node with a branch length was found
+        # Hitting this symbol when we expect a new node means that
+        # an unnamed node with a branch length was found.
         next_index = _parse_newick_helper_blen(symbols, index, root)
         return (root, next_index)
     elif symbols[index] == '(':
-        # hitting this symbol when we expect a new node means that one or more child nodes must be created in addition to the root node
+        # Hitting this symbol when we expect a new node means that
+        # one or more child nodes must be created
+        # in addition to the root node.
         index += 1
         while True:
             child, index = _parse_newick_helper(symbols, node_factory, index)
@@ -114,16 +128,20 @@ def _parse_newick_helper(symbols, node_factory, index):
                     root.add_name(symbols[index+1])
                     index += 1
                 if symbols[index+1] == ':':
-                    next_index = _parse_newick_helper_blen(symbols, index+1, root)
+                    next_index = _parse_newick_helper_blen(
+                            symbols, index+1, root)
                 else:
                     next_index = index+1
                 return (root, next_index)
             else:
-                raise NewickSyntaxError('found "%s" instead of a comma or a closing parenthesis' % symbols[index])
+                msg_a = 'found "%s" instead of ' % symbols[index]
+                msg_b = 'a comma or a closing parenthesis'
+                raise NewickSyntaxError(msg_a + msg_b)
     elif symbols[index] == ';':
         raise NewickSyntaxError('found the ";" terminator prematurely')
     else:
-        # hitting an unrecognized symbol means that we are starting a named node
+        # Hitting an unrecognized symbol means that
+        # we are starting a named node.
         root.add_name(symbols[index])
         if symbols[index+1] == ':':
             next_index = _parse_newick_helper_blen(symbols, index+1, root)
@@ -145,19 +163,26 @@ def parse(s, tree_factory):
     if symbols.count('(') != symbols.count(')'):
         raise NewickSyntaxError('parenthesis mismatch')
     if not symbols[-1] == ';':
-        raise NewickSyntaxError('the newick symbol list should end with a semicolon: ' + str(symbols))
+        msg_a = 'the newick symbol list should end with a semicolon: '
+        msg_b = str(symbols)
+        raise NewickSyntaxError(msg_a + msg_b)
     root, index = _parse_newick_helper(symbols, tree.NodeFactory, 0)
     if index >= len(symbols):
-        raise NewickSyntaxError('the parser tried to use too much of the newick string')
+        msg = 'the parser tried to use too much of the newick string'
+        raise NewickSyntaxError(msg)
     if index < len(symbols) - 1:
-        raise NewickSyntaxError('the parser did not use the whole newick string')
+        msg = 'the parser did not use the whole newick string'
+        raise NewickSyntaxError(msg)
     tree.set_root(root)
     return tree
 
 
 def _get_name_string(node):
     """
-    @return: the name of the node if one exists, otherwise a string representing the node id
+    Get a string representation of the node.
+    This is the name of the node if one exists,
+    but otherwise it a string representation of the node id.
+    @return: the string representation of the node
     """
     name = node.get_name()
     if name is None:
@@ -185,7 +210,8 @@ def _get_multiline_newick_string_helper(node, nlevels, depth):
     """
     subtree_lists = []
     for child in node.gen_children():
-        lines = list(_get_multiline_newick_string_helper(child, nlevels, depth+1))
+        lines = list(_get_multiline_newick_string_helper(
+            child, nlevels, depth+1))
         subtree_lists.append(lines)
     if depth < nlevels:
         # yield multiple lines with indentation
@@ -196,7 +222,9 @@ def _get_multiline_newick_string_helper(node, nlevels, depth):
                     # indent every line
                     outline = '  ' + line
                     # put a comma at the end of some of the lines
-                    if j == len(subtree_list) - 1 and i != len(subtree_lists) - 1:
+                    jfinal = (j == len(subtree_list) - 1)
+                    ifinal = (i == len(subtree_lists) - 1)
+                    if jfinal and not ifinal:
                         outline += ','
                     yield outline
             internal_name_string = ''
@@ -217,7 +245,8 @@ def _get_multiline_newick_string_helper(node, nlevels, depth):
             internal_name_string = ''
             if node.name is not None:
                 internal_name_string = node.name
-            base_string = '(' + ', '.join(subtree_strings) + ')' + internal_name_string
+            base_string = ''.join([
+                '(', ', '.join(subtree_strings), ')', internal_name_string])
         else:
             base_string = _get_name_string(node)
         blen_string = _get_blen_string(node)
