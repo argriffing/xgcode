@@ -70,6 +70,155 @@ def _lex_newick(s):
     if bracket_depth != 0:
         raise NewickSyntaxError('unbalanced brackets')
 
+
+# In this experimental section we use a new API.
+# The new API is flatter and expects a tree object (not a factory)
+# from the caller, where the tree object has
+# four member functions:  v=create_root(), v=create_child(parent),
+# set_branch_length(v,length), and set_root(v) .
+# A compatibility level will be added.
+
+def _pnh_blen(tree, symbols, index, node):
+    """
+    This uses the simplified API.
+    Parse Newick Helper.
+    This is called when we are at a ":" symbol.
+    @param tree: the object provided by the user
+    @param node: a node in the user tree
+    @return: next index
+    """
+    blen_str = symbols[index+1]
+    try:
+        branch_length = float(blen_str)
+    except ValueError:
+        msg = 'found "%s" instead of a branch length' % blen_str
+        raise NewickSyntaxError(msg)
+    tree.set_branch_length(node, branch_length)
+    return index+2
+
+def _pnh(tree, symbols, index):
+    """
+    This uses the simplified API.
+    Parse Newick Helper.
+    @param tree: the object provided by the user
+    @param symbols: the output of the newick lexer
+    @param index: the current position in the symbol list
+    @return: (root node, next index)
+    """
+    if symbols[-1] != ';':
+        msg = 'the newick symbol list should end with a semicolon'
+        raise NewickSyntaxError(msg)
+    if index >= len(symbols):
+        raise NewickSyntaxError('premature string termination')
+    root = tree.create_root()
+    if symbols[index] == ',':
+        # Hitting this symbol when we expect a new node means that
+        # an unnamed node with no branch length was found.
+        return (root, index)
+    elif symbols[index] == ')':
+        # Hitting this symbol when we expect a new node means that
+        # an unnamed node with no branch length was found
+        # and that the list terminates.
+        return (root, index)
+    elif symbols[index] == ':':
+        # Hitting this symbol when we expect a new node means that
+        # an unnamed node with a branch length was found.
+        next_index = _pnh_blen(tree, symbols, index, root)
+        return (root, next_index)
+    elif symbols[index] == '(':
+        # Hitting this symbol when we expect a new node means that
+        # one or more child nodes must be created
+        # in addition to the root node.
+        index += 1
+        while True:
+            child, index = _pnh(tree, symbols, index)
+            tree.add_child(root, child)
+            if symbols[index] == ',':
+                index += 1
+            elif symbols[index] == ')':
+                if symbols[index+1] not in list(':;(),'):
+                    root.add_name(symbols[index+1])
+                    index += 1
+                if symbols[index+1] == ':':
+                    next_index = _pnh_blen(tree, symbols, index+1, root)
+                else:
+                    next_index = index+1
+                return (root, next_index)
+            else:
+                msg_a = 'found "%s" instead of ' % symbols[index]
+                msg_b = 'a comma or a closing parenthesis'
+                raise NewickSyntaxError(msg_a + msg_b)
+    elif symbols[index] == ';':
+        raise NewickSyntaxError('found the ";" terminator prematurely')
+    else:
+        # Hitting an unrecognized symbol means that
+        # we are starting a named node.
+        tree.set_name(root, symbols[index])
+        if symbols[index+1] == ':':
+            next_index = _pnh_blen(tree, symbols, index+1, root)
+        else:
+            next_index = index+1
+        return (root, next_index)
+
+def parse_simplified(s, tree):
+    """
+    This is a new parse function.
+    Note that this takes a tree instead of a tree factory.
+    @param s: the newick tree string to be parsed
+    @param tree: a newly created tree
+    @return: the tree
+    """
+    if not s:
+        raise NewickSyntaxError('empty tree string')
+    symbols = list(_lex_newick(s))
+    if symbols.count('(') != symbols.count(')'):
+        raise NewickSyntaxError('parenthesis mismatch')
+    if not symbols[-1] == ';':
+        msg_a = 'the newick symbol list should end with a semicolon: '
+        msg_b = str(symbols)
+        raise NewickSyntaxError(msg_a + msg_b)
+    root, index = _pnh(tree, symbols, 0)
+    if index >= len(symbols):
+        msg = 'the parser tried to use too much of the newick string'
+        raise NewickSyntaxError(msg)
+    if index < len(symbols) - 1:
+        msg = 'the parser did not use the whole newick string'
+        raise NewickSyntaxError(msg)
+    tree.set_root(root)
+    return tree
+
+
+# In this section we add API wrappers for the old interface.
+
+class _T_wrapper:
+    def __init__(self, tree):
+        self.tree = tree
+    def create_root(self):
+        return self.tree.NodeFactory()
+    def add_child(self, parent, child):
+        parent.add_child(child)
+        child.set_parent(parent)
+    def set_branch_length(self, node, blen):
+        node.set_branch_length(blen)
+    def set_name(self, node, name):
+        node.add_name(name)
+    def set_root(self, node):
+        self.tree.set_root(node)
+
+def parse(s, tree_factory):
+    """
+    This should act like the old parse function.
+    @param s: the newick tree string to be parsed
+    @param tree_factory: a callable that returns a tree given a root
+    @return: the tree
+    """
+    wrapped_tree = parse_simplified(s, _T_wrapper(tree_factory()))
+    return wrapped_tree.tree
+
+
+
+# This is the old section.
+
 def _parse_newick_helper_blen(symbols, index, node):
     """
     This is called when we are at a ":" symbol.
@@ -150,7 +299,7 @@ def _parse_newick_helper(symbols, node_factory, index):
         return (root, next_index)
 
 
-def parse(s, tree_factory):
+def parse_old(s, tree_factory):
     """
     @param s: the newick tree string to be parsed
     @param tree_factory: a callable that returns a tree given a root
