@@ -16,6 +16,8 @@ B is a map from vertex doubletons to branch lengths,
 R is a set of directed edges, D is a tree distance matrix,
 L is a tree Laplacian matrix.
 Matrices are numpy arrays.
+The functions that read the Newick strings
+do not save enough information to reconstruct the input strings.
 """
 
 import unittest
@@ -27,8 +29,12 @@ import numpy as np
 import NewickIO
 import MatrixUtil
 
+
+# In this section we define helper functions.
+
 def invseq(seq):
     """
+    This is a helper function.
     @param seq: an iterable
     @return: a map from the value to the sequence index
     """
@@ -36,11 +42,13 @@ def invseq(seq):
 
 def mkedge(a, b):
     """
+    This is a helper function.
     @param a: a vertex
     @param b: another vertex
     @return: the unordered edge between the two vertices
     """
     return frozenset([a, b])
+
 
 # In this section we define functions on directed trees.
 
@@ -72,7 +80,7 @@ def get_R_vertices(R):
         V.add(b)
     return V
 
-def get_root(R):
+def R_to_root(R):
     """
     @param R: a directed topology
     @return: the root vertex
@@ -106,7 +114,7 @@ def R_to_newick(R):
     @param R: a directed topology
     @return: a newick string
     """
-    r = get_root(R)
+    r = R_to_root(R)
     return _v_to_newick(get_v_to_sinks(R), r) + ';'
 
 def _Bv_to_newick(v_to_source, v_to_sinks, B, v):
@@ -137,7 +145,7 @@ def RB_to_newick(R, B):
     @param B: branch lengths
     @return: a newick string
     """
-    r = get_root(R)
+    r = R_to_root(R)
     return _Bv_to_newick(get_v_to_source(R), get_v_to_sinks(R), B, r) + ';'
 
 def R_to_preorder(R):
@@ -149,7 +157,7 @@ def R_to_preorder(R):
     @return: the preorder list of vertices
     """
     v_to_sinks = get_v_to_sinks(R)
-    r = get_root(R)
+    r = R_to_root(R)
     shell = set([r])
     visited = set()
     arr = []
