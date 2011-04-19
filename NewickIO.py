@@ -164,6 +164,7 @@ def parse_simplified(s, tree):
     """
     This is a new parse function.
     Note that this takes a tree instead of a tree factory.
+    The tree should work with the new API.
     @param s: the newick tree string to be parsed
     @param tree: a newly created tree
     @return: the tree
@@ -191,6 +192,9 @@ def parse_simplified(s, tree):
 # In this section we add API wrappers for the old interface.
 
 class _T_wrapper:
+    """
+    This is for backward compatibility.
+    """
     def __init__(self, tree):
         self.tree = tree
     def create_root(self):
@@ -208,12 +212,12 @@ class _T_wrapper:
 def parse(s, tree_factory):
     """
     This should act like the old parse function.
+    It is for backward compatibility.
     @param s: the newick tree string to be parsed
     @param tree_factory: a callable that returns a tree given a root
-    @return: the tree
+    @return: a tree created by the tree factory
     """
-    wrapped_tree = parse_simplified(s, _T_wrapper(tree_factory()))
-    return wrapped_tree.tree
+    return parse_simplified(s, _T_wrapper(tree_factory())).tree
 
 
 # Remaining functions.
