@@ -75,7 +75,7 @@ def _lex_newick(s):
 # The new API is flatter and expects a tree object (not a factory)
 # from the caller, where the tree object has
 # four member functions:  v=create_root(), v=create_child(parent),
-# set_branch_length(v,length), and set_root(v) .
+# set_branch_length(v,length), set_root(v), and finish() .
 # A compatibility level will be added.
 
 def _pnh_blen(tree, symbols, index, node):
@@ -186,6 +186,7 @@ def parse_simple(s, tree):
         msg = 'the parser did not use the whole newick string'
         raise NewickSyntaxError(msg)
     tree.set_root(root)
+    tree.finish()
     return tree
 
 
@@ -208,6 +209,8 @@ class _T_wrapper:
         node.add_name(name)
     def set_root(self, node):
         self.tree.set_root(node)
+    def finish(self):
+        pass
 
 def parse(s, tree_factory):
     """

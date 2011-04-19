@@ -16,6 +16,8 @@ import NewickIO
 import Ftree
 from Ftree import mkedge
 
+class FtreeIOError(Exception): pass
+
 class _IO_Tree:
     """
     This implements the simplified NewickIO API.
@@ -42,6 +44,7 @@ class _IO_Tree:
         # resolve a hanging branch
         if v in self.v_to_hanging_length:
             self.set_branch_length(v, self.v_to_hanging_length[v])
+            del self.v_to_hanging_length[v]
     def set_branch_length(self, v, blen):
         """
         Note that a branch length can be set to a root.
@@ -61,6 +64,12 @@ class _IO_Tree:
         """
         self.R = Ftree.T_to_R_specific(Ftree.R_to_T(self.R), v)
         self.v_to_source = Ftree.R_to_v_to_source(self.R)
+    def finish(self):
+        r = Ftree.R_to_root(self.R)
+        if r in self.v_to_hanging_length:
+            msg = 'the root should not have a hanging branch'
+            raise FtreeIOError(msg)
+
 
 def R_to_newick(R):
     """
@@ -244,6 +253,16 @@ class TestFtreeIO(unittest.TestCase):
         expected_B = g_example_B
         self.assertEqual(observed_T, expected_T)
         self.assertEqual(observed_B, expected_B)
+
+    def _help_hanging_root_branch(self):
+        """
+        This is supposed to raise an exception.
+        """
+        s = '(1:1, (5:3, (7:3)6:3)3:2, 4:2)2:1;'
+        T, B = newick_to_TB(s, int)
+
+    def test_hanging_root_branch(self):
+        self.assertRaises(FtreeIOError, self._help_hanging_root_branch)
 
 if __name__ == '__main__':
     unittest.main()
