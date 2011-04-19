@@ -1,96 +1,66 @@
 """
 This is a function oriented rather than object oriented approach to trees.
+
+This is an interface module for the Ftree module.
+In addition to the standard Ftree
+variable names T, R, and B, we add N as the map from vertex to name.
+With this new variable, vertices may now have names separate from
+the hashable vertices themselves.
+This facilitates, for example, the interpretation of a Newick string
+whose leaves are labeled but whose internal vertices are not labeled.
 """
 
 import unittest
-from StringIO import StringIO
-from collections import defaultdict
 
 import NewickIO
 import Ftree
-
-
-class _IO_Node:
-    """
-    Force this to work with the NewickIO parser.
-    """
-    def __init__(self, name_type):
-        self.name_type = name_type
-        self.name = None
-        self.blen = None
-        self.children = []
-    def __call__(self):
-        return _IO_Node(self.name_type)
-    def set_parent(self, node):
-        pass
-    def set_branch_length(self, blen):
-        self.blen = blen
-    def add_child(self, child):
-        self.children.append(child)
-    def add_name(self, name):
-        if self.name_type:
-            self.name = self.name_type(name)
-        else:
-            self.name = name
+from Ftree import mkedge
 
 class _IO_Tree:
     """
-    Force this to work with the NewickIO parser.
-    The functions prefixed with x_ are not part
-    of the NewickIO parser interface.
+    This implements the simplified NewickIO API.
     """
-    def __init__(self, name_type):
-        self.root = None
-        self.NodeFactory = _IO_Node(name_type)
-        self.name_type = name_type
-    def __call__(self):
-        return _IO_Tree(self.name_type)
-    def set_root(self, node):
-        self.root = node
-    def x_all_nodes(self):
-        nodes = []
-        shell = [self.root]
-        while shell:
-            nodes.extend(shell)
-            next_shell = []
-            for node in shell:
-                next_shell.extend(node.children)
-            shell = next_shell
-        return nodes
-    def x_get_RB(self):
-        R = set()
-        B = {}
-        shell = [self.root]
-        while shell:
-            next_shell = []
-            for node in shell:
-                for child in node.children:
-                    d_edge = (node.name, child.name)
-                    R.add(d_edge)
-                    B[frozenset(d_edge)] = child.blen
-                    next_shell.append(child)
-            shell = next_shell
-        return R, B
-    def x_assert_root(self):
-        if self.root is None:
-            raise ValueError('no root was specified')
-    def x_assert_names(self):
-        nodes = self.x_all_nodes()
-        if any(n.name is None for n in nodes):
-            msg = 'all nodes should be named, including internal nodes'
-            raise ValueError(msg)
-        if len(set(n.name for n in nodes)) < len(nodes):
-            msg = 'nodes should have unique names'
-            raise ValueError(msg)
-    def x_assert_branch_lengths(self):
-        root = self.root
-        if root.blen is not None:
-            raise ValueError('the root should not have a branch length')
-        nodes = self.x_all_nodes()
-        non_root_nodes = [n for n in nodes if n is not root]
-        if any(n.blen is None for n in non_root_nodes):
-            msg = 'every node except the root should have a branch length'
-            raise ValueError(msg)
+    def __init__(self):
+        """
+        Initialize the variables.
+        """
+        # This is the state of interest to the caller.
+        self.v_to_name = {}
+        self.B = {}
+        self.R = set()
+        # This is internal state.
+        self.next_v = 0
+        self.v_to_source = {}
+        self.v_to_hanging_length = {}
+    def create_root(self):
+        root = self.next_v
+        self.next_v += 1
+        return root
+    def add_child(self, parent, v):
+        self.R.add((parent, v))
+        self.v_to_source[v] = parent
+        # resolve a hanging branch
+        if v in self.v_to_hanging_length:
+            self.set_branch_length(v, self.v_to_hanging_length[v])
+    def set_branch_length(self, v, blen):
+        """
+        Note that a branch length can be set to a root.
+        This happens during the construction of the tree
+        when the subtree has not yet been connected to the rest of the tree.
+        """
+        if v in self.v_to_source:
+            edge = mkedge(v, self.v_to_source[v])
+            self.B[edge] = blen
+        else:
+            self.v_to_hanging_length[v] = blen
+    def set_name(self, v, name):
+        self.v_to_name[v] = name
+    def set_root(self, v):
+        """
+        This is slow, probably as a result of the design.
+        """
+        self.R = Ftree.T_to_R_specific(Ftree.R_to_T(self.R), v)
+        self.v_to_source = Ftree.R_to_v_to_source(self.R)
 
 def R_to_newick(R):
     """
@@ -98,7 +68,7 @@ def R_to_newick(R):
     @return: a newick string
     """
     r = Ftree.R_to_root(R)
-    return _v_to_newick(Ftree.get_v_to_sinks(R), r) + ';'
+    return _v_to_newick(Ftree.R_to_v_to_sinks(R), r) + ';'
 
 def _Bv_to_newick(v_to_source, v_to_sinks, B, v):
     """
@@ -112,7 +82,7 @@ def _Bv_to_newick(v_to_source, v_to_sinks, B, v):
     """
     if v in v_to_source:
         # a vertex that has a source should record its distance to its source
-        blen = B[Ftree.mkedge(v, v_to_source[v])]
+        blen = B[mkedge(v, v_to_source[v])]
         suffix = ':' + str(blen)
     else:
         suffix = ''
@@ -129,8 +99,8 @@ def RB_to_newick(R, B):
     @return: a newick string
     """
     r = Ftree.R_to_root(R)
-    v_to_source = Ftree.get_v_to_source(R)
-    v_to_sinks = Ftree.get_v_to_sinks(R)
+    v_to_source = Ftree.R_to_v_to_source(R)
+    v_to_sinks = Ftree.R_to_v_to_sinks(R)
     return _Bv_to_newick(v_to_source, v_to_sinks, B, r) + ';'
 
 def T_to_newick(T):
@@ -164,55 +134,90 @@ def _v_to_newick(v_to_sinks, v):
     arr = [_v_to_newick(v_to_sinks, x) for x in sinks]
     return '(' + ', '.join(arr) + ')' + str(v)
 
-def newick_to_T(s, name_type=None):
+def newick_to_TN(s):
     """
     Everything to do with branch lengths is ignored.
     @param s: newick string
-    @return: undirected topology
+    @return: undirected topology, vertex name map
     """
-    tree = NewickIO.parse(s, _IO_Tree(name_type))
-    tree.x_assert_root()
-    tree.x_assert_names()
-    R, B = tree.x_get_RB()
-    return Ftree.R_to_T(R)
+    tree = NewickIO.parse_simple(s, _IO_Tree())
+    return Ftree.R_to_T(tree.R), tree.v_to_name
+
+def newick_to_TBN(s):
+    """
+    @param s: newick string
+    @return: undirected topology, branch lengths, vertex name map
+    """
+    tree = NewickIO.parse_simple(s, _IO_Tree())
+    T = Ftree.R_to_T(tree.R)
+    Ftree.TB_assert_branch_lengths(T, tree.B)
+    return T, tree.B, tree.v_to_name
+
+def newick_to_T(s, name_type=None):
+    """
+    Everything to do with branch lengths is ignored.
+    Vertex names are used as vertices.
+    This is mostly for testing.
+    @param s: newick string
+    @return: undirected topology, vertex name map
+    """
+    T, N = newick_to_TN(s)
+    N = get_validated_name_map(N, name_type)
+    T = set(mkedge(N[a], N[b]) for a, b in T)
+    return T
 
 def newick_to_TB(s, name_type=None):
     """
+    Vertex names are used as vertices.
+    This is mostly for testing.
     @param s: newick string
-    @return: undirected topology, branch lengths
+    @return: undirected topology, branch lengths, vertex name map
     """
-    R, B = newick_to_RB(s, name_type)
-    return Ftree.R_to_T(R), B
+    T, B, N = newick_to_TBN(s)
+    N = get_validated_name_map(N, name_type)
+    T = set(mkedge(N[a], N[b]) for a, b in T)
+    B = dict((mkedge(N[a], N[b]), x) for (a, b), x in B.items())
+    return T, B
 
-def newick_to_RB(s, name_type=None):
+def get_validated_name_map(N, name_type):
     """
-    @param s: newick string
-    @return: directed topology, branch lengths
+    Convert the vertex name map N to the requested type and check conditions.
+    The conditions are that every vertex should have a name
+    and that the names should be unique.
+    @param N: vertex name map
+    @param name_type: a function that defines the name type
+    @return: a validated name map with names of the requested type
     """
-    tree = NewickIO.parse(s, _IO_Tree(name_type))
-    tree.x_assert_root()
-    tree.x_assert_names()
-    tree.x_assert_branch_lengths()
-    return tree.x_get_RB()
+    if name_type:
+        N = dict((v, name_type(n)) for v, n in N.items())
+    nvertices = len(N)
+    names = N.values()
+    if any(n is None for n in names):
+        msg = 'expected a name for each vertex, including internal vertices'
+        raise ValueError(msg)
+    if len(set(names)) < nvertices:
+        msg = 'expected unique vertex names'
+        raise ValueError(msg)
+    return N
 
 
 # Testing
 
 g_example_T = set([
-    Ftree.mkedge(2,1),
-    Ftree.mkedge(2,3),
-    Ftree.mkedge(2,4),
-    Ftree.mkedge(3,5),
-    Ftree.mkedge(3,6),
-    Ftree.mkedge(6,7)])
+    mkedge(2,1),
+    mkedge(2,3),
+    mkedge(2,4),
+    mkedge(3,5),
+    mkedge(3,6),
+    mkedge(6,7)])
 
 g_example_B = {
-        Ftree.mkedge(2,1) : 1,
-        Ftree.mkedge(2,3) : 2,
-        Ftree.mkedge(2,4) : 2,
-        Ftree.mkedge(3,5) : 3,
-        Ftree.mkedge(3,6) : 3,
-        Ftree.mkedge(6,7) : 3}
+        mkedge(2,1) : 1,
+        mkedge(2,3) : 2,
+        mkedge(2,4) : 2,
+        mkedge(3,5) : 3,
+        mkedge(3,6) : 3,
+        mkedge(6,7) : 3}
 
 class TestFtreeIO(unittest.TestCase):
 

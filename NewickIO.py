@@ -137,7 +137,7 @@ def _pnh(tree, symbols, index):
                 index += 1
             elif symbols[index] == ')':
                 if symbols[index+1] not in list(':;(),'):
-                    root.add_name(symbols[index+1])
+                    tree.set_name(root, symbols[index+1])
                     index += 1
                 if symbols[index+1] == ':':
                     next_index = _pnh_blen(tree, symbols, index+1, root)
@@ -160,7 +160,7 @@ def _pnh(tree, symbols, index):
             next_index = index+1
         return (root, next_index)
 
-def parse_simplified(s, tree):
+def parse_simple(s, tree):
     """
     This is a new parse function.
     Note that this takes a tree instead of a tree factory.
@@ -217,7 +217,7 @@ def parse(s, tree_factory):
     @param tree_factory: a callable that returns a tree given a root
     @return: a tree created by the tree factory
     """
-    return parse_simplified(s, _T_wrapper(tree_factory())).tree
+    return parse_simple(s, _T_wrapper(tree_factory())).tree
 
 
 # Remaining functions.

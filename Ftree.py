@@ -49,9 +49,28 @@ def mkedge(a, b):
     return frozenset([a, b])
 
 
+# In this section we define validation functions.
+
+def TB_assert_branch_lengths(T, B):
+    extra = set(B) - set(T)
+    missing = set(T) - set(B)
+    if not B:
+        msg = 'no branch lengths were found'
+        raise ValueError(msg)
+    if extra:
+        msg = 'lengths are specified for nonexistent branches'
+        raise ValueError(msg)
+    if missing:
+        msg = 'some branches do not have lengths'
+        raise ValueError(msg)
+
+def RB_assert_branch_lengths(R, B):
+    TB_assert_branch_lengths(R_to_T(B), B)
+
+
 # In this section we define functions on directed trees.
 
-def get_v_to_sinks(R):
+def R_to_v_to_sinks(R):
     """
     @param R: a directed topology
     @return: a map from a vertex to a set of sinks
@@ -61,7 +80,7 @@ def get_v_to_sinks(R):
         d[a].add(b)
     return d
 
-def get_v_to_source(R):
+def R_to_v_to_source(R):
     """
     @param R: a directed topology
     @return: a map from a vertex to its source
@@ -84,7 +103,7 @@ def R_to_root(R):
     @param R: a directed topology
     @return: the root vertex
     """
-    root_set = get_R_vertices(R) - set(get_v_to_source(R))
+    root_set = get_R_vertices(R) - set(R_to_v_to_source(R))
     return sorted(root_set)[0]
 
 def R_to_T(R):
@@ -102,7 +121,7 @@ def R_to_preorder(R):
     @param R: a directed topology
     @return: the preorder list of vertices
     """
-    v_to_sinks = get_v_to_sinks(R)
+    v_to_sinks = R_to_v_to_sinks(R)
     r = R_to_root(R)
     shell = set([r])
     visited = set()
@@ -124,7 +143,7 @@ def RB_to_D(R, B, vertices):
     @param vertices: ordered vertices
     @return: distance matrix
     """
-    v_to_source = get_v_to_source(R)
+    v_to_source = R_to_v_to_source(R)
     # An intermediate representation is
     # a dense map from an edge to a distance.
     visited = set()
