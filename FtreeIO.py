@@ -162,13 +162,22 @@ def newick_to_TBN(s):
     Ftree.TB_assert_branch_lengths(T, tree.B)
     return T, tree.B, tree.v_to_name
 
+def newick_to_RBN(s):
+    """
+    @param s: newick string
+    @return: directed topology, branch lengths, vertex name map
+    """
+    tree = NewickIO.parse_simple(s, _IO_Tree())
+    Ftree.RB_assert_branch_lengths(tree.R, tree.B)
+    return tree.R, tree.B, tree.v_to_name
+
 def newick_to_T(s, name_type=None):
     """
     Everything to do with branch lengths is ignored.
     Vertex names are used as vertices.
     This is mostly for testing.
     @param s: newick string
-    @return: undirected topology, vertex name map
+    @return: undirected topology
     """
     T, N = newick_to_TN(s)
     N = get_validated_name_map(N, name_type)
@@ -180,13 +189,26 @@ def newick_to_TB(s, name_type=None):
     Vertex names are used as vertices.
     This is mostly for testing.
     @param s: newick string
-    @return: undirected topology, branch lengths, vertex name map
+    @return: undirected topology, branch lengths
     """
     T, B, N = newick_to_TBN(s)
     N = get_validated_name_map(N, name_type)
     T = set(mkedge(N[a], N[b]) for a, b in T)
     B = dict((mkedge(N[a], N[b]), x) for (a, b), x in B.items())
     return T, B
+
+def newick_to_RB(s, name_type=None):
+    """
+    Vertex names are used as vertices.
+    This is mostly for testing.
+    @param s: newick string
+    @return: directed topology, branch lengths
+    """
+    R, B, N = newick_to_RBN(s)
+    N = get_validated_name_map(N, name_type)
+    R = set((N[a], N[b]) for a, b in R)
+    B = dict((mkedge(N[a], N[b]), x) for (a, b), x in B.items())
+    return R, B
 
 def get_validated_name_map(N, name_type):
     """
@@ -253,6 +275,16 @@ class TestFtreeIO(unittest.TestCase):
         expected_B = g_example_B
         self.assertEqual(observed_T, expected_T)
         self.assertEqual(observed_B, expected_B)
+
+    def test_topo_b_from_newick(self):
+        s = '((1:1, 2:0.5)6:1, (3:0.33333333333, 4:0.5)7:1, 5:1)8;'
+        observed_T, observed_B = newick_to_TB(s, int)
+        expected_T = Ftree.R_to_T(set([
+            (8,7), (8,6), (8,5), (7,4), (7,3), (6,2), (6,1)]))
+        self.assertEqual(observed_T, expected_T)
+        observed_leaves = Ftree.T_to_leaves(observed_T)
+        expected_leaves = [1, 2, 3, 4, 5]
+        self.assertEqual(observed_leaves, expected_leaves)
 
     def _help_hanging_root_branch(self):
         """

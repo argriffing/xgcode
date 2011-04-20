@@ -25,6 +25,7 @@ from StringIO import StringIO
 from collections import defaultdict
 
 import numpy as np
+import scipy.linalg
 
 import MatrixUtil
 
@@ -252,36 +253,6 @@ def TB_to_weight_matrix(T, B):
     w = [1.0 / B[frozenset(e)] for e in edges]
     return np.diag(w)
 
-def T_to_outside_in(T):
-    """
-    Get an ordered sequence of vertices.
-    This is according to a certain notion of centrality.
-    The leaves are guaranteed to be first.
-    @return: a list of ordered vertices
-    """
-    v_to_cent = T_to_v_to_centrality(T)
-    pairs = sorted((c, v) for v, c in v_to_cent.items())
-    return [v for c, v in pairs]
-
-def T_to_inside_out(T):
-    """
-    Get an ordered sequence of vertices.
-    This is according to a certain notion of centrality.
-    The initial subsequences are guaranteed to induce connected graphs.
-    The leaves are guaranteed to be last.
-    @return: a list of ordered vertices
-    """
-    return list(reversed(T_to_outside_in(T)))
-
-def T_to_order(T):
-    """
-    Get an ordered sequence of vertices.
-    The order should have the property that every graph induced by
-    an initial subsequence should be connected.
-    @return: a list of ordered vertices
-    """
-    return R_to_preorder(T_to_R_canonical(T))
-
 def TB_to_D(T, B, vertices):
     """
     Get the matrix of distances among the given vertices.
@@ -323,6 +294,55 @@ def TB_to_L_principal(T, B, vertices):
     @return: a block of a laplacian matrix
     """
     return TB_to_L_block(T, B, vertices, vertices)
+
+def TB_to_G(T, B, vertices):
+    """
+    Get the Gower matrix.
+    Note that this should be the pseudoinverse of L_schur.
+    @param T: topology
+    @param B: branch lengths
+    @param vertices: ordered vertices
+    @return: the Gower matrix
+    """
+    D = TB_to_D(T, B, vertices)
+    HDH = MatrixUtil.double_centered(D)
+    return -0.5 * HDH
+
+def TB_to_L_schur(T, B, vertices):
+    """
+    Get a Schur complement in the Laplacian matrix.
+    The specified vertices are the ones to keep.
+    So the returned matrix will by a Schur complement Laplacian matrix
+    which is square symmetric singular positive semidefinite
+    and whose number of rows and columns
+    is the same as the number of provided vertices.
+    The Schur complement is in the full Laplacian
+    defined by all vertices in edges of T.
+    Note that this should be the pseudoinverse of G.
+    @param T: topology
+    @param B: branch lengths
+    @param vertices: ordered vertices
+    @return: a Schur complement matrix
+    """
+    # define the list of removed vertices
+    removed  = sorted(set(T_to_order(T)) - set(vertices))
+    Laa = TB_to_L_block(T, B, vertices, vertices)
+    Lab = TB_to_L_block(T, B, vertices, removed)
+    Lba = TB_to_L_block(T, B, removed, vertices)
+    Lbb = TB_to_L_block(T, B, removed, removed)
+    # use the Schur complement definition directly
+    L_schur = Laa - np.dot(Lab, np.dot(np.linalg.pinv(Lbb), Lba))
+    return L_schur
+
+def TB_to_harmonic_extension(T, B, leaves, internal):
+    nleaves = len(leaves)
+    Lbb = TB_to_L_block(T, B, internal, internal)
+    Lba = TB_to_L_block(T, B, internal, leaves)
+    L_schur = TB_to_L_schur(T, B, leaves)
+    w, v1 = scipy.linalg.eigh(L_schur, eigvals=(1, nleaves-1))
+    v2 = -np.dot(np.dot(np.linalg.pinv(Lbb), Lba), v1)
+    v = np.vstack([v1, v2])
+    return w, v
 
 def T_to_v_to_neighbors(T):
     """
@@ -389,6 +409,36 @@ def T_to_internal_vertices(T):
     v_to_degree = T_to_v_to_degree(T)
     return sorted(v for v, degree in v_to_degree.items() if degree > 1)
 
+def T_to_outside_in(T):
+    """
+    Get an ordered sequence of vertices.
+    This is according to a certain notion of centrality.
+    The leaves are guaranteed to be first.
+    @return: a list of ordered vertices
+    """
+    v_to_cent = T_to_v_to_centrality(T)
+    pairs = sorted((c, v) for v, c in v_to_cent.items())
+    return [v for c, v in pairs]
+
+def T_to_inside_out(T):
+    """
+    Get an ordered sequence of vertices.
+    This is according to a certain notion of centrality.
+    The initial subsequences are guaranteed to induce connected graphs.
+    The leaves are guaranteed to be last.
+    @return: a list of ordered vertices
+    """
+    return list(reversed(T_to_outside_in(T)))
+
+def T_to_order(T):
+    """
+    Get an ordered sequence of vertices.
+    The order should have the property that every graph induced by
+    an initial subsequence should be connected.
+    @return: a list of ordered vertices
+    """
+    return R_to_preorder(T_to_R_canonical(T))
+
 def T_to_R_specific(T, r):
     """
     Convert an unrooted topology to a directed topology.
@@ -439,16 +489,43 @@ g_example_B = {
         mkedge(3,6) : 3,
         mkedge(6,7) : 3}
 
+g_example_b_T = set([
+    mkedge(0,1),
+    mkedge(0,2),
+    mkedge(0,6),
+    mkedge(2,3),
+    mkedge(2,4),
+    mkedge(4,5)])
+
+g_example_b_B = {
+        mkedge(0,1) : 1,
+        mkedge(0,2) : 2,
+        mkedge(0,6) : 2,
+        mkedge(2,3) : 3,
+        mkedge(2,4) : 3,
+        mkedge(4,5) : 3}
+
+
 class TestFtree(unittest.TestCase):
 
-    def test_leaves(self):
+    def test_leaves_a(self):
         observed = T_to_leaves(g_example_T)
-        expected = [1,4,5,7]
+        expected = [1, 4, 5, 7]
         self.assertEqual(observed, expected)
 
-    def test_internal_vertices(self):
+    def test_leaves_b(self):
+        observed = T_to_leaves(g_example_b_T)
+        expected = [1, 3, 5, 6]
+        self.assertEqual(observed, expected)
+
+    def test_internal_vertices_a(self):
         observed = T_to_internal_vertices(g_example_T)
-        expected = [2,3,6]
+        expected = [2, 3, 6]
+        self.assertEqual(observed, expected)
+
+    def test_internal_vertices_b(self):
+        observed = T_to_internal_vertices(g_example_b_T)
+        expected = [0, 2, 4]
         self.assertEqual(observed, expected)
 
     def test_distance_matrix(self):
@@ -475,13 +552,8 @@ class TestFtree(unittest.TestCase):
 
     def test_schur_to_distance(self):
         leaves = T_to_leaves(g_example_T)
-        internal = T_to_internal_vertices(g_example_T)
-        Lpp = TB_to_L_block(g_example_T, g_example_B, leaves, leaves)
-        Lpr = TB_to_L_block(g_example_T, g_example_B, leaves, internal)
-        Lrp = TB_to_L_block(g_example_T, g_example_B, internal, leaves)
-        Lrr = TB_to_L_block(g_example_T, g_example_B, internal, internal)
         # Compute the Schur complement Laplacian and the leaf distance matrix.
-        L_schur = Lpp - np.dot(Lpr, np.dot(np.linalg.pinv(Lrr), Lrp))
+        L_schur = TB_to_L_schur(g_example_T, g_example_B, leaves)
         Dpp_direct = TB_to_D(g_example_T, g_example_B, leaves)
         # Compute one from the other.
         HDppH_schur = -2*np.linalg.pinv(L_schur)
@@ -492,18 +564,53 @@ class TestFtree(unittest.TestCase):
 
     def test_distance_to_schur(self):
         leaves = T_to_leaves(g_example_T)
-        internal = T_to_internal_vertices(g_example_T)
-        Lpp = TB_to_L_block(g_example_T, g_example_B, leaves, leaves)
-        Lpr = TB_to_L_block(g_example_T, g_example_B, leaves, internal)
-        Lrp = TB_to_L_block(g_example_T, g_example_B, internal, leaves)
-        Lrr = TB_to_L_block(g_example_T, g_example_B, internal, internal)
         # Compute the Schur complement Laplacian and the leaf distance matrix.
-        L_schur = Lpp - np.dot(Lpr, np.dot(np.linalg.pinv(Lrr), Lrp))
+        L_schur = TB_to_L_schur(g_example_T, g_example_B, leaves)
         Dpp_direct = TB_to_D(g_example_T, g_example_B, leaves)
         # Compute one from the other.
         HDppH = MatrixUtil.double_centered(Dpp_direct)
         L_schur_estimate = np.linalg.pinv(-0.5*HDppH)
         self.assertTrue(np.allclose(L_schur_estimate, L_schur))
+
+    def test_L_schur_spectrum(self):
+        leaves_a = T_to_leaves(g_example_T)
+        leaves_b = T_to_leaves(g_example_b_T)
+        L_schur_a = TB_to_L_schur(g_example_T, g_example_B, leaves_a)
+        L_schur_b = TB_to_L_schur(g_example_b_T, g_example_b_B, leaves_b)
+        w_a = scipy.linalg.eigh(L_schur_a, eigvals_only=True)
+        w_b = scipy.linalg.eigh(L_schur_b, eigvals_only=True)
+        self.assertTrue(np.allclose(w_a, w_b))
+
+    def test_harmonic_extension_a(self):
+        leaves = T_to_leaves(g_example_T)
+        internal = T_to_internal_vertices(g_example_T)
+        w_observed, v_observed = TB_to_harmonic_extension(
+                g_example_T, g_example_B, leaves, internal)
+        w_expected = [0.1707228213, 0.271592036629, 0.684669269055]
+        self.assertTrue(np.allclose(w_observed, w_expected))
+
+    def test_harmonic_extension_b(self):
+        leaves = T_to_leaves(g_example_b_T)
+        internal = T_to_internal_vertices(g_example_b_T)
+        w_observed, v_observed = TB_to_harmonic_extension(
+                g_example_b_T, g_example_b_B, leaves, internal)
+        w_expected = [0.1707228213, 0.271592036629, 0.684669269055]
+        self.assertTrue(np.allclose(w_observed, w_expected))
+
+    def test_harmonic_extension_c(self):
+        T = set([
+            frozenset([2, 4]), frozenset([0, 6]), frozenset([2, 3]),
+            frozenset([0, 2]), frozenset([0, 1]), frozenset([4, 5])])
+        B = {
+                frozenset([2, 4]): 3.0, frozenset([0, 6]): 2.0,
+                frozenset([2, 3]): 3.0, frozenset([0, 2]): 2.0,
+                frozenset([0, 1]): 1.0, frozenset([4, 5]): 3.0}
+        leaves = T_to_leaves(T)
+        internal = T_to_internal_vertices(T)
+        w_observed, v_observed = TB_to_harmonic_extension(
+                T, B, leaves, internal)
+        w_expected = [0.1707228213, 0.271592036629, 0.684669269055]
+        self.assertTrue(np.allclose(w_observed, w_expected))
 
 
 if __name__ == '__main__':
