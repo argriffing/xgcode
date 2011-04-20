@@ -69,20 +69,69 @@ def get_form():
 def get_form_out():
     return FormOut.Image('frame')
 
-def get_response_content(fs):
-    # define the requested physical size of the images (in pixels)
-    physical_size = (640, 480)
-    # get the directed edges and the branch lengths and vertex names
-    R, B, N = FtreeIO.newick_to_RBN(fs.tree_string)
-    # get the requested undirected edge
-    pairs = [(a,b) for a, b in R if N.get(b, None) == fs.branch_name]
+def reflect_to_match(A, B):
+    """
+    The idea is to make a new matrix by multiplying columns of A by -1 or 1.
+    In this new matrix each column vector will be pointing in the
+    same approximate direction as the corresponding column
+    vector in B.
+    @param A: the new matrix
+    @param B: the old matrix
+    @return: a reflection of the new matrix
+    """
+    return np.dot(A, np.diag(np.sign(np.diag(np.dot(A.T, B)))))
+
+#TODO this will probably be removed
+def get_branch_length(progress, initial_length, final_length):
+    """
+    This uses the sigmoid.
+    The progress parameter should be proportional
+    to units of animation frames.
+    @param progress: animation progress between 0 and 1
+    @param initial_length: initial branch length
+    @param final_length: final branch length
+    """
+    # define t for the convex combination
+    t = sigmoid(progress)
+    return (1-t)*initial_length + t*final_length
+
+def raw_sigmoid(x, alpha):
+    """
+    @param x: something between -0.5 and 0.5
+    @param alpha: larger alpha means a steeper shift
+    @return: something small but monotonic
+    """
+    return 1.0 / (1.0 + math.exp(-alpha*x)) - 0.5
+
+def sigmoid(x, alpha=12):
+    """
+    @param x: something between 0 and 1
+    @param alpha: larger alpha means a steeper shift
+    @return: something between 0 and 1
+    """
+    height = raw_sigmoid(0.5, alpha) - raw_sigmoid(-0.5, alpha)
+    t = raw_sigmoid(x - 0.5, alpha) / height + 0.5
+    if t < 0 or t > 1:
+        raise ValueError('oops i screwed up the response curve')
+    return t
+
+def get_edge(R, N, name):
+    pairs = [(a,b) for a, b in R if N.get(b, None) == name]
     if len(pairs) > 1:
         msg = 'expected the vertex to define a single variable branch'
         raise ValueError(msg)
     if len(pairs) < 1:
         msg = 'the provided vertex is not associated with a branch'
         raise ValueError(msg)
-    edge = frozenset(pairs[0])
+    return frozenset(pairs[0])
+
+def get_response_content(fs):
+    # define the requested physical size of the images (in pixels)
+    physical_size = (640, 480)
+    # get the directed edges and the branch lengths and vertex names
+    R, B, N = FtreeIO.newick_to_RBN(fs.tree_string)
+    # get the requested undirected edge
+    edge = get_edge(R, N, fs.branch_name)
     # get the undirected tree topology
     T = Ftree.R_to_T(R)
     # get the leaves and the vertices of articulation
@@ -90,7 +139,6 @@ def get_response_content(fs):
     internal = Ftree.T_to_internal_vertices(T)
     vertices = leaves + internal
     nleaves = len(leaves)
-    nvertices = len(vertices)
     v_to_index = Ftree.invseq(vertices)
     # get the requested indices
     x_index = fs.x_axis - 1
@@ -99,16 +147,11 @@ def get_response_content(fs):
         msg = 'projection indices must be smaller than the number of leaves'
         raise ValueError(msg)
     w, v = Ftree.TB_to_harmonic_extension(T, B, leaves, internal)
-    print T
-    print B
-    print w
-    print v
     X_full = np.dot(v, np.diag(np.reciprocal(np.sqrt(w))))
     X = np.vstack([X_full[:,x_index], X_full[:,y_index]]).T
     # draw the image
     ext = Form.g_imageformat_to_ext[fs.imageformat]
-    return get_animation_frame(ext, physical_size, fs.scale,
-            v_to_index, T, X)
+    return get_animation_frame(ext, physical_size, fs.scale, v_to_index, T, X)
 
 def get_animation_frame(
         image_format, physical_size, scale,
@@ -161,42 +204,50 @@ def get_animation_frame(
     # create the image
     return cairo_helper.get_image_string()
 
-def sigmoid(x):
-    t = (x - .5) * 12
-    return 1.0 / (1.0 + math.exp(-t))
-
 def main(args):
     # do some validation
     if args.nframes < 2:
         raise ValueError('nframes should be at least 2')
     # define the requested physical size of the images (in pixels)
     physical_size = (args.physical_width, args.physical_height)
-    # build the newick tree from the string
-    tree = NewickIO.parse(args.tree, FelTree.NewickTree)
-    nvertices = len(list(tree.preorder()))
-    nleaves = len(list(tree.gen_tips()))
-    # Get ordered ids with the leaves first,
-    # and get the corresponding distance matrix.
-    ordered_ids = get_ordered_ids(tree)
-    D = np.array(tree.get_partial_distance_matrix(ordered_ids))
-    index_edges = get_index_edges(tree, ordered_ids)
-    # Create the reference points
-    # so that the video frames are not reflected arbitrarily.
-    reference_points = Euclid.edm_to_points(D).T[:3].T
+    # get the directed edges and the branch lengths and vertex names
+    R, B, N = FtreeIO.newick_to_RBN(args.tree)
+    # get the requested undirected edge
+    edge = get_edge(R, N, args.branch_name)
+    initial_length = B[edge]
+    # get the undirected tree topology
+    T = Ftree.R_to_T(R)
+    # get the leaves and the vertices of articulation
+    leaves = Ftree.T_to_leaves(T)
+    internal = Ftree.T_to_internal_vertices(T)
+    vertices = leaves + internal
+    nleaves = len(leaves)
+    v_to_index = Ftree.invseq(vertices)
+    # get the requested indices
+    x_index = args.x_axis - 1
+    y_index = args.y_axis - 1
+    if x_index >= nleaves-1 or y_index >= nleaves-1:
+        msg = 'projection indices must be smaller than the number of leaves'
+        raise ValueError(msg)
+    X_prev = None
     # create the animation frames and write them as image files
     pbar = Progress.Bar(args.nframes)
     for frame_index in range(args.nframes):
         linear_progress = frame_index / float(args.nframes - 1)
         if args.interpolation == 'sigmoid':
-            progress = sigmoid(linear_progress)
+            t = sigmoid(linear_progress)
         else:
-            progress = linear_progress
-        mass_vector = get_mass_vector(nvertices, nleaves, progress)
-        points = get_canonical_3d_mds(D, mass_vector, reference_points)
-        crossings = get_crossings(index_edges, points)
+            t = linear_progress
+        B[edge] = (1-t)*initial_length + t*args.final_length
+        w, v = Ftree.TB_to_harmonic_extension(T, B, leaves, internal)
+        X_full = np.dot(v, np.diag(np.reciprocal(np.sqrt(w))))
+        X = np.vstack([X_full[:,x_index], X_full[:,y_index]]).T
+        if X_prev is not None:
+            X = reflect_to_match(X, X_prev)
+        X_prev = X
         image_string = get_animation_frame(
                 args.image_format, physical_size, args.scale,
-                mass_vector, index_edges, points, crossings)
+                v_to_index, T, X)
         image_filename = 'frame-%04d.%s' % (frame_index, args.image_format)
         image_pathname = os.path.join(args.output_directory, image_filename)
         with open(image_pathname, 'wb') as fout:
@@ -206,7 +257,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--scale', type=float, default=1.0,
+    parser.add_argument('--scale', type=float, default=200.0,
             help='define the drawing scale') 
     parser.add_argument('--physical_width', type=int, default=480,
             help='width (pixels)') 
@@ -214,6 +265,14 @@ if __name__ == '__main__':
             help='height (pixels)') 
     parser.add_argument('--tree', default=g_tree_string,
             help='newick tree with branch lengths')
+    parser.add_argument('--branch_name', default='1',
+            help='name of the vertex associated with the variable branch')
+    parser.add_argument('--final_length', type=float, default=10.0,
+            help='final branch length')
+    parser.add_argument('--x_axis', type=int, default=1,
+            help='x axis projection (1 is Fiedler)')
+    parser.add_argument('--y_axis', type=int, default=2,
+            help='y axis projection (1 is Fiedler)')
     parser.add_argument('--image_format', default='png',
             choices=('png', 'svg', 'ps', 'pdf'),
             help='image format')
