@@ -101,6 +101,32 @@ def _Bv_to_newick(v_to_source, v_to_sinks, B, v):
     arr = [_Bv_to_newick(v_to_source, v_to_sinks, B, x) for x in sinks]
     return '(' + ', '.join(arr) + ')' + str(v) + suffix
 
+def _BNv_to_newick(v_to_source, v_to_sinks, B, N, v):
+    """
+    This is part of writing a newick string with branch lengths.
+    Note that this function does not add the semicolon termination.
+    @param v_to_source: a map from a vertex to its source
+    @param v_to_sinks: a map from a vertex to a set of sinks
+    @param B: branch lengths
+    @param N: map from vertices to names
+    @param v: a subtree root vertex
+    @return: a chunk of a newick string
+    """
+    if v in v_to_source:
+        # a vertex that has a source should record its distance to its source
+        blen = B[mkedge(v, v_to_source[v])]
+        suffix = ':' + str(blen)
+    else:
+        suffix = ''
+    if v not in v_to_sinks:
+        if v not in N:
+            raise ValueError('expected leaf vertices to be named')
+        return str(N[v]) + suffix
+    sinks = sorted(v_to_sinks[v])
+    arr = [_BNv_to_newick(v_to_source, v_to_sinks, B, N, x) for x in sinks]
+    internal_vertex_name = str(N.get(v, ''))
+    return '(' + ', '.join(arr) + ')' + internal_vertex_name + suffix
+
 def RB_to_newick(R, B):
     """
     @param R: a directed topology
@@ -111,6 +137,18 @@ def RB_to_newick(R, B):
     v_to_source = Ftree.R_to_v_to_source(R)
     v_to_sinks = Ftree.R_to_v_to_sinks(R)
     return _Bv_to_newick(v_to_source, v_to_sinks, B, r) + ';'
+
+def RBN_to_newick(R, B, N):
+    """
+    @param R: a directed topology
+    @param B: branch lengths
+    @param N: map from vertices to names
+    @return: a newick string
+    """
+    r = Ftree.R_to_root(R)
+    v_to_source = Ftree.R_to_v_to_source(R)
+    v_to_sinks = Ftree.R_to_v_to_sinks(R)
+    return _BNv_to_newick(v_to_source, v_to_sinks, B, N, r) + ';'
 
 def T_to_newick(T):
     """
