@@ -1,4 +1,4 @@
-"""Animate a 2D MDS tree as a branch length changes. [UNFINISHED]
+"""Animate a 2D MDS tree as a branch length changes, plus eigenvalues. [UNFINISHED]
 
 Create a tree MDS animation
 showing a progressive branch length change.
@@ -23,6 +23,7 @@ import os
 import math
 
 import numpy as np
+import scipy.stats
 import cairo
 import argparse
 
@@ -133,11 +134,63 @@ def get_response_content(fs):
     X = np.vstack([X_full[:,x_index], X_full[:,y_index]]).T
     # draw the image
     ext = Form.g_imageformat_to_ext[fs.imageformat]
-    return get_animation_frame(ext, physical_size, fs.scale, v_to_index, T, X)
+    return get_animation_frame(ext, physical_size, fs.scale,
+            v_to_index, T, X, w)
+
+def draw_eigenvalues(ctx, y_in, x_in_low, x_in_high, w):
+    """
+    @param ctx: cairo context
+    @param y_in: y offset of the spectrum axis
+    @param x_in_low: left side of spectrum
+    @param x_in_high: right side of spectrum
+    """
+    width = float(x_in_high - x_in_low)
+    w_rescaled = np.array([0] + (w / max(w)).tolist())
+    # draw dots
+    dot_radius = 2
+    for v in w_rescaled:
+        cx = x_in_low + width*v
+        cy = y_in
+        #ctx.arc(cx, cy, dot_radius, 0, math.pi*2)
+        #ctx.fill()
+    # define an array of intensities
+    stddev = 3
+    npoints = int(width)
+    arr = []
+    for i in range(npoints):
+        v = i / float(npoints-1)
+        intensity = 0
+        for p in w_rescaled:
+            d = (p-v)*(width/stddev)
+            intensity += scipy.stats.norm.pdf(d)
+        arr.append(intensity)
+    # prepare to draw the curves
+    height = 20
+    offsets = [height*v for v in arr]
+    ctx.save()
+    ctx.set_source_rgb(.7, .7, .9)
+    # draw the upper curve
+    ctx.move_to(x_in_low, y_in - offsets[0])
+    for i, v in enumerate(offsets[1:]):
+        y = y_in - v
+        t = i / float(npoints-1)
+        x = x_in_low + t*width
+        ctx.line_to(x, y)
+    ctx.stroke()
+    # draw the lower curve
+    ctx.move_to(x_in_low, y_in + offsets[0])
+    for i, v in enumerate(offsets[1:]):
+        y = y_in + v
+        t = i / float(npoints-1)
+        x = x_in_low + t*width
+        ctx.line_to(x, y)
+    ctx.stroke()
+    # stop drawing the curves
+    ctx.restore()
 
 def get_animation_frame(
         image_format, physical_size, scale,
-        v_to_index, T, X):
+        v_to_index, T, X, w):
     """
     This function is about drawing the tree.
     @param image_format: the image extension
@@ -146,6 +199,7 @@ def get_animation_frame(
     @param v_to_index: maps vertices to their index
     @param T: defines the connectivity of the tree
     @param X: an array of 2D points
+    @param w: eigenvalues
     @return: the animation frame as an image as a string
     """
     # before we begin drawing we need to create the cairo surface and context
@@ -183,6 +237,9 @@ def get_animation_frame(
         context.line_to(x0 + bx*scale, y0 + by*scale)
         context.stroke()
     context.restore()
+    # draw the eigenvalues
+    width, height = physical_size
+    draw_eigenvalues(context, 0.9*height, 0.05*width, 0.95*width, w)
     # create the image
     return cairo_helper.get_image_string()
 
@@ -229,7 +286,7 @@ def main(args):
         X_prev = X
         image_string = get_animation_frame(
                 args.image_format, physical_size, args.scale,
-                v_to_index, T, X)
+                v_to_index, T, X, w)
         image_filename = 'frame-%04d.%s' % (frame_index, args.image_format)
         image_pathname = os.path.join(args.output_directory, image_filename)
         with open(image_pathname, 'wb') as fout:
