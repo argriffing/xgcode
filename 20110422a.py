@@ -1,4 +1,4 @@
-"""Animate a 2D MDS tree as a branch length changes, plus eigenvalues. [UNFINISHED]
+"""Animate a 2D MDS tree as a branch length changes, plus eigenvalues.
 
 Create a tree MDS animation
 showing a progressive branch length change.
@@ -49,11 +49,12 @@ def get_form():
                 g_tree_string),
             Form.Float('scale', 'scale the image of the tree by this factor',
                 200.0, low_exclusive=0.0),
-            Form.Float('progress', 'animation progress between 0.0 and 1.0',
+            Form.Float('frame_progress',
+                'animation frame progress between 0.0 and 1.0',
                 0.5, low_inclusive=0.0, high_inclusive=1.0),
             Form.SingleLine('branch_name',
                 'name of the vertex associated with the variable branch', '1'),
-            Form.Float('final_blen',
+            Form.Float('final_length',
                 'final branch length', 10.0, low_exclusive=0.0),
             Form.Integer('x_axis',
                 'x axis projection (1 is Fiedler)', 1, low=1),
@@ -129,6 +130,11 @@ def get_response_content(fs):
     if x_index >= nleaves-1 or y_index >= nleaves-1:
         msg = 'projection indices must be smaller than the number of leaves'
         raise ValueError(msg)
+    # adjust the branch length
+    initial_length = B[edge]
+    t = sigmoid(fs.frame_progress)
+    B[edge] = (1-t)*initial_length + t*fs.final_length
+    # get the points
     w, v = Ftree.TB_to_harmonic_extension(T, B, leaves, internal)
     X_full = np.dot(v, np.diag(np.reciprocal(np.sqrt(w))))
     X = np.vstack([X_full[:,x_index], X_full[:,y_index]]).T
