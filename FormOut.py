@@ -146,6 +146,26 @@ class Png(FormOut):
         return 'png'
 
 
+class Tikz(FormOut):
+
+    def __init__(self, base_format_string='tkz', base_interpolants=[]):
+        self.filename_format_string = base_format_string + '.%s'
+        self.filename_interpolants = base_interpolants + ['tikzformat']
+
+    def get_contenttype(self, fs):
+        return Form.g_tikzformat_to_contenttype[fs.tikzformat]
+
+    def get_mobyle_class(self):
+        return 'Picture'
+
+    def get_mobyle_superclass(self):
+        return 'Binary'
+
+    def get_galaxy_format(self):
+        return 'png'
+
+
+
 class ContextDependent(FormOut):
     def __init__(self, fmt='out', ext='unknown', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)

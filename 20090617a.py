@@ -331,21 +331,17 @@ def get_form():
                 RadioItem('full_tree_only', 'full tree only', False),
                 RadioItem('pruned_trees_only', 'pruned trees only', False),
                 RadioItem('all_trees', 'all trees', True)]),
-            Form.RadioGroup('output_options', 'output format options', [
-                RadioItem('tikz', 'TikZ code', True),
-                RadioItem('latex', 'full LaTeX code'),
-                RadioItem('pdf', 'pdf'),
-                RadioItem('png', 'png')]),
+            Form.TikzFormat(),
             Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():
-    return FormOut.ContextDependent()
+    return FormOut.Tikz()
 
-def get_response(fs):
+def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
+    @return: the response
     """
     # decide which hardcoded tree to use
     if fs.six_leaves:
@@ -369,27 +365,13 @@ def get_response(fs):
         fs.scaling_factor, show_full_tree, show_pruned_trees)
     # decide the output format
     if fs.tikz:
-        filename = 'tikz-tree.tikz'
-        contenttype = 'text/plain'
-        response_text = tikz_text
-    elif fs.latex:
-        filename = 'tikz-tree.tex'
-        contenttype = 'text/plain'
-        response_text = latex_text
+        return tikz_text
+    elif fs.tex:
+        return latex_text
     elif fs.pdf:
-        filename = 'tikz-tree.pdf'
-        contenttype = 'application/pdf'
-        response_text = get_pdf_contents(latex_text)
+        return get_pdf_contents(latex_text)
     elif fs.png:
-        filename = 'tikz-tree.png'
-        contenttype = 'image/png'
-        response_text = get_png_contents(latex_text)
-    # return the response
-    disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
-    response_headers = [
-            ('Content-Type', contenttype),
-            ('Content-Disposition', disposition)]
-    return response_headers, response_text
+        return get_png_contents(latex_text)
 
 def create_temp_pdf_file(latex_text):
     """

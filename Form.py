@@ -38,6 +38,18 @@ g_imageformat_to_r_function = {
         'pdf' : 'pdf',
         'ps' : 'postscript'}
 
+g_tikzformat_to_contenttype = {
+        'tikz' : 'text/plain',
+        'tex' : 'text/plain',
+        'pdf' : 'application/pdf',
+        'png' : 'image/png'}
+
+g_tikzformat_to_ext = {
+        'tikz' : 'tikz',
+        'tex' : 'tex',
+        'pdf' : 'pdf',
+        'png' : 'png'}
+
 class HelpItem(object):
     def __init__(self, command, description):
         self.command = command
@@ -1354,4 +1366,20 @@ class ImageFormat(RadioGroup):
             RadioItem('pdf', 'pdf'),
             RadioItem('ps', 'postscript'),
             RadioItem('svg', 'svg')]
+        RadioGroup.__init__(self, label, description, radio_items)
+
+
+class TikzFormat(RadioGroup):
+    def __init__(self):
+        """
+        The group label is tikzformat.
+        The description and radio items are hard coded.
+        """
+        label = 'tikzformat'
+        description = 'output format'
+        radio_items = [
+            RadioItem('tikz', 'TikZ code', True),
+            RadioItem('tex', 'full LaTeX code'),
+            RadioItem('pdf', 'pdf'),
+            RadioItem('png', 'png')]
         RadioGroup.__init__(self, label, description, radio_items)
