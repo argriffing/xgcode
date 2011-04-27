@@ -88,6 +88,24 @@ def R_to_v_to_source(R):
     """
     return dict((b, a) for a, b in R)
 
+#TODO remove this?
+def Rv_to_subtree(R, v):
+    """
+    Get a directed topology that possibly has fewer vertices.
+    The returned directed topology is rooted at the specified vertex,
+    and none of the branches change direction
+    with respect to the original tree.
+    @param R: a directed topology
+    @param v: the new root
+    @return: a directed topology
+    """
+    v_to_sinks = R_to_v_to_sinks(R)
+    R_new = set()
+    shell = [v]
+    while shell:
+        pass
+
+
 def get_R_vertices(R):
     """
     @param R: a directed topology
