@@ -62,6 +62,7 @@ def assert_symmetric(M):
     """
     assert_square(M)
     if not np.allclose(M, M.T):
+        print M - M.T
         raise MatrixError('the matrix is not symmetric')
 
 def assert_nonnegative(M):
