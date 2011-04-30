@@ -154,6 +154,23 @@ def MDS_v3(D):
     # get the MDS points
     return np.dot(V, np.diag(np.reciprocal(np.sqrt(w))))
 
+def MDS_v4(D):
+    """
+    Use the Lingoes method of removing negative eigenvalues.
+    @param D: tree distance matrix
+    @return: leaf points
+    """
+    eps = 1e-8
+    # get the Schur complement matrix analog for the leaves
+    G = -0.5 * MatrixUtil.double_centered(D)
+    # do the Lingoes correction
+    most_neg = scipy.linalg.eigh(G, eigvals_only=True, eigvals=(0,0))
+    if most_neg < -eps:
+        D_corrected = D - 2*(-most_neg)*(np.ones_like(D) - np.eye(len(D)))
+        return MDS_v2(D_corrected)
+    else:
+        return MDS_v2(D)
+
 def get_response_content(fs):
     # read the ordered leaf names for the distance matrix
     D_names = Util.get_stripped_lines(fs.names.splitlines())
@@ -185,7 +202,7 @@ def get_response_content(fs):
     # get correspondingly ordered leaf sequences
     test_leaves_reordered = [test_n_to_leaf[n] for n in D_names]
     # get the MDS points
-    X = MDS_v2(fs.D)
+    X = MDS_v4(fs.D)
     # get the linear operator that defines the harmonic extension
     test_internal = Ftree.T_to_internal_vertices(T_test)
     L22 = Ftree.TB_to_L_block(T_test, B_test,
