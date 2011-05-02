@@ -30,7 +30,6 @@ def get_form():
                 'first eigenfunction index (1 means Fiedler)', 0, low=0),
             Form.Integer('last_index',
                 'last eigenfunction index (1 means Fiedler)', 4, low=0),
-            Form.Integer('ncols', 'use this many columns', 1, low=1),
             Form.CheckGroup('check_options', 'output options', [
                 Form.CheckItem('draw_background', 'draw background', True),
                 Form.CheckItem('draw_vertices', 'draw vertices'),
@@ -61,8 +60,6 @@ def get_response_content(fs):
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
-        #TODO remove ncols from the input
-        #TODO because it is not used here
         return DrawEigenLacing.get_forest_image_b(
                 tree, (640, 480), ext, valuations,
                 fs.draw_background, fs.draw_vertices, fs.draw_labels)
