@@ -60,7 +60,7 @@ def get_response_content(fs):
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
-        return DrawEigenLacing.get_forest_image_b(
+        return DrawEigenLacing.get_forest_image(
                 tree, (640, 480), ext, valuations,
                 fs.draw_background, fs.draw_vertices, fs.draw_labels)
     except CairoUtil.CairoUtilError, e:
