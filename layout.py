@@ -86,17 +86,7 @@ def min_rect_to_row_major(w, h, n):
     """
     if not rect_is_minimal(w, h, n):
         raise LayoutError('expected a minimal rectangle')
-    ngaps = w*h - n
-    points = []
-    for row in range(h):
-        index = (h-1) - row
-        if ngaps > index:
-            ncols = w-1
-        else:
-            ncols = w
-        for col in range(ncols):
-            points.append((row, col))
-    return points
+    return [divmod(i, w) for i in range(n)]
 
 def min_rect_to_col_major(w, h, n):
     """
@@ -108,17 +98,7 @@ def min_rect_to_col_major(w, h, n):
     """
     if not rect_is_minimal(w, h, n):
         raise LayoutError('expected a minimal rectangle')
-    ngaps = w*h - n
-    points = []
-    for col in range(w):
-        index = (w-1) - col
-        if ngaps > index:
-            nrows = h-1
-        else:
-            nrows = h
-        for row in range(nrows):
-            points.append((row, col))
-    return points
+    return [(b, a) for a, b in min_rect_to_row_major(h, w, n)]
 
 
 class TestLayout(unittest.TestCase):
@@ -163,9 +143,9 @@ class TestLayout(unittest.TestCase):
         n = 10
         observed = min_rect_to_row_major(4, 3, n)
         expected = [
-                (0,0), (0,1), (0,2), (0,3),
-                (1,0), (1,1), (1,2),
-                (2,0), (2,1), (2,2)]
+                (0, 0), (0, 1), (0, 2), (0, 3),
+                (1, 0), (1, 1), (1, 2), (1, 3),
+                (2, 0), (2, 1)]
         self.assertEqual(observed, expected)
 
     def test_min_rect_to_col_major_9(self):
@@ -181,10 +161,10 @@ class TestLayout(unittest.TestCase):
         n = 10
         observed = min_rect_to_col_major(4, 3, n)
         expected = [
-                (0,0), (1,0), (2,0),
-                (0,1), (1,1), (2,1),
-                (0,2), (1,2),
-                (0,3), (1,3)]
+                (0, 0), (1, 0), (2, 0),
+                (0, 1), (1, 1), (2, 1),
+                (0, 2), (1, 2), (2, 2),
+                (0, 3)]
         self.assertEqual(observed, expected)
 
 
