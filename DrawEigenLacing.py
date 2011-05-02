@@ -12,6 +12,7 @@ import SpatialTree
 import FastDaylightLayout
 import CairoUtil
 import iterutils
+import layout
 
 
 g_line_width_thin = 1.0
@@ -260,6 +261,114 @@ def get_forest_image(tree, max_size, image_format, vs, ncols,
             context.translate(0, -(nrows-1)*(g_border_inner + pane_height))
         else:
             context.translate(0, g_border_inner + pane_height)
+    # get the image string
+    return cairo_helper.get_image_string()
+
+def get_forest_image_b(tree, max_size, image_format, vs,
+        bdrawbackground, bdrawvertices, bdrawlabels):
+    """
+    Get the image of the tree.
+    This could be called from outside the module.
+    This second function uses the layout module
+    and does not require a number of columns for input.
+    The rectangle size is determined automatically
+    so as to maximize the scaling factors of the trees in the panels.
+    @param tree: something like a SpatialTree
+    @param max_size: (max_width, max_height)
+    @param image_format: a string that determines the image format
+    @param vs: sequence of maps from node id to valuation
+    @param bdrawbackground: flag to draw the background
+    @param bdrawvertices: flag to draw vertices
+    @param bdrawlabels: flag to draw labels
+    @return: a string containing the image data
+    """
+    npairs = len(vs)-1
+    if npairs < 1:
+        raise ValueError('not enough valuation maps')
+    # get all minimum rectangle sizes
+    rect_sizes = layout.get_rect_sizes(npairs)
+    # get (scaling_factor, w, h) triples
+    triples = []
+    max_width, max_height = max_size
+    for ncols, nrows in rect_sizes:
+        max_pane_width = (
+                max_width - 2*g_border_outer - g_border_inner*(ncols-1))/ncols
+        max_pane_height = (
+                max_height - 2*g_border_outer - g_border_inner*(nrows-1))/nrows
+        # require a minimum size
+        if max_pane_width < g_min_pane_width:
+            continue
+        elif max_pane_height < g_min_pane_height:
+            continue
+        # append a triple after finding the scaling factor
+        max_pane_size = (max_pane_width, max_pane_height)
+        tree.fit(max_pane_size)
+        triples.append((tree.scale, ncols, nrows))
+    # if no triples were found then we fail
+    if not triples:
+        raise ValueError('not enough room')
+    # get the nrows and ncols corresponding to the best scaling factor
+    max_scale, ncols, nrows = max(triples)
+    # get the position of each pane
+    row_col_pairs = layout.min_rect_to_row_major(ncols, nrows, npairs)
+    # re-fit the tree using the best size
+    max_pane_width = (
+            max_width - 2*g_border_outer - g_border_inner*(ncols-1))/ncols
+    max_pane_height = (
+            max_height - 2*g_border_outer - g_border_inner*(nrows-1))/nrows
+    max_pane_size = (max_pane_width, max_pane_height)
+    tree.fit(max_pane_size)
+    # get the width and height of the tree image
+    xmin, ymin, xmax, ymax = tree.get_extents()
+    pane_width = xmax - xmin
+    pane_height = ymax - ymin
+    width = 2*g_border_outer + (ncols-1)*g_border_inner + ncols*pane_width
+    height = 2*g_border_outer + (nrows-1)*g_border_inner + nrows*pane_height
+    # create the surface
+    cairo_helper = CairoUtil.CairoHelper(image_format)
+    surface = cairo_helper.create_surface(width, height)
+    context = cairo.Context(surface)
+    # draw the background
+    if bdrawbackground:
+        context.save()
+        context.set_source_rgb(*g_color_background)
+        context.paint()
+        context.restore()
+    # draw the trees
+    for i, ((row, col), (v1, v2)) in enumerate(
+            zip(row_col_pairs, iterutils.pairwise(vs))):
+        context.save()
+        # center the context on the correct pane
+        xtrans_initial = g_border_outer + pane_width/2.0
+        xtrans_extra = (g_border_inner + pane_width)*col
+        ytrans_initial = g_border_outer + pane_height/2.0
+        ytrans_extra = (g_border_inner + pane_height)*row
+        context.translate(
+                xtrans_initial + xtrans_extra, ytrans_initial + ytrans_extra)
+        # draw the tree into the context
+        if bdrawbackground:
+            bgcolor = g_color_background
+        else:
+            # Pretend that if there is not a background color
+            # then the background color is white.
+            bgcolor = (1.0, 1.0, 1.0)
+        draw_single_tree(tree, context, v1, v2, bgcolor,
+                bdrawvertices, bdrawlabels)
+        # draw the pane label into the context
+        if i < len(string.uppercase):
+            letter = string.uppercase[i]
+        else:
+            letter = '?'
+        context.save()
+        context.set_font_size(20.0)
+        xbear, ybear, w, h, xadv, yadv = context.text_extents(letter)
+        xtarget = -pane_width/2
+        ytarget = -pane_height/2 + h
+        context.move_to(xtarget, ytarget)
+        context.show_text(letter)
+        context.restore()
+        # restore the position
+        context.restore()
     # get the image string
     return cairo_helper.get_image_string()
 
