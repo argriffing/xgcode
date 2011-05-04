@@ -13,11 +13,8 @@ from SnippetUtil import HandlingError
 from Form import RadioItem
 import Form
 import FormOut
+import tikz
 
-#FIXME multiple output types
-
-# Do it like this.
-# python 20090617a.py > x.tex; latex x.tex; dvips x; ps2pdf x.ps; evince x.pdf
 
 class Layout:
     """
@@ -369,70 +366,9 @@ def get_response_content(fs):
     elif fs.tex:
         return latex_text
     elif fs.pdf:
-        return get_pdf_contents(latex_text)
+        return tikz.get_pdf_contents(latex_text)
     elif fs.png:
-        return get_png_contents(latex_text)
-
-def create_temp_pdf_file(latex_text):
-    """
-    @param latex_text: contents of a LaTeX file
-    @return: the base of the path name of a temporary pdf file (without the .pdf appended!)
-    """
-    # write a named temporary latex file
-    fd, pathname = tempfile.mkstemp(prefix='webtex', dir='/tmp', text=True)
-    fout = os.fdopen(fd, 'w+b')
-    fout.write(latex_text)
-    fout.close()
-    # convert the file to a pdf
-    args = ['/usr/bin/pdflatex', '-output-directory', '/tmp', '-interaction', 'nonstopmode', pathname]
-    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p.wait()
-    p_output = p.stdout.read()
-    p_error = p.stderr.read()
-    return pathname
-
-def get_png_contents(latex_text):
-    """
-    This involves using temporary files.
-    @param latex_text: contents of a LaTeX file
-    @return: contents of a png file
-    """
-    # create the pdf file
-    pathname = create_temp_pdf_file(latex_text)
-    # create the png file
-    input_arg = pathname + '.pdf'
-    output_arg = '-sOutputFile=%s.png' % pathname
-    args = ['gs', '-dSAFER', '-dBATCH', '-dNOPAUSE', '-sDEVICE=pnggray', output_arg, input_arg]
-    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p.wait()
-    p_output = p.stdout.read()
-    p_error = p.stderr.read()
-    # read the png file
-    png_pathname = pathname + '.png'
-    try:
-        fin = open(png_pathname, 'rb')
-        png_contents = fin.read()
-        fin.close()
-    except IOError, e:
-        raise HandlingError('failed to create a png file')
-    return png_contents
-
-def get_pdf_contents(latex_text):
-    """
-    This involves using temporary files.
-    @param latex_text: contents of a LaTeX file
-    @return: contents of a pdf file
-    """
-    # create the pdf file
-    pdf_pathname = create_temp_pdf_file(latex_text) + '.pdf'
-    # read the pdf file
-    try:
-        fin = open(pdf_pathname, 'rb')
-        pdf_contents = fin.read()
-        fin.close()
-    except IOError, e:
-        raise HandlingError('failed to create a pdf file')
-    return pdf_contents
+        return tikz.get_png_contents(latex_text)
 
 def main(options):
     layout = SevenLeafLayout()
@@ -441,7 +377,5 @@ def main(options):
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
-    #parser.add_option('--nseconds', dest='nseconds', type='int', default=0, help='seconds to run or 0 to run until ctrl-c')
-    #parser.add_option('--ntaxa', dest='ntaxa', type='int', default=20, help='number of taxa in each sampled tree topology')
     options, args = parser.parse_args()
     main(options)
