@@ -5,9 +5,6 @@ This is probably useful only as an example.
 
 from StringIO import StringIO
 import optparse
-import tempfile
-import subprocess
-import os
 
 from SnippetUtil import HandlingError
 from Form import RadioItem
