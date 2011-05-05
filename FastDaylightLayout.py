@@ -9,6 +9,8 @@ import SpatialTree
 import EqualArcLayout
 import day
 
+class LayoutError(Exception): pass
+
 
 def _build_dtree(dtree, node, count):
     """
@@ -41,7 +43,7 @@ class StraightBranchLayout:
 
     def set_iteration_count(self, iteration_count):
         """
-        @param iteration_count: do this many daylight equalizing passes through the tree
+        @param iteration_count: do this many daylight equalizing iterations
         """
         self.iteration_count = iteration_count
 
@@ -65,8 +67,8 @@ class StraightBranchLayout:
                     dtree.reroot()
                     try:
                         dtree.equalize()
-                    except RuntimeError, e:
-                        pass
+                    except RuntimeError as e:
+                        raise LayoutError(e)
         # extract the x and y coordinates from the parallel tree
         for node in tree.preorder():
             dtree.select_node(node.dtree_id)
@@ -76,7 +78,6 @@ class StraightBranchLayout:
         # take off the silly dtree_id members
         for node in tree.preorder():
             del node.dtree_id
-            raise NotImplementedError('use a derived class')
 
 
 class CurvedBranchLayout:
@@ -87,7 +88,8 @@ class CurvedBranchLayout:
 
     def set_min_segment_count(self, min_segment_count):
         """
-        @param min_segment_count: the minimum number of segments in the automatically segmented tree
+        The tree will be automatically segmented.
+        @param min_segment_count: the minimum number of segments
         """
         self.min_segment_count = min_segment_count
 
@@ -104,7 +106,8 @@ class CurvedBranchLayout:
         """
         # reroot to a node with more than two neighbors
         if get_neighbor_count(tree.root) < 3:
-            suitable_roots = [node for node in tree.preorder() if get_neighbor_count(node) > 2]
+            suitable_roots = [
+                    x for x in tree.preorder() if get_neighbor_count(x) > 2]
             if suitable_roots:
                 tree.reroot(suitable_roots[0])
         # create the initial layout
@@ -127,7 +130,7 @@ class CurvedBranchLayout:
                     try:
                         dtree.equalize()
                     except RuntimeError, e:
-                        pass
+                        raise LayoutError(e)
             # read the extension tree
             for node in tree.preorder():
                 dtree.select_node(node.dtree_id)
@@ -139,9 +142,11 @@ class CurvedBranchLayout:
             for node in old_nodes:
                 if node is tree.root:
                     if node.blen is not None:
-                        raise HandlingError('the root node should not have a branch length')
+                        msg = 'the root node should not have a branch length'
+                        raise HandlingError(msg)
                 elif node.blen is None:
-                    raise HandlingError('each non-root node should have a branch length')
+                    msg = 'each non-root node should have a branch length'
+                    raise HandlingError(msg)
                 elif node.blen > max_branch_length:
                     # create a new node and set its attributes
                     new = self.node_factory()
@@ -171,9 +176,11 @@ def segment_tree(tree, min_segment_count, node_factory):
         for node in old_nodes:
             if node is tree.root:
                 if node.blen is not None:
-                    raise HandlingError('the root node should not have a branch length')
+                    msg = 'the root node should not have a branch length'
+                    raise HandlingError(msg)
             elif node.blen is None:
-                raise HandlingError('each non-root node should have a branch length')
+                msg = 'each non-root node should have a branch length'
+                raise HandlingError(msg)
             elif node.blen > max_branch_length:
                 # create a new node and set its attributes
                 new = node_factory()

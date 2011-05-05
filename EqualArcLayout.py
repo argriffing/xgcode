@@ -13,7 +13,8 @@ def do_layout(tree):
     # decorate the tree with subtree_tip_count members
     for node in tree.postorder():
         if node.children:
-            node.subtree_tip_count = sum(child.subtree_tip_count for child in node.children)
+            node.subtree_tip_count = sum(
+                    child.subtree_tip_count for child in node.children)
         else:
             node.subtree_tip_count = 1
     # create the equal arc angles
@@ -27,7 +28,8 @@ def do_layout(tree):
 
 def _force_equal_arcs(current_node, min_theta, max_theta):
     """
-    Use the equal angle method to lay out the tree with non-intersecting branches.
+    Use the equal angle method.
+    Lay out the tree with non-intersecting branches.
     Define the angles in this subtree to be within the specified range.
     """
     current_node.theta = (min_theta + max_theta) / 2
@@ -36,7 +38,8 @@ def _force_equal_arcs(current_node, min_theta, max_theta):
         cumulative_theta = 0
         for i, child in enumerate(current_node.children):
             sub_subtree_tip_count = child.subtree_tip_count
-            aliquot = (max_theta - min_theta) * sub_subtree_tip_count / float(subtree_tip_count)
+            dtheta = max_theta - min_theta
+            aliquot = dtheta * sub_subtree_tip_count / float(subtree_tip_count)
             low = min_theta + cumulative_theta - current_node.theta
             cumulative_theta += aliquot
             high = min_theta + cumulative_theta - current_node.theta
@@ -64,7 +67,5 @@ def main():
 
 if __name__ == '__main__':
     parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', help='output file')
     options, args = parser.parse_args()
     main()
