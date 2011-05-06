@@ -39,6 +39,45 @@ g_vertex_dot_radius_thick = 2
 
 g_label_distance = 8
 
+g_wavelength = 3
+
+def draw_wavy_line(ctx, x1, y1, x2, y2, wavelength):
+    """
+    @param ctx: cairo context
+    @param x1: x coordinate of first point
+    @param y1: y coordinate of first point
+    @param x2: x coordinate of second point
+    @param y2: y coordinate of second point
+    @param wavelength: a value proportional to the wavelength
+    """
+    # set up the parameters
+    d = math.hypot(y2-y1, x2-x1)
+    nknots = 2 + math.ceil(d / wavelength)
+    xincr = (x2-x1) / (nknots - 1)
+    yincr = (y2-y1) / (nknots - 1)
+    amplitude = math.hypot(xincr, yincr) / 2
+    # start drawing
+    ctx.save()
+    ctx.set_line_width(g_line_width_thin)
+    ctx.set_source_rgb(*g_color_dark)
+    for i in range(nknots - 1):
+        xa = x1 + i*xincr
+        ya = y1 + i*yincr
+        xb = xa + xincr
+        yb = ya + yincr
+        xm = (xa + xb)/2
+        ym = (ya + yb)/2
+        theta = math.atan2(yb-ya, xb-xa)
+        if i % 2:
+            theta += math.pi / 2
+        else:
+            theta -= math.pi / 2
+        xc = xm + amplitude * math.cos(theta)
+        yc = ym + amplitude * math.sin(theta)
+        ctx.move_to(xa, ya)
+        ctx.curve_to(xc, yc, xc, yc, xb, yb)
+        ctx.stroke()
+    ctx.restore()
 
 def is_bad_edge(node, child, v1, v2):
     v1_pair = (v1[id(node)], v1[id(child)])
@@ -101,6 +140,7 @@ def get_eg2_image(tree, max_size, image_format, v1, v2s,
         context.paint()
         context.restore()
         # draw rectangles for the panes
+        #FIXME
         if False:
             gap = g_border_inner - 2*g_border_outer
             if gap > 0:
@@ -132,7 +172,7 @@ def get_eg2_image(tree, max_size, image_format, v1, v2s,
         draw_single_tree(tree, context, v1, v2, bgcolor,
                 bdrawvertices, bdrawlabels)
         # draw the pane label into the context
-        # TODO conditional
+        # FIXME
         if False:
             if i < len(string.uppercase):
                 letter = string.uppercase[i]
@@ -306,10 +346,17 @@ def _draw_bad_branches(tree, context, v1, v2):
             context.save()
             psrc = tree._layout_to_display(node.location)
             pdst = tree._layout_to_display(child.location)
-            context.set_source_rgb(*g_color_bad_edge)
-            context.move_to(*psrc)
-            context.line_to(*pdst)
-            context.stroke()
+            #FIXME
+            if False:
+                context.set_source_rgb(*g_color_bad_edge)
+                context.move_to(*psrc)
+                context.line_to(*pdst)
+                context.stroke()
+            else:
+                draw_wavy_line(
+                        context,
+                        psrc[0], psrc[1], pdst[0], pdst[1],
+                        g_wavelength)
             context.restore()
 
 def _draw_directed_branches(tree, context, v1, v2):
@@ -373,10 +420,19 @@ def _draw_ticks(tree, context, v1, v2):
             barbx2 = pmid[0] + g_barb_radius * math.cos(theta - math.pi/2)
             barby2 = pmid[1] + g_barb_radius * math.sin(theta - math.pi/2)
             # set line thickness for barb
-            context.set_line_width(g_line_width_thin)
-            context.move_to(barbx1, barby1)
-            context.line_to(barbx2, barby2)
-            context.stroke()
+            eps = 1e-8
+            if abs(vsrc) < eps or abs(vdst) < eps:
+                #FIXME
+                if False:
+                    draw_wavy_line(
+                            context,
+                            barbx1, barby1, barbx2, barby2,
+                            g_wavelength)
+            else:
+                context.set_line_width(g_line_width_thin)
+                context.move_to(barbx1, barby1)
+                context.line_to(barbx2, barby2)
+                context.stroke()
         context.restore()
 
 def get_free_angle(tree, node):
@@ -434,8 +490,10 @@ def draw_single_tree(tree, context, v1, v2, bgcolor,
         for node in tree.preorder():
             d = id(node)
             if d in bad_node_ids:
-                r = g_vertex_dot_radius_thick
-                fgcolor = g_color_bad_edge
+                #r = g_vertex_dot_radius_thick
+                #fgcolor = g_color_bad_edge
+                r = g_vertex_dot_radius_thin
+                fgcolor = g_color_dark
             elif v1[d] < 0:
                 r = g_vertex_dot_radius_thin
                 fgcolor = g_color_light
