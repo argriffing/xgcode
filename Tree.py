@@ -130,6 +130,11 @@ class TreeNode:
         if self.parent:
             count += 1
         return count
+    def get_neighbors(self):
+        if self.parent:
+            return self.children + [self.parent]
+        else:
+            return self.children
     def get_child_count(self):
         return len(self.get_children())
     def get_children(self):
