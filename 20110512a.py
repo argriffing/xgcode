@@ -34,6 +34,8 @@ def get_form():
             Form.CheckGroup('check_options', 'output options', [
                 Form.CheckItem('draw_background', 'draw background', True),
                 Form.CheckItem('draw_labels', 'draw labels', True)]),
+            Form.Integer('width', 'physical width', 880, low=10, high=1000),
+            Form.Integer('height', 'physical height', 680, low=10, high=1000),
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -60,8 +62,9 @@ def get_response_content(fs):
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
+        physical_size = (fs.width, fs.height)
         return DrawEigenLacing.get_forest_image_revised(
-                tree, (640, 480), ext, valuations,
+                tree, physical_size, ext, valuations,
                 fs.draw_background, fs.draw_labels)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
