@@ -204,8 +204,20 @@ def get_eg2_image(tree, max_size, image_format, v1, v2s,
     # get the image string
     return cairo_helper.get_image_string()
 
+def locations_to_extents(locations):
+    """
+    @param locations: (x, y) pairs
+    @return: (xmin, ymin, xmax, ymax)
+    """
+    xmin = min(x for x, y in locations)
+    ymin = min(y for x, y in locations)
+    xmax = max(x for x, y in locations)
+    ymax = max(y for x, y in locations)
+    return (xmin, ymin, xmax, ymax)
+
 def get_forest_image_revised(tree, max_size, image_format, vs,
-        bdrawbackground, bdrawlabels):
+        bdrawbackground, bdrawlabels, inner_margin, outer_margin,
+        reflect_trees):
     """
     Get the image of the tree.
     This could be called from outside the module.
@@ -229,9 +241,9 @@ def get_forest_image_revised(tree, max_size, image_format, vs,
     max_width, max_height = max_size
     for ncols, nrows in rect_sizes:
         max_pane_width = (
-                max_width - 2*g_border_outer - g_border_inner*(ncols-1))/ncols
+                max_width - 2*outer_margin - inner_margin*(ncols-1))/ncols
         max_pane_height = (
-                max_height - 2*g_border_outer - g_border_inner*(nrows-1))/nrows
+                max_height - 2*outer_margin - inner_margin*(nrows-1))/nrows
         # require a minimum size
         if max_pane_width < g_min_pane_width:
             continue
@@ -250,17 +262,24 @@ def get_forest_image_revised(tree, max_size, image_format, vs,
     row_col_pairs = layout.min_rect_to_row_major(ncols, nrows, npairs)
     # re-fit the tree using the best size
     max_pane_width = (
-            max_width - 2*g_border_outer - g_border_inner*(ncols-1))/ncols
+            max_width - 2*outer_margin - inner_margin*(ncols-1))/ncols
     max_pane_height = (
-            max_height - 2*g_border_outer - g_border_inner*(nrows-1))/nrows
+            max_height - 2*outer_margin - inner_margin*(nrows-1))/nrows
     max_pane_size = (max_pane_width, max_pane_height)
     tree.fit(max_pane_size)
+    # get the map from id to location for the final tree layout
+    nodes = list(tree.preorder())
+    id_to_location = dict(
+            (id(n), tree._layout_to_display(n.location)) for n in nodes)
+    if reflect_trees:
+        id_to_location = dict(
+                (v, (-x, y)) for v, (x,y) in id_to_location.items())
     # get the width and height of the tree image
-    xmin, ymin, xmax, ymax = tree.get_extents()
+    xmin, ymin, xmax, ymax = locations_to_extents(id_to_location.values())
     pane_width = xmax - xmin
     pane_height = ymax - ymin
-    width = 2*g_border_outer + (ncols-1)*g_border_inner + ncols*pane_width
-    height = 2*g_border_outer + (nrows-1)*g_border_inner + nrows*pane_height
+    width = 2*outer_margin + (ncols-1)*inner_margin + ncols*pane_width
+    height = 2*outer_margin + (nrows-1)*inner_margin + nrows*pane_height
     # create the surface
     cairo_helper = CairoUtil.CairoHelper(image_format)
     surface = cairo_helper.create_surface(width, height)
@@ -276,10 +295,10 @@ def get_forest_image_revised(tree, max_size, image_format, vs,
             zip(row_col_pairs, iterutils.pairwise(vs+[None]))):
         context.save()
         # center the context on the correct pane
-        xtrans_initial = g_border_outer + pane_width/2.0
-        xtrans_extra = (g_border_inner + pane_width)*col
-        ytrans_initial = g_border_outer + pane_height/2.0
-        ytrans_extra = (g_border_inner + pane_height)*row
+        xtrans_initial = outer_margin + pane_width/2.0
+        xtrans_extra = (inner_margin + pane_width)*col
+        ytrans_initial = outer_margin + pane_height/2.0
+        ytrans_extra = (inner_margin + pane_height)*row
         context.translate(
                 xtrans_initial + xtrans_extra, ytrans_initial + ytrans_extra)
         # draw the tree into the context
@@ -289,7 +308,8 @@ def get_forest_image_revised(tree, max_size, image_format, vs,
             # Pretend that if there is not a background color
             # then the background color is white.
             bgcolor = (1.0, 1.0, 1.0)
-        draw_single_tree_revised(tree, context, v1, v2, bgcolor, bdrawlabels)
+        draw_single_tree_revised(
+                tree, context, v1, v2, bgcolor, bdrawlabels, id_to_location)
         # draw the pane label into the context
         if i < len(string.uppercase):
             pane_label = str(i+1)
@@ -452,12 +472,12 @@ def get_single_tree_image(tree, max_size, image_format, v1, v2):
     # get the image string
     return cairo_helper.get_image_string()
 
-def _draw_bad_branches_revised(tree, context, v1):
+def _draw_bad_branches_revised(tree, context, v1, id_to_location):
     for node, child in tree.gen_directed_branches():
         if is_bad_edge_revised(node, child, v1):
             context.save()
-            psrc = tree._layout_to_display(node.location)
-            pdst = tree._layout_to_display(child.location)
+            psrc = id_to_location[id(node)]
+            pdst = id_to_location[id(child)]
             draw_wavy_line(
                     context,
                     psrc[0], psrc[1], pdst[0], pdst[1],
@@ -483,7 +503,7 @@ def _draw_bad_branches(tree, context, v1, v2):
                         g_wavelength)
             context.restore()
 
-def _draw_directed_branches_revised(tree, context, v1):
+def _draw_directed_branches_revised(tree, context, v1, id_to_location):
     for node, child in tree.gen_directed_branches():
         if is_bad_edge_revised(node, child, v1):
             continue
@@ -491,8 +511,8 @@ def _draw_directed_branches_revised(tree, context, v1):
         context.set_source_rgb(*g_color_light)
         # Get the valuations and (x,y) points of each node.
         vsrc, vdst = v1[id(node)], v1[id(child)]
-        psrc = tree._layout_to_display(node.location)
-        pdst = tree._layout_to_display(child.location)
+        psrc = id_to_location[id(node)]
+        pdst = id_to_location[id(child)]
         if vsrc < 0 and vdst < 0:
             context.set_line_width(g_line_width_thin)
             context.move_to(*psrc)
@@ -567,7 +587,7 @@ def _draw_directed_branches(tree, context, v1, v2):
             context.stroke()
         context.restore()
 
-def _draw_vertex_ticks_revised(tree, context, v2):
+def _draw_vertex_ticks_revised(tree, context, v2, id_to_location):
     """
     @param v2: maps node id to valuation for zero crossing ticks
     """
@@ -591,7 +611,7 @@ def _draw_vertex_ticks_revised(tree, context, v2):
             continue
         if not nneg:
             continue
-        x, y = tree._layout_to_display(node.location)
+        x, y = id_to_location[id(node)]
         r = g_vertex_dot_radius_thick
         context.save()
         context.set_source_rgb(*g_color_dark)
@@ -599,15 +619,15 @@ def _draw_vertex_ticks_revised(tree, context, v2):
         context.fill()
         context.restore()
 
-def _draw_edge_ticks_revised(tree, context, v2):
+def _draw_edge_ticks_revised(tree, context, v2, id_to_location):
     for node, child in tree.gen_directed_branches():
         if is_bad_edge_revised(node, child, v2):
             continue
         context.save()
         # Get the valuations and (x,y) points of each node.
         vsrc, vdst = v2[id(node)], v2[id(child)]
-        psrc = tree._layout_to_display(node.location)
-        pdst = tree._layout_to_display(child.location)
+        psrc = id_to_location[id(node)]
+        pdst = id_to_location[id(child)]
         if vsrc * vdst < 0:
             # find the crossing point
             t = -vsrc / (vdst - vsrc)
@@ -619,14 +639,7 @@ def _draw_edge_ticks_revised(tree, context, v2):
             barby2 = pmid[1] + g_barb_radius * math.sin(theta - math.pi/2)
             # set line thickness for barb
             eps = 1e-8
-            if abs(vsrc) < eps or abs(vdst) < eps:
-                #FIXME
-                if False:
-                    draw_wavy_line(
-                            context,
-                            barbx1, barby1, barbx2, barby2,
-                            g_wavelength)
-            else:
+            if abs(vsrc) > eps and abs(vdst) > eps:
                 context.set_line_width(g_line_width_thin)
                 context.move_to(barbx1, barby1)
                 context.line_to(barbx2, barby2)
@@ -667,6 +680,24 @@ def _draw_ticks(tree, context, v1, v2):
                 context.stroke()
         context.restore()
 
+def _draw_labels_revised(tree, context, id_to_location):
+    for node in tree.preorder():
+        label = node.get_name()
+        if label:
+            # get the parameters for the label
+            theta = get_free_angle_revised(tree, node, id_to_location)
+            x, y = id_to_location[id(node)]
+            xlab = x + g_label_distance * math.cos(theta)
+            ylab = y + g_label_distance * math.sin(theta)
+            # draw the text, centered on the target point
+            context.save()
+            xbear, ybear, w, h, xadv, yadv = context.text_extents(label)
+            xtarget = xlab - w/2
+            ytarget = ylab + h/2
+            context.move_to(xtarget, ytarget)
+            context.show_text(label)
+            context.restore()
+
 def _draw_labels(tree, context):
     for node in tree.preorder():
         label = node.get_name()
@@ -684,6 +715,36 @@ def _draw_labels(tree, context):
             context.move_to(xtarget, ytarget)
             context.show_text(label)
             context.restore()
+
+def get_free_angle_revised(tree, node, id_to_location):
+    """
+    @param tree: something like a SpatialTree
+    @param node: something like a SpatialNode
+    @return: get the angle from the node to some free space
+    """
+    # FIXME this is implemented quadratic but it could be implemented linear.
+    # get the list of angles away from the node of interest
+    angles = []
+    origin = id_to_location[id(node)]
+    for a, b in tree.gen_bidirected_branches():
+        if a is node:
+            target = id_to_location[id(b)]
+            theta = SpatialTree.get_angle(origin, target)
+            angles.append(theta)
+    # if there is only one angle then return its reflection
+    if len(angles) == 1:
+        return angles[0] + math.pi
+    # If there are multiple angles then get the mid angle
+    # of the widest interval.
+    # Begin by sorting the angles.
+    angles.sort()
+    # convert pairs of sorted angles to angle intervals
+    intervals = []
+    for low, high in iterutils.pairwise(angles + [angles[0]]):
+        intervals.append(SpatialTree.AngleInterval(low, high))
+    # return the mid angle of the widest interval
+    mag, interval = max((x.get_magnitude(), x) for x in intervals)
+    return interval.get_mid_angle()
 
 def get_free_angle(tree, node):
     """
@@ -715,7 +776,8 @@ def get_free_angle(tree, node):
     mag, interval = max((x.get_magnitude(), x) for x in intervals)
     return interval.get_mid_angle()
 
-def draw_single_tree_revised(tree, context, v1, v2, bgcolor, bdrawlabels):
+def draw_single_tree_revised(
+        tree, context, v1, v2, bgcolor, bdrawlabels, id_to_location):
     """
     This is most likely called only from inside the module.
     @param tree: a fitted SpatialTree
@@ -725,13 +787,13 @@ def draw_single_tree_revised(tree, context, v1, v2, bgcolor, bdrawlabels):
     @param bgcolor: background color
     @param bdrawlabels: flag to draw labels
     """
-    _draw_bad_branches_revised(tree, context, v1)
-    _draw_directed_branches_revised(tree, context, v1)
+    _draw_bad_branches_revised(tree, context, v1, id_to_location)
+    _draw_directed_branches_revised(tree, context, v1, id_to_location)
     if v2:
-        _draw_edge_ticks_revised(tree, context, v2)
-        _draw_vertex_ticks_revised(tree, context, v2)
+        _draw_edge_ticks_revised(tree, context, v2, id_to_location)
+        _draw_vertex_ticks_revised(tree, context, v2, id_to_location)
     if bdrawlabels:
-        _draw_labels(tree, context)
+        _draw_labels_revised(tree, context, id_to_location)
 
 def draw_single_tree(tree, context, v1, v2, bgcolor,
         bdrawvertices, bdrawlabels):

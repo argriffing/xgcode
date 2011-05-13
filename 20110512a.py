@@ -32,10 +32,13 @@ def get_form():
             Form.Integer('last_index',
                 'last eigenfunction index (1 means Fiedler)', 12, low=0),
             Form.CheckGroup('check_options', 'output options', [
+                Form.CheckItem('reflect_trees', 'reflect trees', True),
                 Form.CheckItem('draw_background', 'draw background', True),
                 Form.CheckItem('draw_labels', 'draw labels', True)]),
             Form.Integer('width', 'physical width', 880, low=10, high=1000),
             Form.Integer('height', 'physical height', 680, low=10, high=1000),
+            Form.Integer('inner_margin', 'inner margin', 10, low=0, high=1000),
+            Form.Integer('outer_margin', 'outer margin', 0, low=0, high=1000),
             Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -65,7 +68,8 @@ def get_response_content(fs):
         physical_size = (fs.width, fs.height)
         return DrawEigenLacing.get_forest_image_revised(
                 tree, physical_size, ext, valuations,
-                fs.draw_background, fs.draw_labels)
+                fs.draw_background, fs.draw_labels,
+                fs.inner_margin, fs.outer_margin, fs.reflect_trees)
     except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
 
