@@ -915,6 +915,26 @@ class TikzContext:
         self.add_line(
                 '\\fill (%.4f,%.4f) circle (0.04cm);' % (x, y))
 
+def _draw_labels_tikz(tree, context, id_to_location):
+    """
+    Use degree anchors for label placement.
+    """
+    for node in tree.preorder():
+        label = node.get_name()
+        if label:
+            # get the parameters for the label
+            theta = get_free_angle_revised(tree, node, id_to_location)
+            x, y = id_to_location[id(node)]
+            # draw the text relative to the location
+            theta = math.atan2(math.sin(theta), -math.cos(theta))
+            float_degree = ((theta % (2 * math.pi)) * 360) / (2 * math.pi)
+            #float_degree = (theta * 360) / (2 * math.pi)
+            degree = int(math.floor(float_degree))
+            style = 'font=\\tiny,anchor=%s,inner sep=1pt' % degree
+            context.add_line(
+                    '\\node[%s] at (%.4f,%.4f) {%s};' % (
+                        style, x, y, label))
+
 def _draw_vertex_ticks_tikz(tree, context, v2, id_to_location):
     """
     @param v2: maps node id to valuation for zero crossing ticks
@@ -1005,7 +1025,8 @@ def _draw_bad_branches_tikz(tree, context, v1, id_to_location):
             pdst = id_to_location[id(child)]
             context.draw_wavy_line(psrc[0], psrc[1], pdst[0], pdst[1])
 
-def draw_single_tree_tikz(tree, context, v1, v2, id_to_location):
+def draw_single_tree_tikz(tree, context, v1, v2,
+        flag_draw_labels, id_to_location):
     """
     This is most likely called only from inside the module.
     @param tree: a fitted SpatialTree
@@ -1018,9 +1039,12 @@ def draw_single_tree_tikz(tree, context, v1, v2, id_to_location):
     if v2:
         _draw_edge_ticks_tikz(tree, context, v2, id_to_location)
         _draw_vertex_ticks_tikz(tree, context, v2, id_to_location)
+    if flag_draw_labels:
+        _draw_labels_tikz(tree, context, id_to_location)
 
 def get_forest_image_tikz(
-            tree, max_size, vs, inner_margin, reflect_trees):
+            tree, max_size, vs, inner_margin,
+            reflect_trees, flag_draw_labels):
     """
     Get the image of the tree.
     This could be called from outside the module.
@@ -1098,7 +1122,7 @@ def get_forest_image_tikz(
         context.begin_pane(xshift, yshift)
         # draw the tree into the context
         draw_single_tree_tikz(
-                tree, context, v1, v2, id_to_location)
+                tree, context, v1, v2, flag_draw_labels, id_to_location)
         # draw the pane label into the context
         if i < len(string.uppercase):
             pane_label = str(i+1)
@@ -1106,9 +1130,10 @@ def get_forest_image_tikz(
             pane_label = '?'
         xtarget = -pane_width/2
         ytarget = -pane_height/2
+        style = 'anchor=north west,inner sep=1pt'
         context.add_line(
-            '\\node[anchor=north west] (%s) at (%.4f,%.4f) {%s};' % (
-                'pane'+pane_label, xtarget, ytarget, pane_label))
+            '\\node[%s] at (%.4f,%.4f) {%s};' % (
+                style, xtarget, ytarget, pane_label))
         context.end_pane()
     context.finish()
     return context.get_text()

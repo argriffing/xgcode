@@ -34,7 +34,8 @@ def get_form():
             Form.Integer('last_index',
                 'last eigenfunction index (1 means Fiedler)', 12, low=0),
             Form.CheckGroup('check_options', 'output options', [
-                Form.CheckItem('reflect_trees', 'reflect trees', True)]),
+                Form.CheckItem('reflect_trees', 'reflect trees', True),
+                Form.CheckItem('draw_labels', 'draw labels')]),
             Form.Float('width', 'width (centimeters)',
                 12, low_inclusive=1, high_exclusive=1000),
             Form.Float('height', 'height (centimeters)',
@@ -92,7 +93,8 @@ def get_response_content(fs):
     # draw the image
     physical_size = (fs.width, fs.height)
     tikz_text = DrawEigenLacing.get_forest_image_tikz(
-            tree, physical_size, valuations, fs.inner_margin, fs.reflect_trees)
+            tree, physical_size, valuations,
+            fs.inner_margin, fs.reflect_trees, fs.draw_labels)
     latex_text = get_latex_text(get_figure_text(tikz_text))
     # decide the output format
     if fs.tikz:
