@@ -1042,11 +1042,12 @@ def draw_single_tree_tikz(tree, context, v1, v2,
     if flag_draw_labels:
         _draw_labels_tikz(tree, context, id_to_location)
 
-def get_forest_image_tikz(
+def get_forest_image_tikz_old(
             tree, max_size, vs, inner_margin,
             reflect_trees, flag_draw_labels):
     """
     Get the image of the tree.
+    Use a manual grid layout.
     This could be called from outside the module.
     The rectangle size is determined automatically
     so as to maximize the scaling factors of the trees in the panels.
@@ -1135,6 +1136,116 @@ def get_forest_image_tikz(
             '\\node[%s] at (%.4f,%.4f) {%s};' % (
                 style, xtarget, ytarget, pane_label))
         context.end_pane()
+    context.finish()
+    return context.get_text()
+
+def get_forest_image_tikz(
+            tree, max_size, vs, inner_margin,
+            reflect_trees, flag_draw_labels):
+    """
+    Get the image of the tree.
+    Attempt to use the builtin TikZ matrix layout.
+    This could be called from outside the module.
+    The rectangle size is determined automatically
+    so as to maximize the scaling factors of the trees in the panels.
+    @param tree: something like a SpatialTree
+    @param max_size: (max_width, max_height) in centimeters
+    @param vs: sequence of maps from node id to valuation
+    @param inner_margin: inner margin in centimeters
+    @param reflect_trees: a flag for tweaking the tree layout
+    @return: tikz text
+    """
+    outer_margin = 0
+    npairs = len(vs)
+    if npairs < 1:
+        raise ValueError('not enough valuation maps')
+    # get all minimum rectangle sizes
+    rect_sizes = layout.get_rect_sizes(npairs)
+    # get (scaling_factor, w, h) triples
+    triples = []
+    max_width, max_height = max_size
+    for ncols, nrows in rect_sizes:
+        max_pane_width = (
+                max_width - 2*outer_margin - inner_margin*(ncols-1))/ncols
+        max_pane_height = (
+                max_height - 2*outer_margin - inner_margin*(nrows-1))/nrows
+        # require a minimum size
+        min_pane_centimeters = 1e-4
+        if max_pane_width < min_pane_centimeters:
+            continue
+        elif max_pane_height < min_pane_centimeters:
+            continue
+        # append a triple after finding the scaling factor
+        max_pane_size = (max_pane_width, max_pane_height)
+        tree.fit(max_pane_size)
+        triples.append((tree.scale, ncols, nrows))
+    # if no triples were found then we fail
+    if not triples:
+        raise ValueError('not enough room')
+    # get the nrows and ncols corresponding to the best scaling factor
+    max_scale, ncols, nrows = max(triples)
+    # get the position of each pane
+    row_col_pairs = layout.min_rect_to_row_major(ncols, nrows, npairs)
+    # re-fit the tree using the best size
+    max_pane_width = (
+            max_width - 2*outer_margin - inner_margin*(ncols-1))/ncols
+    max_pane_height = (
+            max_height - 2*outer_margin - inner_margin*(nrows-1))/nrows
+    max_pane_size = (max_pane_width, max_pane_height)
+    tree.fit(max_pane_size)
+    # get the map from id to location for the final tree layout
+    nodes = list(tree.preorder())
+    id_to_location = dict(
+            (id(n), tree._layout_to_display(n.location)) for n in nodes)
+    if reflect_trees:
+        id_to_location = dict(
+                (v, (-x, y)) for v, (x,y) in id_to_location.items())
+    # get the width and height of the tree image
+    xmin, ymin, xmax, ymax = locations_to_extents(id_to_location.values())
+    pane_width = xmax - xmin
+    pane_height = ymax - ymin
+    width = 2*outer_margin + (ncols-1)*inner_margin + ncols*pane_width
+    height = 2*outer_margin + (nrows-1)*inner_margin + nrows*pane_height
+    # draw the trees
+    context = TikzContext()
+    style = 'column sep=%.4f,row sep=%.4f' % (
+            inner_margin, inner_margin)
+    context.add_line('\\matrix[%s] {' % style)
+    context.depth += 1
+    for i, ((row, col), (v1, v2)) in enumerate(
+            zip(row_col_pairs, iterutils.pairwise(vs+[None]))):
+        # draw the tree into the context
+        context.add_line('\\begin{scope}[yscale=-1]')
+        context.depth += 1
+        draw_single_tree_tikz(
+                tree, context, v1, v2, flag_draw_labels, id_to_location)
+        # draw the pane label into the context
+        if i < len(string.uppercase):
+            pane_label = str(i+1)
+        else:
+            pane_label = '?'
+        xtarget = -pane_width/2
+        ytarget = -pane_height/2
+        style = 'anchor=north west,inner sep=1pt'
+        context.add_line(
+            '\\node[%s] at (%.4f,%.4f) {%s};' % (
+                style, xtarget, ytarget, pane_label))
+        context.depth -= 1
+        context.add_line('\\end{scope}')
+        # add a row break or a column break
+        nblanks = nrows * ncols - len(row_col_pairs)
+        if i == len(row_col_pairs) - 1:
+            line = ''
+            if nblanks:
+                line += ' '.join(['&']*nblanks)
+            line += '\\\\'
+            context.add_line(line)
+        elif col == ncols-1:
+            context.add_line('\\\\')
+        else:
+            context.add_line('&')
+    context.depth -= 1
+    context.add_line('};')
     context.finish()
     return context.get_text()
 
