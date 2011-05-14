@@ -54,7 +54,7 @@ def get_png_contents(latex_text):
         png_contents = fin.read()
         fin.close()
     except IOError, e:
-        raise HandlingError('failed to create a png file')
+        raise ValueError('failed to create a png file')
     return png_contents
 
 def get_pdf_contents(latex_text):
@@ -71,5 +71,5 @@ def get_pdf_contents(latex_text):
         pdf_contents = fin.read()
         fin.close()
     except IOError, e:
-        raise HandlingError('failed to create a pdf file')
+        raise ValueError('failed to create a pdf file')
     return pdf_contents
