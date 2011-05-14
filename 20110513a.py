@@ -84,64 +84,6 @@ def get_float_figure_lines(subfloat_pictures):
         '\\end{figure}'])
     return arr
 
-def get_vertex_line(v, x, y):
-    """
-    @param v: the vertex
-    @param x: vertex x location
-    @param y: vertex y location
-    @return: tikz line
-    """
-    style = 'draw,shape=circle,inner sep=0pt'
-    line = '\\node (%s)[%s] at (%.4f, %.4f) {};' % (v, style, x, y)
-    return line
-
-def get_edge_line(va, vb):
-    """
-    @param va: first vertex
-    @param vb: second vertex
-    @return: tikz line
-    """
-    line = '\\path (%s) edge node {} (%s);' % (va, vb)
-    return line
-
-def get_tikz_lines(newick):
-    """
-    @param newick: a newick tree string
-    @return: a sequence of tikz lines
-    """
-    # hardcode the axes
-    x_index = 0
-    y_index = 1
-    # get the tree with ordered vertices
-    T, B = FtreeIO.newick_to_TB(newick, int)
-    leaves = Ftree.T_to_leaves(T)
-    internal = Ftree.T_to_internal_vertices(T)
-    vertices = leaves + internal
-    # get the harmonic extension points
-    w, v = Ftree.TB_to_harmonic_extension(T, B, leaves, internal)
-    # do not scale using eigenvalues!
-    #X_full = np.dot(v, np.diag(np.reciprocal(np.sqrt(w))))
-    X_full = v
-    X = np.vstack([X_full[:,x_index], X_full[:,y_index]]).T
-    # get the tikz lines
-    axis_lines = [
-            '% draw the axes',
-            '\\node (axisleft) at (0, -1.2) {};',
-            '\\node (axisright) at (0, 1.2) {};',
-            '\\node (axistop) at (1.2, 0) {};',
-            '\\node (axisbottom) at (-1.2, 0) {};',
-            '\\path (axisleft) edge[draw,color=lightgray] node {} (axisright);',
-            '\\path (axistop) edge[draw,color=lightgray] node {} (axisbottom);']
-    node_lines = []
-    for v, (x,y) in zip(vertices, X.tolist()):
-        line = get_vertex_line(v, x, y)
-        node_lines.append(line)
-    edge_lines = []
-    for va, vb in T:
-        line = get_edge_line(va, vb)
-        edge_lines.append(line)
-    return axis_lines + node_lines + edge_lines
-
 def get_tikz_crossed_line(pt, direction, solid=False):
     """
     @param pt: a point
@@ -192,13 +134,6 @@ def get_preamble_lines():
     """
     @return: some tikz lines common to several tikz figures
     """
-    preamble_horizontal = [
-            '\\node[anchor=east] (1) at (0,0) {1};',
-            '\\node[anchor=north] (2) at (1,-1) {2};',
-            '\\draw[line width=0.1cm,color=lightgray] (0,0) -- (1.5,0);',
-            '\\draw[line width=0.1cm,color=lightgray] (1,0) -- (1,-1);',
-            '\\draw[color=lightgray] (1.5,0) -- (2,0);',
-            '\\draw (1.25,0.25) -- (1.25,-0.25);']
     preamble = [
             '\\node[anchor=south] (1) at (1,1) {1};',
             '\\node[anchor=north] (2) at (1,-1) {2};',
