@@ -864,7 +864,8 @@ class TikzContext:
         self.depth = 0
         self.lines = []
         self.finished = False
-        self.add_line('\\begin{tikzpicture}[x=1cm,y=1cm,yscale=-1]')
+        #self.add_line('\\begin{tikzpicture}[x=1cm,y=1cm,yscale=-1]')
+        self.add_line('\\begin{tikzpicture}')
         self.depth += 1
         # add the wave style
         style = '[snake=snake,color=gray,line after snake=0mm]'
@@ -926,9 +927,9 @@ def _draw_labels_tikz(tree, context, id_to_location):
             theta = get_free_angle_revised(tree, node, id_to_location)
             x, y = id_to_location[id(node)]
             # draw the text relative to the location
-            theta = math.atan2(math.sin(theta), -math.cos(theta))
+            theta += math.pi
             float_degree = ((theta % (2 * math.pi)) * 360) / (2 * math.pi)
-            #float_degree = (theta * 360) / (2 * math.pi)
+            ##float_degree = (theta * 360) / (2 * math.pi)
             degree = int(math.floor(float_degree))
             style = 'font=\\tiny,anchor=%s,inner sep=1pt' % degree
             context.add_line(
@@ -1215,23 +1216,23 @@ def get_forest_image_tikz(
     for i, ((row, col), (v1, v2)) in enumerate(
             zip(row_col_pairs, iterutils.pairwise(vs+[None]))):
         # draw the tree into the context
-        context.add_line('\\begin{scope}[yscale=-1]')
-        context.depth += 1
         draw_single_tree_tikz(
                 tree, context, v1, v2, flag_draw_labels, id_to_location)
-        # draw the pane label into the context
+        # Draw the pane label into the context.
+        # Note that with TikZ we will use the opposite y sign compare to cairo.
+        # This cannot be easily compensated by rescaling the y axis by -1
+        # because each picture inside a matrix environment
+        # cannot see the rescaling outside its own matrix cell.
         if i < len(string.uppercase):
             pane_label = str(i+1)
         else:
             pane_label = '?'
         xtarget = -pane_width/2
-        ytarget = -pane_height/2
-        style = 'anchor=north west,inner sep=1pt'
+        ytarget = pane_height/2
+        style = 'anchor=north west,inner sep=0pt'
         context.add_line(
             '\\node[%s] at (%.4f,%.4f) {%s};' % (
                 style, xtarget, ytarget, pane_label))
-        context.depth -= 1
-        context.add_line('\\end{scope}')
         # add a row break or a column break
         nblanks = nrows * ncols - len(row_col_pairs)
         if i == len(row_col_pairs) - 1:

@@ -114,6 +114,16 @@ def R_to_T(R):
     """
     return set(frozenset(d_edge) for d_edge in R)
 
+def R_to_postorder(R):
+    """
+    Return the postorder list of vertices.
+    This list has the property that every child vertex appears earlier
+    in the list than its parent vertex.
+    @param R: a directed topology
+    @return: the postorder list of vertices
+    """
+    return list(reversed(R_to_preorder(R)))
+
 def R_to_preorder(R):
     """
     Return the preorder list of vertices.
