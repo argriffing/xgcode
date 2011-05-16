@@ -1,16 +1,16 @@
 """Draw an MDS with imputed internal nodes, using TikZ.
+
+WARNING --
+the code currently requires the newick tree
+to have an integer label for every vertex,
+including internal vertices.
 """
 
-
-from StringIO import StringIO
-import math
 
 import numpy as np
 
 import Form
 import FormOut
-import MatrixUtil
-import EigUtil
 import tikz
 import Ftree
 import FtreeIO
