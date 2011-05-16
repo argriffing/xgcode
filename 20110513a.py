@@ -127,7 +127,7 @@ def get_tikz_uncrossed_line(pt, direction):
     dx, dy = direction
     bx = ax + g_segment_length * dx
     by = ay + g_segment_length * dy
-    return ['\\draw[color=lightgray] (%s,%s) -- (%s,%s);' % (ax, ay, bx, by)]
+    return ['\\draw[color=gray] (%s,%s) -- (%s,%s);' % (ax, ay, bx, by)]
 
 def get_tikz_crossed_line(pt, direction, solid=False):
     """
@@ -164,12 +164,12 @@ def get_fiedler_tikz_lines():
             '\\node[anchor=south] (1) at (1,1) {1};',
             '\\node[anchor=north] (1) at (1,-1) {2};',
             '\\node[anchor=west] (x) at (2.4,0) {$\\{3,4,5\\}$};',
-            '\\draw[color=lightgray] (1,1) -- (1,0);',
-            '\\draw[color=lightgray] (1,0) -- (1,-1);',
-            '\\draw[color=lightgray] (1,0) -- (2,0);',
-            '\\draw[color=lightgray] (2,0) -- (2.4,0.4);',
-            '\\draw[color=lightgray] (2,0) -- (2.4,-0.4);',
-            '\\draw[color=lightgray] (2.4,0.4) -- (2.4,-0.4);',
+            '\\draw[color=gray] (1,1) -- (1,0);',
+            '\\draw[color=gray] (1,0) -- (1,-1);',
+            '\\draw[color=gray] (1,0) -- (2,0);',
+            '\\draw[color=gray] (2,0) -- (2.4,0.4);',
+            '\\draw[color=gray] (2,0) -- (2.4,-0.4);',
+            '\\draw[color=gray] (2.4,0.4) -- (2.4,-0.4);',
             '\\draw (1.5,0.2) -- (1.5,-0.2);']
     return lines
 
@@ -180,9 +180,9 @@ def get_preamble_lines():
     preamble = [
             '\\node[anchor=south] (1) at (1,1) {1};',
             '\\node[anchor=north] (2) at (1,-1) {2};',
-            '\\draw[line width=0.1cm,color=lightgray] (1,1) -- (1,-1);',
-            '\\draw[line width=0.1cm,color=lightgray] (1,0) -- (1.5,0);',
-            '\\draw[color=lightgray] (1.5,0) -- (2,0);',
+            '\\draw[line width=0.1cm,color=gray] (1,1) -- (1,-1);',
+            '\\draw[line width=0.1cm,color=gray] (1,0) -- (1.5,0);',
+            '\\draw[color=gray] (1.5,0) -- (2,0);',
             '\\draw (1.2,0.2) -- (1.2,-0.2);']
     return preamble
 
