@@ -7,6 +7,10 @@ The pgf manual pgfmanualse13 has helpful information
 about TikZ coordinate transformations.
 """
 
+import scipy
+from scipy import linalg
+import numpy as np
+
 from SnippetUtil import HandlingError
 import Newick
 import SpatialTree
@@ -16,6 +20,9 @@ import FormOut
 import DrawEigenLacing
 import Harmonic
 import tikz
+import Ftree
+import FtreeIO
+import FtreeAux
 
 
 def get_form():
@@ -70,30 +77,59 @@ def get_figure_text(figure_body):
         '\\label{fig:interlacing}',
         '\\end{figure}'])
 
+#FIXME this is used because the analogous Ftree function does not
+#      include the constant vector
+def TB_to_harmonic_valuations(T, B):
+    """
+    @param T: topology
+    @param B: branch lengths
+    @return: a number of dictionaries equal to the number of leaves
+    """
+    leaves = Ftree.T_to_leaves(T)
+    internal = Ftree.T_to_internal_vertices(T)
+    vertices = leaves + internal
+    nleaves = len(leaves)
+    Lbb = Ftree.TB_to_L_block(T, B, internal, internal)
+    Lba = Ftree.TB_to_L_block(T, B, internal, leaves)
+    L_schur = Ftree.TB_to_L_schur(T, B, leaves)
+    w, v1 = scipy.linalg.eigh(L_schur)
+    v2 = -np.dot(np.dot(np.linalg.pinv(Lbb), Lba), v1)
+    V = np.vstack([v1, v2])
+    vs = []
+    for col in range(nleaves):
+        d = dict((v, V[row, col]) for row, v in enumerate(vertices))
+        vs.append(d)
+    return vs
+
 def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
     # get a properly formatted newick tree with branch lengths
-    tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
+    #tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
+    T, B, N = FtreeIO.newick_to_TBN(fs.tree)
     # check the indices
     if fs.last_index <= fs.first_index:
         msg = 'the last index should be greater than the first index'
         raise ValueError(msg)
     # get the vertex valuations
-    valuations = [Harmonic.get_harmonic_valuations(
-        tree, i) for i in range(fs.first_index, fs.last_index+1)]
+    #valuations = [Harmonic.get_harmonic_valuations(
+    #tree, i) for i in range(fs.first_index, fs.last_index+1)]
+    all_valuations = TB_to_harmonic_valuations(T, B)
+    valuations = all_valuations[fs.first_index : fs.last_index+1]
     # do the layout
-    try:
-        layout = FastDaylightLayout.StraightBranchLayout()
-        layout.do_layout(tree)
-    except RuntimeError, e:
-        pass
+    #try:
+    #layout = FastDaylightLayout.StraightBranchLayout()
+    #layout.do_layout(tree)
+    #except RuntimeError, e:
+    #pass
+    v_to_location = FtreeAux.equal_arc_layout(T, B)
     # draw the image
     physical_size = (fs.width, fs.height)
-    tikz_text = DrawEigenLacing.get_forest_image_tikz(
-            tree, physical_size, valuations,
+    tikz_text = DrawEigenLacing.get_forest_image_ftree(
+            T, B, N, v_to_location,
+            physical_size, valuations,
             fs.inner_margin, fs.reflect_trees, fs.draw_labels)
     latex_text = get_latex_text(get_figure_text(tikz_text))
     # decide the output format

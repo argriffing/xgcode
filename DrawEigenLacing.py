@@ -6,6 +6,7 @@ import math
 import string
 
 import cairo
+import numpy as np
 
 import Newick
 import SpatialTree
@@ -13,6 +14,9 @@ import FastDaylightLayout
 import CairoUtil
 import iterutils
 import layout
+import Ftree
+import FtreeIO
+import FtreeAux
 
 
 g_line_width_thin = 1.0
@@ -859,6 +863,9 @@ def draw_single_tree(tree, context, v1, v2, bgcolor,
     if bdrawlabels:
         _draw_labels(tree, context)
 
+def location_to_tikz(location):
+    return '(%.4f,%.4f)' % location
+
 class TikzContext:
     def __init__(self):
         self.depth = 0
@@ -897,17 +904,15 @@ class TikzContext:
             raise ValueError('unfinished')
         return '\n'.join(self.lines)
     def draw_wavy_line(self, x1, y1, x2, y2):
-        self.add_line(
-                '\\draw[style=mywave] (%.4f,%.4f) -- (%.4f,%.4f);' % (
-                    x1, y1, x2, y2))
+        self.draw_styled_path('mywave', ((x1, y1), (x2, y2)))
     def draw_thin_light_line(self, x1, y1, x2, y2):
-        self.add_line(
-                '\\draw[style=mythin] (%.4f,%.4f) -- (%.4f,%.4f);' % (
-                    x1, y1, x2, y2))
+        self.draw_styled_path('mythin', ((x1, y1), (x2, y2)))
     def draw_thick_light_line(self, x1, y1, x2, y2):
-        self.add_line(
-                '\\draw[style=mythick] (%.4f,%.4f) -- (%.4f,%.4f);' % (
-                    x1, y1, x2, y2))
+        self.draw_styled_path('mythick', ((x1, y1), (x2, y2)))
+    def draw_styled_path(self, style, xy_pairs):
+        xys = [location_to_tikz(xy) for xy in xy_pairs]
+        line = ('\\draw[style=%s] ' % style) + ' -- '.join(xys) + ';'
+        self.add_line(line)
     def draw_dark_line(self, x1, y1, x2, y2):
         self.add_line(
                 '\\draw (%.4f,%.4f) -- (%.4f,%.4f);' % (
@@ -915,6 +920,7 @@ class TikzContext:
     def draw_dark_dot(self, x, y):
         self.add_line(
                 '\\fill (%.4f,%.4f) circle (0.04cm);' % (x, y))
+
 
 def _draw_labels_tikz(tree, context, id_to_location):
     """
@@ -1250,3 +1256,258 @@ def get_forest_image_tikz(
     context.finish()
     return context.get_text()
 
+def get_free_angle_ftree(T, v, v_to_location):
+    """
+    @param T: tree topology
+    @param v: vertex
+    @param v_to_location: where the nodes are in two dimensional space
+    @return: get the angle from the node to some free space
+    """
+    # get the list of angles away from the node of interest
+    angles = []
+    origin = v_to_location[v]
+    # FIXME this is slow to call per vertex
+    v_to_neighbors = Ftree.T_to_v_to_neighbors(T)
+    for n in v_to_neighbors[v]:
+        target = v_to_location[n]
+        theta = layout.get_angle(origin, target)
+        angles.append(theta)
+    # if there is only one angle then return its reflection
+    if len(angles) == 1:
+        return angles[0] + math.pi
+    # If there are multiple angles then get the mid angle
+    # of the widest interval.
+    # Begin by sorting the angles.
+    angles.sort()
+    # convert pairs of sorted angles to angle intervals
+    intervals = []
+    for low, high in iterutils.pairwise(angles + [angles[0]]):
+        intervals.append(layout.AngleInterval(low, high))
+    # return the mid angle of the widest interval
+    mag, interval = max((x.get_magnitude(), x) for x in intervals)
+    return interval.get_mid_angle()
+
+def _draw_labels_ftree(T, N, context, v_to_location):
+    """
+    Use degree anchors for label placement.
+    """
+    for v in Ftree.T_to_order(T):
+        if v not in N:
+            continue
+        label = N[v]
+        # get the parameters for the label
+        theta = get_free_angle_ftree(T, v, v_to_location)
+        x, y = v_to_location[v]
+        # draw the text relative to the location
+        theta += math.pi
+        float_degree = ((theta % (2 * math.pi)) * 360) / (2 * math.pi)
+        ##float_degree = (theta * 360) / (2 * math.pi)
+        degree = int(math.floor(float_degree))
+        style = 'font=\\tiny,anchor=%s,inner sep=1pt' % degree
+        context.add_line(
+                '\\node[%s] at (%.4f,%.4f) {%s};' % (
+                    style, x, y, label))
+
+def _draw_ticks_ftree(T_in, B_in, context, v2_in, v_to_location):
+    eps = 1e-8
+    T = set(T_in)
+    B = dict(B_in)
+    v2 = dict(v2_in)
+    # break the branches according to valuation signs of v2
+    FtreeAux.break_branches_by_vertex_sign(T, B, v2, eps)
+    # add the new locations for internal vertices
+    v_to_x = dict((v, x) for v, (x, y) in v_to_location.items())
+    v_to_y = dict((v, y) for v, (x, y) in v_to_location.items())
+    FtreeAux.harmonically_interpolate(T, B, v_to_x)
+    FtreeAux.harmonically_interpolate(T, B, v_to_y)
+    vertices = Ftree.T_to_order(T)
+    v_to_location = dict((v, (v_to_x[v], v_to_y[v])) for v in vertices)
+    # draw the ticks
+    v_to_neighbors = Ftree.T_to_v_to_neighbors(T)
+    for v, location in v_to_location.items():
+        x, y = location
+        neighbors = v_to_neighbors[v]
+        if abs(v2[v]) > eps:
+            continue
+        if len(neighbors) == 2:
+            barb_radius_cm = 0.06
+            va, vb = neighbors
+            ax, ay = v_to_location[va]
+            bx, by = v_to_location[vb]
+            theta = math.atan2(by - ay, bx - ax)
+            barbx1 = x + barb_radius_cm * math.cos(theta + math.pi/2)
+            barby1 = y + barb_radius_cm * math.sin(theta + math.pi/2)
+            barbx2 = x + barb_radius_cm * math.cos(theta - math.pi/2)
+            barby2 = y + barb_radius_cm * math.sin(theta - math.pi/2)
+            context.draw_dark_line(barbx1, barby1, barbx2, barby2)
+        elif len(neighbors) > 2:
+            if max(abs(v2[n]) for n in neighbors) < eps:
+                continue
+            context.draw_dark_dot(x, y)
+
+def _draw_branches_ftree(T_in, B_in, context, v1_in, v_to_location):
+    eps = 1e-8
+    T = set(T_in)
+    B = dict(B_in)
+    v1 = dict(v1_in)
+    # break the branches according to valuation signs of v1
+    FtreeAux.break_branches_by_vertex_sign(T, B, v1, eps)
+    # add the new locations for internal vertices
+    v_to_x = dict((v, x) for v, (x, y) in v_to_location.items())
+    v_to_y = dict((v, y) for v, (x, y) in v_to_location.items())
+    FtreeAux.harmonically_interpolate(T, B, v_to_x)
+    FtreeAux.harmonically_interpolate(T, B, v_to_y)
+    vertices = Ftree.T_to_order(T)
+    v_to_location = dict((v, (v_to_x[v], v_to_y[v])) for v in vertices)
+    # color the edges by vertex sign
+    edge_to_color = FtreeAux.color_edges_by_vertex_sign(T, v1, eps)
+    # get the multi-edges
+    multi_edges = FtreeAux.get_multi_edges(T, edge_to_color)
+    # draw the multi-edges with the correct styles
+    for multi_edge in multi_edges:
+        locations = [v_to_location[v] for v in multi_edge]
+        c = edge_to_color[frozenset(multi_edge[:2])]
+        if c == FtreeAux.NUL_EDGE:
+            context.draw_styled_path('mywave', locations)
+        elif c == FtreeAux.POS_EDGE:
+            context.draw_styled_path('mythick', locations)
+        elif c == FtreeAux.NEG_EDGE:
+            context.draw_styled_path('mythin', locations)
+
+def draw_single_tree_ftree(T, B, N, context, v1, v2,
+        flag_draw_labels, v_to_location):
+    """
+    This is most likely called only from inside the module.
+    @param T: ftree topology
+    @param B: ftree branch lengths
+    @param N: ftree vertex names
+    @param context: a tikz context with origin at tree center
+    @param v1: maps node id to valuation for line thickness
+    @param v2: maps node id to valuation for zero crossing ticks
+    """
+    _draw_branches_ftree(T, B, context, v1, v_to_location)
+    if v2:
+        _draw_ticks_ftree(T, B, context, v2, v_to_location)
+    if flag_draw_labels:
+        _draw_labels_ftree(T, N, context, v_to_location)
+
+def get_forest_image_ftree(
+            T, B, N, v_to_location_in,
+            max_size, vs, inner_margin,
+            reflect_trees, flag_draw_labels):
+    """
+    Get the image of the tree.
+    Attempt to use the builtin TikZ matrix layout.
+    This could be called from outside the module.
+    The rectangle size is determined automatically
+    so as to maximize the scaling factors of the trees in the panels.
+    @param T: ftree tree topology
+    @param B: ftree branch lengths
+    @param N: ftree vertex names
+    @param v_to_location_in: initial vertex locations
+    @param max_size: (max_width, max_height) in centimeters
+    @param vs: sequence of maps from node id to valuation
+    @param inner_margin: inner margin in centimeters
+    @param reflect_trees: a flag for tweaking the tree layout
+    @param flag_draw_labels: True to draw the vertex labels
+    @return: tikz text
+    """
+    outer_margin = 0
+    npairs = len(vs)
+    if npairs < 1:
+        raise ValueError('not enough valuation maps')
+    # get the vertex list and the initial vertex locations
+    vertices = Ftree.T_to_leaves(T) + Ftree.T_to_internal_vertices(T)
+    X_in = np.array([tuple(v_to_location_in[v]) for v in vertices])
+    # get all minimum rectangle sizes
+    rect_sizes = layout.get_rect_sizes(npairs)
+    # get (scaling_factor, w, h) triples
+    triples = []
+    max_width, max_height = max_size
+    for ncols, nrows in rect_sizes:
+        max_pane_width = (
+                max_width - 2*outer_margin - inner_margin*(ncols-1))/ncols
+        max_pane_height = (
+                max_height - 2*outer_margin - inner_margin*(nrows-1))/nrows
+        # require a minimum size
+        min_pane_centimeters = 1e-4
+        if max_pane_width < min_pane_centimeters:
+            continue
+        elif max_pane_height < min_pane_centimeters:
+            continue
+        # append a triple after finding the scaling factor
+        max_pane_size = (max_pane_width, max_pane_height)
+        theta = layout.get_best_angle(X_in, max_pane_size)
+        X = layout.rotate_2d_centroid(X_in, theta)
+        sz = layout.get_axis_aligned_size(X)
+        sf = layout.get_scaling_factor(sz, max_pane_size)
+        triples.append((sf, ncols, nrows))
+    # if no triples were found then we fail
+    if not triples:
+        raise ValueError('not enough room')
+    # get the nrows and ncols corresponding to the best scaling factor
+    max_scale, ncols, nrows = max(triples)
+    # get the position of each pane
+    row_col_pairs = layout.min_rect_to_row_major(ncols, nrows, npairs)
+    # get the best pane size
+    max_pane_width = (
+            max_width - 2*outer_margin - inner_margin*(ncols-1))/ncols
+    max_pane_height = (
+            max_height - 2*outer_margin - inner_margin*(nrows-1))/nrows
+    max_pane_size = (max_pane_width, max_pane_height)
+    # re-fit the tree
+    theta = layout.get_best_angle(X_in, max_pane_size)
+    X = layout.rotate_2d_centroid(X_in, theta)
+    sz = layout.get_axis_aligned_size(X)
+    sf = layout.get_scaling_factor(sz, max_pane_size)
+    X *= sf
+    if reflect_trees:
+        X *= np.array([-1, 1])
+    # get the map from id to location for the final tree layout
+    v_to_location = dict((v, tuple(r)) for v, r in zip(vertices, X))
+    # get the width and height of the tree image
+    pane_width, pane_height = layout.get_axis_aligned_size(X)
+    width = 2*outer_margin + (ncols-1)*inner_margin + ncols*pane_width
+    height = 2*outer_margin + (nrows-1)*inner_margin + nrows*pane_height
+    # draw the trees
+    context = TikzContext()
+    style = 'column sep=%.4f,row sep=%.4f' % (
+            inner_margin, inner_margin)
+    context.add_line('\\matrix[%s] {' % style)
+    context.depth += 1
+    for i, ((row, col), (v1, v2)) in enumerate(
+            zip(row_col_pairs, iterutils.pairwise(vs+[None]))):
+        # draw the tree into the context
+        draw_single_tree_ftree(T, B, N, context, v1, v2,
+                flag_draw_labels, v_to_location)
+        # Draw the pane label into the context.
+        # Note that with TikZ we will use the opposite y sign compare to cairo.
+        # This cannot be easily compensated by rescaling the y axis by -1
+        # because each picture inside a matrix environment
+        # cannot see the rescaling outside its own matrix cell.
+        if i < len(string.uppercase):
+            pane_label = str(i+1)
+        else:
+            pane_label = '?'
+        xtarget = -pane_width/2
+        ytarget = pane_height/2
+        style = 'anchor=north west,inner sep=0pt'
+        context.add_line(
+            '\\node[%s] at (%.4f,%.4f) {%s};' % (
+                style, xtarget, ytarget, pane_label))
+        # add a row break or a column break
+        nblanks = nrows * ncols - len(row_col_pairs)
+        if i == len(row_col_pairs) - 1:
+            line = ''
+            if nblanks:
+                line += ' '.join(['&']*nblanks)
+            line += '\\\\'
+            context.add_line(line)
+        elif col == ncols-1:
+            context.add_line('\\\\')
+        else:
+            context.add_line('&')
+    context.depth -= 1
+    context.add_line('};')
+    context.finish()
+    return context.get_text()

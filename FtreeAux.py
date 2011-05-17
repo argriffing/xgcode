@@ -31,7 +31,7 @@ def equal_arc_layout(T, B):
     # map vertices to subtree tip count
     v_to_sinks = Ftree.R_to_v_to_sinks(R)
     v_to_count = {}
-    for v in R_to_postorder(R):
+    for v in Ftree.R_to_postorder(R):
         sinks = v_to_sinks.get(v, [])
         if sinks:
             v_to_count[v] = sum(v_to_count[sink] for sink in sinks)
@@ -43,9 +43,9 @@ def equal_arc_layout(T, B):
             v_to_sinks, v_to_count, v_to_theta,
             r, -math.pi, math.pi)
     # convert angles to coordinates
-    v_to_source = R_to_v_to_source(R)
+    v_to_source = Ftree.R_to_v_to_source(R)
     v_to_location = {}
-    update_locations(
+    _update_locations(
             R, B,
             v_to_source, v_to_sinks, v_to_theta, v_to_location,
             r, (0, 0), 0)
@@ -65,7 +65,7 @@ def _force_equal_arcs(
     if sinks:
         subtree_tip_count = v_to_count[v]
         cumulative_theta = 0
-        for i, child in enumerate(sinks):
+        for child in sinks:
             sub_subtree_tip_count = v_to_count[child]
             dtheta = max_theta - min_theta
             aliquot = dtheta * sub_subtree_tip_count / float(subtree_tip_count)
@@ -74,7 +74,7 @@ def _force_equal_arcs(
             high = min_theta + cumulative_theta - v_to_theta[v]
             _force_equal_arcs(
                     v_to_sinks, v_to_count, v_to_theta,
-                    v, low, high)
+                    child, low, high)
 
 def _update_locations(
         R, B,
@@ -103,7 +103,7 @@ def _update_locations(
     for child in sinks:
         _update_locations(R, B,
                 v_to_source, v_to_sinks, v_to_theta, v_to_location,
-                child, current_location, theta)
+                child, v_to_location[v], theta)
 
 def values_to_color(value_a, value_b, eps):
     """
@@ -184,6 +184,9 @@ def harmonically_interpolate(T, B, v_to_value):
     # Define the lists of vertices for which the values are known and unknown.
     known = sorted(v_to_value)
     unknown = sorted(set(vertices) - set(v_to_value))
+    # If everything is known then we do not need to interpolate.
+    if not unknown:
+        return
     # Get pieces of the Laplacian matrix.
     Lbb = Ftree.TB_to_L_block(T, B, unknown, unknown)
     Lba = Ftree.TB_to_L_block(T, B, unknown, known)
@@ -236,6 +239,7 @@ def get_multi_edges(T, edge_to_color):
     The partition is somewhat arbitrary.
     @param T: topology
     @param edge_to_color: maps an edge to a color
+    @return: vertex tuples
     """
     multi_edges = []
     visited_edges = set()

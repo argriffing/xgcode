@@ -6,6 +6,7 @@ import math
 import unittest
 
 import Newick
+import layout
 
 # a utility variable defining 360 degrees
 m2pi = 2*math.pi
@@ -69,18 +70,6 @@ class AngleInterval:
         return phi < m2pi
 
 
-
-def _get_scaling_factor(current_size, max_size):
-    """
-    @param current_size: the width and height of the current bounding box
-    @param max_size: the width and height of the target bounding box
-    @return: the amount by which the current size should be scaled
-    """
-    cwidth, cheight = current_size
-    mwidth, mheight = max_size
-    xscale = float(mwidth) / float(cwidth)
-    yscale = float(mheight) / float(cheight)
-    return min(xscale, yscale)
 
 
 class SpatialTreeBranch:
@@ -167,7 +156,7 @@ class SpatialTree(Newick.NewickTree):
             if cy == 0:
                 cy = cx / 100
             current_size = (cx, cy)
-            sf = _get_scaling_factor(current_size, max_size)
+            sf = layout.get_scaling_factor(current_size, max_size)
             sf_theta_pairs.append((sf, self.theta))
         self.scale, self.theta = max(sf_theta_pairs)
         xmin, ymin, xmax, ymax  = self.get_extents()
