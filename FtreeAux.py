@@ -11,12 +11,77 @@ from collections import defaultdict
 
 import numpy as np
 
+import day
 import Ftree
 
 NEG_EDGE = -1
 NUL_EDGE = 0
 POS_EDGE = 1
 ALT_EDGE = 2
+
+
+#####################################################
+# This section is for EqualDaylight layout.
+
+
+def _build_dtree(dtree, v, v_to_sinks, v_to_location, v_to_dtree_id, count):
+    """
+    @param dtree: an object that lives in the C extension
+    @param v: vertex
+    @param v_to_sinks: computed from a rooted Ftree
+    @parma v_to_location: vertex to location map
+    @param v_to_dtree_id: this is filled as the dtree is built
+    @param count: the number of nodes added so far
+    """
+    x, y = v_to_location[v]
+    v_to_dtree_id[v] = count
+    count += 1
+    dtree.begin_node(v_to_dtree_id[v])
+    dtree.set_x(x)
+    dtree.set_y(y)
+    sinks = v_to_sinks.get(v, [])
+    for sink in sinks:
+        count = _build_dtree(
+                dtree, sink, v_to_sinks, v_to_location, v_to_dtree_id, count)
+    dtree.end_node()
+    return count
+
+def equal_daylight_layout(T, B, iteration_count):
+    """
+    @param T: topology
+    @param B: branch lengths
+    """
+    R = Ftree.T_to_R_canonical(T)
+    r = Ftree.R_to_root(R)
+    # create the initial equal arc layout
+    v_to_location = equal_arc_layout(T, B)
+    # use sax-like events to create a parallel tree in the C extension
+    v_to_sinks = Ftree.R_to_v_to_sinks(R)
+    v_to_dtree_id = {}
+    dtree = day.Day()
+    count = _build_dtree(
+            dtree, r, v_to_sinks, v_to_location, v_to_dtree_id, 0)
+    # repeatedly reroot and equalize
+    v_to_neighbors = Ftree.T_to_v_to_neighbors(T)
+    for i in range(iteration_count):
+        for v in Ftree.T_to_inside_out(T):
+            neighbor_count = len(v_to_neighbors[v])
+            if neighbor_count > 2:
+                dtree.select_node(v_to_dtree_id[v])
+                dtree.reroot()
+                dtree.equalize()
+    # extract the x and y coordinates from the dtree
+    v_to_location = {}
+    for v, dtree_id in v_to_dtree_id.items():
+        dtree.select_node(dtree_id)
+        x = dtree.get_x()
+        y = dtree.get_y()
+        v_to_location[v] = (x, y)
+    return v_to_location
+
+
+#####################################################
+# This section is for EqualArc layout.
 
 
 def equal_arc_layout(T, B):
@@ -104,6 +169,11 @@ def _update_locations(
         _update_locations(R, B,
                 v_to_source, v_to_sinks, v_to_theta, v_to_location,
                 child, v_to_location[v], theta)
+
+
+#####################################################
+# This section is for splitting the branches.
+
 
 def values_to_color(value_a, value_b, eps):
     """

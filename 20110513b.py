@@ -124,7 +124,7 @@ def get_response_content(fs):
     #layout.do_layout(tree)
     #except RuntimeError, e:
     #pass
-    v_to_location = FtreeAux.equal_arc_layout(T, B)
+    v_to_location = FtreeAux.equal_daylight_layout(T, B, 3)
     # draw the image
     physical_size = (fs.width, fs.height)
     tikz_text = DrawEigenLacing.get_forest_image_ftree(
