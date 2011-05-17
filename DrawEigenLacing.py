@@ -1489,8 +1489,10 @@ def get_forest_image_ftree(
             pane_label = str(i+1)
         else:
             pane_label = '?'
-        xtarget = -pane_width/2
-        ytarget = pane_height/2
+        xmin, ymin = np.min(X, axis=0)
+        xmax, ymax = np.max(X, axis=0)
+        xtarget = xmin
+        ytarget = ymax
         style = 'anchor=north west,inner sep=0pt'
         context.add_line(
             '\\node[%s] at (%.4f,%.4f) {%s};' % (
