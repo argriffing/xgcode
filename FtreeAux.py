@@ -40,7 +40,7 @@ def _build_dtree(dtree, v, v_to_sinks, v_to_location, v_to_dtree_id, count):
     dtree.set_x(x)
     dtree.set_y(y)
     sinks = v_to_sinks.get(v, [])
-    for sink in sinks:
+    for sink in sorted(sinks):
         count = _build_dtree(
                 dtree, sink, v_to_sinks, v_to_location, v_to_dtree_id, count)
     dtree.end_node()
