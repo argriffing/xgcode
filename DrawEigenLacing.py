@@ -894,6 +894,14 @@ class TikzContext:
     def end_pane(self):
         self.depth -= 1
         self.add_line('\\end{scope}')
+    def begin_matrix(self, inner_margin):
+        style = 'column sep=%.4f,row sep=%.4f' % (
+                inner_margin, inner_margin)
+        self.add_line('\\matrix[%s] {' % style)
+        self.depth += 1
+    def end_matrix(self):
+        self.depth -= 1
+        self.add_line('}')
     def finish(self):
         if not self.finished:
             self.depth -= 1
@@ -1215,10 +1223,7 @@ def get_forest_image_tikz(
     height = 2*outer_margin + (nrows-1)*inner_margin + nrows*pane_height
     # draw the trees
     context = TikzContext()
-    style = 'column sep=%.4f,row sep=%.4f' % (
-            inner_margin, inner_margin)
-    context.add_line('\\matrix[%s] {' % style)
-    context.depth += 1
+    context.begin_matrix(inner_margin)
     for i, ((row, col), (v1, v2)) in enumerate(
             zip(row_col_pairs, iterutils.pairwise(vs+[None]))):
         # draw the tree into the context
@@ -1251,8 +1256,7 @@ def get_forest_image_tikz(
             context.add_line('\\\\')
         else:
             context.add_line('&')
-    context.depth -= 1
-    context.add_line('};')
+    context.end_matrix()
     context.finish()
     return context.get_text()
 
@@ -1447,8 +1451,6 @@ def get_forest_image_ftree(
         raise ValueError('not enough room')
     # get the nrows and ncols corresponding to the best scaling factor
     max_scale, ncols, nrows = max(triples)
-    # get the position of each pane
-    row_col_pairs = layout.min_rect_to_row_major(ncols, nrows, npairs)
     # get the best pane size
     max_pane_width = (
             max_width - 2*outer_margin - inner_margin*(ncols-1))/ncols
@@ -1469,47 +1471,40 @@ def get_forest_image_ftree(
     pane_width, pane_height = layout.get_axis_aligned_size(X)
     width = 2*outer_margin + (ncols-1)*inner_margin + ncols*pane_width
     height = 2*outer_margin + (nrows-1)*inner_margin + nrows*pane_height
+    # get some layout-related things
+    M = layout.min_rect_to_row_major_matrix(ncols, nrows, npairs)
+    vpairs = list(iterutils.pairwise(vs + [None]))
+    xmin, ymin = np.min(X, axis=0)
+    xmax, ymax = np.max(X, axis=0)
+    pane_label_xtarget = xmin
+    pane_label_ytarget = ymax
+    pane_label_style = 'anchor=north west,inner sep=0pt'
     # draw the trees
     context = TikzContext()
-    style = 'column sep=%.4f,row sep=%.4f' % (
-            inner_margin, inner_margin)
-    context.add_line('\\matrix[%s] {' % style)
-    context.depth += 1
-    for i, ((row, col), (v1, v2)) in enumerate(
-            zip(row_col_pairs, iterutils.pairwise(vs+[None]))):
-        # draw the tree into the context
-        draw_single_tree_ftree(T, B, N, context, v1, v2,
-                flag_draw_labels, v_to_location)
-        # Draw the pane label into the context.
-        # Note that with TikZ we will use the opposite y sign compare to cairo.
-        # This cannot be easily compensated by rescaling the y axis by -1
-        # because each picture inside a matrix environment
-        # cannot see the rescaling outside its own matrix cell.
-        if i < len(string.uppercase):
-            pane_label = str(i+1)
-        else:
-            pane_label = '?'
-        xmin, ymin = np.min(X, axis=0)
-        xmax, ymax = np.max(X, axis=0)
-        xtarget = xmin
-        ytarget = ymax
-        style = 'anchor=north west,inner sep=0pt'
-        context.add_line(
-            '\\node[%s] at (%.4f,%.4f) {%s};' % (
-                style, xtarget, ytarget, pane_label))
-        # add a row break or a column break
-        nblanks = nrows * ncols - len(row_col_pairs)
-        if i == len(row_col_pairs) - 1:
-            line = ''
-            if nblanks:
-                line += ' '.join(['&']*nblanks)
-            line += '\\\\'
-            context.add_line(line)
-        elif col == ncols-1:
-            context.add_line('\\\\')
-        else:
-            context.add_line('&')
-    context.depth -= 1
-    context.add_line('};')
+    context.begin_matrix(inner_margin)
+    for row in M:
+        for col_index, index in enumerate(row):
+            if index is not None:
+                # get the valuation pairs corresponding to the index
+                v1, v2 = vpairs[index]
+                # draw the tree into the context
+                draw_single_tree_ftree(T, B, N, context, v1, v2,
+                        flag_draw_labels, v_to_location)
+                # draw the pane label
+                if index < len(string.uppercase):
+                    pane_label = str(index+1)
+                else:
+                    pane_label = '?'
+                context.add_line(
+                    '\\node[%s] at (%.4f,%.4f) {%s};' % (
+                        pane_label_style,
+                        pane_label_xtarget, pane_label_ytarget, pane_label))
+            # Add an ampersand after every column except the final column.
+            if col_index < len(row) - 1:
+                context.add_line('&')
+        # Add a linebreak after every row including the final row.
+        context.add_line('\\\\')
+    context.end_matrix()
     context.finish()
     return context.get_text()
+

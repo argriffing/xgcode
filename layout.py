@@ -158,6 +158,7 @@ def get_best_angle(X_in, max_size):
 ##############################################
 # This next section is about tiling panes into a rectangular viewing area.
 # The rows or columns of the tiled panes may be ragged.
+# Everything in this section is about integers.
 
 
 def rect_is_minimal(w, h, n):
@@ -229,7 +230,7 @@ def min_rect_to_row_major(w, h, n):
     @param w: width of a minimal rectangle
     @param h: height of a minimal rectangle
     @param n: the number of items
-    @return: a sequence of (row, col) pairs
+    @return: a sequence of n (row, col) pairs
     """
     if not rect_is_minimal(w, h, n):
         raise LayoutError('expected a minimal rectangle')
@@ -246,6 +247,40 @@ def min_rect_to_col_major(w, h, n):
     if not rect_is_minimal(w, h, n):
         raise LayoutError('expected a minimal rectangle')
     return [(b, a) for a, b in min_rect_to_row_major(h, w, n)]
+
+def min_rect_to_row_major_matrix(w, h, n):
+    """
+    This is an alternative representation of the layout.
+    Instead of returning a sequence of n (row, col) pairs,
+    this function returns a matrix of index values.
+    If a cell of the matrix is empty then its entry will be None.
+    @param w: width of a minimal rectangle
+    @param h: height of a minimal rectangle
+    @param n: the number of items
+    @return: a list of lists of index entries
+    """
+    M = [[None]*w for row in range(h)]
+    row_col_pairs = min_rect_to_row_major(w, h, n)
+    for i, (row, col) in enumerate(row_col_pairs):
+        M[row][col] = i
+    return M
+
+def min_rect_to_col_major_matrix(w, h, n):
+    """
+    This is an alternative representation of the layout.
+    Instead of returning a sequence of n (row, col) pairs,
+    this function returns a matrix of index values.
+    If a cell of the matrix is empty then its entry will be None.
+    @param w: width of a minimal rectangle
+    @param h: height of a minimal rectangle
+    @param n: the number of items
+    @return: a list of lists of index entries
+    """
+    M = [[None]*w for row in range(h)]
+    row_col_pairs = min_rect_to_col_major(w, h, n)
+    for i, (row, col) in enumerate(row_col_pairs):
+        M[row][col] = i
+    return M
 
 
 class TestRaggedTilingLayout(unittest.TestCase):
