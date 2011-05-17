@@ -219,6 +219,13 @@ def T_to_v_to_centrality(T):
                 shell.add(p)
     return v_to_cent
 
+def T_to_edges(T):
+    """
+    @param T: a topology
+    @return: a list of undirected edges
+    """
+    return [frozenset(d_edge) for d_edge in T_to_outside_in_edges(T)]
+
 def T_to_outside_in_edges(T):
     """
     @param T: a topology
