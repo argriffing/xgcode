@@ -901,7 +901,7 @@ class TikzContext:
         self.depth += 1
     def end_matrix(self):
         self.depth -= 1
-        self.add_line('}')
+        self.add_line('};')
     def finish(self):
         if not self.finished:
             self.depth -= 1
