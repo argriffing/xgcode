@@ -1397,8 +1397,8 @@ def draw_single_tree_ftree(T, B, N, context, v1, v2,
 
 def get_forest_image_ftree(
             T, B, N, v_to_location_in,
-            max_size, vs, inner_margin,
-            reflect_trees, flag_draw_labels):
+            max_size, vs, nfigures, inner_margin,
+            reflect_trees, flag_draw_vertex_labels, flag_draw_pane_labels):
     """
     Get the image of the tree.
     Attempt to use the builtin TikZ matrix layout.
@@ -1417,14 +1417,13 @@ def get_forest_image_ftree(
     @return: tikz text
     """
     outer_margin = 0
-    npairs = len(vs)
-    if npairs < 1:
-        raise ValueError('not enough valuation maps')
+    if nfigures < 1:
+        raise ValueError('not enough requested subfigures')
     # get the vertex list and the initial vertex locations
     vertices = Ftree.T_to_leaves(T) + Ftree.T_to_internal_vertices(T)
     X_in = np.array([tuple(v_to_location_in[v]) for v in vertices])
     # get all minimum rectangle sizes
-    rect_sizes = layout.get_rect_sizes(npairs)
+    rect_sizes = layout.get_rect_sizes(nfigures)
     # get (scaling_factor, w, h) triples
     triples = []
     max_width, max_height = max_size
@@ -1472,7 +1471,7 @@ def get_forest_image_ftree(
     width = 2*outer_margin + (ncols-1)*inner_margin + ncols*pane_width
     height = 2*outer_margin + (nrows-1)*inner_margin + nrows*pane_height
     # get some layout-related things
-    M = layout.min_rect_to_row_major_matrix(ncols, nrows, npairs)
+    M = layout.min_rect_to_row_major_matrix(ncols, nrows, nfigures)
     vpairs = list(iterutils.pairwise(vs + [None]))
     xmin, ymin = np.min(X, axis=0)
     xmax, ymax = np.max(X, axis=0)
@@ -1489,16 +1488,17 @@ def get_forest_image_ftree(
                 v1, v2 = vpairs[index]
                 # draw the tree into the context
                 draw_single_tree_ftree(T, B, N, context, v1, v2,
-                        flag_draw_labels, v_to_location)
+                        flag_draw_vertex_labels, v_to_location)
                 # draw the pane label
-                if index < len(string.uppercase):
-                    pane_label = str(index+1)
-                else:
-                    pane_label = '?'
-                context.add_line(
-                    '\\node[%s] at (%.4f,%.4f) {%s};' % (
-                        pane_label_style,
-                        pane_label_xtarget, pane_label_ytarget, pane_label))
+                if flag_draw_pane_labels:
+                    if index < len(string.uppercase):
+                        pane_label = str(index+1)
+                    else:
+                        pane_label = '?'
+                    context.add_line(
+                        '\\node[%s] at (%.4f,%.4f) {%s};' % (
+                            pane_label_style,
+                            pane_label_xtarget, pane_label_ytarget, pane_label))
             # Add an ampersand after every column except the final column.
             if col_index < len(row) - 1:
                 context.add_line('&')
