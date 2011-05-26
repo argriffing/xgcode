@@ -895,7 +895,7 @@ class TikzContext:
         self.depth -= 1
         self.add_line('\\end{scope}')
     def begin_matrix(self, inner_margin):
-        style = 'column sep=%.4f,row sep=%.4f' % (
+        style = 'column sep=%.4fcm,row sep=%.4fcm' % (
                 inner_margin, inner_margin)
         self.add_line('\\matrix[%s] {' % style)
         self.depth += 1
@@ -945,7 +945,8 @@ def _draw_labels_tikz(tree, context, id_to_location):
             float_degree = ((theta % (2 * math.pi)) * 360) / (2 * math.pi)
             ##float_degree = (theta * 360) / (2 * math.pi)
             degree = int(math.floor(float_degree))
-            style = 'font=\\tiny,anchor=%s,inner sep=1pt' % degree
+            #style = 'font=\\tiny,anchor=%s,inner sep=1pt' % degree
+            style = 'anchor=%s,inner sep=1pt' % degree
             context.add_line(
                     '\\node[%s] at (%.4f,%.4f) {%s};' % (
                         style, x, y, label))
@@ -1307,7 +1308,9 @@ def _draw_labels_ftree(T, N, context, v_to_location):
         float_degree = ((theta % (2 * math.pi)) * 360) / (2 * math.pi)
         ##float_degree = (theta * 360) / (2 * math.pi)
         degree = int(math.floor(float_degree))
-        style = 'font=\\tiny,anchor=%s,inner sep=1pt' % degree
+        #style = 'font=\\tiny,anchor=%s,inner sep=1pt' % degree
+        #style = 'anchor=%s,inner sep=1pt' % degree
+        style = 'anchor=%s' % degree
         context.add_line(
                 '\\node[%s] at (%.4f,%.4f) {%s};' % (
                     style, x, y, label))
@@ -1349,6 +1352,16 @@ def _draw_ticks_ftree(T_in, B_in, context, v2_in, v_to_location):
                 continue
             context.draw_dark_dot(x, y)
 
+def get_color_to_volume(edge_to_color, B):
+    color_to_volume = {
+            FtreeAux.NEG_EDGE : 0.0,
+            FtreeAux.NUL_EDGE : 0.0,
+            FtreeAux.POS_EDGE : 0.0,
+            FtreeAux.ALT_EDGE : 0.0}
+    for u_edge, c in edge_to_color.items():
+        color_to_volume[c] += B[u_edge]
+    return color_to_volume
+
 def _draw_branches_ftree(T_in, B_in, context, v1_in, v_to_location):
     eps = 1e-8
     T = set(T_in)
@@ -1365,6 +1378,15 @@ def _draw_branches_ftree(T_in, B_in, context, v1_in, v_to_location):
     v_to_location = dict((v, (v_to_x[v], v_to_y[v])) for v in vertices)
     # color the edges by vertex sign
     edge_to_color = FtreeAux.color_edges_by_vertex_sign(T, v1, eps)
+    # Assign signs so that the thin styled path has more
+    # total branch length than the thick styled path.
+    color_to_volume = get_color_to_volume(edge_to_color, B)
+    if color_to_volume[FtreeAux.POS_EDGE] > color_to_volume[FtreeAux.NEG_EDGE]:
+        for u_edge, c in dict(edge_to_color).items():
+            if c == FtreeAux.NEG_EDGE:
+                edge_to_color[u_edge] = FtreeAux.POS_EDGE
+            elif c == FtreeAux.POS_EDGE:
+                edge_to_color[u_edge] = FtreeAux.NEG_EDGE
     # get the multi-edges
     multi_edges = FtreeAux.get_multi_edges(T, edge_to_color)
     # draw the multi-edges with the correct styles
@@ -1477,7 +1499,20 @@ def get_forest_image_ftree(
     xmax, ymax = np.max(X, axis=0)
     pane_label_xtarget = xmin
     pane_label_ytarget = ymax
-    pane_label_style = 'anchor=north west,inner sep=0pt'
+    pane_label_style_dict = {
+            #'text' : 'white',
+            #'fill' : 'gray',
+            'draw' : None,
+            'shape' : 'circle',
+            'inner sep' : '1pt',
+            'anchor' : 'north west'}
+    pane_label_items = []
+    for k, v in pane_label_style_dict.items():
+        if v:
+            pane_label_items.append(str(k) + '=' + str(v))
+        else:
+            pane_label_items.append(str(k))
+    pane_label_style = ','.join(pane_label_items)
     # draw the trees
     context = TikzContext()
     context.begin_matrix(inner_margin)

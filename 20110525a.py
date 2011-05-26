@@ -143,7 +143,8 @@ def draw_labels_ftree(T, N, context, v_to_location):
         theta += math.pi
         float_degree = ((theta % (2 * math.pi)) * 360) / (2 * math.pi)
         degree = int(math.floor(float_degree))
-        style = 'anchor=%s,inner sep=1pt' % degree
+        #style = 'anchor=%s,inner sep=1pt' % degree
+        style = 'anchor=%s' % degree
         context.add_line(
                 '\\node[%s] at (%.4f,%.4f) {%s};' % (
                     style, x, y, label))

@@ -18,7 +18,6 @@ import FastDaylightLayout
 import Form
 import FormOut
 import DrawEigenLacing
-import Harmonic
 import tikz
 import Ftree
 import FtreeIO
@@ -43,8 +42,6 @@ def get_form():
             Form.CheckGroup('check_options', 'output options', [
                 Form.CheckItem('reflect_trees',
                     'reflect trees across the vertical axis'),
-                Form.CheckItem('reflect_valuations',
-                    'reflect valuations'),
                 Form.CheckItem('show_subfigure_labels',
                     'show subfigure labels', True),
                 Form.CheckItem('show_vertex_labels',
@@ -85,7 +82,7 @@ def get_figure_text(figure_body):
 
 #FIXME this is used because the analogous Ftree function does not
 #      include the constant vector
-def TB_to_harmonic_valuations(T, B, reflect):
+def TB_to_harmonic_valuations(T, B):
     """
     @param T: topology
     @param B: branch lengths
@@ -101,8 +98,6 @@ def TB_to_harmonic_valuations(T, B, reflect):
     w, v1 = scipy.linalg.eigh(L_schur)
     v2 = -np.dot(np.dot(np.linalg.pinv(Lbb), Lba), v1)
     V = np.vstack([v1, v2])
-    if reflect:
-        V *= -1
     vs = []
     for col in range(nleaves):
         d = dict((v, V[row, col]) for row, v in enumerate(vertices))
@@ -121,7 +116,7 @@ def get_response_content(fs):
         msg = 'the last index should not be greater than the first index'
         raise ValueError(msg)
     # get the vertex valuations
-    all_valuations = TB_to_harmonic_valuations(T, B, fs.reflect_valuations)
+    all_valuations = TB_to_harmonic_valuations(T, B)
     valuations = all_valuations[fs.first_index:]
     nfigures = (fs.last_index - fs.first_index) + 1
     # do the layout
