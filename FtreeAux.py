@@ -13,6 +13,7 @@ import numpy as np
 
 import day
 import Ftree
+import FtreeIO
 
 NEG_EDGE = -1
 NUL_EDGE = 0
@@ -172,6 +173,31 @@ def _update_locations(
 
 
 #####################################################
+# This section is for leaf weight calculation.
+
+def get_internal_vertex_to_leaf_distn(T, B):
+    """
+    Return a map from an internal vertex to a leaf distribution.
+    @return: a dictionary that maps an internal vertex to a leaf distribution
+    """
+    leaves = Ftree.T_to_leaves(T)
+    internal = Ftree.T_to_internal_vertices(T)
+    vertices = leaves + internal
+    # Get pieces of the Laplacian matrix.
+    Lbb = Ftree.TB_to_L_block(T, B, internal, internal)
+    Lba = Ftree.TB_to_L_block(T, B, internal, leaves)
+    # Get the numpy array of harmonic extensions to previously unknown values.
+    interpolator = -np.dot(np.linalg.pinv(Lbb), Lba)
+    d = {}
+    for i, v in enumerate(internal):
+        distn = {}
+        for j, leaf in enumerate(leaves):
+            distn[leaf] = interpolator[i, j]
+        d[v] = distn
+    return d
+
+
+#####################################################
 # This section is for splitting the branches.
 
 
@@ -244,6 +270,11 @@ def break_branches_by_vertex_sign(T, B, v_to_value, eps):
         v_to_value[next_v] = 0.0
         # increment the vertex counter
         next_v += 1
+
+
+#####################################################
+# The remaining functions are miscellaneous.
+
 
 def harmonically_interpolate(T, B, v_to_value):
     """
@@ -403,6 +434,36 @@ class TestFtreeAux(unittest.TestCase):
             ((4,5),NUL_EDGE),
             ((5,6),NEG_EDGE), ((5,7),NEG_EDGE), ((7,8),ALT_EDGE)])
         self.assertEqual(edge_to_color_observed, edge_to_color_expected)
+
+    def test_leaf_distn(self):
+        # Set up the expectation for the test.
+        n = 5.0
+        expected_name_weight_pairs = []
+        expected_first_value = n / (3*n - 2)
+        expected_non_first_value = 2 / (3*n - 2)
+        expected_name_weight_pairs.append(('a', expected_first_value))
+        for name in list('bcde'):
+            expected_name_weight_pairs.append((name, expected_non_first_value))
+        # A tree like this is used as an example in a manuscript by Eric Stone.
+        stone_example_tree = '(a:2, (b:1, c:1, d:1, e:1)x:1)y;'
+        T, B, N = FtreeIO.newick_to_TBN(stone_example_tree)
+        name_to_vertex = dict((n, v) for v, n in N.items())
+        r = name_to_vertex['y']
+        R = Ftree.T_to_R_specific(T, r)
+        # Get the leaf distribution associated with the root.
+        internal_to_leaf_distn = get_internal_vertex_to_leaf_distn(T, B)
+        r_to_leaf_distn = internal_to_leaf_distn[r]
+        leaves = Ftree.T_to_leaves(T)
+        observed_name_weight_pairs = [
+                (N[v], r_to_leaf_distn[v]) for v in leaves]
+        # Do the comparison for testing.
+        expected_d = dict(expected_name_weight_pairs)
+        observed_d = dict(observed_name_weight_pairs)
+        for v in leaves:
+            name = N[v]
+            expected_value = expected_d[name]
+            observed_value = observed_d[name]
+            self.assertTrue(np.allclose(expected_value, observed_value))
 
 
 if __name__ == '__main__':

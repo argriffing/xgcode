@@ -156,7 +156,8 @@ def get_stone_weights_fast(tree):
 def get_thompson_weights(tree):
     """
     Thompson, J. D., Higgins, D. G. and Gibson, T. J. 1994.
-    Improved sensitivity of profile searches through the use of sequence weights and gap excision.
+    Improved sensitivity of profile searches
+    through the use of sequence weights and gap excision.
     Computer Applications in the Biosciences 10:19-29.
     @param tree: a tree object with branch lengths for all non-root nodes
     @return: a sequence of (name, weight) pairs
@@ -189,7 +190,8 @@ def get_stone_weights(tree):
     for old_target in tree.gen_non_root_nodes():
         # create a new rerooted tree
         clone = copy.deepcopy(tree)
-        new_target_list = [node for node in clone.preorder() if node.id == old_target.id]
+        new_target_list = [
+                node for node in clone.preorder() if node.id == old_target.id]
         assert len(new_target_list) == 1
         target = new_target_list[0]
         new_root = Newick.NewickNode()
@@ -210,13 +212,16 @@ def get_stone_weights(tree):
 
 class TestLeafWeights(unittest.TestCase):
 
-    def do_stone_tree_comparison(self, tree, method, expected_name_weight_pairs):
+    def do_stone_tree_comparison(self, tree, method, expected_pairs):
         """
-        Use the example tree by Eric Stone to compare the output of a method to its expected output.
+        Check an example tree by Eric Stone.
+        Use the example tree by Eric Stone
+        to compare the output of a method to its expected output.
         @param tree: a newick tree of some sort
         @param method: a function that generates (name, weight) pairs
         @param expected_name_weight_pairs: the expected (name, weight) pairs
         """
+        expected_name_weight_pairs = expected_pairs
         names = [tip.name for tip in tree.gen_tips()]
         n = float(len(list(tree.gen_tips())))
         # get the dictionary that maps each name to its calculated weight
@@ -225,7 +230,8 @@ class TestLeafWeights(unittest.TestCase):
         name_to_expected_weight = dict(expected_name_weight_pairs)
         # for each name compare the calculated weight to the expected weight
         for name in names:
-            self.assertAlmostEqual(name_to_weight[name], name_to_expected_weight[name])
+            self.assertAlmostEqual(
+                    name_to_weight[name], name_to_expected_weight[name])
 
     def test_stone_fast(self):
         n = 5.0
@@ -236,7 +242,8 @@ class TestLeafWeights(unittest.TestCase):
         expected_name_weight_pairs.append(('a', expected_first_value))
         for name in list('bcde'):
             expected_name_weight_pairs.append((name, expected_non_first_value))
-        self.do_stone_tree_comparison(tree, get_stone_weights_fast, expected_name_weight_pairs)
+        self.do_stone_tree_comparison(
+                tree, get_stone_weights_fast, expected_name_weight_pairs)
 
     def test_stone(self):
         n = 5.0
@@ -246,8 +253,10 @@ class TestLeafWeights(unittest.TestCase):
         expected_non_first_value = (3*n+2) / ((n+2)*(3*n-2))
         expected_name_weight_pairs.append(('a', expected_first_value))
         for name in list('bcde'):
-            expected_name_weight_pairs.append((name, expected_non_first_value))
-        self.do_stone_tree_comparison(tree, get_stone_weights, expected_name_weight_pairs)
+            expected_name_weight_pairs.append(
+                    (name, expected_non_first_value))
+        self.do_stone_tree_comparison(
+                tree, get_stone_weights, expected_name_weight_pairs)
 
     def test_thompson(self):
         n = 5.0
@@ -258,11 +267,14 @@ class TestLeafWeights(unittest.TestCase):
         expected_name_weight_pairs.append(('a', expected_first_value))
         for name in list('bcde'):
             expected_name_weight_pairs.append((name, expected_non_first_value))
-        self.do_stone_tree_comparison(tree, get_thompson_weights, expected_name_weight_pairs)
+        self.do_stone_tree_comparison(
+                tree, get_thompson_weights, expected_name_weight_pairs)
 
     def test_stone_fast_equality(self):
         """
-        Assert that the faster algorithm gives the same result as the slower algorithm on a nontrivial tree.
+        Assert that fast and slow algorithms give the same result.
+        Assert that the faster algorithm gives the same result
+        as the slower algorithm on a nontrivial tree.
         """
         # define the common tree string
         tree_string = bsa_example_tree
@@ -282,7 +294,8 @@ class TestLeafWeights(unittest.TestCase):
     def test_vingron_additive(self):
         tree = Newick.parse(g_vingron_additive_tree, Newick.NewickTree)
         name_weight_pairs = get_thompson_weights(tree)
-        int_weight_pairs = [(int(name), weight) for name, weight in name_weight_pairs]
+        int_weight_pairs = [
+                (int(name), weight) for name, weight in name_weight_pairs]
         weights = [weight for name, weight in sorted(int_weight_pairs)]
         #print 'vingron additive:'
         #print weights
@@ -291,7 +304,8 @@ class TestLeafWeights(unittest.TestCase):
     def test_vingron_ultra(self):
         tree = Newick.parse(g_vingron_ultra_tree, Newick.NewickTree)
         name_weight_pairs = get_thompson_weights(tree)
-        int_weight_pairs = [(int(name), weight) for name, weight in name_weight_pairs]
+        int_weight_pairs = [
+                (int(name), weight) for name, weight in name_weight_pairs]
         weights = [weight for name, weight in sorted(int_weight_pairs)]
         #print 'vingron ultra:'
         #print weights
@@ -301,7 +315,8 @@ class TestLeafWeights(unittest.TestCase):
         tree = Newick.parse(g_acl_tree, Newick.NewickTree)
         name_weight_pairs = get_thompson_weights(tree)
         name_to_weight = dict(name_weight_pairs)
-        self.assertEqual(set(n for n, w in name_weight_pairs), set(g_acl_ordered_names))
+        self.assertEqual(
+                set(n for n, w in name_weight_pairs), set(g_acl_ordered_names))
         incorrect_names = []
         for name in g_acl_ordered_names:
             s_expected = g_acl_expected_weights[name]
@@ -311,5 +326,4 @@ class TestLeafWeights(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
 
