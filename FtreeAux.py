@@ -14,6 +14,7 @@ import numpy as np
 import day
 import Ftree
 import FtreeIO
+import LeafWeights
 
 NEG_EDGE = -1
 NUL_EDGE = 0
@@ -195,6 +196,32 @@ def get_internal_vertex_to_leaf_distn(T, B):
             distn[leaf] = interpolator[i, j]
         d[v] = distn
     return d
+
+def get_leaf_distn_acl(R, B):
+    """
+    This is a possibly equivalent formulation.
+    It is based on Felsenstein weights.
+    """
+    # Get the vertex order.
+    T = Ftree.R_to_T(R)
+    r = Ftree.R_to_root(R)
+    leaves = Ftree.T_to_leaves(T)
+    non_r_internal = [v for v in Ftree.T_to_internal_vertices(T) if v != r]
+    vertices = leaves + non_r_internal + [r]
+    # Get the pseudoinverse of the Laplacian.
+    # This is also the doubly centered covariance matrix.
+    L = Ftree.TB_to_L_principal(T, B, vertices)
+    HSH = np.linalg.pinv(L)
+    # Decenter the covariance matrix using the root.
+    # This should give the rooted covariance matrix
+    # which is M in the appendix of Weights for Data Related by a Tree
+    # by Altschul, Carroll, and Lipman, 1989.
+    e = np.ones_like(HSH[-1])
+    J = np.ones_like(HSH)
+    M = HSH - np.outer(e, HSH[-1]) - np.outer(HSH[-1], e) + HSH[-1,-1]*J
+    # Normalized row or column sums of M gives the leaf distribution.
+    w = M.sum(axis=0) / M.sum()
+    return dict((v, w[i]) for i, v in enumerate(vertices))
 
 
 #####################################################
@@ -435,7 +462,18 @@ class TestFtreeAux(unittest.TestCase):
             ((5,6),NEG_EDGE), ((5,7),NEG_EDGE), ((7,8),ALT_EDGE)])
         self.assertEqual(edge_to_color_observed, edge_to_color_expected)
 
-    def test_leaf_distn(self):
+    def test_leaf_distn_a(self):
+        # Read the example tree.
+        example_tree = '(a:2, (b:1, c:1, d:1, e:1)x:1)y;'
+        R, B, N = FtreeIO.newick_to_RBN(example_tree)
+        T = Ftree.R_to_T(R)
+        r = Ftree.R_to_root(R)
+        # Get the leaf distribution associated with the root.
+        internal_to_leaf_distn = get_internal_vertex_to_leaf_distn(T, B)
+        r_to_leaf_distn = internal_to_leaf_distn[r]
+        leaves = Ftree.T_to_leaves(T)
+        observed_name_weight_pairs = [
+                (N[v], r_to_leaf_distn[v]) for v in leaves]
         # Set up the expectation for the test.
         n = 5.0
         expected_name_weight_pairs = []
@@ -444,18 +482,6 @@ class TestFtreeAux(unittest.TestCase):
         expected_name_weight_pairs.append(('a', expected_first_value))
         for name in list('bcde'):
             expected_name_weight_pairs.append((name, expected_non_first_value))
-        # A tree like this is used as an example in a manuscript by Eric Stone.
-        stone_example_tree = '(a:2, (b:1, c:1, d:1, e:1)x:1)y;'
-        T, B, N = FtreeIO.newick_to_TBN(stone_example_tree)
-        name_to_vertex = dict((n, v) for v, n in N.items())
-        r = name_to_vertex['y']
-        R = Ftree.T_to_R_specific(T, r)
-        # Get the leaf distribution associated with the root.
-        internal_to_leaf_distn = get_internal_vertex_to_leaf_distn(T, B)
-        r_to_leaf_distn = internal_to_leaf_distn[r]
-        leaves = Ftree.T_to_leaves(T)
-        observed_name_weight_pairs = [
-                (N[v], r_to_leaf_distn[v]) for v in leaves]
         # Do the comparison for testing.
         expected_d = dict(expected_name_weight_pairs)
         observed_d = dict(observed_name_weight_pairs)
@@ -464,6 +490,43 @@ class TestFtreeAux(unittest.TestCase):
             expected_value = expected_d[name]
             observed_value = observed_d[name]
             self.assertTrue(np.allclose(expected_value, observed_value))
+
+    def test_leaf_distn_b(self):
+        # Read the example tree.
+        example_tree = LeafWeights.g_acl_tree
+        R, B, N = FtreeIO.newick_to_RBN(example_tree)
+        T = Ftree.R_to_T(R)
+        r = Ftree.R_to_root(R)
+        # Get the leaf distribution associated with the root.
+        internal_to_leaf_distn = get_internal_vertex_to_leaf_distn(T, B)
+        leaf_distn = internal_to_leaf_distn[r]
+        leaves = Ftree.T_to_leaves(T)
+        observed_name_weight_pairs = [
+                (N[v], leaf_distn[v]) for v in leaves]
+        # Do the comparaison for testing.
+        observed_name_to_weight = dict(observed_name_weight_pairs)
+        for name in LeafWeights.g_acl_ordered_names:
+            s_expected = LeafWeights.g_acl_expected_weights[name]
+            s_observed = '%.3f' % observed_name_to_weight[name]
+            self.assertTrue(s_expected, s_observed)
+
+    def test_leaf_distn_acl(self):
+        # Read the example tree.
+        example_tree = LeafWeights.g_acl_tree
+        R, B, N = FtreeIO.newick_to_RBN(example_tree)
+        T = Ftree.R_to_T(R)
+        r = Ftree.R_to_root(R)
+        # Get the leaf distribution associated with the root.
+        leaf_distn = get_leaf_distn_acl(R, B)
+        leaves = Ftree.T_to_leaves(T)
+        observed_name_weight_pairs = [
+                (N[v], leaf_distn[v]) for v in leaves]
+        # Do the comparaison for testing.
+        observed_name_to_weight = dict(observed_name_weight_pairs)
+        for name in LeafWeights.g_acl_ordered_names:
+            s_expected = LeafWeights.g_acl_expected_weights[name]
+            s_observed = '%.3f' % observed_name_to_weight[name]
+            self.assertTrue(s_expected, s_observed)
 
 
 if __name__ == '__main__':
