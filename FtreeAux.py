@@ -219,9 +219,35 @@ def get_leaf_distn_acl(R, B):
     e = np.ones_like(HSH[-1])
     J = np.ones_like(HSH)
     M = HSH - np.outer(e, HSH[-1]) - np.outer(HSH[-1], e) + HSH[-1,-1]*J
-    # Normalized row or column sums of M gives the leaf distribution.
-    w = M.sum(axis=0) / M.sum()
-    return dict((v, w[i]) for i, v in enumerate(vertices))
+    # Pick out the part corresponding to leaves.
+    nleaves = len(leaves)
+    S = M[:nleaves, :nleaves]
+    S_pinv = np.linalg.pinv(S)
+    # Normalized row or column sums of inverse of M gives the leaf distribution.
+    w = S_pinv.sum(axis=0) / S_pinv.sum()
+    return dict((v, w[i]) for i, v in enumerate(leaves))
+
+def get_leaf_distn_schur(R, B):
+    """
+    This is a possibly equivalent formulation.
+    It is based on removing all internal vertices except the root
+    by Schur complement.
+    """
+    # Get the vertex order.
+    # This order is different from the acl order.
+    T = Ftree.R_to_T(R)
+    r = Ftree.R_to_root(R)
+    leaves = Ftree.T_to_leaves(T)
+    non_r_internal = [v for v in Ftree.T_to_internal_vertices(T) if v != r]
+    vertices = leaves + [r] + non_r_internal
+    # Get the combinatorial Laplacian matrix
+    # and Schur complement out all of the non-root internal vertices.
+    L_schur = Ftree.TB_to_L_schur(T, B, leaves + [r])
+    # Get the vector of negative weights between the root and the leaves.
+    w_unnormalized = L_schur[-1, :-1]
+    # Get the normalized weight vector
+    w = w_unnormalized / w_unnormalized.sum()
+    return dict((v, w[i]) for i, v in enumerate(leaves))
 
 
 #####################################################
@@ -508,7 +534,7 @@ class TestFtreeAux(unittest.TestCase):
         for name in LeafWeights.g_acl_ordered_names:
             s_expected = LeafWeights.g_acl_expected_weights[name]
             s_observed = '%.3f' % observed_name_to_weight[name]
-            self.assertTrue(s_expected, s_observed)
+            self.assertEqual(s_expected, s_observed)
 
     def test_leaf_distn_acl(self):
         # Read the example tree.
@@ -526,7 +552,25 @@ class TestFtreeAux(unittest.TestCase):
         for name in LeafWeights.g_acl_ordered_names:
             s_expected = LeafWeights.g_acl_expected_weights[name]
             s_observed = '%.3f' % observed_name_to_weight[name]
-            self.assertTrue(s_expected, s_observed)
+            self.assertEqual(s_expected, s_observed)
+
+    def test_leaf_distn_schur(self):
+        # Read the example tree.
+        example_tree = LeafWeights.g_acl_tree
+        R, B, N = FtreeIO.newick_to_RBN(example_tree)
+        T = Ftree.R_to_T(R)
+        r = Ftree.R_to_root(R)
+        # Get the leaf distribution associated with the root.
+        leaf_distn = get_leaf_distn_schur(R, B)
+        leaves = Ftree.T_to_leaves(T)
+        observed_name_weight_pairs = [
+                (N[v], leaf_distn[v]) for v in leaves]
+        # Do the comparaison for testing.
+        observed_name_to_weight = dict(observed_name_weight_pairs)
+        for name in LeafWeights.g_acl_ordered_names:
+            s_expected = LeafWeights.g_acl_expected_weights[name]
+            s_observed = '%.3f' % observed_name_to_weight[name]
+            self.assertEqual(s_expected, s_observed)
 
 
 if __name__ == '__main__':
