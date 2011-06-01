@@ -248,6 +248,11 @@ def newick_to_RB(s, name_type=None):
     B = dict((mkedge(N[a], N[b]), x) for (a, b), x in B.items())
     return R, B
 
+def newick_to_R(s, name_type=None):
+    tree = NewickIO.parse_simple(s, _IO_Tree())
+    N = get_validated_name_map(tree.v_to_name, name_type)
+    return set((N[a], N[b]) for a, b in tree.R)
+
 def get_validated_name_map(N, name_type):
     """
     Convert the vertex name map N to the requested type and check conditions.
