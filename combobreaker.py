@@ -1,6 +1,6 @@
 """
 Run an algorithm until one of four conditions happens.
-First, the user could manually break out of the loop with ctrl-c.
+First, the user could manually break out of the loop with Ctrl-C.
 Second, the loop could hit a time limit.
 Third, the loop could hit a limit on the number of iterations.
 Fourth, the algorithm could terminate successfully.
@@ -11,6 +11,11 @@ Or it could compute a statistic on some arbitrarily large set of sampled data.
 
 import time
 import unittest
+
+STOP_FINISHED = 'finished'
+STOP_ITERATION_LIMIT = 'iteration limit'
+STOP_TIME_LIMIT = 'time limit'
+STOP_INTERRUPT = 'Ctrl-C'
 
 
 class RunInfo(object):
@@ -30,15 +35,14 @@ class RunInfo(object):
         self.stop_msg = stop_msg
 
     def get_response(self):
-        chunks = [
+        return '\n'.join([
             'termination condition: %s' % self.stop_msg,
             'completed iterations: %s' % self.iterations,
             'elapsed seconds: %s' % self.seconds,
-            self.state.get_response()]
-        return '\n'.join(chunks)
+            self.state.get_response()])
 
 
-def combo_breaker(states, nseconds=None, niterations=None):
+def run(states, nseconds=None, niterations=None):
     """
     Return a RunInfo object containing the final state.
     @param states: a state iterator, probably a generator object
@@ -48,34 +52,70 @@ def combo_breaker(states, nseconds=None, niterations=None):
     tm = time.time()
     count_m1 = -1
     state = None
-    stop_msg = 'finished'
+    stop_msg = STOP_FINISHED
     try:
         for count_m1, state in enumerate(states):
             if nseconds is not None:
                 if time.time() - tm >= nseconds:
-                    stop_msg = 'time limit'
+                    stop_msg = STOP_TIME_LIMIT
                     break
             if niterations is not None:
                 if count_m1 + 1 >= niterations:
-                    stop_msg = 'iteration limit'
+                    stop_msg = STOP_ITERATION_LIMIT
                     break
     except KeyboardInterrupt:
-        stop_msg = 'ctrl-c'
+        stop_msg = STOP_INTERRUPT
     return RunInfo(state, count_m1 + 1, time.time() - tm, stop_msg)
+
+class Collatz:
+    """
+    For testing.
+    """
+    def __init__(self, k):
+        self.k = k
+        self.seq = [k]
+        self.high_water = [k]
+    def __iter__(self):
+        return self
+    def next(self):
+        if self.k == 1:
+            raise StopIteration
+        elif self.k % 2:
+            self.k = 3*self.k + 1
+        else:
+            self.k /= 2
+        self.seq.append(self.k)
+        if self.k > self.high_water[-1]:
+            self.high_water.append(self.k)
+        return self
+    def get_response(self):
+        return '\n'.join([
+            'sequence: ' + str(self.seq),
+            'high water marks: ' + str(self.high_water)])
 
 
 class TestComboBreaker(unittest.TestCase):
 
-    def test_combo_breaker_finish(self):
-        info = combo_breaker(xrange(3))
+    def test_finish(self):
+        info = run(xrange(3))
         self.assertEqual(info.iterations, 3)
-        self.assertEqual(info.stop_msg, 'finished')
+        self.assertEqual(info.stop_msg, STOP_FINISHED)
 
-    def test_combo_breaker_niterations(self):
-        info = combo_breaker(xrange(3), niterations=2)
+    def test_niterations(self):
+        info = run(xrange(3), niterations=2)
         self.assertEqual(info.iterations, 2)
-        self.assertEqual(info.stop_msg, 'iteration limit')
+        self.assertEqual(info.stop_msg, STOP_ITERATION_LIMIT)
+
+    def test_collatz(self):
+        info = run(Collatz(42), niterations=5)
+        self.assertEqual(info.iterations, 5)
+        self.assertEqual(info.stop_msg, STOP_ITERATION_LIMIT)
+        info = run(Collatz(42))
+        self.assertEqual(info.iterations, 8)
+        self.assertEqual(info.stop_msg, STOP_FINISHED)
+        self.assertEqual(len(info.get_response().splitlines()), 5)
 
 
 if __name__ == '__main__':
     unittest.main()
+

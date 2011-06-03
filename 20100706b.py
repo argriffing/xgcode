@@ -116,8 +116,7 @@ class GlobalState(object):
         self.nclusters = nclusters
         self.init_strategy = init_strategy
 
-class ClusterState(object):
-    # TODO this should possibly be a real generator
+class ClusterState:
 
     def __init__(self, global_state):
         """
@@ -141,7 +140,10 @@ class ClusterState(object):
                 lines.append('\t'.join(row))
             return '\n'.join(lines)
 
-    def mutate(self):
+    def __iter__(self):
+        return self
+
+    def next(self):
         """
         Do an iteration of the Lloyd algorithm.
         """
@@ -153,26 +155,7 @@ class ClusterState(object):
         if (self.best_wcss is None) or (wcss < self.best_wcss):
             self.best_wcss = wcss
             self.best_labels = labels
-
-    def get_next(self):
-        """
-        This call should return a new object without self-mutation.
-        """
-        next_state = ClusterState(self.gs)
-        next_state.best_wcss = self.best_wcss
-        next_state.best_labels = self.best_labels
-        next_state.mutate()
-        return next_state
-
-
-def gen_states(gs):
-    """
-    @param gs: state that is unchanged between iterations
-    """
-    state = ClusterState(gs)
-    while True:
-        state = state.get_next()
-        yield state
+        return self
 
 
 def main(args):
@@ -186,9 +169,8 @@ def main(args):
     init_strategy = kmeans.InitStrategy().string_to_function(args.kmeans_init)
     gs = GlobalState(rtable, points, args.annotation, args.k, init_strategy)
     # go until iteration is stopped for some reason
-    run_info = combobreaker.combo_breaker(
-            gen_states(gs), args.nseconds, args.nrestarts)
-    print run_info.get_response()
+    info = combobreaker.run(ClusterState(gs), args.nseconds, args.nrestarts)
+    print info.get_response()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
@@ -196,7 +178,7 @@ if __name__ == '__main__':
             help='R table filename')
     parser.add_argument('--axes', required=True,
             help='column labels of Euclidean axes')
-    parser.add_argument('--k', type=moretypes.int_ge_2, required=True,
+    parser.add_argument('--k', type=moretypes.int_ge(2), required=True,
             help='target number of clusters')
     parser.add_argument('--annotation', default='cluster',
             help='header of added column')
