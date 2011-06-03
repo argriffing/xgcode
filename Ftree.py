@@ -132,8 +132,24 @@ def R_to_preorder(R):
     @param R: a directed topology
     @return: the preorder list of vertices
     """
+    return R_to_subtree_preorder(R, R_to_root(R))
+
+def R_to_vertex_partition(R):
+    """
+    @param R: a directed topology
+    @return: set of frozensets of vertices
+    """
     v_to_sinks = R_to_v_to_sinks(R)
-    r = R_to_root(R)
+    roots = v_to_sinks[R_to_root(R)]
+    return set(frozenset(R_to_subtree_preorder(R, r)) for r in roots)
+
+def R_to_subtree_preorder(R, r):
+    """
+    @param R: directed topology
+    @param r: subtree root
+    @return: list of vertices
+    """
+    v_to_sinks = R_to_v_to_sinks(R)
     shell = set([r])
     visited = set()
     arr = []
@@ -145,6 +161,7 @@ def R_to_preorder(R):
                 next_shell.add(adj)
         shell = next_shell
     return arr
+
 
 def RB_to_D(R, B, vertices):
     """
@@ -628,6 +645,12 @@ class TestFtree(unittest.TestCase):
                 T, B, leaves, internal)
         w_expected = [0.1707228213, 0.271592036629, 0.684669269055]
         self.assertTrue(np.allclose(w_observed, w_expected))
+
+    def test_R_to_vertex_partition(self):
+        R = set([(8, 5), (8, 6), (8, 7), (6, 1), (6, 2), (7, 3), (7, 4)])
+        observed = R_to_vertex_partition(R)
+        expected = set([frozenset([5]), frozenset([1,2,6]), frozenset([3,4,7])])
+        self.assertEqual(observed, expected)
 
 
 if __name__ == '__main__':
