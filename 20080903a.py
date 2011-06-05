@@ -1,4 +1,5 @@
-"""Evaluate distance matrix tree inference, giving more weight to deep splits.
+"""
+Evaluate distance matrix tree inference, giving more weight to deep splits.
 
 Evaluate distance matrix tree building methods,
 giving more weight to deep splits.
@@ -34,6 +35,7 @@ import Form
 import FormOut
 import Progress
 import const
+import combobreaker
 
 g_default_string = const.read('20100730q')
 

@@ -1,4 +1,5 @@
-"""Compare spectral sign splits with and without internal nodes.
+"""
+Compare spectral sign splits with and without internal nodes.
 
 For each of a set of trees,
 compare spectral sign splits with and without internal nodes.
@@ -17,8 +18,18 @@ import FelTree
 import NewickIO
 import TreeComparison
 import TreeSampler
+import combobreaker
 
 #FIXME use const data
+
+g_user_message = """\
+Does the Fiedler split of a certain graph correspond to a cut
+of a single branch on the tree from which the graph was derived?
+To look for a counterexample to this conjecture,
+I am sampling a bunch of random trees.
+Force the program to stop running by using Ctrl-c when you get bored."""
+
+g_filename = 'counterexamples.out'
 
 def get_form():
     """
@@ -141,55 +152,51 @@ def get_response_content(fs):
     # write the response
     return out.getvalue()
 
+class Search:
+    def __init__(self):
+        self.ncounterexamples = 0
+        self.fout = None
+    def get_response(self):
+        return 'found %d counterexamples' % self.ncounterexamples
+    def __iter__(self):
+        return self
+    def next(self):
+        # get a random tree
+        n_base_leaves = 4
+        n_expected_extra_leaves = 1
+        expected_branch_length = 1
+        tree = TreeSampler.sample_tree(n_base_leaves,
+                n_expected_extra_leaves, expected_branch_length)
+        # get the partitions implied by the tree
+        valid_partitions = TreeComparison.get_partitions(tree)
+        # Get the partition implied by the Fiedler split
+        # of the graph derived from the tree.
+        tip_nodes = list(tree.gen_tips())
+        D = tree.get_partial_distance_matrix(
+                [id(node) for node in tip_nodes])
+        y = get_vector(D).tolist()
+        name_selection = frozenset(node.get_name()
+                for node, elem in zip(tip_nodes, y) if elem > 0)
+        name_complement = frozenset(node.get_name()
+                for node, elem in zip(tip_nodes, y) if elem <= 0)
+        name_partition = frozenset((name_selection, name_complement))
+        if name_partition not in valid_partitions:
+            msg = '\n'.join([
+                'invalid partition found:',
+                'tree:', NewickIO.get_newick_string(tree),
+                'invalid partition:', name_partition])
+            if not self.fout:
+                self.fout = open(g_filename, 'wt')
+            print >> self.fout, msg
+            print msg
+            self.ncounterexamples += 1
+        return self
+
 def main():
-    filename = 'counterexamples.out'
-    fout = open(filename, 'wt')
-    print 'Does the Fiedler split of a certain graph'
-    print 'correspond to a cut of a single branch on the tree'
-    print 'from which the graph was derived?'
-    print 'To look for a counterexample to this conjecture,'
-    print 'I am sampling a bunch of random trees.'
-    print 'Force the program to stop running'
-    print 'by using Ctrl-c when you get bored.'
-    try:
-        count = 0
-        ncounterexamples = 0
-        while True:
-            count += 1
-            # get a random tree
-            n_base_leaves = 4
-            n_expected_extra_leaves = 1
-            expected_branch_length = 1
-            tree = TreeSampler.sample_tree(n_base_leaves,
-                    n_expected_extra_leaves, expected_branch_length)
-            # get the partitions implied by the tree
-            valid_partitions = TreeComparison.get_partitions(tree)
-            # Get the partition implied by the Fiedler split
-            # of the graph derived from the tree.
-            tip_nodes = list(tree.gen_tips())
-            D = tree.get_partial_distance_matrix(
-                    [id(node) for node in tip_nodes])
-            y = get_vector(D).tolist()
-            name_selection = frozenset(node.get_name()
-                    for node, elem in zip(tip_nodes, y) if elem > 0)
-            name_complement = frozenset(node.get_name()
-                    for node, elem in zip(tip_nodes, y) if elem <= 0)
-            name_partition = frozenset((name_selection, name_complement))
-            if name_partition not in valid_partitions:
-                message = StringIO()
-                print >> message, 'invalid partition found:'
-                print >> message, 'tree:', NewickIO.get_newick_string(tree)
-                print >> message, 'invalid partition:', name_partition
-                message_string = message.getvalue()
-                print >> fout, message_string
-                print message_string
-                ncounterexamples += 1
-    except KeyboardInterrupt, e:
-        print 'ok that is enough'
-        print 'found', ncounterexamples, 'counterexamples'
-        print 'out of', count, 'attempts'
+    print g_user_message
+    info = combobreaker.run(Search())
+    print info.get_response()
 
 if __name__ == '__main__':
     main()
-
 
