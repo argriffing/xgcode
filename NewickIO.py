@@ -64,7 +64,7 @@ def _lex_newick(s):
         elif symbol == ']':
             bracket_depth -= 1
         elif bracket_depth == 0:
-            yield(symbol)
+            yield symbol
         if bracket_depth < 0:
             raise NewickSyntaxError('unmatched bracket')
     if bracket_depth != 0:
@@ -74,8 +74,12 @@ def _lex_newick(s):
 # In this experimental section we use a new API.
 # The new API is flatter and expects a tree object (not a factory)
 # from the caller, where the tree object has
-# four member functions:  v=create_root(), v=create_child(parent),
-# set_branch_length(v,length), set_root(v), and finish() .
+# some member functions:
+#   v=create_root()
+#   v=create_child(parent)
+#   set_branch_length(v,length)
+#   set_root(v)
+#   finish()
 # A compatibility level will be added.
 
 def _pnh_blen(tree, symbols, index, node):
