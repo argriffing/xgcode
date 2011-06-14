@@ -1,9 +1,4 @@
 """Draw an MDS with imputed internal nodes, using TikZ.
-
-WARNING --
-the code currently requires the newick tree
-to have an integer label for every vertex,
-including internal vertices.
 """
 
 
@@ -27,6 +22,11 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree_string', 'newick tree',
                 g_tree_string),
+            Form.CheckGroup('check_group', 'scaling options', [
+                Form.CheckItem('scale_using_eigenvalues',
+                    'scale using eigenvalues', True)]),
+            Form.Float('scaling_factor',
+                'scaling factor', 10.0, low_exclusive=0),
             Form.TikzFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -68,32 +68,43 @@ def get_edge_line(va, vb):
     line = '\\path (%s) edge node {} (%s);' % (va, vb)
     return line
 
-def get_tikz_lines(newick):
+def get_tikz_lines(fs):
     """
-    @param newick: a newick tree string
+    @param fs: user input
     @return: a sequence of tikz lines
     """
+    newick = fs.tree_string
     # hardcode the axes
     x_index = 0
     y_index = 1
     # get the tree with ordered vertices
-    T, B = FtreeIO.newick_to_TB(newick, int)
+    #T, B = FtreeIO.newick_to_TB(newick, int)
+    T, B, N = FtreeIO.newick_to_TBN(newick)
     leaves = Ftree.T_to_leaves(T)
     internal = Ftree.T_to_internal_vertices(T)
     vertices = leaves + internal
     # get the harmonic extension points
     w, v = Ftree.TB_to_harmonic_extension(T, B, leaves, internal)
-    # do not scale using eigenvalues!
-    #X_full = np.dot(v, np.diag(np.reciprocal(np.sqrt(w))))
-    X_full = v
+    # possibly scale using the eigenvalues
+    if fs.scale_using_eigenvalues:
+        X_full = np.dot(v, np.diag(np.reciprocal(np.sqrt(w))))
+    else:
+        X_full = v
+    # scale using the scaling factor
+    X_full *= fs.scaling_factor
+    # get the first two axes
     X = np.vstack([X_full[:,x_index], X_full[:,y_index]]).T
     # get the tikz lines
     axis_lines = [
             '% draw the axes',
-            '\\node (axisleft) at (0, -1.2) {};',
-            '\\node (axisright) at (0, 1.2) {};',
-            '\\node (axistop) at (1.2, 0) {};',
-            '\\node (axisbottom) at (-1.2, 0) {};',
+            #'\\node (axisleft) at (0, -1.2) {};',
+            #'\\node (axisright) at (0, 1.2) {};',
+            #'\\node (axistop) at (1.2, 0) {};',
+            #'\\node (axisbottom) at (-1.2, 0) {};',
+            '\\node (axisleft) at (0, -5) {};',
+            '\\node (axisright) at (0, 5) {};',
+            '\\node (axistop) at (5, 0) {};',
+            '\\node (axisbottom) at (-5, 0) {};',
             '\\path (axisleft) edge[draw,color=lightgray] node {} (axisright);',
             '\\path (axistop) edge[draw,color=lightgray] node {} (axisbottom);']
     node_lines = []
@@ -112,7 +123,7 @@ def get_response_content(fs):
     @return: the response
     """
     # get the texts
-    tikz_lines = get_tikz_lines(fs.tree_string)
+    tikz_lines = get_tikz_lines(fs)
     tikz_text = get_tikz_text('\n'.join(tikz_lines))
     latex_text = get_latex_text(tikz_text)
     # decide the output format

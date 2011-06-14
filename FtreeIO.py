@@ -12,6 +12,8 @@ whose leaves are labeled but whose internal vertices are not labeled.
 
 import unittest
 
+#import dendropy
+
 import NewickIO
 import Ftree
 from Ftree import mkedge
@@ -70,6 +72,38 @@ class _IO_Tree:
             msg = 'the root should not have a hanging branch'
             raise FtreeIOError(msg)
 
+def dendropy_to_RBN(tree):
+    """
+    @param tree: a dendropy.Tree object
+    @return: R, B, N
+    """
+    next_v = 0
+    node_to_v = {}
+    R = set()
+    B = {}
+    N = {}
+    for edge in tree.get_edge_set():
+        # get the source and sink nodes and the branch length
+        blen = edge.length
+        head = edge.head_node
+        tail = edge.tail_node
+        if (head is None) or (tail is None):
+            continue
+        # add unknown vertices
+        for node in (edge.head_node, edge.tail_node):
+            if node not in node_to_v:
+                v = next_v
+                next_v += 1
+                node_to_v[node] = v
+                if node.taxon is not None:
+                    N[v] = node.taxon.label
+        # add the directed edge
+        d_edge = (node_to_v[head], node_to_v[tail])
+        R.add(d_edge)
+        # add the branch length if it exists
+        if blen is not None:
+            B[d_edge] = blen
+    return R, B, N
 
 def R_to_newick(R):
     """
@@ -338,6 +372,14 @@ class TestFtreeIO(unittest.TestCase):
 
     def test_hanging_root_branch(self):
         self.assertRaises(FtreeIOError, self._help_hanging_root_branch)
+
+    def test_dendropy_io(self):
+        s = '((a:1, b:1), c:3, d:4)e;'
+        tree = dendropy.Tree.get_from_string(s, 'newick')
+        R, B, N = dendropy_to_RBN(tree)
+        print R
+        print B
+        print N
 
 if __name__ == '__main__':
     unittest.main()

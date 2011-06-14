@@ -52,6 +52,11 @@ def get_form():
                 8, low_inclusive=1, high_exclusive=1000),
             Form.Float('inner_margin', 'inner margin (centimeters)',
                 0.25, low_inclusive=0, high_exclusive=1000),
+            Form.RadioGroup('radio_options', 'tree layout options', [
+                Form.RadioItem('equal_daylight_layout',
+                    'equal daylight layout', True),
+                Form.RadioItem('equal_arc_layout',
+                    'equal arc layout')]),
             Form.TikzFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -120,7 +125,10 @@ def get_response_content(fs):
     valuations = all_valuations[fs.first_index:]
     nfigures = (fs.last_index - fs.first_index) + 1
     # do the layout
-    v_to_location = FtreeAux.equal_daylight_layout(T, B, 3)
+    if fs.equal_arc_layout:
+        v_to_location = FtreeAux.equal_arc_layout(T, B)
+    elif fs.equal_daylight_layout:
+        v_to_location = FtreeAux.equal_daylight_layout(T, B, 3)
     # draw the image
     physical_size = (fs.width, fs.height)
     tikz_text = DrawEigenLacing.get_forest_image_ftree(
