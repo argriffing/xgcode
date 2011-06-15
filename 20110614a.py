@@ -29,6 +29,9 @@ def get_form():
             #Form.CheckGroup('check_group', 'scaling options', [
                 #Form.CheckItem('scale_using_eigenvalues',
                     #'scale using eigenvalues', True)]),
+            Form.Integer('nsamples',
+                'use this many perturbed distance matrices',
+                10, low=0, high=100),
             Form.Float('stddev',
                 'standard deviation of distance errors',
                 0.1, low_exclusive=0),
@@ -212,7 +215,7 @@ def get_tikz_lines(fs):
     nsamples = 10
     # define the points caused by MDS of distance matrices with errors
     point_lines = []
-    for v_to_point in info.gen_point_samples(nsamples, fs.stddev):
+    for v_to_point in info.gen_point_samples(fs.nsamples, fs.stddev):
         for x, y in v_to_point.values():
             line = get_point_line(fs.scaling_factor*x, fs.scaling_factor*y)
             point_lines.append(line)
