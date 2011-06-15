@@ -26,11 +26,14 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree_string', 'newick tree',
                 g_tree_string),
-            Form.CheckGroup('check_group', 'scaling options', [
-                Form.CheckItem('scale_using_eigenvalues',
-                    'scale using eigenvalues', True)]),
+            #Form.CheckGroup('check_group', 'scaling options', [
+                #Form.CheckItem('scale_using_eigenvalues',
+                    #'scale using eigenvalues', True)]),
+            Form.Float('stddev',
+                'standard deviation of distance errors',
+                0.1, low_exclusive=0),
             Form.Float('scaling_factor',
-                'scaling factor', 10.0, low_exclusive=0),
+                'scaling factor', 5.0, low_exclusive=0),
             Form.TikzFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -56,8 +59,10 @@ class FigureInfo:
         """
         self.T = T
         self.B = B
-        # compute the reference MDS for canonical reflection
+        # define a leaf and internal vertex order
         self.leaves = Ftree.T_to_leaves(self.T)
+        self.internal = Ftree.T_to_internal_vertices(self.T)
+        # compute the reference MDS for canonical reflection
         D = Ftree.TB_to_D(self.T, self.B, self.leaves)
         self.reference_MDS = self._D_to_MDS(D)
     def _get_D_perturbed(self, D, stddev):
@@ -121,6 +126,23 @@ class FigureInfo:
             MDS = self._D_to_MDS(D_perturbed)
             MDS = self._reflected_to_reference(MDS)
             yield dict((self.leaves[i], tuple(pt)) for i, pt in enumerate(MDS))
+    def get_v_to_point(self):
+        """
+        This uses the harmonic extension.
+        Also it uses the reference MDS for reflection.
+        @return: a map from vertex to point
+        """
+        Lbb = Ftree.TB_to_L_block(self.T, self.B, self.internal, self.internal)
+        Lba = Ftree.TB_to_L_block(self.T, self.B, self.internal, self.leaves)
+        L_schur = Ftree.TB_to_L_schur(self.T, self.B, self.leaves)
+        W, V = scipy.linalg.eigh(L_schur, eigvals=(1, 2))
+        V = V * np.reciprocal(np.sqrt(W))
+        V = self._reflected_to_reference(V)
+        Y = -np.dot(np.dot(np.linalg.pinv(Lbb), Lba), V)
+        MDS = np.vstack([V, Y])
+        vertices = self.leaves + self.internal
+        return dict((vertices[i], tuple(pt)) for i, pt in enumerate(MDS))
+
 
 def get_tikz_text(tikz_body):
     tikz_header = '\\begin{tikzpicture}[auto]'
@@ -176,58 +198,35 @@ def get_tikz_lines(fs):
     leaves = Ftree.T_to_leaves(T)
     internal = Ftree.T_to_internal_vertices(T)
     vertices = leaves + internal
-    """
-    # hardcode the axes
-    x_index = 0
-    y_index = 1
-    # get the harmonic extension points
-    w, v = Ftree.TB_to_harmonic_extension(T, B, leaves, internal)
-    # possibly scale using the eigenvalues
-    if fs.scale_using_eigenvalues:
-        X_full = np.dot(v, np.diag(np.reciprocal(np.sqrt(w))))
-    else:
-        X_full = v
-    # scale using the scaling factor
-    X_full *= fs.scaling_factor
-    # get the first two axes
-    X = np.vstack([X_full[:,x_index], X_full[:,y_index]]).T
-    """
     # get the tikz lines
     axis_lines = [
             '% draw the axes',
-            #'\\node (axisleft) at (0, -1.2) {};',
-            #'\\node (axisright) at (0, 1.2) {};',
-            #'\\node (axistop) at (1.2, 0) {};',
-            #'\\node (axisbottom) at (-1.2, 0) {};',
-            '\\node (axisleft) at (0, -5) {};',
-            '\\node (axisright) at (0, 5) {};',
-            '\\node (axistop) at (5, 0) {};',
-            '\\node (axisbottom) at (-5, 0) {};',
+            '\\node (axisleft) at (0, -6) {};',
+            '\\node (axisright) at (0, 6) {};',
+            '\\node (axistop) at (6, 0) {};',
+            '\\node (axisbottom) at (-6, 0) {};',
             '\\path (axisleft) edge[draw,color=lightgray] node {} (axisright);',
             '\\path (axistop) edge[draw,color=lightgray] node {} (axisbottom);']
-    """
+    # set up the figure info
+    info = FigureInfo(T, B)
+    nsamples = 10
+    # define the points caused by MDS of distance matrices with errors
+    point_lines = []
+    for v_to_point in info.gen_point_samples(nsamples, fs.stddev):
+        for x, y in v_to_point.values():
+            line = get_point_line(fs.scaling_factor*x, fs.scaling_factor*y)
+            point_lines.append(line)
+    # get the tikz corresponding to the tree drawn inside the MDS plot
     node_lines = []
-    for v, (x,y) in zip(vertices, X.tolist()):
-        line = get_vertex_line(v, x, y)
+    for v, (x,y) in info.get_v_to_point().items():
+        line = get_vertex_line(v, fs.scaling_factor*x, fs.scaling_factor*y)
         node_lines.append(line)
     edge_lines = []
     for va, vb in T:
         line = get_edge_line(va, vb)
         edge_lines.append(line)
-    return axis_lines + node_lines + edge_lines
-    """
-    # set up the figure info
-    info = FigureInfo(T, B)
-    nsamples = 10
-    stddev = 0.1
-    # define the points caused by MDS of distance matrices with errors
-    point_lines = []
-    for v_to_point in info.gen_point_samples(nsamples, stddev):
-        for x, y in v_to_point.values():
-            line = get_point_line(x, y)
-            point_lines.append(line)
     # return the tikz
-    return axis_lines + point_lines
+    return axis_lines + point_lines + node_lines + edge_lines
 
 def get_response_content(fs):
     """
@@ -247,3 +246,4 @@ def get_response_content(fs):
         return tikz.get_pdf_contents(latex_text)
     elif fs.png:
         return tikz.get_png_contents(latex_text)
+
