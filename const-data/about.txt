@@ -226,3 +226,7 @@ An unrealistic fasta nucleotide alignment.
 An R table with a subset of fungus data from Dr. Ignazio Carbone.
 Three of the columns define principal component eigenvectors.
 One of the column defines (bad) clusters.
+
+20110616a.dat
+A primate newick tree from UCSC.
+
