@@ -212,7 +212,6 @@ def get_tikz_lines(fs):
             '\\path (axistop) edge[draw,color=lightgray] node {} (axisbottom);']
     # set up the figure info
     info = FigureInfo(T, B)
-    nsamples = 10
     # define the points caused by MDS of distance matrices with errors
     point_lines = []
     for v_to_point in info.gen_point_samples(fs.nsamples, fs.stddev):
