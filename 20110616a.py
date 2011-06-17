@@ -10,9 +10,10 @@ without the lines.
 Fourth the MDS of the leaf distance matrix
 plus harmonic extensions
 plus lines corresponding to edges.
-There are two major modes.
+There are three label drawing modes.
 The first mode is with vertex labels suppressed.
-The second mode adds vertex labels directly onto the vertices.
+The second mode draws only the original taxon names at the leaves.
+The third mode draws short vertex labels directly onto all vertices.
 """
 
 import itertools
