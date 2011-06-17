@@ -115,12 +115,14 @@ def get_response_content(fs):
     # compute the harmonic extension of 2D MDS of the leaves
     MDS_harmonic = get_harmonically_extended_MDS(T, B, leaves, internal)
     # get the Fiedler MDS leaf partition for full 2D MDS
-    neg_leaves = frozenset([v for v in leaves if MDS_full[v,0] < 0])
-    pos_leaves = frozenset([v for v in leaves if MDS_full[v,0] >= 0])
+    v_to_value = dict(zip(vertices, MDS_full[:,0]))
+    neg_leaves = frozenset([v for v in leaves if v_to_value[v] < 0])
+    pos_leaves = frozenset([v for v in leaves if v_to_value[v] >= 0])
     full_mds_fiedler_partition = [neg_leaves, pos_leaves]
     # get the Fiedler MDS leaf partition for harmonic 2D MDS
-    neg_leaves = frozenset([v for v in leaves if MDS_harmonic[v,0] < 0])
-    pos_leaves = frozenset([v for v in leaves if MDS_harmonic[v,0] >= 0])
+    v_to_value = dict(zip(vertices, MDS_harmonic[:,0]))
+    neg_leaves = frozenset([v for v in leaves if v_to_value[v] < 0])
+    pos_leaves = frozenset([v for v in leaves if v_to_value[v] >= 0])
     harmonic_mds_fiedler_partition = [neg_leaves, pos_leaves]
     # get the Fiedler plus one MDS leaf partition for full 2D MDS
     v_to_value = dict(zip(vertices, MDS_full[:,1]))
