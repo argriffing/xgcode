@@ -7,7 +7,12 @@ import tempfile
 import subprocess
 import os
 
-def ad_hoc_sanitation(text):
+def sanitize(text):
+    """
+    This is ad hoc and is probably insufficient.
+    @param text: unsanitized text
+    @return: sanitized text
+    """
     arr = []
     d = {
             '\\' : '\\textbackslash{}',
