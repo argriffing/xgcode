@@ -54,6 +54,12 @@ def get_form():
                     'suppress all vertex labels except leaf taxa'),
                 Form.RadioItem('label_mode_show',
                     'label all vertices using keyed taxon names')]),
+            Form.RadioGroup('sanitation_options',
+                'taxon label sanitation options', [
+                    Form.RadioItem('no_sanitation',
+                        'allow TikZ to interpret the taxon labels', True),
+                    Form.RadioItem('sanitation',
+                        'attempt an ad-hoc sanitation of taxon labels')]),
             Form.RadioGroup('tree_layout', 'tree layout options', [
                 Form.RadioItem('equal_arc', 'equal arc layout', True),
                 Form.RadioItem('equal_daylight', 'equal daylight layout')]),
@@ -351,6 +357,10 @@ def get_response_content(fs):
     @return: the response
     """
     T, B, N = FtreeIO.newick_to_TBN(fs.tree_string)
+    # sanitize taxon labels if requested
+    if fs.sanitation:
+        for v in N:
+            N[v] = tikz.ad_hoc_sanitation(N[v])
     # scale branch lengths so the diameter is 1
     diameter = np.max(Ftree.TB_to_D(T, B, Ftree.T_to_leaves(T)))
     # scale the branch lengths

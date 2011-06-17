@@ -7,6 +7,24 @@ import tempfile
 import subprocess
 import os
 
+def ad_hoc_sanitation(text):
+    arr = []
+    d = {
+            '\\' : '\\textbackslash{}',
+            '_' : '\\textunderscore{}',
+            '<' : '\\textless{}',
+            '>' : '\\textgreater{}',
+            '~' : '\\textasciitilde{}',
+            }
+    for c in text:
+        if c in d:
+            arr.append(d[c])
+        elif c in '%${}&#':
+            arr.append('\\' + c)
+        else:
+            arr.append(c)
+    return ''.join(arr)
+
 def _create_temp_pdf_file(latex_text):
     """
     The returned path name base does not yet have the pdf extension.
