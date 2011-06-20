@@ -52,9 +52,9 @@ def get_form():
                 Form.RadioItem('label_mode_suppressed',
                     'suppress all vertex labels', True),
                 Form.RadioItem('label_mode_leaf_only',
-                    'suppress all vertex labels except leaf taxa'),
+                    'draw leaf names'),
                 Form.RadioItem('label_mode_show',
-                    'label all vertices using keyed taxon names')]),
+                    'draw arbitrary short names at all vertices')]),
             Form.RadioGroup('sanitization_options',
                 'taxon label sanitization options', [
                     Form.RadioItem('no_sanitization',
@@ -244,6 +244,11 @@ class FigureInfo:
             for i, v in enumerate(self.vertices):
                 x, y = MDS[i]
                 label_lines.append(get_label_line(x, y, self.N_short[v]))
+        elif self.label_mode == 'label_mode_leaf_only':
+            for i, v in enumerate(self.vertices):
+                x, y = MDS[i]
+                if v in self.N:
+                    label_lines.append(get_label_line(x, y, self.N[v]))
         # return the tikz
         tikz_lines = axis_lines + node_lines + edge_lines + label_lines
         return '\n'.join(tikz_lines)
