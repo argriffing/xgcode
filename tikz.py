@@ -63,8 +63,9 @@ def get_png_contents(latex_text):
     # create the png file
     input_arg = pathname + '.pdf'
     output_arg = '-sOutputFile=%s.png' % pathname
+    # sDEVICE used to be pngggray
     args = [
-            'gs', '-dSAFER', '-dBATCH', '-dNOPAUSE', '-sDEVICE=pnggray',
+            'gs', '-dSAFER', '-dBATCH', '-dNOPAUSE', '-sDEVICE=png16m',
             output_arg, input_arg]
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
