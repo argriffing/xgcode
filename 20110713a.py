@@ -1,15 +1,9 @@
 """
-Draw the parametric plot for a sequence of interlacing polynomials.
+Draw a sequence of superimposed interlacing polynomials. [UNFINISHED]
 
 The input defines a monic cubic polynomial p(t) with distinct real zeros.
-From this cubic polynomial we compute a one dimensional parametric curve
-in three dimensional Euclidean space such that f(t) = (p''(t), p'(t), p(t)).
-The output is a tikz plot which shows the intersections
-between the parametric curve and the planes orthogonal
-to the axes of the standard basis.
 """
 
-import heapq
 import math
 
 import numpy as np
@@ -17,14 +11,14 @@ import numpy as np
 import Form
 import FormOut
 import tikz
+import Ftree
+import FtreeIO
+import MatrixUtil
 import interlace
 import pcurve
 import const
 
-STYLE_X = 0
-STYLE_Y = 1
-STYLE_Z = 2
-STYLE_CURVE = 3
+#TODO finish this
 
 def get_form():
     """
@@ -77,19 +71,19 @@ def get_world_segments(root_a, root_b, root_c, initial_t, final_t):
     segments = []
     # add the axis line segments
     d = 5
-    f_x = pcurve.LineSegment(np.array([-d, 0, 0]), np.array([d, 0, 0]))
-    f_y = pcurve.LineSegment(np.array([0, -d, 0]), np.array([0, d, 0]))
-    f_z = pcurve.LineSegment(np.array([0, 0, -d]), np.array([0, 0, d]))
-    x_axis_segs = pcurve.get_piecewise_curve(f_x, 0, 1, 10, seg_length_min)
-    y_axis_segs = pcurve.get_piecewise_curve(f_y, 0, 1, 10, seg_length_min)
-    z_axis_segs = pcurve.get_piecewise_curve(f_z, 0, 1, 10, seg_length_min)
+    f_x = LineSegment(np.array([-d, 0, 0]), np.array([d, 0, 0]))
+    f_y = LineSegment(np.array([0, -d, 0]), np.array([0, d, 0]))
+    f_z = LineSegment(np.array([0, 0, -d]), np.array([0, 0, d]))
+    x_axis_segs = get_piecewise_curve(f_x, 0, 1, 10, seg_length_min)
+    y_axis_segs = get_piecewise_curve(f_y, 0, 1, 10, seg_length_min)
+    z_axis_segs = get_piecewise_curve(f_z, 0, 1, 10, seg_length_min)
     segments.extend((p0, p1, STYLE_X) for p0, p1 in x_axis_segs)
     segments.extend((p0, p1, STYLE_Y) for p0, p1 in y_axis_segs)
     segments.extend((p0, p1, STYLE_Z) for p0, p1 in z_axis_segs)
     # add the parametric curve
     f_poly = interlace.InterlacingPoly(
             root_a, root_b, root_c, initial_t, final_t)
-    poly_segs = pcurve.get_piecewise_curve(
+    poly_segs = get_piecewise_curve(
             f_poly, initial_t, final_t, 10, seg_length_min)
     segments.extend((p0, p1, STYLE_CURVE) for p0, p1 in poly_segs)
     # add the intersection circles
@@ -98,19 +92,52 @@ def get_world_segments(root_a, root_b, root_c, initial_t, final_t):
     y_roots = f_poly.get_quadratic_roots()
     z_roots = f_poly.get_cubic_roots()
     for r in x_roots:
-        f = pcurve.OrthoCircle(f_poly(r), radius, 0)
-        segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
+        f = OrthoCircle(f_poly(r), radius, 0)
+        segs = get_piecewise_curve(f, 0, 1, 10, seg_length_min)
         segments.extend((p0, p1, STYLE_X) for p0, p1 in segs)
     for r in y_roots:
-        f = pcurve.OrthoCircle(f_poly(r), radius, 1)
-        segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
+        f = OrthoCircle(f_poly(r), radius, 1)
+        segs = get_piecewise_curve(f, 0, 1, 10, seg_length_min)
         segments.extend((p0, p1, STYLE_Y) for p0, p1 in segs)
     for r in z_roots:
-        f = pcurve.OrthoCircle(f_poly(r), radius, 2)
-        segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
+        f = OrthoCircle(f_poly(r), radius, 2)
+        segs = get_piecewise_curve(f, 0, 1, 10, seg_length_min)
         segments.extend((p0, p1, STYLE_Z) for p0, p1 in segs)
     # return the segments
     return segments
+    
+
+def get_piecewise_curve(f, t_initial, t_final, npieces_min, seg_length_max):
+    """
+    Convert a parametric curve into a collection of line segments.
+    @param f: returns the (x, y, z) value at time t
+    @param t_initial: initial value of t
+    @param t_final: final value of t
+    @param npieces_min: minimum number of line segments
+    @param seg_length_max: maximum line segment length without subdivision
+    """
+    # define a heap of triples (-length, ta, tb)
+    # where length is ||f(tb) - f(ta)||
+    q = []
+    # initialize the heap
+    t_incr = float(t_final - t_initial) / npieces_min
+    for i in range(npieces_min):
+        ta = t_initial + t_incr * i
+        tb = ta + t_incr
+        dab = np.linalg.norm(f(tb) - f(ta))
+        heapq.heappush(q, (-dab, ta, tb))
+    # While segments are longer than the max allowed length,
+    # subdivide the segments.
+    while -q[0][0] > seg_length_max:
+        neg_d, ta, tc = heapq.heappop(q)
+        tb = float(ta + tc) / 2
+        dab = np.linalg.norm(f(tb) - f(ta))
+        dbc = np.linalg.norm(f(tc) - f(tb))
+        heapq.heappush(q, (-dab, ta, tb))
+        heapq.heappush(q, (-dbc, tb, tc))
+    # convert time segments to spatial segments
+    return [(f(ta), f(tb)) for neg_d, ta, tb in q]
+
 
 def get_tikz_lines(fs):
     """
@@ -151,17 +178,6 @@ def get_tikz_lines(fs):
         #lines.append(line_foreground)
         lines.append(line_double)
     # draw dots at the positive endpoints of the axes
-    """
-    x, y, z = rotate_to_view((3, 0, 0))
-    line = '\\draw[fill=red] (%s, %s) circle (0.1);' % (y, z)
-    lines.append(line)
-    x, y, z = rotate_to_view((0, 3, 0))
-    line = '\\draw[fill=green] (%s, %s) circle (0.1);' % (y, z)
-    lines.append(line)
-    x, y, z = rotate_to_view((0, 0, 3))
-    line = '\\draw[fill=blue] (%s, %s) circle (0.1);' % (y, z)
-    lines.append(line)
-    """
     return lines
 
 def get_tikz_text(tikz_body):
