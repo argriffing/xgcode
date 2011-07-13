@@ -20,6 +20,7 @@ import tikz
 import Ftree
 import FtreeIO
 import MatrixUtil
+import interlace
 import const
 
 STYLE_X = 0
@@ -88,7 +89,8 @@ def get_world_segments(root_a, root_b, root_c, initial_t, final_t):
     segments.extend((p0, p1, STYLE_Y) for p0, p1 in y_axis_segs)
     segments.extend((p0, p1, STYLE_Z) for p0, p1 in z_axis_segs)
     # add the parametric curve
-    f_poly = InterlacingPoly(root_a, root_b, root_c, initial_t, final_t)
+    f_poly = interlace.InterlacingPoly(
+            root_a, root_b, root_c, initial_t, final_t)
     poly_segs = get_piecewise_curve(
             f_poly, initial_t, final_t, 10, seg_length_min)
     segments.extend((p0, p1, STYLE_CURVE) for p0, p1 in poly_segs)
@@ -183,47 +185,6 @@ class LineSegment:
         """
         return self.initial_point * (1-t) + self.final_point * t
 
-class InterlacingPoly:
-    def __init__(self, root_a, root_b, root_c, initial_t, final_t):
-        """
-        @param root_a: first root of monic cubic polynomial
-        @param root_b: second root of monic cubic polynomial
-        @param root_c: third root of monic cubic polynomial
-        """
-        self.root_a = root_a
-        self.root_b = root_b
-        self.root_c = root_c
-    def get_cubic_roots(self):
-        a = self.root_a
-        b = self.root_b
-        c = self.root_c
-        return a, b, c
-    def get_quadratic_roots(self):
-        a = self.root_a
-        b = self.root_b
-        c = self.root_c
-        A = a*a + b*b + c*c
-        B = a*b + a*c + b*c
-        S = a + b + c
-        r0 = float(S + math.sqrt(A - B)) / 3
-        r1 = float(S - math.sqrt(A - B)) / 3
-        return r0, r1
-    def get_linear_root(self):
-        r = float(self.root_a + self.root_b + self.root_c) / 3
-        return r
-    def __call__(self, t):
-        """
-        @param t: a float
-        @return: a 3d point
-        """
-        a = self.root_a
-        b = self.root_b
-        c = self.root_c
-        z = (t - a) * (t - b) * (t - c)
-        y = 3*t*t - 2*t*(a + b + c) + a*b + a*c + b*c
-        x = 6*t - 2*(a + b + c)
-        return np.array([x, y, z])
-
 
 def get_tikz_lines(fs):
     """
@@ -257,10 +218,12 @@ def get_tikz_lines(fs):
                 STYLE_Y: 'green',
                 STYLE_Z: 'blue',
                 STYLE_CURVE: 'black'}[style]
-        line_background = '\\draw[thick,color=white] (%s, %s) -- (%s, %s);' % (y0, z0, y1, z1)
-        line_foreground = '\\draw[color=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
+        #line_background = '\\draw[thick,color=white] (%s, %s) -- (%s, %s);' % (y0, z0, y1, z1)
+        #line_foreground = '\\draw[color=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
+        line_double = '\\draw[draw=white,double=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
         #lines.append(line_background)
-        lines.append(line_foreground)
+        #lines.append(line_foreground)
+        lines.append(line_double)
     # draw dots at the positive endpoints of the axes
     """
     x, y, z = rotate_to_view((3, 0, 0))
