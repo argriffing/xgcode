@@ -1,5 +1,5 @@
 """
-Draw a sequence of superimposed interlacing polynomials. [UNFINISHED]
+Draw a sequence of superimposed interlacing polynomials.
 
 The input defines a monic cubic polynomial p(t) with distinct real zeros.
 """
