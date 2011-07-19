@@ -67,7 +67,7 @@ def get_tikz_lines(fs):
     npoints = nsegs + 1
     incr = (fs.final_t - fs.initial_t) / nsegs
     polys = interlace.roots_to_differential_polys(roots)
-    t_values = [incr*i for i in range(npoints)]
+    t_values = [fs.initial_t + incr*i for i in range(npoints)]
     # get the tikz lines
     lines = []
     lines.extend(get_function_tikz_lines(
