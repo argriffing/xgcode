@@ -9,7 +9,6 @@ between the parametric curve and the planes orthogonal
 to the axes of the standard basis.
 """
 
-import heapq
 import math
 
 import numpy as np
@@ -99,9 +98,6 @@ def get_world_segments(root_a, root_b, root_c, initial_t, final_t):
     x_roots_symbolic = sympy.roots(polys[0])
     y_roots_symbolic = sympy.roots(polys[1])
     z_roots_symbolic = sympy.roots(polys[2])
-    print x_roots_symbolic
-    print y_roots_symbolic
-    print z_roots_symbolic
     x_roots = [float(r) for r in x_roots_symbolic]
     y_roots = [float(r) for r in y_roots_symbolic]
     z_roots = [float(r) for r in z_roots_symbolic]
@@ -210,4 +206,3 @@ def get_response_content(fs):
         return tikz.get_pdf_contents(latex_text)
     elif fs.png:
         return tikz.get_png_contents(latex_text)
-
