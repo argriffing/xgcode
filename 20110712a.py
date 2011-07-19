@@ -13,6 +13,7 @@ import heapq
 import math
 
 import numpy as np
+import sympy
 
 import Form
 import FormOut
@@ -87,16 +88,23 @@ def get_world_segments(root_a, root_b, root_c, initial_t, final_t):
     segments.extend((p0, p1, STYLE_Y) for p0, p1 in y_axis_segs)
     segments.extend((p0, p1, STYLE_Z) for p0, p1 in z_axis_segs)
     # add the parametric curve
-    f_poly = interlace.InterlacingPoly(
-            root_a, root_b, root_c, initial_t, final_t)
+    roots = (root_a, root_b, root_c)
+    polys = interlace.roots_to_differential_polys(roots)
+    f_poly = interlace.Multiplex(polys)
     poly_segs = pcurve.get_piecewise_curve(
             f_poly, initial_t, final_t, 10, seg_length_min)
     segments.extend((p0, p1, STYLE_CURVE) for p0, p1 in poly_segs)
     # add the intersection circles
     radius = 0.1
-    x_roots = [f_poly.get_linear_root()]
-    y_roots = f_poly.get_quadratic_roots()
-    z_roots = f_poly.get_cubic_roots()
+    x_roots_symbolic = sympy.roots(polys[0])
+    y_roots_symbolic = sympy.roots(polys[1])
+    z_roots_symbolic = sympy.roots(polys[2])
+    print x_roots_symbolic
+    print y_roots_symbolic
+    print z_roots_symbolic
+    x_roots = [float(r) for r in x_roots_symbolic]
+    y_roots = [float(r) for r in y_roots_symbolic]
+    z_roots = [float(r) for r in z_roots_symbolic]
     for r in x_roots:
         f = pcurve.OrthoCircle(f_poly(r), radius, 0)
         segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)

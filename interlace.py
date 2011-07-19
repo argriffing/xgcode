@@ -23,6 +23,7 @@ import numpy as np
 import sympy
 from sympy import matrices
 from sympy import abc
+import mpmath
 
 def roots_to_poly(roots):
     """
@@ -78,7 +79,8 @@ class Multiplex:
         """
         self.fns = fns
     def __call__(self, t):
-        return np.array([float(f(t)) for f in self.fns])
+        #return np.array([float(f(t)) for f in self.fns])
+        return np.array([float(f.eval(t)) for f in self.fns])
 
 
 class TestInterlacing(unittest.TestCase):
@@ -94,6 +96,31 @@ class TestInterlacing(unittest.TestCase):
 
     def test_ndiff_roots(self):
         roots = (1, 4, 5)
+        a, b, c = roots
+        polys = roots_to_differential_polys(roots)
+        # compute linear root manually
+        r = float(a + b + c) / 3
+        # check linear root
+        observed = sorted(float(r) for r in sympy.roots(polys[0]))
+        expected = sorted([r])
+        self.assertTrue(np.allclose(observed, expected))
+        # compute quadratic roots manually
+        A = a*a + b*b + c*c
+        B = a*b + a*c + b*c
+        S = a + b + c
+        r0 = float(S + math.sqrt(A - B)) / 3
+        r1 = float(S - math.sqrt(A - B)) / 3
+        # check quadratic roots
+        observed = sorted(float(r) for r in sympy.roots(polys[1]))
+        expected = sorted([r0, r1])
+        self.assertTrue(np.allclose(observed, expected))
+        # check cubic roots
+        observed = sorted(float(r) for r in sympy.roots(polys[2]))
+        expected = sorted(roots)
+        self.assertTrue(np.allclose(observed, expected))
+
+    def test_ndiff_roots_symbolic(self):
+        roots = (1.25, 4.5, 5.75)
         a, b, c = roots
         polys = roots_to_differential_polys(roots)
         # compute linear root manually
