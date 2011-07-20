@@ -23,7 +23,7 @@ def get_form():
     form_objects = [
             Form.Float('initial_t', 'initial t', 0.6),
             Form.Float('root_a', 'first root of p(t)', 1.0),
-            Form.Float('root_b', 'second root of p(t)', 2.2),
+            Form.Float('root_b', 'second root of p(t)', 2.0),
             Form.Float('root_c', 'third root of p(t)', 2.5),
             Form.Float('final_t', 'final t', 3.2),
             Form.TikzFormat(),

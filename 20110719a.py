@@ -1,5 +1,5 @@
 """
-A third visualization of interlacing polynomial sequences. [UNFINISHED]
+A third visualization of interlacing polynomial sequences.
 
 The cubic polynomial should have distinct real roots.
 """

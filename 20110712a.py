@@ -34,9 +34,14 @@ def get_form():
     form_objects = [
             Form.Float('initial_t', 'initial t', 0.6),
             Form.Float('root_a', 'first root of p(t)', 1.0),
-            Form.Float('root_b', 'second root of p(t)', 2.2),
+            Form.Float('root_b', 'second root of p(t)', 2.0),
             Form.Float('root_c', 'third root of p(t)', 2.5),
             Form.Float('final_t', 'final t', 3.2),
+            Form.CheckGroup('vis_options', 'visualization options', [
+                Form.CheckItem(
+                    'fancy_intersect', 'doubly occluded intersections')]),
+            Form.Float('radius',
+                'curve-plane intersection circle radius', 0.1),
             Form.TikzFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -65,7 +70,8 @@ def rotate_to_view(p):
     z2 = z1 * c + x1 * s
     return np.array([x2, y2, z2])
 
-def get_world_segments(root_a, root_b, root_c, initial_t, final_t):
+def get_world_segments(root_a, root_b, root_c,
+        initial_t, final_t, intersection_radius):
     """
     The world consists of
     three axis lines,
@@ -94,7 +100,6 @@ def get_world_segments(root_a, root_b, root_c, initial_t, final_t):
             f_poly, initial_t, final_t, 10, seg_length_min)
     segments.extend((p0, p1, STYLE_CURVE) for p0, p1 in poly_segs)
     # add the intersection circles
-    radius = 0.1
     x_roots_symbolic = sympy.roots(polys[0])
     y_roots_symbolic = sympy.roots(polys[1])
     z_roots_symbolic = sympy.roots(polys[2])
@@ -102,15 +107,15 @@ def get_world_segments(root_a, root_b, root_c, initial_t, final_t):
     y_roots = [float(r) for r in y_roots_symbolic]
     z_roots = [float(r) for r in z_roots_symbolic]
     for r in x_roots:
-        f = pcurve.OrthoCircle(f_poly(r), radius, 0)
+        f = pcurve.OrthoCircle(f_poly(r), intersection_radius, 0)
         segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
         segments.extend((p0, p1, STYLE_X) for p0, p1 in segs)
     for r in y_roots:
-        f = pcurve.OrthoCircle(f_poly(r), radius, 1)
+        f = pcurve.OrthoCircle(f_poly(r), intersection_radius, 1)
         segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
         segments.extend((p0, p1, STYLE_Y) for p0, p1 in segs)
     for r in z_roots:
-        f = pcurve.OrthoCircle(f_poly(r), radius, 2)
+        f = pcurve.OrthoCircle(f_poly(r), intersection_radius, 2)
         segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
         segments.extend((p0, p1, STYLE_Z) for p0, p1 in segs)
     # return the segments
@@ -123,7 +128,7 @@ def get_tikz_lines(fs):
     """
     segs = get_world_segments(
             fs.root_a, fs.root_b, fs.root_c,
-            fs.initial_t, fs.final_t)
+            fs.initial_t, fs.final_t, fs.radius)
     # get the rotated and styled line segments
     rotated_and_styled = []
     for p0, p1, style in segs:
@@ -148,12 +153,12 @@ def get_tikz_lines(fs):
                 STYLE_Y: 'green',
                 STYLE_Z: 'blue',
                 STYLE_CURVE: 'black'}[style]
-        #line_background = '\\draw[thick,color=white] (%s, %s) -- (%s, %s);' % (y0, z0, y1, z1)
-        #line_foreground = '\\draw[color=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
-        line_double = '\\draw[draw=white,double=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
-        #lines.append(line_background)
-        #lines.append(line_foreground)
-        lines.append(line_double)
+        if fs.fancy_intersect:
+            line_double = '\\draw[draw=white,double=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
+            lines.append(line_double)
+        else:
+            line_foreground = '\\draw[color=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
+            lines.append(line_foreground)
     # draw dots at the positive endpoints of the axes
     """
     x, y, z = rotate_to_view((3, 0, 0))
