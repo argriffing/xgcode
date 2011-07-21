@@ -13,6 +13,7 @@ import Form
 import FormOut
 import tikz
 import interlace
+import color
 import const
 
 def get_form():
@@ -72,11 +73,28 @@ def get_tikz_lines(fs):
     lines = []
     lines.extend(get_function_tikz_lines(
         (lambda t: 0), (t_values[0], t_values[-1]), 'black'))
-    colors = ('red', 'green', 'blue')
+    colors = ('wolfram-blue', 'wolfram-red', 'wolfram-olive')
     for p, color in zip(polys, colors):
         lines.extend(get_function_tikz_lines(
             p.eval, t_values, color))
     return lines
+
+def get_latex_text(tikz_text):
+    """
+    TikZ boilerplate code.
+    """
+    arr = []
+    arr.extend([
+        '\\documentclass{article}',
+        '\\usepackage{tikz}',
+        '\\usepackage{color}'])
+    arr.extend(
+        tikz.define_color(*pair) for pair in color.wolfram_name_color_pairs)
+    arr.extend([
+        '\\begin{document}',
+        tikz_text,
+        '\\end{document}'])
+    return '\n'.join(arr)
 
 def get_tikz_text(tikz_body):
     """
@@ -85,18 +103,6 @@ def get_tikz_text(tikz_body):
     tikz_header = '\\begin{tikzpicture}[auto]'
     tikz_footer = '\\end{tikzpicture}'
     return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    """
-    latex_header = '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\begin{document}'])
-    latex_body = tikz_text
-    latex_footer = '\\end{document}'
-    return '\n'.join([latex_header, latex_body, latex_footer])
 
 def get_response_content(fs):
     """

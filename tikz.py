@@ -1,11 +1,21 @@
 """Help write TikZ things.
 
+This is also for tex scope.
 Requires ghostscript and pdflatex.
 """
 
 import tempfile
 import subprocess
 import os
+
+def define_color(name, rgb):
+    """
+    @param name: the name of the color
+    @param rgb: a triple of integers defining the rgb of the color
+    @return: a line of latex code
+    """
+    r, g, b = rgb
+    return '\\definecolor{%s}{RGB}{%s,%s,%s}' % (name, r, g, b)
 
 def sanitize(text):
     """

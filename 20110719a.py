@@ -15,6 +15,7 @@ import FormOut
 import tikz
 import interlace
 import iterutils
+import color
 import const
 
 def get_form():
@@ -85,7 +86,7 @@ def get_tikz_lines(fs):
     @return: a sequence of tikz lines
     """
     # construct a 'matrix' of three vertically stacked panes
-    colors = ('black', 'red', 'green', 'blue')
+    colors = ('black', 'wolfram-blue', 'wolfram-red', 'wolfram-olive')
     p0 = sympy.Poly(1, sympy.abc.x)
     roots = (fs.root_a, fs.root_b, fs.root_c)
     polys = [p0] + interlace.roots_to_differential_polys(roots)
@@ -104,6 +105,23 @@ def get_tikz_lines(fs):
     lines.append('};')
     return lines
 
+def get_latex_text(tikz_text):
+    """
+    TikZ boilerplate code.
+    """
+    arr = []
+    arr.extend([
+        '\\documentclass{article}',
+        '\\usepackage{tikz}',
+        '\\usepackage{color}'])
+    arr.extend(
+        tikz.define_color(*pair) for pair in color.wolfram_name_color_pairs)
+    arr.extend([
+        '\\begin{document}',
+        tikz_text,
+        '\\end{document}'])
+    return '\n'.join(arr)
+
 def get_tikz_text(tikz_body):
     """
     TikZ boilerplate code.
@@ -111,20 +129,6 @@ def get_tikz_text(tikz_body):
     tikz_header = '\\begin{tikzpicture}[auto]'
     tikz_footer = '\\end{tikzpicture}'
     return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    Add the matrix library.
-    """
-    latex_header = '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\usetikzlibrary{matrix}',
-        '\\begin{document}'])
-    latex_body = tikz_text
-    latex_footer = '\\end{document}'
-    return '\n'.join([latex_header, latex_body, latex_footer])
 
 def get_response_content(fs):
     """

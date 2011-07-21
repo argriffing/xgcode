@@ -19,6 +19,7 @@ import FormOut
 import tikz
 import interlace
 import pcurve
+import color
 import const
 
 STYLE_X = 0
@@ -149,9 +150,9 @@ def get_tikz_lines(fs):
         x0, y0, z0 = p0
         x1, y1, z1 = p1
         color = {
-                STYLE_X: 'red',
-                STYLE_Y: 'green',
-                STYLE_Z: 'blue',
+                STYLE_X: 'wolfram-blue',
+                STYLE_Y: 'wolfram-red',
+                STYLE_Z: 'wolfram-olive',
                 STYLE_CURVE: 'black'}[style]
         if fs.fancy_intersect:
             line_double = '\\draw[draw=white,double=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
@@ -173,6 +174,23 @@ def get_tikz_lines(fs):
     """
     return lines
 
+def get_latex_text(tikz_text):
+    """
+    TikZ boilerplate code.
+    """
+    arr = []
+    arr.extend([
+        '\\documentclass{article}',
+        '\\usepackage{tikz}',
+        '\\usepackage{color}'])
+    arr.extend(
+        tikz.define_color(*pair) for pair in color.wolfram_name_color_pairs)
+    arr.extend([
+        '\\begin{document}',
+        tikz_text,
+        '\\end{document}'])
+    return '\n'.join(arr)
+
 def get_tikz_text(tikz_body):
     """
     TikZ boilerplate code.
@@ -180,18 +198,6 @@ def get_tikz_text(tikz_body):
     tikz_header = '\\begin{tikzpicture}[auto]'
     tikz_footer = '\\end{tikzpicture}'
     return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    """
-    latex_header = '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\begin{document}'])
-    latex_body = tikz_text
-    latex_footer = '\\end{document}'
-    return '\n'.join([latex_header, latex_body, latex_footer])
 
 def get_response_content(fs):
     """
