@@ -1,5 +1,5 @@
 """
-Draw a tikz illustration of harmonic interpolation. [UNFINISHED]
+Draw a tikz illustration of harmonic interpolation.
 """
 
 import numpy as np
@@ -144,6 +144,14 @@ def get_tikz_lines(fs):
     codomain_2d = [p[1:] for p in codomain_points]
     # get the tikz lines
     lines = []
+    lines.extend([
+        '% variable settings:',
+        '%% d1: %04f' % fs.d1,
+        '%% d2: %04f' % fs.d2,
+        '%% d3: %04f' % fs.d3,
+        '%% y1: %04f' % fs.y1,
+        '%% y2: %04f' % fs.y2,
+        '%% y3: %04f' % fs.y3])
     lines.extend(get_domain_vertex_tikz_lines(domain_2d))
     lines.extend(get_codomain_vertex_tikz_lines(codomain_2d))
     lines.extend(get_domain_edge_tikz_lines())
