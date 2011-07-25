@@ -150,6 +150,24 @@ def grouper(sequence, size, fillvalue=None):
     args = [iter(sequence)] * size
     return itertools.izip_longest(fillvalue=fillvalue, *args)
 
+def ragged_grouper(seq, size):
+    """
+    This is a custom ragged variant of the grouper recipe.
+    Unlike the chopper recipe this works with iterables.
+    @param seq: a sequence with a length
+    @param size: the size of the chunks
+    """
+    short_arr = []
+    long_arr = []
+    for v in seq:
+        short_arr.append(v)
+        if len(short_arr) == size:
+            long_arr.append(tuple(short_arr))
+            short_arr = []
+    if short_arr:
+        long_arr.append(tuple(short_arr))
+    return long_arr
+
 def pairwise(iterable):
     """
     Yield pairs of neighbors.
@@ -212,6 +230,12 @@ class TestIterutils(unittest.TestCase):
         mygen = (a for a in range(10))
         observed = tuple(grouper(mygen, 3))
         expected = ((0,1,2),(3,4,5),(6,7,8),(9,None,None))
+        self.assertEqual(observed, expected)
+
+    def test_ragged_grouper(self):
+        mygen = (a for a in range(10))
+        observed = tuple(ragged_grouper(mygen, 3))
+        expected = ((0,1,2),(3,4,5),(6,7,8),(9,))
         self.assertEqual(observed, expected)
 
     def test_rle(self):

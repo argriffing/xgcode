@@ -8,6 +8,28 @@ import tempfile
 import subprocess
 import os
 
+import iterutils
+
+
+def point_to_tikz(pt):
+    """
+    Assume that the format specifier 04f is enough for anybody.
+    @param pt: an (x, y) pair
+    @return: a tikz string
+    """
+    return '(' + ', '.join('%04f' % v for v in pt) + ')'
+
+def curve_to_tikz(points, k=4):
+    """
+    @param points: (x, y) pairs
+    @param k: max number of points per tikz line
+    @return: a tikz multiline with up to k points per line
+    """
+    arr = []
+    for chunk in iterutils.ragged_grouper(points, k):
+        arr.append(' -- '.join(point_to_tikz(p) for p in chunk))
+    return ' --\n'.join(arr)
+
 def define_color(name, rgb):
     """
     @param name: the name of the color
