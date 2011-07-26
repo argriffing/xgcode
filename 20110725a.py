@@ -64,7 +64,7 @@ def get_tikz_multilines(fs):
             y_morphed = mypoly.eval(x_morphed)
             points.append((x, y_morphed))
         arr.append('\\draw[color=%s]' % colors[i])
-        arr.append(tikz.curve_to_tikz(points, 4) + ';')
+        arr.append(tikz.curve_to_tikz(points, 3) + ';')
     return arr
 
 def get_latex_text(tikz_text):

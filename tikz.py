@@ -13,11 +13,11 @@ import iterutils
 
 def point_to_tikz(pt):
     """
-    Assume that the format specifier 04f is enough for anybody.
+    Assume that the format specifier .4f is enough for anybody.
     @param pt: an (x, y) pair
     @return: a tikz string
     """
-    return '(' + ', '.join('%04f' % v for v in pt) + ')'
+    return '(' + ', '.join('%.4f' % v for v in pt) + ')'
 
 def curve_to_tikz(points, k=4):
     """
