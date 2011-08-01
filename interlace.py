@@ -1,7 +1,8 @@
 """
 Interlacing functions.
 
-This includes polynomials.  Some families of polynomial sequences are known to
+This includes polynomials.
+Some families of polynomial sequences are known to
 strictly or weakly interlace.
 This includes all sequences of polynomials that you get by
 starting with a high degree polynomial with distinct real roots
@@ -23,7 +24,70 @@ import numpy as np
 import sympy
 from sympy import matrices
 from sympy import abc
-import mpmath
+import tikz
+import iterutils
+import color
+
+def is_strictly_increasing(seq):
+    for a, b in iterutils.pairwise(seq):
+        if not a < b:
+            return False
+    return True
+
+def assert_support(t_seq, y_seqs):
+    # check that the t sequence is increasing
+    if not is_strictly_increasing(t_seq):
+        msg = 'expected a strictly increasing t sequence'
+        raise ValueError(msg)
+    # check that each sequence has the same number of samples
+    seqs = [t_seq] + y_seqs
+    lengths = set(len(seq) for seq in seqs)
+    if len(lengths) != 1:
+        msg = 'expected each sequence to have the same length'
+        raise ValueError(msg)
+
+def tikz_superposition(t_seq, y_seqs, width, height):
+    """
+    Return the body of a tikzpicture environment.
+    The input defines k piecewise-linear parametric functions.
+    The domain is a real interval.
+    The kth sequence of y values should have k zero-crossings.
+    The returned drawing has arbitrary horizontal and vertical scale.
+    @param t_seq: sequence of t values
+    @param y_seqs: sequence of y value sequences
+    @param width: a horizontal scaling factor
+    @param height: a vertical scaling factor
+    @return: LaTeX code for a tikzpicture
+    """
+    # check the form of the input sequences
+    assert_support(t_seq, y_seqs)
+    # Get the y scaling factor.
+    # This is the value by which the observed y values are multiplied
+    # to give a number that is relevant to the tikz coordinate system.
+    ymin = min(min(seq) for seq in y_seqs)
+    ymax = max(max(seq) for seq in y_seqs)
+    yscale = height / float(ymax - ymin)
+    # Get the x scaling factor.
+    xmin = t_seq[0]
+    xmax = t_seq[-1]
+    xscale = width / float(xmax - xmin)
+    # Get the rescaled sequences.
+    t_seq_rescaled = [t*xscale for t in t_seq]
+    y_seqs_rescaled = [[y*yscale for y in seq] for seq in y_seqs]
+    # Start the text array.
+    arr = []
+    # Plot the horizontal domain segment.
+    pa = tikz.point_to_tikz((t_seq_rescaled[0], 0))
+    pb = tikz.point_to_tikz((t_seq_rescaled[-1], 0))
+    arr.append('\\draw %s -- %s;' % (pa, pb))
+    # Plot the scaled functions.
+    for seq, c in zip(y_seqs_rescaled, color.wolfram):
+        arr.append('\\draw[color=%s]' % c)
+        points = zip(t_seq_rescaled, seq)
+        arr.append(tikz.curve_to_tikz(points, 3) + ';')
+    # Return the text.
+    return '\n'.join(arr)
+
 
 def roots_to_poly(roots):
     """
