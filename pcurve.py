@@ -6,11 +6,14 @@ The default embedding space is three dimensional Euclidean space.
 Everything in the Bezier section assumes that points are numpy arrays.
 """
 
+from collections import defaultdict
 import unittest
 import heapq
 import math
+import itertools
 
 import numpy as np
+
 
 def de_casteljau(p0, p1, p2, p3, t):
     """
@@ -69,7 +72,7 @@ class BezChunk(object):
         @return: axis aligned bounding box max point
         """
         return np.max([self.p0, self.p1, self.p2, self.p3], axis=0)
-    def enumerate_bb_gridpoints(self, gridsize):
+    def gen_bb_gridpoints(self, gridsize):
         """
         Each yielded gridpoint is a possibly non-unique integer tuple.
         @param gridsize: a positive float
@@ -78,8 +81,8 @@ class BezChunk(object):
         bb_max = self.get_bb_max() / gridsize
         ranges = []
         for low_float, high_float in zip(bb_min, bb_max):
-            low = int(math.floor(low))
-            high = int(math.floor(high))
+            low = int(math.floor(low_float))
+            high = int(math.floor(high_float))
             ranges.append(tuple(range(low, high+1)))
         return itertools.product(*ranges)
     def bisect(self):
@@ -110,6 +113,60 @@ class BezChunk(object):
         # return the new objects
         return a, b
 
+def find_bezier_intersections(bchunks, min_gridsize):
+    """
+    This is essentially a dumb search.
+    It looks for collisions of smaller and smaller curve pieces
+    on finer and finer grids.
+    The only smartness is that if a large curve piece
+    has no collisions on a coarse grid,
+    then it is not subdivided for consideration in a finer grid search.
+    Self intersections of curves are not considered.
+    @param bchunks: a collection of BezChunk objects
+    @param min_gridsize: a float lower bound resolution
+    @return: a collection of refined intersecting bchunks
+    """
+    # Maintain the invariant that potentially intersecting chunks
+    # have a diameter of no more than twice the gridsize.
+    gridsize = 0.5 * max(b.get_diameter() for b in bchunks)
+    while True:
+        # map each grid point to a set of nearby parent curves
+        gridmap = defaultdict(set)
+        for b in bchunks:
+            for gridpoint in b.gen_bb_gridpoints(gridsize):
+                gridmap[gridpoint].add(b.parent_ref)
+        # Get the set of indices of bchunks
+        # whose bounding boxes contain contested grid points.
+        index_set = set()
+        for i, b in enumerate(bchunks):
+            for gridpoint in b.gen_bb_gridpoints(gridsize):
+                if len(gridmap[gridpoint]) > 1:
+                    index_set.add(i)
+                    break
+        # Cut the gridsize in half.
+        gridsize *= 0.5
+        # If the gridsize is below the min
+        # then return the bchunks involved in putative intersections.
+        if gridsize < min_gridsize:
+            return [bchunks[index] for index in index_set]
+        # Bisect potentially intersecting chunks
+        # until each chunk has a diameter no more than twice the gridsize.
+        bchunks_small = []
+        bchunks_large = []
+        for index in index_set:
+            b = bchunks[index]
+            if b.get_diameter() <= gridsize*2:
+                bchunks_small.append(b)
+            else:
+                bchunks_large.append(b)
+        while bchunks_large:
+            b = bchunks_large.pop()
+            for child in b.bisect():
+                if child.get_diameter() <= gridsize*2:
+                    bchunks_small.append(child)
+                else:
+                    bchunks_large.append(child)
+        bchunks = bchunks_small
 
 class PiecewiseBezier(object):
     """
