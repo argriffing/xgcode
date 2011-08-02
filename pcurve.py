@@ -13,6 +13,7 @@ import math
 import itertools
 
 import numpy as np
+from scipy import optimize
 
 
 def de_casteljau(p0, p1, p2, p3, t):
@@ -85,11 +86,10 @@ class BezChunk(object):
             high = int(math.floor(high_float))
             ranges.append(tuple(range(low, high+1)))
         return itertools.product(*ranges)
-    def bisect(self):
+    def split(self, t):
         """
         @return: two new BezChunk objects
         """
-        t = 0.5
         q01, r012, s0123, r123, q23 = bezier_split(
                 self.p0, self.p1, self.p2, self.p3, t)
         # define the first child BezChunk
@@ -112,6 +112,16 @@ class BezChunk(object):
         b.p3 = self.p3
         # return the new objects
         return a, b
+    def bisect(self):
+        return self.split(0.5)
+
+def decompose_scene(piecewise_curves, min_gridsize):
+    """
+    The piecewise curves
+    """
+    #FIXME
+    pass
+
 
 def find_bezier_intersections(bchunks, min_gridsize):
     """
@@ -168,32 +178,156 @@ def find_bezier_intersections(bchunks, min_gridsize):
                     bchunks_large.append(child)
         bchunks = bchunks_small
 
+
+#TODO possibly add a faster function for simultaneous evaluation
+# at multiple times
 class PiecewiseBezier(object):
     """
     This curve is created by patching together cubic Bezier curves.
     It may live in a high dimensional space.
     """
     def __init__(self):
-        pass
-    def get_bounding_box(self):
+        self.bchunks = None
+        self.characteristic_time = None
+    def get_start_time(self):
+        return self.bchunks[0].start_time
+    def get_stop_time(self):
+        return self.bchunks[-1].stop_time
+    def evaluate(self, t):
+        for b in self.bchunks:
+            if b.start_time <= t <= b.stop_time:
+                duration = b.stop_time - b.start_time
+                t_local = (t - b.start_time) / duration
+                return bezier_eval(b.p0, b.p1, b.p2, b.p3, t_local)
+    def get_weak_midpoint_error(self, t_mid, pa, pb):
+        p = self.evaluate(t_mid)
+        e = np.linalg.norm(p - pa) - np.linalg.norm(pb - p)
+        return e*e
+    def get_weak_midpoint(self, t_initial, t_final):
         """
-        A Bezier curve falls within the convex hull of its control points.
-        Therefore the bounding box of its control points
-        is also the bounding box of the curve.
-        @return: pmin, pmax
+        Get a t_mid such that the position is equidistant from the endpoints.
+        In other words if c(t) is the curve position at time t,
+        then we want a value of t_mid such that
+        ||c(t_mid) - c(t_initial)|| == ||c(t_final) - c(t_mid)||.
+        Note that this is not necessarily a unique point,
+        and it doesn't necessarily have anything to do with arc length.
+        @param t_initial: an initial time
+        @param t_final: a final time
+        @return: t_mid
         """
+        args = (self.evaluate(t_initial), self.evaluate(t_final))
+        result = scipy.optimize.fminbound(
+                self.get_weak_midpoint_error, t_initial, t_final, args)
+        print 'fminbound result:'
+        print result
+        return result
+    def _filter_intersection_times(
+            self, raw_intersection_times, min_spatial_gap):
+        """
+        Collapse intersection clusters.
+        @param raw_intersection_times: a collection of intersection times
+        @param min_spatial_gap: minimium spatial gap between sequential events
+        @return: filtered time sequence
+        """
+        # first sort the intersection times
+        times = sorted(raw_intersection_times)
+        # group together times that are indistinguishable
+        groups = []
+        last_point = None
+        g = None
+        for t in times:
+            point = self.evaluate(t)
+            # if we have seen a previous point then check the gap
+            if g:
+                gap = np.linalg.norm(point - last_point)
+                # if the gap is large then start a new group
+                if gap >= min_spatial_gap:
+                    groups.append(g)
+                    g = []
+                # append the current time to the current group
+                g.append(t)
+            # remember the most recent point
+            last_point = point
+        if g:
+            groups.append(g)
+        # return the sequence of group midpoints
+        return [0.5 * (g[0] + g[-1]) for g in groups]
+    def shatter(self, raw_intersection_times, min_gridsize):
+        """
+        Return a collection of PiecewiseBezier objects.
+        The returned objects should be annotated
+        with characteristic times corresponding to intersections.
+        @return: a collection of PiecewiseBezier objects
+        """
+        times = self._filter_intersection_times(
+                raw_intersection_times, min_gridsize*3)
+        # handle the edge case of no intersections
+        if not times:
+            self.characteristic_time = 0.5 * (
+                    self.start_time + self.stop_time)
+            return [self]
+        # Compute quiescence times.
+        # TODO use weak spatially quiescent midpoints
+        # instead of naive temporally quiescent midpoints
+        quiescence_times = [0.5*(a+b) for a, b in iterutils.pairwise(times)]
+        # Construct the bchunks sequences.
+        # Use whole bchunks when possible,
+        # but at quiescence times we might have to split the bchuncks.
+        remaining = deque(self.bchunks)
+        groups = []
+        g = []
+        q_index = 0
+        # repeatedly split the remaining sequence
+        for q in quiescence_times:
+            while True:
+                b = remaining.popleft()
+                if b.start_time <= q <= b.stop_time:
+                    duration = b.stop_time - b.start_time
+                    t_local = (q - b.start_time) / duration
+                    alpha, beta = b.split(t_local)
+                    g.append(alpha)
+                    remaining.appendleft(beta)
+                    groups.append(g)
+                    g = []
+                    break
+                else:
+                    g.append(b)
+        if g:
+            groups.append(g)
+        # Create a piecewise bezier curve from each group,
+        # and give each piecewise curve a characteristic time.
+        piecewise_curves = []
+        for t, group in zip(times, groups):
+            curve = PiecewiseBezier()
+            curve.characteristic_time = t
+            curve.bchunks = group
+        return piecewise_curves
 
-class Bezier(object):
+
+#TODO unfinished
+def get_bchunks():
     """
-    This is a cubic Bezier curve.
-    It may live in a high dimensional space.
+    Assume that at some evenly spaced moments in time
+    you know both the location and velocity.
+    This information can be used to construct a piecewise bezier.
+    @return: a sequence of BezChunk objects
     """
-    def __init__(self):
-        pass
-    def get_bounding_box(self):
-        """
-        @return: pmin, pmax
-        """
+    bchunks = []
+    npoints = len(self.points)
+    nsegs = npoints - 1
+    incr = (self.stop_time - self.start_time) / float(nsegs)
+    pv_pairs = zip(self.points, self.velocities)
+    for i, ((pa, va), (pb, vb)) in enumerate(iterutils.pairwise(pv_pairs)):
+        b = BezChunk()
+        b.parent_ref = id(self)
+        b.start_time = i*incr
+        b_stop_time = (i+1)*incr
+        b.p0 = pa
+        b.p1 = pa + va
+        b.p2 = pb - vb
+        b.p3 = pb
+    return bchunks
+
 
 def get_piecewise_curve(f, t_initial, t_final, npieces_min, seg_length_max):
     """
