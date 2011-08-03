@@ -1,5 +1,5 @@
 """
-Experiment with Bezier curve intersection.
+Draw Bezier curve intersection.
 """
 
 import math

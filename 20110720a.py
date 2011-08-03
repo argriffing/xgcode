@@ -1,5 +1,5 @@
 """
-Examine properties of the Chebyshev polynomials.
+Examine properties of the Chebyshev polynomials. [UNFINISHED]
 
 In particular look at their orthogonality,
 their interlacing properties, their trigonometric relations,

@@ -1,5 +1,5 @@
 """
-Experiment with curve subdivision for two and a half dimensional drawing.
+Draw curve subdivision for two and a half dimensional drawing.
 """
 
 import math
