@@ -12,6 +12,7 @@ import Form
 import FormOut
 import tikz
 import interlace
+import bezier
 import pcurve
 import color
 import const
@@ -52,58 +53,6 @@ def rotate_to_view(p):
     z2 = z1 * c + x1 * s
     return np.array([x2, y2, z2])
 
-#TODO remove
-def get_world_segments(root_a, root_b, root_c,
-        initial_t, final_t, intersection_radius):
-    """
-    The world consists of
-    three axis lines,
-    six circles marking the intersections,
-    and a single parametric curve.
-    @return: a collection of (p0, p1, style) triples
-    """
-    seg_length_min = 0.1
-    segments = []
-    # add the axis line segments
-    d = 5
-    f_x = pcurve.LineSegment(np.array([-d, 0, 0]), np.array([d, 0, 0]))
-    f_y = pcurve.LineSegment(np.array([0, -d, 0]), np.array([0, d, 0]))
-    f_z = pcurve.LineSegment(np.array([0, 0, -d]), np.array([0, 0, d]))
-    x_axis_segs = pcurve.get_piecewise_curve(f_x, 0, 1, 10, seg_length_min)
-    y_axis_segs = pcurve.get_piecewise_curve(f_y, 0, 1, 10, seg_length_min)
-    z_axis_segs = pcurve.get_piecewise_curve(f_z, 0, 1, 10, seg_length_min)
-    segments.extend((p0, p1, STYLE_X) for p0, p1 in x_axis_segs)
-    segments.extend((p0, p1, STYLE_Y) for p0, p1 in y_axis_segs)
-    segments.extend((p0, p1, STYLE_Z) for p0, p1 in z_axis_segs)
-    # add the parametric curve
-    roots = (root_a, root_b, root_c)
-    polys = interlace.roots_to_differential_polys(roots)
-    f_poly = interlace.Multiplex(polys)
-    poly_segs = pcurve.get_piecewise_curve(
-            f_poly, initial_t, final_t, 10, seg_length_min)
-    segments.extend((p0, p1, STYLE_CURVE) for p0, p1 in poly_segs)
-    # add the intersection circles
-    x_roots_symbolic = sympy.roots(polys[0])
-    y_roots_symbolic = sympy.roots(polys[1])
-    z_roots_symbolic = sympy.roots(polys[2])
-    x_roots = [float(r) for r in x_roots_symbolic]
-    y_roots = [float(r) for r in y_roots_symbolic]
-    z_roots = [float(r) for r in z_roots_symbolic]
-    for r in x_roots:
-        f = pcurve.OrthoCircle(f_poly(r), intersection_radius, 0)
-        segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
-        segments.extend((p0, p1, STYLE_X) for p0, p1 in segs)
-    for r in y_roots:
-        f = pcurve.OrthoCircle(f_poly(r), intersection_radius, 1)
-        segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
-        segments.extend((p0, p1, STYLE_Y) for p0, p1 in segs)
-    for r in z_roots:
-        f = pcurve.OrthoCircle(f_poly(r), intersection_radius, 2)
-        segs = pcurve.get_piecewise_curve(f, 0, 1, 10, seg_length_min)
-        segments.extend((p0, p1, STYLE_Z) for p0, p1 in segs)
-    # return the segments
-    return segments
-
 def get_tikz_lines(fs):
     """
     @param fs: user input
@@ -115,11 +64,15 @@ def get_tikz_lines(fs):
     # define the first circle
     center = np.array([1.0, 1.0, 1.0])
     axis = 0
-    first_curve = pcurve.create_bezier_ortho_circle(center, radius, axis)
+    owned_bchunks = bezier.gen_bchunks_ortho_circle(
+        center, radius, axis, pcurve.OwnedBezierChunk)
+    first_curve = pcurve.BezierPath(owned_bchunks)
     # define the second circle
     center = np.array([1.0, 1.0, 0.0])
     axis = 1
-    second_curve = pcurve.create_bezier_ortho_circle(center, radius, axis)
+    owned_bchunks = bezier.gen_bchunks_ortho_circle(
+        center, radius, axis, pcurve.OwnedBezierChunk)
+    second_curve = pcurve.BezierPath(owned_bchunks)
     # rotate every control point in every bchunk in each curve
     for curve in (first_curve, second_curve):
         for b in curve.bchunks:
@@ -131,19 +84,14 @@ def get_tikz_lines(fs):
     deep_curves = (first_curve, second_curve)
     flat_curves = []
     for deep_curve in deep_curves:
-        curve = pcurve.PiecewiseBezier()
-        curve.bchunks = []
+        flat_bchunks = []
         for deep_b in deep_curve.bchunks:
-            b = pcurve.BezChunk()
-            b.p0 = deep_b.p0[1:]
-            b.p1 = deep_b.p1[1:]
-            b.p2 = deep_b.p2[1:]
-            b.p3 = deep_b.p3[1:]
-            b.start_time = deep_b.start_time
-            b.stop_time = deep_b.stop_time
-            b.parent_ref = id(deep_curve)
-            curve.bchunks.append(b)
-        flat_curves.append(curve)
+            flat_b = pcurve.OwnedBezierChunk(
+                    deep_b.start_time, deep_b.stop_time,
+                    deep_b.p0[1:], deep_b.p1[1:], deep_b.p2[1:], deep_b.p3[1:])
+            flat_b.parent_ref = id(deep_curve)
+            flat_bchunks.append(flat_b)
+        flat_curves.append(pcurve.BezierPath(flat_bchunks))
     # break up the piecewise curves for z-ordering
     child_parent_curve_pairs = list(pcurve.decompose_scene(
             deep_curves, flat_curves, fs.min_gridsize))

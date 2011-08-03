@@ -45,7 +45,7 @@ def bezier_eval(p0, p1, p2, p3, t):
     q01, q12, q23, r012, r123, s0123 = de_casteljau(p0, p1, p2, p3, t)
     return s0123
 
-class BezierChunk(object):
+class BezierChunk:
     def __init__(self, start_time, stop_time, p0, p1, p2, p3):
         self.start_time = start_time
         self.stop_time = stop_time
@@ -86,11 +86,11 @@ class BezierChunk(object):
         """
         q01, r012, s0123, r123, q23 = bezier_split(
                 self.p0, self.p1, self.p2, self.p3, t)
-        a = BezChunk(
+        a = self.__class__(
                 self.start_time,
                 (1-t)*self.start_time + t*self.stop_time,
                 self.p0, q01, r012, s0123)
-        b = BezChunk(
+        b = self.__class__(
                 (1-t)*self.start_time + t*self.stop_time,
                 self.stop_time,
                 s0123, r123, q23, self.p3)
@@ -101,14 +101,15 @@ class BezierChunk(object):
 def create_bchunk_hermite(
         initial_time, final_time,
         initial_point, final_point,
-        initial_velocity, final_velocity):
+        initial_velocity, final_velocity,
+        btype=BezierChunk):
     """
     This function uses the Hermite to Bezier change of basis.
     http://spec.winprog.org/curves/
-    @return: a BezierChunk
+    @return: a btype object
     """
     duration = final_time - initial_time
-    return BezierChunk(
+    return btype(
             initial_time, final_time,
             initial_point,
             initial_point + (1.0 / 3.0) * (duration * initial_velocity),
@@ -116,20 +117,20 @@ def create_bchunk_hermite(
             final_point)
 
 def create_bchunk_line_segment(
-        initial_point, final_point):
+        initial_point, final_point, btype=BezierChunk):
     """
     This is a geometric function.
     It assumes that the caller does not care about velocity.
-    @return: a BezierChunk
+    @return: a btype object
     """
-    return BezierChunk(
+    return btype(
             0.0, 1.0,
             initial_point,
             initial_point * (2.0 / 3.0) + final_point * (1.0 / 3.0),
             initial_point * (1.0 / 3.0) + final_point * (2.0 / 3.0),
             final_point)
 
-def gen_bchunks_ortho_circle(center, radius, axis):
+def gen_bchunks_ortho_circle(center, radius, axis, btype=BezierChunk):
     """
     This is a geometric function.
     It assumes that the caller does not care about velocity.
@@ -168,7 +169,7 @@ def gen_bchunks_ortho_circle(center, radius, axis):
         v_final[axis_a] = -math.sin(theta_final)
         v_final[axis_b] = math.cos(theta_final)
         # yield the bezier chunk
-        yield BezierChunk(
+        yield btype(
                 theta_initial, theta_final,
                 center + radius * p_initial,
                 center + radius * (p_initial + kappa * v_initial),
