@@ -53,6 +53,11 @@ class BezierChunk:
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
+    def eval(self, t_local):
+        """
+        @param t_local: local time in the interval [0, 1]
+        """
+        return bezier_eval(self.p0, self.p1, self.p2, self.p3, t_local)
     def get_points(self):
         return self.p0, self.p1, self.p2, self.p3
     def get_diameter(self):

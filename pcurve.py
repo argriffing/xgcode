@@ -55,7 +55,7 @@ class BezierPath:
             if b.start_time <= t <= b.stop_time:
                 duration = b.stop_time - b.start_time
                 t_local = (t - b.start_time) / duration
-                return bezier.bezier_eval(b.p0, b.p1, b.p2, b.p3, t_local)
+                return b.eval(t_local)
     def get_weak_midpoint_error(self, t_mid, pa, pb):
         p = self.evaluate(t_mid)
         e = np.linalg.norm(p - pa) - np.linalg.norm(pb - p)
