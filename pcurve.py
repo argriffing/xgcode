@@ -7,6 +7,7 @@ Everything in the Bezier section assumes that points are numpy arrays.
 """
 
 from collections import defaultdict
+from collections import deque
 import unittest
 import heapq
 import math
@@ -14,6 +15,8 @@ import itertools
 
 import numpy as np
 from scipy import optimize
+
+import iterutils
 
 
 def de_casteljau(p0, p1, p2, p3, t):
@@ -115,13 +118,88 @@ class BezChunk(object):
     def bisect(self):
         return self.split(0.5)
 
-def decompose_scene(piecewise_curves, min_gridsize):
+def create_bezier_ortho_circle(center, radius, axis):
     """
-    The piecewise curves
+    Use a fixed number of segments for the circle.
+    Also use a magic number for the control points.
+    @param center: a 3d point
+    @param radius: a scalar radius
+    @param axis: one of {0, 1, 2}
     """
-    #FIXME
-    pass
+    nsegments = 4
+    kappa = 4 * (math.sqrt(2) - 1) / 3
+    theta_increment = (math.pi * 2) / nsegments
+    # compute the positions and velocities
+    axis_a = (axis + 1) % 3
+    axis_b = (axis + 2) % 3
+    # initialize the piecewise bezier curve
+    curve = PiecewiseBezier()
+    curve.bchunks = []
+    for i in range(nsegments):
+        # define the angles
+        theta_initial = i * theta_increment
+        theta_final = (i+1) * theta_increment
+        # define the initial point
+        p_initial = np.zeros(3)
+        p_initial[axis_a] = radius * math.cos(theta_initial)
+        p_initial[axis_b] = radius * math.sin(theta_initial)
+        p_initial += center
+        # define the final point
+        p_final = np.zeros(3)
+        p_final[axis_a] = radius * math.cos(theta_final)
+        p_final[axis_b] = radius * math.sin(theta_final)
+        p_final += center
+        # define the initial velocity
+        v_initial = np.zeros(3)
+        v_initial[axis_a] = -radius * math.sin(theta_initial)
+        v_initial[axis_b] = radius * math.cos(theta_initial)
+        # define the final velocity
+        v_final = np.zeros(3)
+        v_final[axis_a] = -radius * math.sin(theta_final)
+        v_final[axis_b] = radius * math.cos(theta_final)
+        # define the bezier chunk
+        b = BezChunk()
+        b.p0 = p_initial
+        b.p1 = p_initial + kappa * v_initial
+        b.p2 = p_final - kappa * v_final
+        b.p3 = p_final
+        b.start_time = theta_initial
+        b.stop_time = theta_final
+        b.parent_ref = id(curve)
+        # add the bezier chunk to the curve
+        curve.bchunks.append(b)
+    return curve
 
+def decompose_scene(deep_curves, flat_curves, min_gridsize):
+    """
+    The bchunks in the flat curves should reference the deep curves.
+    Yield (curve, parent) pairs
+    """
+    # get the list of all bchunks
+    flat_bchunks = []
+    for curve in flat_curves:
+        flat_bchunks.extend(curve.bchunks)
+    # get a smallish set of refined bchunks involved in putative intersections
+    intersecting_bchunks = find_bezier_intersections(
+            flat_bchunks, min_gridsize)
+    # transform the intersecting bchunks into a t set per curve
+    curve_id_to_t_set = defaultdict(set)
+    for b in intersecting_bchunks:
+        curve_id_to_t_set[b.parent_ref].update((b.start_time, b.stop_time))
+    # filter the times using the flat curves
+    curve_id_to_times = defaultdict(list)
+    for flat_curve, deep_curve in zip(flat_curves, deep_curves):
+        ref = id(deep_curve)
+        t_set = curve_id_to_t_set[ref]
+        times = flat_curve.filter_intersection_times(t_set, 3*min_gridsize)
+        curve_id_to_times[ref] = times
+    # break deep curve into multiple curves
+    for curve in deep_curves:
+        times = curve_id_to_times.get(id(curve), [])
+        child_curves = curve.shatter(times)
+        print '# child curves:', len(child_curves)
+        for child in child_curves:
+            yield child, curve
 
 def find_bezier_intersections(bchunks, min_gridsize):
     """
@@ -221,7 +299,7 @@ class PiecewiseBezier(object):
         print 'fminbound result:'
         print result
         return result
-    def _filter_intersection_times(
+    def filter_intersection_times(
             self, raw_intersection_times, min_spatial_gap):
         """
         Collapse intersection clusters.
@@ -234,7 +312,7 @@ class PiecewiseBezier(object):
         # group together times that are indistinguishable
         groups = []
         last_point = None
-        g = None
+        g = []
         for t in times:
             point = self.evaluate(t)
             # if we have seen a previous point then check the gap
@@ -244,27 +322,31 @@ class PiecewiseBezier(object):
                 if gap >= min_spatial_gap:
                     groups.append(g)
                     g = []
-                # append the current time to the current group
-                g.append(t)
+            # append the current time to the current group
+            g.append(t)
             # remember the most recent point
             last_point = point
         if g:
             groups.append(g)
         # return the sequence of group midpoints
         return [0.5 * (g[0] + g[-1]) for g in groups]
-    def shatter(self, raw_intersection_times, min_gridsize):
+    def shatter(self, times):
         """
         Return a collection of PiecewiseBezier objects.
         The returned objects should be annotated
         with characteristic times corresponding to intersections.
+        @param times: filtered intersection times
         @return: a collection of PiecewiseBezier objects
         """
-        times = self._filter_intersection_times(
-                raw_intersection_times, min_gridsize*3)
+        print 'filtered times:', times
         # handle the edge case of no intersections
         if not times:
             self.characteristic_time = 0.5 * (
-                    self.start_time + self.stop_time)
+                    self.get_start_time() + self.get_stop_time())
+            return [self]
+        # handle the edge case of a single intersection
+        if len(times) == 1:
+            self.characteristic_time = times[0]
             return [self]
         # Compute quiescence times.
         # TODO use weak spatially quiescent midpoints
@@ -276,7 +358,6 @@ class PiecewiseBezier(object):
         remaining = deque(self.bchunks)
         groups = []
         g = []
-        q_index = 0
         # repeatedly split the remaining sequence
         for q in quiescence_times:
             while True:
@@ -292,8 +373,9 @@ class PiecewiseBezier(object):
                     break
                 else:
                     g.append(b)
-        if g:
-            groups.append(g)
+        g.extend(remaining)
+        groups.append(g)
+        print '#groups:', len(groups)
         # Create a piecewise bezier curve from each group,
         # and give each piecewise curve a characteristic time.
         piecewise_curves = []
@@ -301,6 +383,7 @@ class PiecewiseBezier(object):
             curve = PiecewiseBezier()
             curve.characteristic_time = t
             curve.bchunks = group
+            piecewise_curves.append(curve)
         return piecewise_curves
 
 
