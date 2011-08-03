@@ -4,6 +4,9 @@ Create and manipulate one dimensional parametric curves.
 The one dimensional parametric curves may live in high dimensional space.
 The default embedding space is three dimensional Euclidean space.
 Everything in the Bezier section assumes that points are numpy arrays.
+The two main Bezier classes are BezChunk and PiecewiseBezier.
+Objects of these types are called bchunks and curves respectively,
+where a curve is basically an aggregation of bchunks.
 """
 
 from collections import defaultdict
@@ -118,13 +121,63 @@ class BezChunk(object):
     def bisect(self):
         return self.split(0.5)
 
-def create_bezier_ortho_circle(center, radius, axis):
+def create_bchunk(
+        initial_time, final_time,
+        initial_point, final_point,
+        initial_velocity, final_velocity):
+    """
+    Create a BezChunk without a parent ref.
+    The parent ref may be added later.
+    This function uses the Hermite to Bezier change of basis.
+    http://spec.winprog.org/curves/
+    @return: a BezChunk
+    """
+    duration = final_time - initial_time
+    b = BezChunk()
+    b.start_time = initial_time
+    b.stop_time = final_time
+    b.p0 = initial_point
+    b.p1 = initial_point + (1.0 / 3.0) * (duration * initial_velocity)
+    b.p2 = final_point - (1.0 / 3.0) * (duration * final_velocity)
+    b.p3 = final_point
+    return b
+
+def create_bchunk_line_segment(
+        initial_time, final_time,
+        initial_point, final_point):
+    duration = final_time - initial_time
+    distance = np.linalg.norm(final_point - initial_point)
+    velocity = distance / duration
+    b = create_bchunk(
+            initial_time, final_time,
+            initial_point, final_point,
+            velocity, velocity)
+    return b
+
+def create_curve_line_segment(
+        initial_time, final_time,
+        initial_point, final_point):
+    """
+    Create a PiecewiseBezier consisting of a single BezChunk.
+    This curve moves directly from the inital point to the final point
+    and the time it takes to get there is equal to the distance.
+    @return: a PiecewiseBezier object
+    """
+    curve = PiecewiseBezier()
+    b = create_bchunk_line_segment(
+            initial_time, final_time, initial_point, final_point)
+    b.parent_ref = id(curve)
+    curve.bchunks = [b]
+    return curve
+
+def create_curve_ortho_circle(center, radius, axis):
     """
     Use a fixed number of segments for the circle.
     Also use a magic number for the control points.
     @param center: a 3d point
     @param radius: a scalar radius
     @param axis: one of {0, 1, 2}
+    @return: a PiecewiseBezier object
     """
     nsegments = 4
     kappa = 4 * (math.sqrt(2) - 1) / 3
@@ -170,6 +223,50 @@ def create_bezier_ortho_circle(center, radius, axis):
         curve.bchunks.append(b)
     return curve
 
+def create_curve_ortho_circle_naive(center, radius, axis):
+    """
+    Create a Bezier circle without using the magic number from the internet.
+    """
+    nsegments = 4
+    theta_increment = (math.pi * 2) / nsegments
+    # compute the positions and velocities
+    axis_a = (axis + 1) % 3
+    axis_b = (axis + 2) % 3
+    # initialize the piecewise bezier curve
+    curve = PiecewiseBezier()
+    curve.bchunks = []
+    for i in range(nsegments):
+        # define the angles
+        theta_initial = i * theta_increment
+        theta_final = (i+1) * theta_increment
+        # define the initial point
+        p_initial = np.zeros(3)
+        p_initial[axis_a] = radius * math.cos(theta_initial)
+        p_initial[axis_b] = radius * math.sin(theta_initial)
+        p_initial += center
+        # define the final point
+        p_final = np.zeros(3)
+        p_final[axis_a] = radius * math.cos(theta_final)
+        p_final[axis_b] = radius * math.sin(theta_final)
+        p_final += center
+        # define the initial velocity
+        v_initial = np.zeros(3)
+        v_initial[axis_a] = -radius * math.sin(theta_initial)
+        v_initial[axis_b] = radius * math.cos(theta_initial)
+        # define the final velocity
+        v_final = np.zeros(3)
+        v_final[axis_a] = -radius * math.sin(theta_final)
+        v_final[axis_b] = radius * math.cos(theta_final)
+        # define the bezier chunk
+        b = create_bchunk(
+                theta_initial, theta_final,
+                p_initial, p_final,
+                v_initial, v_final)
+        b.parent_ref = id(curve)
+        # add the bezier chunk to the curve
+        curve.bchunks.append(b)
+    return curve
+
 def decompose_scene(deep_curves, flat_curves, min_gridsize):
     """
     The bchunks in the flat curves should reference the deep curves.
@@ -197,7 +294,6 @@ def decompose_scene(deep_curves, flat_curves, min_gridsize):
     for curve in deep_curves:
         times = curve_id_to_times.get(id(curve), [])
         child_curves = curve.shatter(times)
-        print '# child curves:', len(child_curves)
         for child in child_curves:
             yield child, curve
 
@@ -296,8 +392,6 @@ class PiecewiseBezier(object):
         args = (self.evaluate(t_initial), self.evaluate(t_final))
         result = scipy.optimize.fminbound(
                 self.get_weak_midpoint_error, t_initial, t_final, args)
-        print 'fminbound result:'
-        print result
         return result
     def filter_intersection_times(
             self, raw_intersection_times, min_spatial_gap):
@@ -338,7 +432,6 @@ class PiecewiseBezier(object):
         @param times: filtered intersection times
         @return: a collection of PiecewiseBezier objects
         """
-        print 'filtered times:', times
         # handle the edge case of no intersections
         if not times:
             self.characteristic_time = 0.5 * (
@@ -375,7 +468,6 @@ class PiecewiseBezier(object):
                     g.append(b)
         g.extend(remaining)
         groups.append(g)
-        print '#groups:', len(groups)
         # Create a piecewise bezier curve from each group,
         # and give each piecewise curve a characteristic time.
         piecewise_curves = []
@@ -387,31 +479,7 @@ class PiecewiseBezier(object):
         return piecewise_curves
 
 
-#TODO unfinished
-def get_bchunks():
-    """
-    Assume that at some evenly spaced moments in time
-    you know both the location and velocity.
-    This information can be used to construct a piecewise bezier.
-    @return: a sequence of BezChunk objects
-    """
-    bchunks = []
-    npoints = len(self.points)
-    nsegs = npoints - 1
-    incr = (self.stop_time - self.start_time) / float(nsegs)
-    pv_pairs = zip(self.points, self.velocities)
-    for i, ((pa, va), (pb, vb)) in enumerate(iterutils.pairwise(pv_pairs)):
-        b = BezChunk()
-        b.parent_ref = id(self)
-        b.start_time = i*incr
-        b_stop_time = (i+1)*incr
-        b.p0 = pa
-        b.p1 = pa + va
-        b.p2 = pb - vb
-        b.p3 = pb
-    return bchunks
-
-
+#FIXME this function is a linear piecewise holdout that does not use bezier
 def get_piecewise_curve(f, t_initial, t_final, npieces_min, seg_length_max):
     """
     Convert a parametric curve into a collection of line segments.
