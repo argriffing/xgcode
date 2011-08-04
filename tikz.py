@@ -10,6 +10,24 @@ import os
 
 import iterutils
 
+def get_latex_text(preamble, document_body):
+    """
+    This may require the tex package called standalone.
+    The package may not be packaged for the OS package manager.
+    https://help.ubuntu.com/community/LaTeX#Installing%20packages%20manually
+    http://www.ctan.org/tex-archive/macros/latex/contrib/standalone
+    Besides the .sty I also had to copy the .cls and the .cfg .
+    This format is supposed to be compatible with the previewer
+    http://www.tlhiv.org/ltxpreview/ .
+    """
+    return '\n'.join([
+        '\\documentclass{standalone}',
+        '\\usepackage{tikz}',
+        preamble,
+        '\\begin{document}',
+        '\\thispagestyle{empty}',
+        document_body,
+        '\\end{document}'])
 
 def point_to_tikz(pt):
     """
