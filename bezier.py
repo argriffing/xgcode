@@ -45,6 +45,37 @@ def bezier_eval(p0, p1, p2, p3, t):
     q01, q12, q23, r012, r123, s0123 = de_casteljau(p0, p1, p2, p3, t)
     return s0123
 
+def bezier_is_almost_linear(p0, p1, p2, p3, reltol):
+    """
+    If this returns True then the curve is almost linear.
+    If it returns False then it might be linear or might not be linear.
+    @param reltol: ratio of displacement to curve length
+    """
+    linear_distance = np.linalg.norm(p3 - p1)
+    if not linear_distance:
+        return False
+    p1_distance = point_to_line_segment_distance(p1, p0, p3)
+    p2_distance = point_to_line_segment_distance(p2, p0, p3)
+    return p1_distance + p2_distance < reltol * linear_distance
+
+def point_to_line_segment_distance(x0, x1, x2):
+    """
+    http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+    @param x0: a test point
+    @param x1: an endpoint of the line segment
+    @param x2: an endpoint of the line segment
+    """
+    v01 = x1 - x0
+    v12 = x2 - x1
+    t = -np.dot(v01, v12) / np.dot(v12, v12)
+    if 0 < t < 1:
+        # the min distance is to the interior of the line segment
+        v = v01 + t*v12
+        return np.linalg.norm(v)
+    else:
+        # the min distance is to an endpoint
+        return min(np.linalg.norm(x1 - x0), np.linalg.norm(x2 - x0))
+
 class BezierChunk:
     def __init__(self, start_time, stop_time, p0, p1, p2, p3):
         self.start_time = start_time
@@ -53,7 +84,17 @@ class BezierChunk:
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
-    def eval(self, t_local):
+    def is_almost_linear(self, reltol=1e-4):
+        return bezier_is_almost_linear(
+                self.p0, self.p1, self.p2, self.p3, reltol)
+    def eval_global(self, t_global):
+        """
+        @param t_global: time in the interval [self.start_time, self.stop_time]
+        """
+        duration = self.stop_time - self.start_time
+        t_local = (t_global - self.start_time) / duration
+        return self.eval_local(t_local)
+    def eval_local(self, t_local):
         """
         @param t_local: local time in the interval [0, 1]
         """

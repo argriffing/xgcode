@@ -30,23 +30,23 @@ def get_form():
     form_objects = [
             Form.Float('initial_t', 'initial t', 0.9),
             Form.Float('root_a', 'first root of p(t)', 1.0),
-            Form.Float('root_b', 'second root of p(t)', 2.4),
-            Form.Float('root_c', 'third root of p(t)', 3.0),
-            Form.Float('final_t', 'final t', 3.1),
+            Form.Float('root_b', 'second root of p(t)', 2.5),
+            Form.Float('root_c', 'third root of p(t)', 3.5),
+            Form.Float('final_t', 'final t', 3.6),
             Form.Float('circle_radius',
-                'curve-plane intersection circle radius', 0.1, low_exclusive=0),
+                'curve-plane intersection circle radius', 0.2, low_exclusive=0),
             Form.Float('x_rad_pos',
-                'x+ half-axis radius', 5.0, low_exclusive=0),
+                'x+ half-axis radius', 6.0, low_exclusive=0),
             Form.Float('x_rad_neg',
-                'x- half-axis radius', 5.0, low_exclusive=0),
+                'x- half-axis radius', 6.0, low_exclusive=0),
             Form.Float('y_rad_pos',
-                'y+ half-axis radius', 5.0, low_exclusive=0),
+                'y+ half-axis radius', 6.0, low_exclusive=0),
             Form.Float('y_rad_neg',
-                'y- half-axis radius', 2.0, low_exclusive=0),
+                'y- half-axis radius', 3.0, low_exclusive=0),
             Form.Float('z_rad_pos',
-                'z+ half-axis radius', 4.0, low_exclusive=0),
+                'z+ half-axis radius', 3.0, low_exclusive=0),
             Form.Float('z_rad_neg',
-                'z- half-axis radius', 4.0, low_exclusive=0),
+                'z- half-axis radius', 3.0, low_exclusive=0),
             Form.TikzFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -219,10 +219,21 @@ def get_tikz_lines(fs):
     for child, style in child_style_pairs:
         x, y, z = rotate_to_view(child.evaluate(child.characteristic_time))
         depth_curve_style_triples.append((x, child, style))
+    # draw the curves
     for x, curve, style in sorted(depth_curve_style_triples):
-        line = '\\draw[draw=white,double=%s,thick]' % g_style_colors[style]
-        lines.append(line)
-        lines.append(get_tikz_bezier(curve))
+        # draw a linear curve or a bezier curve
+        if len(curve.bchunks)==1 and curve.bchunks[0].is_almost_linear():
+            p0 = curve.bchunks[0].p0
+            p3 = curve.bchunks[0].p3
+            line = '\\draw[draw=white,double=%s,thick] %s -- %s;' % (
+                    g_style_colors[style],
+                    tikz.point_to_tikz(curve.bchunks[0].p0[1:]),
+                    tikz.point_to_tikz(curve.bchunks[0].p3[1:]))
+            lines.append(line)
+        else:
+            line = '\\draw[draw=white,double=%s,thick]' % g_style_colors[style]
+            lines.append(line)
+            lines.append(get_tikz_bezier(curve))
     return lines
 
 def get_tikz_bezier(bpath):

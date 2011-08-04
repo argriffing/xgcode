@@ -53,9 +53,7 @@ class BezierPath:
         # at multiple times
         for b in self.bchunks:
             if b.start_time <= t <= b.stop_time:
-                duration = b.stop_time - b.start_time
-                t_local = (t - b.start_time) / duration
-                return b.eval(t_local)
+                return b.eval_global(t)
     def get_weak_midpoint_error(self, t_mid, pa, pb):
         p = self.evaluate(t_mid)
         e = np.linalg.norm(p - pa) - np.linalg.norm(pb - p)
