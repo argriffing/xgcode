@@ -28,6 +28,150 @@ import tikz
 import iterutils
 import color
 
+
+class Shape:
+    """
+    This is like a tree or a curve embedded in Euclidean space.
+    It is basically a bunch of 1D curves glued together
+    and embedded in a higher dimensional Euclidean space.
+    Shapes are expected to have the following functions --
+    a function that gives bounding box info,
+    a function that returns a collection of bezier paths,
+    a function that returns the orthoplanar intersections.
+    """
+    pass
+
+class DifferentiableShape(Shape):
+    """
+    This is a differentiable parametric curve of interlacing functions.
+    """
+    def __init__(self, fps, t_initial, t_final):
+        """
+        @param fps: functions giving the position as a function of time
+        @param t_initial: initial time
+        @param t_final: final time
+        """
+        self.fps = fps
+        self.t_initial = t_initial
+        self.t_final = t_final
+    def get_bb_min(self):
+        """
+        Get the min value on each axis.
+        """
+        values = []
+        for f in self.fps:
+            t = scipy.optimize.fminbound(f, self.t_initial, self.t_final)
+            values.append(f(t))
+        return values
+    def get_bb_max(self):
+        """
+        Get the max value on each axis.
+        """
+        values = []
+        for f in self.fps:
+            t = scipy.optimize.fminbound(
+                    (lambda x: -f(x)), self.t_initial, self.t_final)
+            values.append(f(t))
+        return values
+    def get_orthoplanar_intersections(self):
+        """
+        Get the list of intersection times on each axis.
+        """
+        root_seqs = [[]]
+        for f in self.fps:
+            root_seq = []
+            for low, high in iterutils.pairwise(
+                    [self.t_initial] + root_seqs[-1] + [self.t_final]):
+                root = scipy.optimize.brentq(f, interval[0], interval[1])
+                root_seq.append(root)
+            root_seqs.append(root_seq)
+        return root_seqs[1:]
+    def get_bezier_path(self, nchunks):
+        """
+        @param nchunks: use this many chunks in the piecewise approximation
+        @return: a BezierPath
+        """
+        # use sympy to get the derivatives
+        fvs = [sympy.diff
+        return 
+        bchunks = []
+        npoints = nchunks + 1
+        duration = self.t_final - self.t_initial
+        incr = duration / nchunks
+        times = [i*incr for i in range(npoints)]
+        for i, ta, tb in iterutils.pairwise(times):
+            pa = np.array(zip(f(ta) for f in self.fps))
+            pb = np.array(zip(f(tb) for f in self.fps))
+            b = bezier.create_bchunk_hermite(ta, tb, pa, pb, va, vb, btype)
+            bchunks.append(b)
+        return BezierPath(
+
+
+class CubicPolyShape(Shape):
+    """
+    A parametric cubic polynomial is exactly reprsented by a Bezier curve.
+    Polynomials are sympy Poly objects.
+    """
+    def __init__(self, fps, t_initial, t_final):
+        """
+        @param fps: sympy Poly polynomials giving the position at time t
+        @param t_initial: initial time
+        @param t_final: final time
+        """
+        self.fps = fps
+        poly_deg_2 = poly_deg_3.diff(sympy.abc.x)
+        self.t_initial = t_initial
+        self.t_final = t_final
+        # define the velocity
+        self.fvs = []
+        for 
+        v0 = fps[0].diff(sympy.abc.x)
+        v1 = fps[1].diff(sympy.abc.x)
+        v2 = fps[2].diff(sympy.abc.x)
+    def get_bb_min(self):
+        """
+        Look at the endpoints and the places where the derivative is zero.
+        """
+        return np.min(self.get_points(), axis=0)
+    def get_bb_max(self):
+        pass
+
+class DifferentialCubicPolyShape(CubicPolyShape):
+    """
+    The polynomials defining the shape are successive derivatives.
+    """
+    def __init__(self, cubic_poly, t_initial, t_final):
+        """
+        @param cubic_poly: a cubic sympy Poly with distinct roots
+        @param t_initial: initial time
+        @param t_final: final time
+        """
+        self.fps = fps
+        self.t_initial = t_initial
+        self.t_final = t_final
+
+class PiecewiseLinearPathShape(Shape):
+    """
+    A path of line segments in higher dimensional Euclidean space.
+    """
+    def get_bb_min(self):
+        pass
+    def get_bb_max(self):
+        pass
+
+class PiecewiseLinearTreeShape(Shape):
+    """
+    A path of line segments in higher dimensional Euclidean space.
+    """
+    def get_bb_min(self):
+        pass
+    def get_bb_max(self):
+        pass
+
+
+
+
+
 def is_strictly_increasing(seq):
     for a, b in iterutils.pairwise(seq):
         if not a < b:
@@ -135,16 +279,30 @@ def matrix_to_schur_polys(M):
     """
     pass
 
+class MultiplexExprs:
+    """
+    Turn a sequence of sympy expressions into a single function.
+    The expressions are basically univariate in the sympy.abc.t variable.
+    """
+    def __init__(self, exprs):
+        """
+        @param exprs: sequence of univariate sympy expressions
+        """
+        self.exprs = exprs
+    def __call__(self, t):
+        arr = [float(expr.subs(sympy.abc.t, t)) for expr in self.exprs]
+        return np.array(arr)
 
 class Multiplex:
     def __init__(self, fns):
         """
-        @param fns: sequence of univariate functions
+        @param fns: sequence of univariate sympy functions
         """
         self.fns = fns
     def __call__(self, t):
         #return np.array([float(f(t)) for f in self.fns])
         return np.array([float(f.eval(t)) for f in self.fns])
+
 
 
 class TestInterlacing(unittest.TestCase):

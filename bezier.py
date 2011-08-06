@@ -5,12 +5,16 @@ The curves are assumed to be cubic,
 but this code is agnostic to the dimension of the embedding Euclidean space.
 The BezierChunk objects of concern in this module are meant to be used
 as components of piecewise Bezier curves which should be defined elsewhere.
+The explicit form of a Bezier curve is
+B(t) = (1-t)^3 p0 + 3(1-t)^2 t p1 + 3(1-t) t^2 p2 + t^3 p3
+where t is between 0 and 1.
 """
 
 import math
 import itertools
 
 import numpy as np
+import sympy
 
 
 class BezierError(ValueError): pass
@@ -87,13 +91,28 @@ class BezierChunk:
     def is_almost_linear(self, reltol=1e-4):
         return bezier_is_almost_linear(
                 self.p0, self.p1, self.p2, self.p3, reltol)
+    def global_to_local_time(self, t_global):
+        duration = self.stop_time - self.start_time
+        return (t_global - self.start_time) / duration
+    def eval_global_ortho(self, t_global, axis):
+        """
+        @param t_global: time in the interval [self.start_time, self.stop_time]
+        @param axis: index of the axis of interest
+        """
+        return self.eval_local_ortho(self.global_to_local_time(t_global))
     def eval_global(self, t_global):
         """
         @param t_global: time in the interval [self.start_time, self.stop_time]
         """
-        duration = self.stop_time - self.start_time
-        t_local = (t_global - self.start_time) / duration
-        return self.eval_local(t_local)
+        return self.eval_local(self.global_to_local_time(t_global))
+    def eval_local_ortho(self, t_local, axis):
+        """
+        @param t_local: local time in the interval [0, 1]
+        @param axis: index of the axis of interest
+        """
+        return bezier_eval(
+                self.p0[axis], self.p1[axis], self.p2[axis], self.p3[axis],
+                t_local)
     def eval_local(self, t_local):
         """
         @param t_local: local time in the interval [0, 1]
@@ -126,6 +145,18 @@ class BezierChunk:
             high = int(math.floor(high_float))
             ranges.append(tuple(range(low, high+1)))
         return itertools.product(*ranges)
+    def transform(self, M):
+        """
+        @param M: a transformation matrix as a numpy array
+        """
+        self.p0 = np.dot(M, self.p0)
+        self.p1 = np.dot(M, self.p1)
+        self.p2 = np.dot(M, self.p2)
+        self.p3 = np.dot(M, self.p3)
+    def clone(self):
+        return self.__class__(
+                self.start_time, self.stop_time,
+                self.p0, self.p1, self.p2, self.p3)
     def split(self, t):
         """
         @return: two new BezierChunk objects

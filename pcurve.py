@@ -48,6 +48,14 @@ class BezierPath:
         return self.bchunks[0].start_time
     def get_stop_time(self):
         return self.bchunks[-1].stop_time
+    def evaluate_ortho(self, t, axis):
+        """
+        @param t: time
+        @param axis: axis index
+        """
+        for b in self.bchunks:
+            if b.start_time <= t <= b.stop_time:
+                return b.eval_global_ortho(t)
     def evaluate(self, t):
         #TODO possibly add a faster function for simultaneous evaluation
         # at multiple times
@@ -242,6 +250,29 @@ def find_bezier_intersections(bchunks, min_gridsize):
                 else:
                     bchunks_large.append(child)
         bchunks = bchunks_small
+
+def get_bezier_path(self, fp, fv, t_initial, t_final, nchunks):
+    """
+    @param fp: a python function from t to position vector
+    @param fv: a python function from t to velocity vector
+    @param t_initial: initial time
+    @param t_final: final time
+    @param nchunks: use this many chunks in the piecewise approximation
+    @return: a BezierPath
+    """
+    bchunks = []
+    npoints = nchunks + 1
+    duration = t_final - t_initial
+    incr = duration / nchunks
+    times = [i*incr for i in range(npoints)]
+    for i, ta, tb in iterutils.pairwise(times):
+        b = bezier.create_bchunk_hermite(
+                ta, tb, fp(ta), fp(tb), fp(va), fp(vb), OwnedBezierChunk)
+        bchunks.append(b)
+    bpath = BezierPath(bchunks)
+    for b in bchunks:
+        b.parent_ref = id(bpath)
+    return bpath
 
 
 
