@@ -251,7 +251,7 @@ def find_bezier_intersections(bchunks, min_gridsize):
                     bchunks_large.append(child)
         bchunks = bchunks_small
 
-def get_bezier_path(self, fp, fv, t_initial, t_final, nchunks):
+def get_bezier_path(fp, fv, t_initial, t_final, nchunks):
     """
     @param fp: a python function from t to position vector
     @param fv: a python function from t to velocity vector
@@ -264,10 +264,10 @@ def get_bezier_path(self, fp, fv, t_initial, t_final, nchunks):
     npoints = nchunks + 1
     duration = t_final - t_initial
     incr = duration / nchunks
-    times = [i*incr for i in range(npoints)]
-    for i, ta, tb in iterutils.pairwise(times):
+    times = [t_initial + i*incr for i in range(npoints)]
+    for ta, tb in iterutils.pairwise(times):
         b = bezier.create_bchunk_hermite(
-                ta, tb, fp(ta), fp(tb), fp(va), fp(vb), OwnedBezierChunk)
+                ta, tb, fp(ta), fp(tb), fv(ta), fv(tb), OwnedBezierChunk)
         bchunks.append(b)
     bpath = BezierPath(bchunks)
     for b in bchunks:

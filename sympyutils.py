@@ -7,8 +7,10 @@ import unittest
 import sympy
 from sympy import abc
 
-class WrappedUnivariateExpr:
+class WrappedUniExpr:
     """
+    This is a wrapped univariate sympy expression.
+    The idea is to make this expression available as a python function.
     The variable is t.
     """
     def __init__(self, sympy_expr):
@@ -23,9 +25,9 @@ class WrappedUnivariateExpr:
 
 class TestSympyUtils:
 
-    def test_wrapped_univariate_expr(self):
+    def test_wrapped_univariate_expression(self):
         expr = sympy.abc.t ** 2.0 + 1.0
-        f = WrappedUnivariateExpr(expr)
+        f = WrappedUniExpr(expr)
         observed = f(3.0)
         expected = 10.0
         self.assertEqual(observed, expected)

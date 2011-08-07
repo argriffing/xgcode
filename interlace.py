@@ -21,13 +21,16 @@ import math
 import unittest
 
 import numpy as np
+import scipy
 import sympy
 from sympy import matrices
 from sympy import abc
+
 import tikz
 import sympyutils
 import iterutils
 import color
+import pcurve
 
 
 class Shape:
@@ -46,13 +49,19 @@ class DifferentiableShape(Shape):
     """
     This is a differentiable parametric curve of interlacing functions.
     """
-    def __init__(self, fps, t_initial, t_final):
+    def __init__(self, position_exprs, t_initial, t_final):
         """
-        @param fps: functions giving the position as a function of time
+        The position expressions are univariate sympy expressions.
+        Each gives the position along an axis as a function of time t.
+        @param position_exprs: sympy expressions that give position at time t
         @param t_initial: initial time
         @param t_final: final time
         """
-        self.fps = fps
+        velocity_exprs = [x.diff(sympy.abc.t) for x in position_exprs]
+        self.fps = [sympyutils.WrappedUniExpr(x) for x in position_exprs]
+        self.fvs = [sympyutils.WrappedUniExpr(x) for x in velocity_exprs]
+        self.fp = Multiplex(self.fps)
+        self.fv = Multiplex(self.fvs)
         self.t_initial = t_initial
         self.t_final = t_final
     def get_bb_min(self):
@@ -83,29 +92,17 @@ class DifferentiableShape(Shape):
             root_seq = []
             for low, high in iterutils.pairwise(
                     [self.t_initial] + root_seqs[-1] + [self.t_final]):
-                root = scipy.optimize.brentq(f, interval[0], interval[1])
+                root = scipy.optimize.brentq(f, low, high)
                 root_seq.append(root)
             root_seqs.append(root_seq)
         return root_seqs[1:]
-    def get_bezier_path(self, nchunks):
+    def get_bezier_path(self, nchunks=20):
         """
         @param nchunks: use this many chunks in the piecewise approximation
         @return: a BezierPath
         """
-        # use sympy to get the derivatives
-        fvs = [sympy.diff
-        return 
-        bchunks = []
-        npoints = nchunks + 1
-        duration = self.t_final - self.t_initial
-        incr = duration / nchunks
-        times = [i*incr for i in range(npoints)]
-        for i, ta, tb in iterutils.pairwise(times):
-            pa = np.array(zip(f(ta) for f in self.fps))
-            pb = np.array(zip(f(tb) for f in self.fps))
-            b = bezier.create_bchunk_hermite(ta, tb, pa, pb, va, vb, btype)
-            bchunks.append(b)
-        return BezierPath(
+        return pcurve.get_bezier_path(
+                self.fp, self.fv, self.t_initial, self.t_final, nchunks)
 
 
 class CubicPolyShape(Shape):
@@ -125,7 +122,6 @@ class CubicPolyShape(Shape):
         self.t_final = t_final
         # define the velocity
         self.fvs = []
-        for 
         v0 = fps[0].diff(sympy.abc.x)
         v1 = fps[1].diff(sympy.abc.x)
         v2 = fps[2].diff(sympy.abc.x)
@@ -280,29 +276,28 @@ def matrix_to_schur_polys(M):
     """
     pass
 
-class MultiplexExprs:
-    """
-    Turn a sequence of sympy expressions into a single function.
-    The expressions are basically univariate in the sympy.abc.t variable.
-    """
-    def __init__(self, exprs):
-        """
-        @param exprs: sequence of univariate sympy expressions
-        """
-        self.exprs = exprs
-    def __call__(self, t):
-        arr = [float(expr.subs(sympy.abc.t, t)) for expr in self.exprs]
-        return np.array(arr)
-
 class Multiplex:
-    def __init__(self, fns):
+    """
+    Turn a sequence of functions into a single function.
+    Each component function should return a float given a float,
+    while the returned function will return a numpy array given a float.
+    """
+    def __init__(self, fs):
         """
-        @param fns: sequence of univariate sympy functions
+        @param fs: sequence of (float -> float) python functions
         """
-        self.fns = fns
+        self.fs = fs
     def __call__(self, t):
-        #return np.array([float(f(t)) for f in self.fns])
-        return np.array([float(f.eval(t)) for f in self.fns])
+        return np.array([f(t) for f in self.fs])
+
+class MultiplexPolys:
+    def __init__(self, polys):
+        """
+        @param fns: sequence of univariate sympy Poly objects
+        """
+        self.polys = polys
+    def __call__(self, t):
+        return np.array([float(p.eval(t)) for p in self.polys])
 
 
 

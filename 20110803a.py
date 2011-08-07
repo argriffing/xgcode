@@ -106,6 +106,7 @@ def get_scene(root_a, root_b, root_c,
     curve_style_pairs.append((make_half_axis(2, +1, zp_rad), STYLE_Z))
     curve_style_pairs.append((make_half_axis(2, -1, zn_rad), STYLE_Z))
     # define the polynomial curve
+    """
     roots = (root_a, root_b, root_c)
     poly_deg_3 = interlace.roots_to_poly(roots)
     poly_deg_2 = poly_deg_3.diff(sympy.abc.x)
@@ -129,17 +130,31 @@ def get_scene(root_a, root_b, root_c,
     bpath_curve = pcurve.BezierPath([b])
     b.parent_ref = id(bpath_curve)
     curve_style_pairs.append((bpath_curve, STYLE_CURVE))
+    """
+    sympy_t = sympy.abc.t
+    p3_expr = (sympy_t - root_a)*(sympy_t - root_b)*(sympy_t - root_c)
+    p2_expr = p3_expr.diff(sympy_t)
+    p1_expr = p2_expr.diff(sympy_t)
+    position_exprs = (p1_expr, p2_expr, p3_expr)
+    shape = interlace.DifferentiableShape(position_exprs, initial_t, final_t)
+    curve_style_pairs.append((shape.get_bezier_path(), STYLE_CURVE))
     # define the orthocircles at curve-plane intersections
+    """
     x_roots_symbolic = sympy.roots(poly_deg_1)
     y_roots_symbolic = sympy.roots(poly_deg_2)
     z_roots_symbolic = sympy.roots(poly_deg_3)
     x_roots = [float(r) for r in x_roots_symbolic]
     y_roots = [float(r) for r in y_roots_symbolic]
     z_roots = [float(r) for r in z_roots_symbolic]
+    """
+    x_roots, y_roots, z_roots = shape.get_orthoplanar_intersections()
     for r in x_roots:
         axis = 0
+        """
         center = np.array([
             p.eval(r) for p in poly_position_triple], dtype=float)
+        """
+        center = shape.fp(r)
         bchunks = list(bezier.gen_bchunks_ortho_circle(
                 center, intersection_radius, axis))
         bpath = pcurve.BezierPath(bchunks)
@@ -148,8 +163,11 @@ def get_scene(root_a, root_b, root_c,
         curve_style_pairs.append((bpath, STYLE_X))
     for r in y_roots:
         axis = 1
+        """
         center = np.array([
             p.eval(r) for p in poly_position_triple], dtype=float)
+        """
+        center = shape.fp(r)
         bchunks = list(bezier.gen_bchunks_ortho_circle(
                 center, intersection_radius, axis))
         bpath = pcurve.BezierPath(bchunks)
@@ -158,8 +176,11 @@ def get_scene(root_a, root_b, root_c,
         curve_style_pairs.append((bpath, STYLE_Y))
     for r in z_roots:
         axis = 2
+        """
         center = np.array([
             p.eval(r) for p in poly_position_triple], dtype=float)
+        """
+        center = shape.fp(r)
         bchunks = list(bezier.gen_bchunks_ortho_circle(
                 center, intersection_radius, axis))
         bpath = pcurve.BezierPath(bchunks)
