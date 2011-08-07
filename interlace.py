@@ -25,6 +25,7 @@ import sympy
 from sympy import matrices
 from sympy import abc
 import tikz
+import sympyutils
 import iterutils
 import color
 
