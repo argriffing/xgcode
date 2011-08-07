@@ -14,6 +14,7 @@ import interlace
 import pcurve
 import bezier
 import color
+import sympyutils
 
 STYLE_X = 0
 STYLE_Y = 1
@@ -106,12 +107,10 @@ def get_scene(root_a, root_b, root_c,
     curve_style_pairs.append((make_half_axis(2, +1, zp_rad), STYLE_Z))
     curve_style_pairs.append((make_half_axis(2, -1, zn_rad), STYLE_Z))
     # define the polynomial curve
-    sympy_t = sympy.abc.t
-    p3_expr = (sympy_t - root_a)*(sympy_t - root_b)*(sympy_t - root_c)
-    p2_expr = p3_expr.diff(sympy_t)
-    p1_expr = p2_expr.diff(sympy_t)
-    position_exprs = (p1_expr, p2_expr, p3_expr)
-    shape = interlace.DifferentiableShape(position_exprs, initial_t, final_t)
+    p3 = sympyutils.roots_to_poly((root_a, root_b, root_c))
+    p2 = p3.diff()
+    p1 = p2.diff()
+    shape = interlace.CubicPolyShape((p1, p2, p3), initial_t, final_t)
     curve_style_pairs.append((shape.get_bezier_path(), STYLE_CURVE))
     # define the orthocircles at curve-plane intersections
     x_roots, y_roots, z_roots = shape.get_orthoplanar_intersections()

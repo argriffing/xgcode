@@ -31,6 +31,7 @@ import sympyutils
 import iterutils
 import color
 import pcurve
+import bezier
 
 
 class Shape:
@@ -107,31 +108,57 @@ class DifferentiableShape(Shape):
 
 class CubicPolyShape(Shape):
     """
-    A parametric cubic polynomial is exactly reprsented by a Bezier curve.
+    A parametric cubic polynomial is exactly represented by a Bezier curve.
     Polynomials are sympy Poly objects.
     """
-    def __init__(self, fps, t_initial, t_final):
+    def __init__(self, polys, t_initial, t_final):
         """
-        @param fps: sympy Poly polynomials giving the position at time t
+        @param polys: cubic sympy Poly objects
         @param t_initial: initial time
         @param t_final: final time
         """
-        self.fps = fps
-        poly_deg_2 = poly_deg_3.diff(sympy.abc.x)
+        self.polys = polys
+        self.fps = [sympyutils.WrappedUniPoly(p) for p in polys]
+        self.fvs = [sympyutils.WrappedUniPoly(p.diff()) for p in polys]
+        self.fp = Multiplex(self.fps)
+        self.fv = Multiplex(self.fvs)
         self.t_initial = t_initial
         self.t_final = t_final
-        # define the velocity
-        self.fvs = []
-        v0 = fps[0].diff(sympy.abc.x)
-        v1 = fps[1].diff(sympy.abc.x)
-        v2 = fps[2].diff(sympy.abc.x)
     def get_bb_min(self):
         """
-        Look at the endpoints and the places where the derivative is zero.
+        Get the min value on each axis.
         """
-        return np.min(self.get_points(), axis=0)
+        values = []
+        for poly in self.polys:
+            t, v = sympyutils.poly_fminbound_pair(
+                    poly, self.t_initial, self.t_final)
+            values.append(v)
+        return values
     def get_bb_max(self):
-        pass
+        """
+        Get the max value on each axis.
+        """
+        values = []
+        for poly in self.polys:
+            t, v = sympyutils.poly_fminbound_pair(
+                    -poly, self.t_initial, self.t_final)
+            values.append(-v)
+        return values
+    def get_orthoplanar_intersections(self):
+        """
+        Get the list of intersection times on each axis.
+        """
+        return [p.nroots() for p in self.polys]
+    def get_bezier_path(self):
+        b = bezier.create_bchunk_hermite(
+                self.t_initial, self.t_final,
+                self.fp(self.t_initial), self.fp(self.t_final),
+                self.fv(self.t_initial), self.fv(self.t_final),
+                pcurve.OwnedBezierChunk)
+        bpath = pcurve.BezierPath([b])
+        b.parent_ref = bpath
+        return bpath
+
 
 class DifferentialCubicPolyShape(CubicPolyShape):
     """
