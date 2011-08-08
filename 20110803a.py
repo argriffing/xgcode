@@ -2,6 +2,28 @@
 Draw a two and a half dimensional scene with occluding curve intersections.
 """
 
+"""
+Draw a scene with occlucing curves using less user input.
+
+The first cubic polynomial root is at t=0.
+The third cubic polynomial root is at t=1.
+"""
+
+"""
+def get_form():
+    # define the form objects
+    form_objects = [
+            Form.Float('root_b',
+                'a cubic polynomial root in the interval (0, 1)',
+                0.6, low_exclusive=0, high_exclusive=1),
+            Form.Float('picture_radius',
+                'a tikzpicture radius estimate',
+                5, low_exclusive=0),
+            Form.TikzFormat(),
+            Form.ContentDisposition()]
+    return form_objects
+"""
+
 import math
 
 import numpy as np
@@ -15,6 +37,7 @@ import pcurve
 import bezier
 import color
 import sympyutils
+import bezintersect
 
 STYLE_X = 0
 STYLE_Y = 1
@@ -76,10 +99,31 @@ def rotate_to_view(p):
     z2 = z1 * c + x1 * s
     return np.array([x2, y2, z2])
 
+# new style intersection code
+def project_to_2d(point):
+    return point[1:]
+
+# new style intersection code
+class Stroke(pcurve.BezierPath):
+    def set_style(self, style):
+        self.style = style
+    def shatter(self, *args, **kwargs):
+        pieces = pcurve.BezierPath.shatter(self, *args, **kwargs)
+        for p in pieces:
+            p.set_style(self.style)
+        return pieces
+
+# new style intersection code
+def bpath_to_stroke(bpath, style):
+    stroke = Stroke(bpath.bchunks)
+    stroke.set_style(style)
+    return stroke
+
 def make_half_axis(axis, sign, radius):
     """
     This is a helper function.
     @param axis: in {0, 1, 2}
+    @return: bpath
     """
     origin = np.zeros(3)
     target = np.zeros(3)
@@ -90,7 +134,46 @@ def make_half_axis(axis, sign, radius):
     b.parent_ref = id(bpath)
     return bpath
 
+# new style intersection code
 def get_scene(root_a, root_b, root_c,
+        initial_t, final_t, intersection_radius, half_axis_radii):
+    """
+    Define all of the bezier paths annotated with styles.
+    @return: a list of strokes
+    """
+    # define the strokes
+    strokes = []
+    # define the half axis line segments
+    xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad = half_axis_radii
+    strokes.extend([
+        bpath_to_stroke(make_half_axis(0, +1, xp_rad), STYLE_X),
+        bpath_to_stroke(make_half_axis(0, -1, xn_rad), STYLE_X),
+        bpath_to_stroke(make_half_axis(1, +1, yp_rad), STYLE_Y),
+        bpath_to_stroke(make_half_axis(1, -1, yn_rad), STYLE_Y),
+        bpath_to_stroke(make_half_axis(2, +1, zp_rad), STYLE_Z),
+        bpath_to_stroke(make_half_axis(2, -1, zn_rad), STYLE_Z)])
+    # define the polynomial curve
+    p3 = sympyutils.roots_to_poly((root_a, root_b, root_c))
+    p2 = p3.diff()
+    p1 = p2.diff()
+    shape = interlace.CubicPolyShape((p1, p2, p3), initial_t, final_t)
+    strokes.append(bpath_to_stroke(shape.get_bezier_path(), STYLE_CURVE))
+    # define the orthocircles at curve-plane intersections
+    axes = range(3)
+    point_seqs = shape.get_orthoplanar_intersections()
+    styles = (STYLE_X, STYLE_Y, STYLE_Z)
+    for axis, point_seq, style in zip(axes, point_seqs, styles):
+        for center in point_seq:
+            bchunks = list(bezier.gen_bchunks_ortho_circle(
+                    center, intersection_radius, axis))
+            bpath = pcurve.BezierPath(bchunks)
+            for b in bchunks:
+                b.parent_ref = id(bpath)
+            strokes.append(bpath_to_stroke(bpath, style))
+    return strokes
+
+#TODO remove when the replacement works
+def get_scene_old(root_a, root_b, root_c,
         initial_t, final_t, intersection_radius, half_axis_radii):
     """
     Define all of the bezier paths annotated with styles.
@@ -138,6 +221,55 @@ def get_tikz_lines(fs):
             fs.x_rad_pos, fs.x_rad_neg,
             fs.y_rad_pos, fs.y_rad_neg,
             fs.z_rad_pos, fs.z_rad_neg)
+    strokes = get_scene(
+            fs.root_a, fs.root_b, fs.root_c,
+            fs.initial_t, fs.final_t,
+            fs.circle_radius, half_axis_radii)
+    # rotate every control point in every bchunk in each curve
+    for stroke in strokes:
+        stroke.transform(rotate_to_view)
+    # get the intersection times
+    time_lists = bezintersect.get_intersection_times(
+            strokes, project_to_2d, min_gridsize, 3*min_gridsize)
+    # shatter the strokes, tracking the times of interest and the styles
+    shattered_strokes = []
+    for time_list, stroke in zip(time_lists, strokes):
+        shattered_strokes.extend(stroke.shatter(time_list))
+    # sort the strokes according to depth order
+    depth_stroke_pairs = []
+    for stroke in shattered_strokes:
+        x, y, z = stroke.evaluate(stroke.characteristic_time)
+        depth_stroke_pairs.append((x, stroke))
+    # draw the curves
+    for x, stroke in sorted(depth_stroke_pairs):
+        # draw a linear curve or a bezier curve
+        c = g_style_colors[stroke.style]
+        if len(stroke.bchunks)==1 and stroke.bchunks[0].is_almost_linear():
+            p0 = stroke.bchunks[0].p0
+            p3 = stroke.bchunks[0].p3
+            line = '\\draw[draw=white,double=%s,thick] %s -- %s;' % (
+                    c,
+                    tikz.point_to_tikz(stroke.bchunks[0].p0[1:]),
+                    tikz.point_to_tikz(stroke.bchunks[0].p3[1:]))
+            lines.append(line)
+        else:
+            line = '\\draw[draw=white,double=%s,thick]' % c
+            lines.append(line)
+            lines.append(get_tikz_bezier(stroke))
+    return lines
+
+#TODO remove when the alternative works
+def get_tikz_lines_old(fs):
+    """
+    @param fs: user input
+    @return: a sequence of tikz lines
+    """
+    lines = []
+    min_gridsize = 0.001
+    half_axis_radii = (
+            fs.x_rad_pos, fs.x_rad_neg,
+            fs.y_rad_pos, fs.y_rad_neg,
+            fs.z_rad_pos, fs.z_rad_neg)
     curve_style_pairs = get_scene(
             fs.root_a, fs.root_b, fs.root_c,
             fs.initial_t, fs.final_t,
@@ -147,11 +279,7 @@ def get_tikz_lines(fs):
     deep_id_to_style = dict((id(c), s) for c, s in curve_style_pairs)
     # rotate every control point in every bchunk in each curve
     for curve in deep_curves:
-        for b in curve.bchunks:
-            b.p0 = rotate_to_view(b.p0)
-            b.p1 = rotate_to_view(b.p1)
-            b.p2 = rotate_to_view(b.p2)
-            b.p3 = rotate_to_view(b.p3)
+        curve.transform(rotate_to_view)
     # define some new flat curves whose bchunks reference the deep curves
     flat_curves = []
     for deep_curve in deep_curves:
@@ -172,10 +300,9 @@ def get_tikz_lines(fs):
         pair = (child, deep_id_to_style[id(parent)])
         child_style_pairs.append(pair)
     # sort the child curves according to depth order
-    # TODO chain together the bezier curve into a single drawing command
     depth_curve_style_triples = []
     for child, style in child_style_pairs:
-        x, y, z = rotate_to_view(child.evaluate(child.characteristic_time))
+        x, y, z = child.evaluate(child.characteristic_time)
         depth_curve_style_triples.append((x, child, style))
     # draw the curves
     for x, curve, style in sorted(depth_curve_style_triples):

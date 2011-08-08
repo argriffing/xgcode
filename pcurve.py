@@ -29,9 +29,13 @@ class OwnedBezierChunk(bezier.BezierChunk):
         self.parent_ref = None
     def split(self, t):
         a, b = bezier.BezierChunk.split(self, t)
-        a.parent_ref = self.parent_ref
-        b.parent_ref = self.parent_ref
+        a.set_parent_ref(self.parent_ref)
+        b.set_parent_ref(self.parent_ref)
         return a, b
+    def clone(self):
+        b = bezier.BezierChunk.clone(self)
+        b.set_parent_ref(self.parent_ref)
+        return b
     def set_parent_ref(self, parent_ref):
         """
         This setter exists for a reason.
@@ -62,6 +66,9 @@ class BezierPath:
         return self.bchunks[0].start_time
     def get_stop_time(self):
         return self.bchunks[-1].stop_time
+    def transform(self, f):
+        for b in self.bchunks:
+            b.transform(f)
     def evaluate_ortho(self, t, axis):
         """
         @param t: time
@@ -175,7 +182,7 @@ class BezierPath:
         # and give each piecewise curve a characteristic time.
         piecewise_curves = []
         for t, group in zip(times, groups):
-            curve = BezierPath(group)
+            curve = self.__class__(group)
             curve.characteristic_time = t
             piecewise_curves.append(curve)
         return piecewise_curves

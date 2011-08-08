@@ -145,14 +145,14 @@ class BezierChunk:
             high = int(math.floor(high_float))
             ranges.append(tuple(range(low, high+1)))
         return itertools.product(*ranges)
-    def transform(self, M):
+    def transform(self, f):
         """
-        @param M: a transformation matrix as a numpy array
+        @param f: a transformation function such as a rotation
         """
-        self.p0 = np.dot(M, self.p0)
-        self.p1 = np.dot(M, self.p1)
-        self.p2 = np.dot(M, self.p2)
-        self.p3 = np.dot(M, self.p3)
+        self.p0 = f(self.p0)
+        self.p1 = f(self.p1)
+        self.p2 = f(self.p2)
+        self.p3 = f(self.p3)
     def clone(self):
         return self.__class__(
                 self.start_time, self.stop_time,
