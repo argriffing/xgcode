@@ -32,18 +32,32 @@ class OwnedBezierChunk(bezier.BezierChunk):
         a.parent_ref = self.parent_ref
         b.parent_ref = self.parent_ref
         return a, b
+    def set_parent_ref(self, parent_ref):
+        """
+        This setter exists for a reason.
+        If .parent_ref were set directly, then if it were accidentally set
+        on a non-owned BezierChunk then the object would fail to propagate
+        its ownership state when it is split.
+        With the setter, an exception is raised if we try to set
+        the .parent_ref of a non-owned chunk.
+        """
+        self.parent_ref = parent_ref
 
 class BezierPath:
     """
     This curve is created by patching together cubic Bezier curves.
     It may live in a high dimensional space.
     """
-    def __init__(self, bchunks):
+    def __init__(self, bchunks, take_ownership=False):
         """
         @param bchunks: an iterable of BezierChunk objects
+        @param take_ownership: True if we want to set the ref in the bchunks
         """
         self.bchunks = list(bchunks)
         self.characteristic_time = None
+        if take_ownership:
+            for b in self.bchunks:
+                b.set_parent_ref(id(self))
     def get_start_time(self):
         return self.bchunks[0].start_time
     def get_stop_time(self):
@@ -269,10 +283,7 @@ def get_bezier_path(fp, fv, t_initial, t_final, nchunks):
         b = bezier.create_bchunk_hermite(
                 ta, tb, fp(ta), fp(tb), fv(ta), fv(tb), OwnedBezierChunk)
         bchunks.append(b)
-    bpath = BezierPath(bchunks)
-    for b in bchunks:
-        b.parent_ref = id(bpath)
-    return bpath
+    return BezierPath(bchunks, take_ownership=True)
 
 
 

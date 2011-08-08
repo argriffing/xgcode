@@ -113,34 +113,17 @@ def get_scene(root_a, root_b, root_c,
     shape = interlace.CubicPolyShape((p1, p2, p3), initial_t, final_t)
     curve_style_pairs.append((shape.get_bezier_path(), STYLE_CURVE))
     # define the orthocircles at curve-plane intersections
-    x_roots, y_roots, z_roots = shape.get_orthoplanar_intersections()
-    for r in x_roots:
-        axis = 0
-        center = shape.fp(r)
-        bchunks = list(bezier.gen_bchunks_ortho_circle(
-                center, intersection_radius, axis))
-        bpath = pcurve.BezierPath(bchunks)
-        for b in bchunks:
-            b.parent_ref = id(bpath)
-        curve_style_pairs.append((bpath, STYLE_X))
-    for r in y_roots:
-        axis = 1
-        center = shape.fp(r)
-        bchunks = list(bezier.gen_bchunks_ortho_circle(
-                center, intersection_radius, axis))
-        bpath = pcurve.BezierPath(bchunks)
-        for b in bchunks:
-            b.parent_ref = id(bpath)
-        curve_style_pairs.append((bpath, STYLE_Y))
-    for r in z_roots:
-        axis = 2
-        center = shape.fp(r)
-        bchunks = list(bezier.gen_bchunks_ortho_circle(
-                center, intersection_radius, axis))
-        bpath = pcurve.BezierPath(bchunks)
-        for b in bchunks:
-            b.parent_ref = id(bpath)
-        curve_style_pairs.append((bpath, STYLE_Z))
+    axes = range(3)
+    point_seqs = shape.get_orthoplanar_intersections()
+    styles = (STYLE_X, STYLE_Y, STYLE_Z)
+    for axis, point_seq, style in zip(axes, point_seqs, styles):
+        for center in point_seq:
+            bchunks = list(bezier.gen_bchunks_ortho_circle(
+                    center, intersection_radius, axis))
+            bpath = pcurve.BezierPath(bchunks)
+            for b in bchunks:
+                b.parent_ref = id(bpath)
+            curve_style_pairs.append((bpath, style))
     # return the (bezier path, curve style) pairs
     return curve_style_pairs
 

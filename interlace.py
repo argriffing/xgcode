@@ -46,7 +46,35 @@ class Shape:
     """
     pass
 
-class DifferentiableShape(Shape):
+class ParametricShape(Shape):
+    """
+    This 1D shape is parameterized by a single variable.
+    The fp member function should map the time to a point.
+    """
+    def get_bb_min(self):
+        """
+        Get the min value on each axis.
+        """
+        times = self.get_bb_min_times()
+        points = [self.fp(t) for t in times]
+        return np.min(points, axis=0)
+    def get_bb_max(self):
+        """
+        Get the max value on each axis.
+        """
+        times = self.get_bb_max_times()
+        points = [self.fp(t) for t in times]
+        return np.max(points, axis=0)
+    def get_orthoplanar_intersections(self):
+        """
+        Get the list of intersection points per axis.
+        """
+        point_seqs = []
+        for time_seq in self.get_orthoplanar_intersection_times():
+            point_seqs.append([self.fp(t) for t in time_seq])
+        return point_seqs
+
+class DifferentiableShape(ParametricShape):
     """
     This is a differentiable parametric curve of interlacing functions.
     """
@@ -65,36 +93,29 @@ class DifferentiableShape(Shape):
         self.fv = Multiplex(self.fvs)
         self.t_initial = t_initial
         self.t_final = t_final
-    def get_bb_min(self):
+    def get_bb_min_times(self):
         """
-        Get the min value on each axis.
+        Get the time of the min value on each axis.
         """
-        values = []
-        for f in self.fps:
-            t = scipy.optimize.fminbound(f, self.t_initial, self.t_final)
-            values.append(f(t))
-        return values
-    def get_bb_max(self):
+        return [scipy.optimize.fminbound(
+            f, self.t_initial, self.t_final) for f in self.fps]
+    def get_bb_max_times(self):
         """
-        Get the max value on each axis.
+        Get the time of the max value on each axis.
         """
-        values = []
-        for f in self.fps:
-            t = scipy.optimize.fminbound(
-                    (lambda x: -f(x)), self.t_initial, self.t_final)
-            values.append(f(t))
-        return values
-    def get_orthoplanar_intersections(self):
+        return [scipy.optimize.fminbound(
+            (lambda x: -f(x)), self.t_initial, self.t_final) for f in self.fps]
+    def get_orthoplanar_intersection_times(self):
         """
-        Get the list of intersection times on each axis.
+        Get the intersection times for the plane orthogonal to each axis.
+        Note that this function assumes interlacing roots.
         """
         root_seqs = [[]]
         for f in self.fps:
             root_seq = []
             for low, high in iterutils.pairwise(
                     [self.t_initial] + root_seqs[-1] + [self.t_final]):
-                root = scipy.optimize.brentq(f, low, high)
-                root_seq.append(root)
+                root_seq.append(scipy.optimize.brentq(f, low, high))
             root_seqs.append(root_seq)
         return root_seqs[1:]
     def get_bezier_path(self, nchunks=20):
@@ -105,8 +126,7 @@ class DifferentiableShape(Shape):
         return pcurve.get_bezier_path(
                 self.fp, self.fv, self.t_initial, self.t_final, nchunks)
 
-
-class CubicPolyShape(Shape):
+class CubicPolyShape(ParametricShape):
     """
     A parametric cubic polynomial is exactly represented by a Bezier curve.
     Polynomials are sympy Poly objects.
@@ -124,29 +144,21 @@ class CubicPolyShape(Shape):
         self.fv = Multiplex(self.fvs)
         self.t_initial = t_initial
         self.t_final = t_final
-    def get_bb_min(self):
+    def get_bb_min_times(self):
         """
-        Get the min value on each axis.
+        Get the time of the min value on each axis.
         """
-        values = []
-        for poly in self.polys:
-            t, v = sympyutils.poly_fminbound_pair(
-                    poly, self.t_initial, self.t_final)
-            values.append(v)
-        return values
-    def get_bb_max(self):
+        return [sympyutils.poly_fminbound(
+            poly, self.t_initial, self.t_final) for poly in self.polys]
+    def get_bb_max_times(self):
         """
-        Get the max value on each axis.
+        Get the time of the max value on each axis.
         """
-        values = []
-        for poly in self.polys:
-            t, v = sympyutils.poly_fminbound_pair(
-                    -poly, self.t_initial, self.t_final)
-            values.append(-v)
-        return values
-    def get_orthoplanar_intersections(self):
+        return [sympyutils.poly_fminbound(
+            -poly, self.t_initial, self.t_final) for poly in self.polys]
+    def get_orthoplanar_intersection_times(self):
         """
-        Get the list of intersection times on each axis.
+        Get the intersection times for the plane orthogonal to each axis.
         """
         return [p.nroots() for p in self.polys]
     def get_bezier_path(self):
@@ -155,44 +167,50 @@ class CubicPolyShape(Shape):
                 self.fp(self.t_initial), self.fp(self.t_final),
                 self.fv(self.t_initial), self.fv(self.t_final),
                 pcurve.OwnedBezierChunk)
-        bpath = pcurve.BezierPath([b])
-        b.parent_ref = bpath
-        return bpath
-
-
-class DifferentialCubicPolyShape(CubicPolyShape):
-    """
-    The polynomials defining the shape are successive derivatives.
-    """
-    def __init__(self, cubic_poly, t_initial, t_final):
-        """
-        @param cubic_poly: a cubic sympy Poly with distinct roots
-        @param t_initial: initial time
-        @param t_final: final time
-        """
-        self.fps = fps
-        self.t_initial = t_initial
-        self.t_final = t_final
+        return pcurve.BezierPath([b], take_ownership=True)
 
 class PiecewiseLinearPathShape(Shape):
-    """
-    A path of line segments in higher dimensional Euclidean space.
-    """
+    def __init__(self, points):
+        """
+        @param points: a sequence of high dimensional points as numpy arrays
+        """
+        self.points = points
+        self.ndim = len(points[0])
     def get_bb_min(self):
-        pass
+        """
+        Get the min value on each axis.
+        """
+        return np.min(self.points, axis=0)
     def get_bb_max(self):
-        pass
-
-class PiecewiseLinearTreeShape(Shape):
-    """
-    A path of line segments in higher dimensional Euclidean space.
-    """
-    def get_bb_min(self):
-        pass
-    def get_bb_max(self):
-        pass
-
-
+        """
+        Get the max value on each axis.
+        """
+        return np.max(self.points, axis=0)
+    def get_orthoplanar_intersections(self):
+        """
+        Get the list of intersection points per axis.
+        """
+        point_seqs = []
+        for axis in range(self.ndim):
+            point_seq = []
+            # check points for exact intersections
+            for p in self.points:
+                if not p[axis]:
+                    point_seq.append(p)
+            # check line segments for intersections
+            for pa, pb in iterutils.pairwise(self.points):
+                if pa[axis]*pb[axis] < 0:
+                    p = (pa[axis]*pa - pb[axis]*pb) / (pa[axis] - pb[axis])
+                    point_seq.append(p)
+            points_seqs.append(point_seq)
+        return point_seqs
+    def get_bezier_path(self):
+        bchunks = []
+        for pa, pb in iterutils.pairwise(self.points):
+            b = bezier.create_bchunk_line_segment(
+                    pa, pb, pcurve.OwnedBezierChunk)
+            bchunks.append(b)
+        return pcurve.BezierPath(bchunks, take_ownership=True)
 
 
 
