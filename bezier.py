@@ -178,15 +178,14 @@ class BezierChunk:
 def create_bchunk_hermite(
         initial_time, final_time,
         initial_point, final_point,
-        initial_velocity, final_velocity,
-        btype=BezierChunk):
+        initial_velocity, final_velocity):
     """
     This function uses the Hermite to Bezier change of basis.
     http://spec.winprog.org/curves/
-    @return: a btype object
+    @return: a BezierChunk object
     """
     duration = final_time - initial_time
-    return btype(
+    return BezierChunk(
             initial_time, final_time,
             initial_point,
             initial_point + (1.0 / 3.0) * (duration * initial_velocity),
@@ -194,20 +193,20 @@ def create_bchunk_hermite(
             final_point)
 
 def create_bchunk_line_segment(
-        initial_point, final_point, btype=BezierChunk):
+        initial_point, final_point):
     """
     This is a geometric function.
     It assumes that the caller does not care about velocity.
-    @return: a btype object
+    @return: a BezierChunk object
     """
-    return btype(
+    return BezierChunk(
             0.0, 1.0,
             initial_point,
             initial_point * (2.0 / 3.0) + final_point * (1.0 / 3.0),
             initial_point * (1.0 / 3.0) + final_point * (2.0 / 3.0),
             final_point)
 
-def gen_bchunks_ortho_circle(center, radius, axis, btype=BezierChunk):
+def gen_bchunks_ortho_circle(center, radius, axis):
     """
     This is a geometric function.
     It assumes that the caller does not care about velocity.
@@ -246,7 +245,7 @@ def gen_bchunks_ortho_circle(center, radius, axis, btype=BezierChunk):
         v_final[axis_a] = -math.sin(theta_final)
         v_final[axis_b] = math.cos(theta_final)
         # yield the bezier chunk
-        yield btype(
+        yield BezierChunk(
                 theta_initial, theta_final,
                 center + radius * p_initial,
                 center + radius * (p_initial + kappa * v_initial),

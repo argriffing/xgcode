@@ -165,9 +165,8 @@ class CubicPolyShape(ParametricShape):
         b = bezier.create_bchunk_hermite(
                 self.t_initial, self.t_final,
                 self.fp(self.t_initial), self.fp(self.t_final),
-                self.fv(self.t_initial), self.fv(self.t_final),
-                pcurve.OwnedBezierChunk)
-        return pcurve.BezierPath([b], take_ownership=True)
+                self.fv(self.t_initial), self.fv(self.t_final))
+        return pcurve.BezierPath([b])
 
 class PiecewiseLinearPathShape(Shape):
     def __init__(self, points):
@@ -207,10 +206,9 @@ class PiecewiseLinearPathShape(Shape):
     def get_bezier_path(self):
         bchunks = []
         for pa, pb in iterutils.pairwise(self.points):
-            b = bezier.create_bchunk_line_segment(
-                    pa, pb, pcurve.OwnedBezierChunk)
+            b = bezier.create_bchunk_line_segment(pa, pb)
             bchunks.append(b)
-        return pcurve.BezierPath(bchunks, take_ownership=True)
+        return pcurve.BezierPath(bchunks)
 
 
 

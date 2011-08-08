@@ -125,8 +125,7 @@ def make_half_axis(axis, sign, radius):
     origin = np.zeros(3)
     target = np.zeros(3)
     target[axis] = sign * radius
-    b = bezier.create_bchunk_line_segment(
-            origin, target, pcurve.OwnedBezierChunk)
+    b = bezier.create_bchunk_line_segment(origin, target)
     bpath = pcurve.BezierPath([b])
     b.parent_ref = id(bpath)
     return bpath
