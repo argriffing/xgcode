@@ -103,37 +103,6 @@ class BezierPath:
         result = scipy.optimize.fminbound(
                 self.get_weak_midpoint_error, t_initial, t_final, args)
         return result
-    def filter_intersection_times(
-            self, raw_intersection_times, min_spatial_gap):
-        """
-        Collapse intersection clusters.
-        @param raw_intersection_times: a collection of intersection times
-        @param min_spatial_gap: minimium spatial gap between sequential events
-        @return: filtered time sequence
-        """
-        # first sort the intersection times
-        times = sorted(raw_intersection_times)
-        # group together times that are indistinguishable
-        groups = []
-        last_point = None
-        g = []
-        for t in times:
-            point = self.evaluate(t)
-            # if we have seen a previous point then check the gap
-            if g:
-                gap = np.linalg.norm(point - last_point)
-                # if the gap is large then start a new group
-                if gap >= min_spatial_gap:
-                    groups.append(g)
-                    g = []
-            # append the current time to the current group
-            g.append(t)
-            # remember the most recent point
-            last_point = point
-        if g:
-            groups.append(g)
-        # return the sequence of group midpoints
-        return [0.5 * (g[0] + g[-1]) for g in groups]
     def shatter(self, times):
         """
         Return a collection of BezierPath objects.
@@ -186,91 +155,6 @@ class BezierPath:
             curve.characteristic_time = t
             piecewise_curves.append(curve)
         return piecewise_curves
-
-def decompose_scene(deep_curves, flat_curves, min_gridsize):
-    """
-    The bchunks in the flat curves should reference the deep curves.
-    Yield (curve, parent) pairs
-    """
-    # get the list of all bchunks
-    flat_bchunks = []
-    for curve in flat_curves:
-        flat_bchunks.extend(curve.bchunks)
-    # get a smallish set of refined bchunks involved in putative intersections
-    intersecting_bchunks = find_bezier_intersections(
-            flat_bchunks, min_gridsize)
-    # transform the intersecting bchunks into a t set per curve
-    curve_id_to_t_set = defaultdict(set)
-    for b in intersecting_bchunks:
-        curve_id_to_t_set[b.parent_ref].update((b.start_time, b.stop_time))
-    # filter the times using the flat curves
-    curve_id_to_times = defaultdict(list)
-    for flat_curve, deep_curve in zip(flat_curves, deep_curves):
-        ref = id(deep_curve)
-        t_set = curve_id_to_t_set[ref]
-        times = flat_curve.filter_intersection_times(t_set, 3*min_gridsize)
-        curve_id_to_times[ref] = times
-    # break deep curve into multiple curves
-    for curve in deep_curves:
-        times = curve_id_to_times.get(id(curve), [])
-        child_curves = curve.shatter(times)
-        for child in child_curves:
-            yield child, curve
-
-def find_bezier_intersections(bchunks, min_gridsize):
-    """
-    This is essentially a dumb search.
-    It looks for collisions of smaller and smaller curve pieces
-    on finer and finer grids.
-    The only smartness is that if a large curve piece
-    has no collisions on a coarse grid,
-    then it is not subdivided for consideration in a finer grid search.
-    Self intersections of curves are not considered.
-    @param bchunks: a collection of OwnedBezierChunk objects
-    @param min_gridsize: a float lower bound resolution
-    @return: a collection of refined intersecting bchunks
-    """
-    # Maintain the invariant that potentially intersecting chunks
-    # have a diameter of no more than twice the gridsize.
-    gridsize = 0.5 * max(b.get_diameter() for b in bchunks)
-    while True:
-        # map each grid point to a set of nearby parent curves
-        gridmap = defaultdict(set)
-        for b in bchunks:
-            for gridpoint in b.gen_bb_gridpoints(gridsize):
-                gridmap[gridpoint].add(b.parent_ref)
-        # Get the set of indices of bchunks
-        # whose bounding boxes contain contested grid points.
-        index_set = set()
-        for i, b in enumerate(bchunks):
-            for gridpoint in b.gen_bb_gridpoints(gridsize):
-                if len(gridmap[gridpoint]) > 1:
-                    index_set.add(i)
-                    break
-        # Cut the gridsize in half.
-        gridsize *= 0.5
-        # If the gridsize is below the min
-        # then return the bchunks involved in putative intersections.
-        if gridsize < min_gridsize:
-            return [bchunks[index] for index in index_set]
-        # Bisect potentially intersecting chunks
-        # until each chunk has a diameter no more than twice the gridsize.
-        bchunks_small = []
-        bchunks_large = []
-        for index in index_set:
-            b = bchunks[index]
-            if b.get_diameter() <= gridsize*2:
-                bchunks_small.append(b)
-            else:
-                bchunks_large.append(b)
-        while bchunks_large:
-            b = bchunks_large.pop()
-            for child in b.bisect():
-                if child.get_diameter() <= gridsize*2:
-                    bchunks_small.append(child)
-                else:
-                    bchunks_large.append(child)
-        bchunks = bchunks_small
 
 def get_bezier_path(fp, fv, t_initial, t_final, nchunks):
     """
