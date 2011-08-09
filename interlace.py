@@ -273,17 +273,6 @@ def tikz_superposition(t_seq, y_seqs, width, height):
     return '\n'.join(arr)
 
 
-def roots_to_poly(roots):
-    """
-    Given some roots, return a monic polynomial.
-    @return: a sympy polynomial
-    """
-    p_prod = sympy.Poly(1, sympy.abc.x)
-    for r in roots:
-        term = sympy.Poly(sympy.abc.x - r, sympy.abc.x)
-        p_prod = p_prod * term
-    return p_prod
-
 def roots_to_differential_polys(roots):
     """
     Construct a sequence of interlacing polynomials.
@@ -292,13 +281,14 @@ def roots_to_differential_polys(roots):
     @param roots: a collection of distinct roots
     @return: a sequence of interlacing polynomials
     """
+    sympy_t = sympy.abc.t
     if len(roots) != len(set(roots)):
         raise ValueError('expected distinct roots')
-    p = roots_to_poly(roots)
+    p = sympyutils.roots_to_poly(roots)
     nroots = len(roots)
     polys = [p]
     for i in range(nroots-1):
-        p = polys[-1].diff(sympy.abc.x)
+        p = polys[-1].diff(sympy_t)
         polys.append(p)
     polys.reverse()
     return polys
@@ -338,13 +328,15 @@ class Multiplex:
 class TestInterlacing(unittest.TestCase):
 
     def test_roots_to_poly(self):
-        roots = (1, 4, 5)
-        p = roots_to_poly(roots)
+        roots = (1.0, 4.0, 5.0)
+        p = sympyutils.roots_to_poly(roots)
         self.assertTrue(p.is_monic)
         root_to_count = sympy.roots(p)
         self.assertEqual(set(root_to_count.values()), set([1]))
-        expected = set(sympy.Integer(x) for x in roots)
-        self.assertEqual(set(root_to_count.keys()), expected)
+        observed = set(root_to_count.keys())
+        expected = set(roots)
+        for r_observed, r_expected in zip(sorted(observed), sorted(expected)):
+            self.assertAlmostEqual(r_observed, r_expected)
 
     def test_ndiff_roots(self):
         roots = (1, 4, 5)
@@ -400,7 +392,8 @@ class TestInterlacing(unittest.TestCase):
         roots = (1, 4, 5)
         t = 3.2
         a, b, c = roots
-        f = Multiplex(roots_to_differential_polys(roots))
+        polys = roots_to_differential_polys(roots)
+        f = Multiplex((sympyutils.WrappedUniPoly(p) for p in polys))
         # compute the evaluation manually
         z = (t - a) * (t - b) * (t - c)
         y = 3*t*t - 2*t*(a + b + c) + a*b + a*c + b*c
