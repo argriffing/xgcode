@@ -3,7 +3,9 @@
 This is also for tex scope.
 Requires ghostscript and pdflatex.
 Default tikz line width is 'thin' which is 0.4pt.
-Also pgflinewidth is the current line width.
+Also 'pgflinewidth' is the current line width.
+Use 'overlay' if bezier control points are causing trouble;
+begin{tikzpicture}[overlay] will stop the bounding box calculation.
 """
 
 import tempfile

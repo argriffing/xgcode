@@ -21,6 +21,8 @@ def get_form():
     form_objects = [
             Form.Integer('ncurves', 'draw this many curves',
                 3, low=1, high=4),
+            Form.Integer('nsegs', 'use this many beziers per curve',
+                10, low=1, high=100),
             Form.Float('morph', 'morph progress in [0,1]',
                 0.5, low_inclusive=0, high_inclusive=1),
             Form.TikzFormat(),
@@ -45,6 +47,35 @@ def inv_warp(x):
     return (2 / math.pi) * math.asin(x)
 
 def get_tikzpicture_body(fs):
+    """
+    Try to use sympy for computation and bezier for drawing.
+    """
+    ncurves = fs.ncurves
+    morph = fs.morph
+    # define the sympy expression for the warp
+    sympy_t = sympy.abc.t
+    sympy_t_warped = sympy.sin((sympy.pi / 2) * sympy_t)
+    sympy_t_morphed = morph*sympy_t_warped + (1-morph)*sympy_t
+    # define the shapes
+    shapes = []
+    x_axis = interlace.PiecewiseLinearPathShape([(-1, 0), (1, 0)])
+    shapes.append(x_axis)
+    for i in range(ncurves):
+        x_expr = sympy_t
+        y_expr = sympy.chebyshevt_poly(i+1, sympy_t_morphed)
+        #cheby_expr = sympy.chebyshevt_poly(i+1, sympy_t)
+        #y_expr = cheby_expr.subs(sympy_t, sympy_t_morphed)
+        shape = interlace.DifferentiableShape(
+                (x_expr, y_expr), -1.0, 1.0, fs.nsegs)
+        shapes.append(shape)
+    width = 6
+    height = 6
+    return interlace.tikz_shape_superposition(shapes, width, height)
+
+def get_tikzpicture_body_gamma(fs):
+    """
+    This was the latest pre-bezier version.
+    """
     ncurves = fs.ncurves
     morph = fs.morph
     # define the number of segments

@@ -134,13 +134,14 @@ class DifferentiableShape(ParametricShape):
     """
     This is a differentiable parametric curve of interlacing functions.
     """
-    def __init__(self, position_exprs, t_initial, t_final):
+    def __init__(self, position_exprs, t_initial, t_final, nchunks_default=20):
         """
         The position expressions are univariate sympy expressions.
         Each gives the position along an axis as a function of time t.
         @param position_exprs: sympy expressions that give position at time t
         @param t_initial: initial time
         @param t_final: final time
+        @param nchunks_default: the default number of chunks for a bpath
         """
         velocity_exprs = [x.diff(sympy.abc.t) for x in position_exprs]
         self.fps = [sympyutils.WrappedUniExpr(x) for x in position_exprs]
@@ -149,6 +150,7 @@ class DifferentiableShape(ParametricShape):
         self.fv = Multiplex(self.fvs)
         self.t_initial = t_initial
         self.t_final = t_final
+        self.nchunks_default = nchunks_default
     def get_bb_min_times(self):
         """
         Get the time of the min value on each axis.
@@ -174,11 +176,14 @@ class DifferentiableShape(ParametricShape):
                 root_seq.append(scipy.optimize.brentq(f, low, high))
             root_seqs.append(root_seq)
         return root_seqs[1:]
-    def get_bezier_path(self, nchunks=20):
+    def get_bezier_path(self, nchunks_in=None):
         """
-        @param nchunks: use this many chunks in the piecewise approximation
+        @param nchunks_in: use this many chunks in the piecewise approximation
         @return: a BezierPath
         """
+        nchunks = self.nchunks_default
+        if nchunks_in:
+            nchunks = nchunks_in
         return pcurve.get_bezier_path(
                 self.fp, self.fv, self.t_initial, self.t_final, nchunks)
 
@@ -229,7 +234,7 @@ class PiecewiseLinearPathShape(Shape):
         """
         @param points: a sequence of high dimensional points as numpy arrays
         """
-        self.points = points
+        self.points = [np.array(p) for p in points]
         self.ndim = len(points[0])
     def get_bb_min(self):
         """
@@ -287,6 +292,38 @@ def assert_support(t_seq, y_seqs):
     if len(lengths) != 1:
         msg = 'expected each sequence to have the same length'
         raise ValueError(msg)
+
+def get_tikz_bezier_2d(bpath):
+    lines = []
+    # draw everything except for the last point of the last chunk
+    for b in bpath.bchunks:
+        pts = [tikz.point_to_tikz(p) for p in b.get_points()[:-1]]
+        lines.append('%s .. controls %s and %s ..' % tuple(pts))
+    # draw the last point of the last chunk
+    lines.append('%s;' % tikz.point_to_tikz(bpath.bchunks[-1].p3))
+    return '\n'.join(lines)
+
+def tikz_shape_superposition(shapes, width, height):
+    """
+    Return the body of a tikzpicture environment.
+    @param shapes: a sequence of 2D Shape objects
+    @param width: max tikz width
+    @param height: max tikz height
+    @return: tikz text
+    """
+    bbmax = np.max([shape.get_bb_max() for shape in shapes], axis=0)
+    bbmin = np.min([shape.get_bb_min() for shape in shapes], axis=0)
+    scale = np.array([width, height], dtype=float) / (bbmax - bbmin)
+    f = lambda x: x*scale
+    colors = ['black'] + color.wolfram
+    arr = []
+    for c, shape in zip(colors, shapes):
+        for bpath in shape.get_bezier_paths():
+            bpath.transform(f)
+            arr.extend([
+                '\\draw[%s]' % c,
+                get_tikz_bezier_2d(bpath)])
+    return '\n'.join(arr)
 
 def tikz_superposition(t_seq, y_seqs, width, height):
     """

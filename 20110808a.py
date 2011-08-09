@@ -153,7 +153,12 @@ def get_tikz_pane(shape):
     shattered_strokes = []
     for time_list, stroke in zip(time_lists, strokes):
         shattered_strokes.extend(stroke.shatter(time_list))
-    # get the patches
+    depth_stroke_pairs = []
+    for stroke in shattered_strokes:
+        x, y, z = stroke.evaluate(stroke.characteristic_time)
+        depth_stroke_pairs.append((x, stroke))
+    ordered_strokes = [s for d, s in sorted(depth_stroke_pairs)]
+    # get the patches, tracking the times of interest and the styles
     patches = []
     for time_list, stroke in zip(time_lists, strokes):
         for patch in stroke.get_patches(time_list):
@@ -162,15 +167,14 @@ def get_tikz_pane(shape):
             elif stroke.style == STYLE_AXIS:
                 patch.style = STYLE_AXIS_PATCH
             patches.append(patch)
-    # sort the strokes according to depth order
-    depth_stroke_pairs = []
-    for stroke in shattered_strokes:
-        x, y, z = stroke.evaluate(stroke.characteristic_time)
-        depth_stroke_pairs.append((x, stroke))
-    # draw the depth sorted strokes and then draw the patches
+    depth_patch_pairs = []
+    for patch in patches:
+        x, y, z = patch.evaluate(patch.characteristic_time)
+        depth_patch_pairs.append((x, patch))
+    ordered_patches = [s for d, s in sorted(depth_patch_pairs)]
+    # draw the depth sorted strokes and patches
     arr = []
-    ordered_strokes = [s for d, s in sorted(depth_stroke_pairs)] + patches
-    for stroke in ordered_strokes:
+    for stroke in ordered_strokes + ordered_patches:
         # draw a linear curve or a bezier curve
         if len(stroke.bchunks)==1 and stroke.bchunks[0].is_almost_linear():
             p0 = stroke.bchunks[0].p0
@@ -254,7 +258,7 @@ def get_latex_text(tikz_text):
     """
     TikZ boilerplate code.
     """
-    preamble = ''
+    preamble = '% preamble goes here'
     document_body = tikz_text
     return tikz.get_latex_text(preamble, document_body)
 
@@ -285,3 +289,4 @@ def get_response_content(fs):
         return tikz.get_pdf_contents(latex_text)
     elif fs.png:
         return tikz.get_png_contents(latex_text)
+
