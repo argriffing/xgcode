@@ -19,6 +19,7 @@ import FormOut
 import tikz
 import interlace
 import pcurve
+import sympyutils
 import color
 import const
 
@@ -96,7 +97,7 @@ def get_world_segments(root_a, root_b, root_c,
     # add the parametric curve
     roots = (root_a, root_b, root_c)
     polys = interlace.roots_to_differential_polys(roots)
-    f_poly = interlace.MultiplexPolys(polys)
+    f_poly = interlace.Multiplex((sympyutils.WrappedUniPoly(p) for p in polys))
     poly_segs = pcurve.get_piecewise_curve(
             f_poly, initial_t, final_t, 10, seg_length_min)
     segments.extend((p0, p1, STYLE_CURVE) for p0, p1 in poly_segs)

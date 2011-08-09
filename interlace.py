@@ -321,26 +321,17 @@ def matrix_to_schur_polys(M):
 
 class Multiplex:
     """
-    Turn a sequence of functions into a single function.
+    Turn an iterable of functions into a single function.
     Each component function should return a float given a float,
     while the returned function will return a numpy array given a float.
     """
     def __init__(self, fs):
         """
-        @param fs: sequence of (float -> float) python functions
+        @param fs: iterable of (float -> float) python functions
         """
-        self.fs = fs
+        self.fs = list(fs)
     def __call__(self, t):
         return np.array([f(t) for f in self.fs])
-
-class MultiplexPolys:
-    def __init__(self, polys):
-        """
-        @param fns: sequence of univariate sympy Poly objects
-        """
-        self.polys = polys
-    def __call__(self, t):
-        return np.array([float(p.eval(t)) for p in self.polys])
 
 
 
