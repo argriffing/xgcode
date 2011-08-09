@@ -157,8 +157,14 @@ class BezierChunk:
         self.p1 = f(self.p1)
         self.p2 = f(self.p2)
         self.p3 = f(self.p3)
+    def split_global(self, t_global):
+        """
+        @param t_global: global time
+        """
+        return self.split(self.global_to_local_time(t_global))
     def split(self, t):
         """
+        @param t: local time in the interval [0, 1]
         @return: two new BezierChunk objects
         """
         q01, r012, s0123, r123, q23 = bezier_split(

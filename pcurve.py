@@ -80,12 +80,60 @@ class BezierPath:
         result = scipy.optimize.fminbound(
                 self.get_weak_midpoint_error, t_initial, t_final, args)
         return result
+    def get_patches(self, times):
+        """
+        The idea is to patch over the quiescent joints.
+        This will erase the small imperfection caused by
+        drawing two background-erased curves butted against each other
+        or overlapping each other.
+        The characteristic times of the returned bpaths should
+        be equal to the quiescence time.
+        The endpoints of the patches should be halfway between
+        the characteristic quiescence time and the neighboring
+        intersection times.
+        @param times: sorted filtered intersection times
+        @return: a collection of BezierPath objects
+        """
+        if len(times) < 2:
+            return []
+        # define the patch endtimes and characteristic times
+        patch_triples = []
+        for intersect_a, intersect_b in iterutils.pairwise(times):
+            tq = 0.5 * (intersect_a + intersect_b)
+            ta = (2.0 / 3.0) * intersect_a + (1.0 / 3.0) * intersect_b
+            tb = (1.0 / 3.0) * intersect_a + (2.0 / 3.0) * intersect_b
+            patch_triples.append((ta, tq, tb))
+        # make the patches
+        patches = []
+        remaining = deque(self.bchunks)
+        for ta, tq, tb in patch_triples:
+            # chop until we reach time ta
+            while remaining[0].start_time < ta:
+                b = remaining.popleft()
+                if ta < b.stop_time:
+                    ba, bb = b.split_global(ta)
+                    remaining.appendleft(bb)
+            # eat until we reach time tb
+            g = []
+            while remaining[0].start_time < tb:
+                b = remaining.popleft()
+                if tb < b.stop_time:
+                    ba, bb = b.split_global(tb)
+                    g.append(ba)
+                    remaining.appendleft(bb)
+                else:
+                    g.append(b)
+            # add the patch
+            patch = self.__class__(g)
+            patch.characteristic_time = tq
+            patches.append(patch)
+        return patches
     def shatter(self, times):
         """
         Return a collection of BezierPath objects.
         The returned objects should be annotated
         with characteristic times corresponding to intersections.
-        @param times: filtered intersection times
+        @param times: sorted filtered intersection times
         @return: a collection of BezierPath objects
         """
         # handle the edge case of no intersections
@@ -112,11 +160,9 @@ class BezierPath:
             while True:
                 b = remaining.popleft()
                 if b.start_time <= q <= b.stop_time:
-                    duration = b.stop_time - b.start_time
-                    t_local = (q - b.start_time) / duration
-                    alpha, beta = b.split(t_local)
-                    g.append(alpha)
-                    remaining.appendleft(beta)
+                    ba, bb = b.split_global(q)
+                    g.append(ba)
+                    remaining.appendleft(bb)
                     groups.append(g)
                     g = []
                     break

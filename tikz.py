@@ -2,6 +2,8 @@
 
 This is also for tex scope.
 Requires ghostscript and pdflatex.
+Default tikz line width is 'thin' which is 0.4pt.
+Also pgflinewidth is the current line width.
 """
 
 import tempfile

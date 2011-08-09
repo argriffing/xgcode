@@ -2,8 +2,10 @@
 Draw nine hardcoded logo-sized 3D-embedded 1D shapes.
 
 The command line version will create tikz files.
-No colors are used except for the foreground and background
-colors 'fg' and 'bg' respectively.
+With basic beamer colors, the default background and foreground are used.
+With advanced beamer colors,
+the primary and tertiary colors are explicitly pillaged from the theme
+and are used to draw the curve and the axes respectively.
 Axes are drawn, and the shapes are drawn winding around the axes,
 scaled so that the shapes do not go outside the bounding box of the axes.
 The orthoplanar intersections are not highlighted
@@ -27,6 +29,11 @@ import bezier
 import sympyutils
 import bezintersect
 
+STYLE_AXIS = 'axis-style'
+STYLE_AXIS_PATCH = 'axis-patch-style'
+STYLE_MAIN = 'main-style'
+STYLE_MAIN_PATCH = 'main-patch-style'
+
 def get_form():
     """
     @return: a list of form objects
@@ -36,8 +43,11 @@ def get_form():
             Form.RadioGroup('options', 'color options', [
                 Form.RadioItem('black_and_white',
                     'use black and white', True),
-                Form.RadioItem('beamer_colors',
-                    'use beamer colors')]),
+                Form.RadioItem('basic_beamer_colors',
+                    'use beamer colors'),
+                Form.RadioItem('advanced_beamer_colors',
+                    'use advanced beamer colors'),
+                ]),
             Form.TikzFormat(),
             Form.ContentDisposition()]
     return form_objects
@@ -69,6 +79,20 @@ def rotate_to_view(p):
 def project_to_2d(point):
     return point[1:]
 
+class Stroke(pcurve.BezierPath):
+    def set_style(self, style):
+        self.style = style
+    def shatter(self, *args, **kwargs):
+        pieces = pcurve.BezierPath.shatter(self, *args, **kwargs)
+        for p in pieces:
+            p.set_style(self.style)
+        return pieces
+
+def bpath_to_stroke(bpath, style):
+    stroke = Stroke(bpath.bchunks)
+    stroke.set_style(style)
+    return stroke
+
 def make_half_axis(axis, sign, radius):
     """
     This is a helper function.
@@ -96,27 +120,25 @@ def get_scene(shape):
     yp_rad = yn_rad = 1.0
     zp_rad = zn_rad = 1.0
     strokes.extend([
-        make_half_axis(0, +1, xp_rad),
-        make_half_axis(0, -1, xn_rad),
-        make_half_axis(1, +1, yp_rad),
-        make_half_axis(1, -1, yn_rad),
-        make_half_axis(2, +1, zp_rad),
-        make_half_axis(2, -1, zn_rad)])
+        bpath_to_stroke(make_half_axis(0, +1, xp_rad), STYLE_AXIS),
+        bpath_to_stroke(make_half_axis(0, -1, xn_rad), STYLE_AXIS),
+        bpath_to_stroke(make_half_axis(1, +1, yp_rad), STYLE_AXIS),
+        bpath_to_stroke(make_half_axis(1, -1, yn_rad), STYLE_AXIS),
+        bpath_to_stroke(make_half_axis(2, +1, zp_rad), STYLE_AXIS),
+        bpath_to_stroke(make_half_axis(2, -1, zn_rad), STYLE_AXIS)])
     # get the infinity radius of the shape
     r = shape.get_infinity_radius()
     # add the scaled bezier paths of the shape
-    bpaths = shape.get_bezier_paths()
-    for bpath in bpaths:
+    for bpath in shape.get_bezier_paths():
         bpath.scale(1.0 / r)
-    strokes.extend(bpaths)
+        strokes.append(bpath_to_stroke(bpath, STYLE_MAIN))
     # return the strokes
     return strokes
 
-def get_tikz_pane(shape, bg_color, fg_color):
+def get_tikz_pane(shape):
     """
+    At this point the tikz styles main-style and axis-style have been defined.
     @param shape: an interlacing.Shape object
-    @param bg_color: background tikz color string
-    @param fg_color: foreground tikz color string
     @return: a tikz text string
     """
     min_gridsize = 0.001
@@ -131,26 +153,35 @@ def get_tikz_pane(shape, bg_color, fg_color):
     shattered_strokes = []
     for time_list, stroke in zip(time_lists, strokes):
         shattered_strokes.extend(stroke.shatter(time_list))
+    # get the patches
+    patches = []
+    for time_list, stroke in zip(time_lists, strokes):
+        for patch in stroke.get_patches(time_list):
+            if stroke.style == STYLE_MAIN:
+                patch.style = STYLE_MAIN_PATCH
+            elif stroke.style == STYLE_AXIS:
+                patch.style = STYLE_AXIS_PATCH
+            patches.append(patch)
     # sort the strokes according to depth order
     depth_stroke_pairs = []
     for stroke in shattered_strokes:
         x, y, z = stroke.evaluate(stroke.characteristic_time)
         depth_stroke_pairs.append((x, stroke))
-    # draw the curves
+    # draw the depth sorted strokes and then draw the patches
     arr = []
-    for x, stroke in sorted(depth_stroke_pairs):
+    ordered_strokes = [s for d, s in sorted(depth_stroke_pairs)] + patches
+    for stroke in ordered_strokes:
         # draw a linear curve or a bezier curve
         if len(stroke.bchunks)==1 and stroke.bchunks[0].is_almost_linear():
             p0 = stroke.bchunks[0].p0
             p3 = stroke.bchunks[0].p3
-            line = '\\draw[draw=%s,double=%s] %s -- %s;' % (
-                    bg_color, fg_color,
+            line = '\\draw[%s] %s -- %s;' % (
+                    stroke.style,
                     tikz.point_to_tikz(stroke.bchunks[0].p0[1:]),
                     tikz.point_to_tikz(stroke.bchunks[0].p3[1:]))
             arr.append(line)
         else:
-            line = '\\draw[draw=%s,double=%s]' % (
-                    bg_color, fg_color)
+            line = '\\draw[%s]' % stroke.style
             arr.append(line)
             arr.append(get_tikz_bezier(stroke))
     return '\n'.join(arr)
@@ -161,32 +192,52 @@ def get_tikz_lines(fs):
     @param fs: user input
     @return: a sequence of tikz lines
     """
-    if fs.beamer_colors:
+    arr = []
+    # possibly import some colors from the beamer theme into the tikzpicture
+    if fs.advanced_beamer_colors:
+        arr.extend([
+            '{\\usebeamercolor{palette sidebar tertiary}}',
+            '{\\usebeamercolor{palette sidebar primary}}'])
+    # determine the foreground and background colors
+    if fs.advanced_beamer_colors:
         bg = 'bg'
-        fg = 'fg'
+        fg_main = 'palette sidebar primary.fg'
+        fg_axis = 'palette sidebar tertiary.fg'
+    elif fs.basic_beamer_colors:
+        bg = 'bg'
+        fg_main = 'fg'
+        fg_axis = 'fg'
     else:
         bg = 'white'
-        fg = 'black'
-    arr = [
-            '\\matrix{',
-            get_tikz_pane(interlace.get_sample_shape_0(), bg, fg),
-            '&',
-            get_tikz_pane(interlace.get_sample_shape_1(), bg, fg),
-            '&',
-            get_tikz_pane(interlace.get_sample_shape_2(), bg, fg),
-            '\\\\',
-            get_tikz_pane(interlace.get_sample_shape_3(), bg, fg),
-            '&',
-            get_tikz_pane(interlace.get_sample_shape_4(), bg, fg),
-            '&',
-            get_tikz_pane(interlace.get_sample_shape_5(), bg, fg),
-            '\\\\',
-            get_tikz_pane(interlace.get_sample_shape_6(), bg, fg),
-            '&',
-            get_tikz_pane(interlace.get_sample_shape_7(), bg, fg),
-            '&',
-            get_tikz_pane(interlace.get_sample_shape_8(), bg, fg),
-            '\\\\};']
+        fg_main = 'black'
+        fg_axis = 'black'
+    # define the tikzstyles for drawing the curve and the axes
+    arr.extend([
+        '\\tikzstyle{main-style}=[draw=%s,double=%s,double distance=\\pgflinewidth]' % (bg, fg_main),
+        '\\tikzstyle{axis-style}=[draw=%s,double=%s,double distance=\\pgflinewidth]' % (bg, fg_axis),
+        '\\tikzstyle{main-patch-style}=[draw=%s]' % fg_main,
+        '\\tikzstyle{axis-patch-style}=[draw=%s]' % fg_axis])
+    # draw the matrix
+    arr.extend([
+        '\\matrix{',
+        get_tikz_pane(interlace.get_sample_shape_0()),
+        '&',
+        get_tikz_pane(interlace.get_sample_shape_1()),
+        '&',
+        get_tikz_pane(interlace.get_sample_shape_2()),
+        '\\\\',
+        get_tikz_pane(interlace.get_sample_shape_3()),
+        '&',
+        get_tikz_pane(interlace.get_sample_shape_4()),
+        '&',
+        get_tikz_pane(interlace.get_sample_shape_5()),
+        '\\\\',
+        get_tikz_pane(interlace.get_sample_shape_6()),
+        '&',
+        get_tikz_pane(interlace.get_sample_shape_7()),
+        '&',
+        get_tikz_pane(interlace.get_sample_shape_8()),
+        '\\\\};'])
     return arr
 
 def get_tikz_bezier(bpath):
