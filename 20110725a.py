@@ -1,8 +1,13 @@
 """
 Draw Chebyshev polynomials stretched into sinusoidal functions.
+
+Use the command line to spam some morphs into separate tikz files
+to be included in a larger tex document.
 """
 
+import argparse
 import math
+import os
 
 import sympy
 import sympy.abc
@@ -12,6 +17,7 @@ import FormOut
 import tikz
 import color
 import interlace
+import typeutils
 
 def get_form():
     """
@@ -46,12 +52,10 @@ def inv_warp(x):
     """
     return (2 / math.pi) * math.asin(x)
 
-def get_tikzpicture_body(fs):
+def get_tikzpicture_body(ncurves, nsegs, morph):
     """
     Try to use sympy for computation and bezier for drawing.
     """
-    ncurves = fs.ncurves
-    morph = fs.morph
     # define the sympy expression for the warp
     sympy_t = sympy.abc.t
     sympy_t_warped = sympy.sin((sympy.pi / 2) * sympy_t)
@@ -66,7 +70,7 @@ def get_tikzpicture_body(fs):
         #cheby_expr = sympy.chebyshevt_poly(i+1, sympy_t)
         #y_expr = cheby_expr.subs(sympy_t, sympy_t_morphed)
         shape = interlace.DifferentiableShape(
-                (x_expr, y_expr), -1.0, 1.0, fs.nsegs)
+                (x_expr, y_expr), -1.0, 1.0, nsegs)
         shapes.append(shape)
     width = 6
     height = 6
@@ -154,7 +158,8 @@ def get_response_content(fs):
     @return: the response
     """
     # get the texts
-    tikz_text = get_tikzpicture(get_tikzpicture_body(fs))
+    tikz_body = get_tikzpicture_body(fs.ncurves, fs.nsegs, fs.morph)
+    tikz_text = get_tikzpicture(tikz_body)
     latex_text = get_latex_text(tikz_text)
     # decide the output format
     if fs.tikz:
@@ -165,4 +170,29 @@ def get_response_content(fs):
         return tikz.get_pdf_contents(latex_text)
     elif fs.png:
         return tikz.get_png_contents(latex_text)
+
+def main(args):
+    for i in range(args.nframes):
+        morph = i / float(args.nframes - 1)
+        filename = os.path.join(args.outdir, 'frame%04d.tikz' % i)
+        with open(filename, 'w') as fout:
+            print 'writing', filename
+            arr = []
+            for name, (r, g, b) in color.wolfram_name_color_pairs:
+                line = '\\definecolor{%s}{RGB}{%s,%s,%s}' % (name, r, g, b)
+                arr.append(line)
+            arr.append(get_tikzpicture_body(args.ncurves, args.nsegs, morph))
+            print >> fout, '\n'.join(arr)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--ncurves', type=typeutils.positive_integer,
+            default=3, help='plot this many curves on top of the x axis')
+    parser.add_argument('--nsegs', type=typeutils.positive_integer,
+            default=10, help='use a piecewise bezier with this many segments')
+    parser.add_argument('--nframes', type=typeutils.positive_integer,
+            default=3, help='make this many files like frame????.tikz')
+    parser.add_argument('--outdir',
+            default='', help='output directory')
+    main(parser.parse_args())
 
