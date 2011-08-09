@@ -42,14 +42,21 @@ def get_intersection_times(bpaths, trans, min_gridsize, min_spatial_gap):
     @param min_spatial_gap: a resolution for spacing between intersections
     @return: a sequence, conformant with bpaths, of lists of intersection times
     """
+    # Clone the bpaths in preparation for transformation.
+    # It is not enough to create transformed cloned bchunks
+    # because the bpaths must be used for time filtering.
+    transformed_bpaths = []
+    for bpath in bpaths:
+        transformed_bpath = bpath.clone()
+        transformed_bpath.transform(trans)
+        transformed_bpaths.append(transformed_bpath)
     # create a soup of owned transformed bchunks
     bchunk_soup = []
-    for i, bpath in enumerate(bpaths):
+    for i, bpath in enumerate(transformed_bpaths):
         for b in bpath.bchunks:
             bnew = _OwnedBezierChunk(
                     b.start_time, b.stop_time, b.p0, b.p1, b.p2, b.p3)
             bnew.parent_ref = i
-            bnew.transform(trans)
             bchunk_soup.append(bnew)
     # get the list of refined bchunks that intersect with something interesting
     intersecting_bchunks = _get_bchunk_intersections(bchunk_soup, min_gridsize)
@@ -59,7 +66,7 @@ def get_intersection_times(bpaths, trans, min_gridsize, min_spatial_gap):
         unfiltered_time_map[b.parent_ref].update((b.start_time, b.stop_time))
     # filter the times
     filtered_times_list = []
-    for i, bpath in enumerate(bpaths):
+    for i, bpath in enumerate(transformed_bpaths):
         unfiltered_times = unfiltered_time_map.get(i, [])
         filtered_times = _filter_intersection_times(
                 bpath, unfiltered_times, min_spatial_gap)

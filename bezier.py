@@ -84,10 +84,14 @@ class BezierChunk:
     def __init__(self, start_time, stop_time, p0, p1, p2, p3):
         self.start_time = start_time
         self.stop_time = stop_time
-        self.p0 = p0
-        self.p1 = p1
-        self.p2 = p2
-        self.p3 = p3
+        self.p0 = np.array(p0)
+        self.p1 = np.array(p1)
+        self.p2 = np.array(p2)
+        self.p3 = np.array(p3)
+    def clone(self):
+        return self.__class__(
+                self.start_time, self.stop_time,
+                self.p0, self.p1, self.p2, self.p3)
     def is_almost_linear(self, reltol=1e-4):
         return bezier_is_almost_linear(
                 self.p0, self.p1, self.p2, self.p3, reltol)
@@ -153,10 +157,6 @@ class BezierChunk:
         self.p1 = f(self.p1)
         self.p2 = f(self.p2)
         self.p3 = f(self.p3)
-    def clone(self):
-        return self.__class__(
-                self.start_time, self.stop_time,
-                self.p0, self.p1, self.p2, self.p3)
     def split(self, t):
         """
         @return: two new BezierChunk objects

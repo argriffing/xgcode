@@ -33,6 +33,53 @@ import color
 import pcurve
 import bezier
 
+def get_sample_shape_0():
+    """
+    A parametric curve defined by a cubic polynomial and its derivatives.
+    @return: a Shape
+    """
+    initial_t = 0.9
+    root_a = 1.0
+    root_b = 2.5
+    root_c = 3.5
+    final_t = 3.6
+    p3 = sympyutils.roots_to_poly((root_a, root_b, root_c))
+    p2 = p3.diff()
+    p1 = p2.diff()
+    return CubicPolyShape((p1, p2, p3), initial_t, final_t)
+
+#FIXME
+def get_sample_shape_1():
+    return get_sample_shape_0()
+
+#FIXME
+def get_sample_shape_2():
+    return get_sample_shape_0()
+
+#FIXME
+def get_sample_shape_3():
+    return get_sample_shape_0()
+
+#FIXME
+def get_sample_shape_4():
+    return get_sample_shape_0()
+
+#FIXME
+def get_sample_shape_5():
+    return get_sample_shape_0()
+
+#FIXME
+def get_sample_shape_6():
+    return get_sample_shape_0()
+
+#FIXME
+def get_sample_shape_7():
+    return get_sample_shape_0()
+
+#FIXME
+def get_sample_shape_8():
+    return get_sample_shape_0()
+
 
 class Shape:
     """
@@ -44,7 +91,14 @@ class Shape:
     a function that returns a collection of bezier paths,
     a function that returns the orthoplanar intersections.
     """
-    pass
+    def get_infinity_radius(self):
+        """
+        Infinity refers to the infinity norm.
+        @return: max of absolute values of axis aligned bounding box coords
+        """
+        a = np.linalg.norm(self.get_bb_min(), np.Inf)
+        b = np.linalg.norm(self.get_bb_max(), np.Inf)
+        return max(a, b)
 
 class ParametricShape(Shape):
     """
@@ -73,6 +127,8 @@ class ParametricShape(Shape):
         for time_seq in self.get_orthoplanar_intersection_times():
             point_seqs.append([self.fp(t) for t in time_seq])
         return point_seqs
+    def get_bezier_paths(self):
+        return [self.get_bezier_path()]
 
 class DifferentiableShape(ParametricShape):
     """
@@ -209,6 +265,8 @@ class PiecewiseLinearPathShape(Shape):
             b = bezier.create_bchunk_line_segment(pa, pb)
             bchunks.append(b)
         return pcurve.BezierPath(bchunks)
+    def get_bezier_paths(self):
+        return [self.get_bezier_path()]
 
 
 

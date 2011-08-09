@@ -19,6 +19,7 @@ from scipy import optimize
 import bezier
 import iterutils
 
+#TODO this could go into the bezier module
 class BezierPath:
     """
     This curve is created by patching together cubic Bezier curves.
@@ -30,10 +31,18 @@ class BezierPath:
         """
         self.bchunks = list(bchunks)
         self.characteristic_time = None
+    def clone(self):
+        bchunks = [b.clone() for b in self.bchunks]
+        bpath = self.__class__(bchunks)
+        bpath.characteristic_time = self.characteristic_time
+        return bpath
     def get_start_time(self):
         return self.bchunks[0].start_time
     def get_stop_time(self):
         return self.bchunks[-1].stop_time
+    def scale(self, scaling_factor):
+        f = lambda p: p*scaling_factor
+        self.transform(f)
     def transform(self, f):
         for b in self.bchunks:
             b.transform(f)
