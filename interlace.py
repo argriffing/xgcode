@@ -22,6 +22,7 @@ import unittest
 
 import numpy as np
 import scipy
+from scipy import linalg
 import sympy
 from sympy import matrices
 from sympy import abc
