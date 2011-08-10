@@ -94,8 +94,11 @@ class BezierPath:
         @param times: sorted filtered intersection times
         @return: a collection of BezierPath objects
         """
+        # if no quiescence time exists then no patch is needed
         if len(times) < 2:
             return []
+        # avoid numerical error at piecewise boundaries
+        abstol = 1e-6
         # define the patch endtimes and characteristic times
         patch_triples = []
         for intersect_a, intersect_b in iterutils.pairwise(times):
@@ -107,15 +110,15 @@ class BezierPath:
         patches = []
         remaining = deque(self.bchunks)
         for ta, tq, tb in patch_triples:
-            # chop until we reach time ta
-            while remaining[0].start_time < ta:
+            # chop until we are near time ta
+            while remaining[0].start_time < ta - abstol:
                 b = remaining.popleft()
                 if ta < b.stop_time:
                     ba, bb = b.split_global(ta)
                     remaining.appendleft(bb)
-            # eat until we reach time tb
+            # eat until we are near time tb
             g = []
-            while remaining[0].start_time < tb:
+            while remaining[0].start_time < tb - abstol:
                 b = remaining.popleft()
                 if tb < b.stop_time:
                     ba, bb = b.split_global(tb)

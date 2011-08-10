@@ -116,7 +116,7 @@ def get_scene(shape):
     strokes = []
     # All of the axis radii are hardcoded.
     # The curve itself is scaled to fit inside the 2d projection of the axes
-    xp_rad = xn_rad = 2.0
+    xp_rad = xn_rad = 3.0
     yp_rad = yn_rad = 1.0
     zp_rad = zn_rad = 1.0
     strokes.extend([
@@ -130,7 +130,7 @@ def get_scene(shape):
     r = shape.get_infinity_radius()
     # add the scaled bezier paths of the shape
     for bpath in shape.get_bezier_paths():
-        bpath.scale(1.0 / r)
+        bpath.scale(1.0 / (r * 1.5))
         strokes.append(bpath_to_stroke(bpath, STYLE_MAIN))
     # return the strokes
     return strokes
@@ -203,7 +203,11 @@ def get_tikz_lines(fs):
             '{\\usebeamercolor{palette sidebar tertiary}}',
             '{\\usebeamercolor{palette sidebar primary}}'])
     # determine the foreground and background colors
-    if fs.advanced_beamer_colors:
+    if fs.black_and_white:
+        bg = 'white'
+        fg_main = 'black'
+        fg_axis = 'black'
+    elif fs.advanced_beamer_colors:
         bg = 'bg'
         fg_main = 'palette sidebar primary.fg'
         fg_axis = 'palette sidebar tertiary.fg'
@@ -212,9 +216,7 @@ def get_tikz_lines(fs):
         fg_main = 'fg'
         fg_axis = 'fg'
     else:
-        bg = 'white'
-        fg_main = 'black'
-        fg_axis = 'black'
+        raise ValueError
     # define the tikzstyles for drawing the curve and the axes
     arr.extend([
         '\\tikzstyle{main-style}=[draw=%s,double=%s,double distance=\\pgflinewidth]' % (bg, fg_main),
@@ -289,4 +291,14 @@ def get_response_content(fs):
         return tikz.get_pdf_contents(latex_text)
     elif fs.png:
         return tikz.get_png_contents(latex_text)
+
+
+def main(args):
+    get_tikz_lines(args)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--black_and_white', type=bool, default=True)
+    parser.add_argument('--advanced_beamer_colors', type=bool, default=False)
+    main(parser.parse_args())
 

@@ -50,34 +50,68 @@ def get_sample_shape_0():
 
 #FIXME
 def get_sample_shape_1():
+    """
+    characteristic polynomials of principal submatrices
+    cauchy interlace theorem
+    """
     return get_sample_shape_0()
 
 #FIXME
 def get_sample_shape_2():
+    """
+    characteristic polynomials of schur complement matrices
+    """
     return get_sample_shape_0()
 
 #FIXME
 def get_sample_shape_3():
-    return get_sample_shape_0()
+    """
+    chebyshev polynomials
+    as examples of polynomials that are orthogonal w.r.t. a positive function
+    """
+    polys = [sympy.chebyshevt_poly(
+        i+1, sympy.abc.t, polys=True) for i in range(3)]
+    return CubicPolyShape(polys, -1.0, 1.0)
 
 #FIXME
 def get_sample_shape_4():
+    """
+    sinusoidal functions
+    solutions to -y'' = y with y'=0 at the boundaries
+    as an example of solution of a sturm liouville system
+    """
     return get_sample_shape_0()
 
 #FIXME
 def get_sample_shape_5():
+    """
+    linearly extended eigenvectors of an unweighted path laplacian
+    introduce as the finite difference equation solution to
+    the sturm liouville system
+    use the five segment path
+    """
     return get_sample_shape_0()
 
 #FIXME
 def get_sample_shape_6():
+    """
+    linearly extended eigenvector of edge-weighted path laplacian
+    """
     return get_sample_shape_0()
 
 #FIXME
 def get_sample_shape_7():
+    """
+    linearly extended eigenvectors of edge-weighted tree laplacian
+    """
     return get_sample_shape_0()
 
 #FIXME
 def get_sample_shape_8():
+    """
+    harmonically extended eigenvectors
+    of schur complement of edge-weighted tree laplacian
+    """
     return get_sample_shape_0()
 
 

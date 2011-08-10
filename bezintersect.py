@@ -8,6 +8,7 @@ or the identities of the curves which they intersect.
 Also we might only care about their intersections under some transformation.
 """
 
+from StringIO import StringIO
 from collections import defaultdict
 
 import numpy as np
@@ -118,10 +119,11 @@ def _get_bchunk_intersections(bchunks, min_gridsize):
     @param min_gridsize: a float lower bound resolution
     @return: a collection of refined intersecting bchunks
     """
+    too_many_things = 1e6
     # Maintain the invariant that potentially intersecting chunks
     # have a diameter of no more than twice the gridsize.
     gridsize = 0.5 * max(b.get_diameter() for b in bchunks)
-    while True:
+    while len(bchunks) < too_many_things:
         # map each grid point to a set of nearby parent curves
         gridmap = defaultdict(set)
         for b in bchunks:
@@ -141,8 +143,7 @@ def _get_bchunk_intersections(bchunks, min_gridsize):
         # then return the bchunks involved in putative intersections.
         if gridsize < min_gridsize:
             return [bchunks[index] for index in index_set]
-        # Bisect potentially intersecting chunks
-        # until each chunk has a diameter no more than twice the gridsize.
+        # Classify each intersecting bchunk by its diameter.
         bchunks_small = []
         bchunks_large = []
         for index in index_set:
@@ -151,6 +152,7 @@ def _get_bchunk_intersections(bchunks, min_gridsize):
                 bchunks_small.append(b)
             else:
                 bchunks_large.append(b)
+        # Iteratively bisect large intersecting chunks.
         while bchunks_large:
             b = bchunks_large.pop()
             for child in b.bisect():
@@ -159,4 +161,10 @@ def _get_bchunk_intersections(bchunks, min_gridsize):
                 else:
                     bchunks_large.append(child)
         bchunks = bchunks_small
+    out = StringIO()
+    print >> out, 'too many things:'
+    print >> out, len(bchunks), 'bchunks'
+    print >> out, gridsize, 'gridsize'
+    print >> out, min_gridsize, 'min_gridsize'
+    raise ValueError(out.getvalue())
 
