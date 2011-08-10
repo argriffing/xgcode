@@ -26,6 +26,7 @@ import Form
 import FormOut
 import tikz
 import interlace
+import interlacesample
 import pcurve
 import bezier
 import sympyutils
@@ -109,7 +110,7 @@ def make_half_axis(axis, sign, radius):
     b.parent_ref = id(bpath)
     return bpath
 
-def get_scene(shape):
+def get_scene(sample):
     """
     Define all of the bezier paths.
     @return: a list of strokes
@@ -118,9 +119,9 @@ def get_scene(shape):
     strokes = []
     # All of the axis radii are hardcoded.
     # The curve itself is scaled to fit inside the 2d projection of the axes
-    xp_rad = xn_rad = 3.0
-    yp_rad = yn_rad = 1.0
-    zp_rad = zn_rad = 1.0
+    xp_rad = xn_rad = 0.7 * 3.0
+    yp_rad = yn_rad = 0.7 * 1.0
+    zp_rad = zn_rad = 0.7 * 1.0
     strokes.extend([
         bpath_to_stroke(make_half_axis(0, +1, xp_rad), STYLE_AXIS),
         bpath_to_stroke(make_half_axis(0, -1, xn_rad), STYLE_AXIS),
@@ -128,23 +129,24 @@ def get_scene(shape):
         bpath_to_stroke(make_half_axis(1, -1, yn_rad), STYLE_AXIS),
         bpath_to_stroke(make_half_axis(2, +1, zp_rad), STYLE_AXIS),
         bpath_to_stroke(make_half_axis(2, -1, zn_rad), STYLE_AXIS)])
-    # get the infinity radius of the shape
-    r = shape.get_infinity_radius()
+    # define the shape and the small 3d scaling factor
+    shape = sample.get_shape()
+    sf = sample.get_small_3d_sf()
     # add the scaled bezier paths of the shape
     for bpath in shape.get_bezier_paths():
-        bpath.scale(1.0 / (r * 1.5))
+        bpath.scale(sf)
         strokes.append(bpath_to_stroke(bpath, STYLE_MAIN))
     # return the strokes
     return strokes
 
-def get_tikz_pane(shape):
+def get_tikz_pane(sample):
     """
     At this point the tikz styles main-style and axis-style have been defined.
-    @param shape: an interlacing.Shape object
+    @param sample: an interlacesample.Sample object
     @return: a tikz text string
     """
     min_gridsize = 0.001
-    strokes = get_scene(shape)
+    strokes = get_scene(sample)
     # rotate every control point in every bchunk in each curve
     for stroke in strokes:
         stroke.transform(rotate_to_view)
@@ -228,25 +230,26 @@ def get_tikz_lines(fs):
     # define the tikzstyles for drawing the curve and the axes
     arr.extend(get_tikz_style_definitions(bg, fg_axis, fg_main))
     # draw the matrix
+    samples = interlacesample.get_samples()
     arr.extend([
         '\\matrix{',
-        get_tikz_pane(interlace.get_sample_shape_0()),
+        get_tikz_pane(samples[0]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_1()),
+        get_tikz_pane(samples[1]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_2()),
+        get_tikz_pane(samples[2]),
         '\\\\',
-        get_tikz_pane(interlace.get_sample_shape_3()),
+        get_tikz_pane(samples[3]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_4()),
+        get_tikz_pane(samples[4]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_5()),
+        get_tikz_pane(samples[5]),
         '\\\\',
-        get_tikz_pane(interlace.get_sample_shape_6()),
+        get_tikz_pane(samples[6]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_7()),
+        get_tikz_pane(samples[7]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_8()),
+        get_tikz_pane(samples[8]),
         '\\\\};'])
     return arr
 
@@ -298,7 +301,7 @@ def get_response_content(fs):
 
 
 def main(args):
-    for i, shape in enumerate(interlace.get_sample_shapes()):
+    for i, sample in enumerate(interlacesample.get_samples()):
         filename = os.path.join(args.outdir, 'logo-%04d.tikz' % i)
         with open(filename, 'w') as fout:
             print 'writing', filename
@@ -315,7 +318,7 @@ def main(args):
             fg_axis = 'palette sidebar tertiary.fg'
             arr.extend(get_tikz_style_definitions(bg, fg_axis, fg_main))
             # add the tikz drawing functions
-            arr.append(get_tikz_pane(shape))
+            arr.append(get_tikz_pane(sample))
             # write the file
             print >> fout, '\n'.join(arr)
 

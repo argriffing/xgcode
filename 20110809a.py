@@ -105,18 +105,60 @@ def make_half_axis(axis, sign, radius):
     b.parent_ref = id(bpath)
     return bpath
 
-def get_scene(shape):
+#TODO this might be unused
+class Scene:
+    """
+    This basically has a bunch of (shape, style) pairs.
+    """
+    def __init__(self, shape_style_pairs):
+        self.shape_style_pairs = shape_style_pairs
+    def gen_strokes(self):
+        for shape, style in self.shape_style_pairs:
+            for bpath in shape.get_bezier_paths():
+                stroke = Stroke(bpath.bchunks)
+                stroke.set_style(style)
+                yield stroke
+
+
+def get_scene(shape, width, height):
     """
     Define all of the bezier paths.
+    @param width: width of scene in tikz units
+    @param height: width of scene in tikz units
     @return: a list of strokes
     """
     # define the strokes
     strokes = []
-    # All of the axis radii are hardcoded.
-    # The curve itself is scaled to fit inside the 2d projection of the axes
-    xp_rad = xn_rad = 3.0
-    yp_rad = yn_rad = 1.0
-    zp_rad = zn_rad = 1.0
+    # For these full images as opposed to the two-color logos,
+    # set the half axis radii per shape.
+    # FIXME AD HOC
+    xp_rad = xn_rad = 3 * (width + height) / 4.0
+    yp_rad = yn_rad = width / 2.0
+    zp_rad = zn_rad = height / 2.0
+    # FIXME AD HOC
+    # Replace this junk with the right transformations.
+    # The right way would involve turning the shapes into
+    # bezier paths and then linearly transforming the beziers
+    # and then estimating the width and height of the transformation
+    # by looking at the bezier bounding boxes and recursively splitting
+    # the beziers which are near the x or y max or min, until
+    # the x and y max and min are known within some specified error.
+    # Then the whole scene can be rescaled to fit within the
+    # desired width and height dimensions.
+    # The values should be (A^T g) where g is a screen space
+    # 2d cardinal direction vector
+    # and A is the matrix that rotates and projects the original shapes
+    # into screen space.
+    bchunks = [b for bpath in shape.get_bezier_paths() for b in bpath.bchunks]
+    screen_right = bezier.get_max_dot(bchunks, np.array([-0.3, 0.8, 0]))
+    screen_left = bezier.get_max_dot(bchunks, -np.array([-0.3, 0.8, 0]))
+    screen_top = bezier.get_max_dot(bchunks, np.array([-0.1, 0.3, 0.8]))
+    screen_bottom = bezier.get_max_dot(bchunks, -np.array([-0.1, 0.3, 0.8]))
+    scaling_factor = min(
+            (width / 2.0) / screen_right,
+            (width / 2.0) / screen_left,
+            (height / 2.0) / screen_top,
+            (height / 2.0) / screen_bottom)
     strokes.extend([
         bpath_to_stroke(make_half_axis(0, +1, xp_rad), STYLE_X),
         bpath_to_stroke(make_half_axis(0, -1, xn_rad), STYLE_X),
@@ -124,9 +166,6 @@ def get_scene(shape):
         bpath_to_stroke(make_half_axis(1, -1, yn_rad), STYLE_Y),
         bpath_to_stroke(make_half_axis(2, +1, zp_rad), STYLE_Z),
         bpath_to_stroke(make_half_axis(2, -1, zn_rad), STYLE_Z)])
-    # get the infinity radius of the shape
-    r = shape.get_infinity_radius()
-    scaling_factor = 1.0 / (r * 1.5)
     # add the scaled bezier paths of the shape
     for bpath in shape.get_bezier_paths():
         bpath.scale(scaling_factor)
@@ -152,7 +191,9 @@ def get_tikz_pane(shape):
     @return: a tikz text string
     """
     min_gridsize = 0.001
-    strokes = get_scene(shape)
+    width = 8.0
+    height = 6.0
+    strokes = get_scene(shape, width, height)
     # rotate every control point in every bchunk in each curve
     for stroke in strokes:
         stroke.transform(rotate_to_view)

@@ -12,6 +12,7 @@ where t is between 0 and 1.
 
 import math
 import itertools
+import heapq
 
 import numpy as np
 import sympy
@@ -124,15 +125,30 @@ class BezierChunk:
         return bezier_eval(self.p0, self.p1, self.p2, self.p3, t_local)
     def get_points(self):
         return self.p0, self.p1, self.p2, self.p3
+    def get_max_dot_bounds(self, direction):
+        """
+        @param direction: an appropriately dimensioned vector
+        @return: (lower bound of the max, upper bound of the max)
+        """
+        attained_points = [self.p0, self.p3]
+        all_points = self.get_points()
+        lower_bound_of_max = max(np.dot(p, direction) for p in attained_points)
+        upper_bound_of_max = max(np.dot(p, direction) for p in all_points)
+        return lower_bound_of_max, upper_bound_of_max
     def get_diameter(self):
+        """
+        This is loose upper bound.
+        """
         return np.linalg.norm(self.get_bb_max() - self.get_bb_min())
     def get_bb_min(self):
         """
+        This is a loose lower bound.
         @return: axis aligned bounding box min point
         """
         return np.min(self.get_points(), axis=0)
     def get_bb_max(self):
         """
+        This is not a loose upper bound.
         @return: axis aligned bounding box max point
         """
         return np.max(self.get_points(), axis=0)
@@ -180,6 +196,42 @@ class BezierChunk:
         return a, b
     def bisect(self):
         return self.split(0.5)
+
+def get_max_dot(bchunks, direction, abstol=1e-4):
+    """
+    Get the max dot product with a given vector within a given tolerance.
+    @param bchunks: a collection of BezierChunk objects
+    @param direction: a direction vector of appropriate dimensionality
+    @param abstol: when this is small the answer is more accurate
+    @return: a python float for the upper bound dot product
+    """
+    # initialize the greatest lower bound
+    glb = None
+    # initialize the queue
+    q = []
+    for b in bchunks:
+        lb, ub = b.get_max_dot_bounds(direction)
+        if glb is None or glb < lb:
+            glb = lb
+        heapq.heappush(q, (-ub, -lb, b))
+    # repeatedly refine the queue
+    while True:
+        # Get the most promising bchunk (the greatest upper bound).
+        neg_ub, neg_lb, b = heapq.heappop(q)
+        ub, lb = -neg_ub, -neg_lb
+        # If the most promising bchunk has a tight bound then we are finished.
+        if ub - lb < abstol:
+            return ub
+        # Bisect the most promising bchunk and look at its pieces.
+        for child in b.bisect():
+            child_lb, child_ub = child.get_max_dot_bounds(direction)
+            # If the child is not promising then leave it out of the queue.
+            if child_ub < glb:
+                continue
+            # Update the glb and put the child into the queue.
+            if glb < child_lb:
+                glb = child_lb
+            heapq.heappush(q, (-child_ub, -child_lb, child))
 
 def create_bchunk_hermite(
         initial_time, final_time,
