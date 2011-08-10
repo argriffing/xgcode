@@ -112,7 +112,6 @@ def get_sample_shape_5():
         L[i, i] = 2
     L[0, 0] = 1
     L[-1, -1] = 1
-    print L
     # define the eigenvector points
     w, vt = scipy.linalg.eigh(L)
     #x_values = vt.T[1] / math.sqrt(w[1])
@@ -121,9 +120,6 @@ def get_sample_shape_5():
     x_values = vt.T[1]
     y_values = -vt.T[2]
     z_values = vt.T[3]
-    print x_values
-    print y_values
-    print z_values
     points = np.array(zip(*(x_values, y_values, z_values)))
     return PiecewiseLinearPathShape(points)
 
@@ -319,24 +315,28 @@ class PiecewiseLinearPathShape(Shape):
         """
         Get the list of intersection points per axis.
         """
+        abstol = 1e-6
         point_seqs = []
         for axis in range(self.ndim):
             point_seq = []
             # check points for exact intersections
             for p in self.points:
-                if not p[axis]:
+                if abs(p[axis]) < abstol:
                     point_seq.append(p)
             # check line segments for intersections
             for pa, pb in iterutils.pairwise(self.points):
-                if pa[axis]*pb[axis] < 0:
-                    p = (pa[axis]*pa - pb[axis]*pb) / (pa[axis] - pb[axis])
-                    point_seq.append(p)
-            points_seqs.append(point_seq)
+                if abs(pa[axis]) > abstol and abs(pb[axis]) > abstol:
+                    if pa[axis]*pb[axis] < 0:
+                        p = (pa[axis]*pa - pb[axis]*pb) / (pa[axis] - pb[axis])
+                        point_seq.append(p)
+            point_seqs.append(point_seq)
         return point_seqs
     def get_bezier_path(self):
         bchunks = []
-        for pa, pb in iterutils.pairwise(self.points):
+        for i, (pa, pb) in enumerate(iterutils.pairwise(self.points)):
             b = bezier.create_bchunk_line_segment(pa, pb)
+            b.start_time = float(i)
+            b.stop_time = float(i+1)
             bchunks.append(b)
         return pcurve.BezierPath(bchunks)
     def get_bezier_paths(self):
