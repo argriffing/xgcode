@@ -19,6 +19,7 @@ import Form
 import FormOut
 import tikz
 import interlace
+import interlacesample
 import pcurve
 import bezier
 import sympyutils
@@ -120,11 +121,10 @@ class Scene:
                 yield stroke
 
 
-def get_scene(shape, width, height):
+def get_scene(sample):
     """
     Define all of the bezier paths.
-    @param width: width of scene in tikz units
-    @param height: width of scene in tikz units
+    @param sample: an interlacesample.Sample object
     @return: a list of strokes
     """
     # define the strokes
@@ -132,9 +132,10 @@ def get_scene(shape, width, height):
     # For these full images as opposed to the two-color logos,
     # set the half axis radii per shape.
     # FIXME AD HOC
-    xp_rad = xn_rad = 3 * (width + height) / 4.0
-    yp_rad = yn_rad = width / 2.0
-    zp_rad = zn_rad = height / 2.0
+    xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad = sample.get_axis_radii()
+    #xp_rad = xn_rad = 3 * (width + height) / 4.0
+    #yp_rad = yn_rad = width / 2.0
+    #zp_rad = zn_rad = height / 2.0
     # FIXME AD HOC
     # Replace this junk with the right transformations.
     # The right way would involve turning the shapes into
@@ -149,6 +150,7 @@ def get_scene(shape, width, height):
     # 2d cardinal direction vector
     # and A is the matrix that rotates and projects the original shapes
     # into screen space.
+    """
     bchunks = [b for bpath in shape.get_bezier_paths() for b in bpath.bchunks]
     screen_right = bezier.get_max_dot(bchunks, np.array([-0.3, 0.8, 0]))
     screen_left = bezier.get_max_dot(bchunks, -np.array([-0.3, 0.8, 0]))
@@ -159,6 +161,11 @@ def get_scene(shape, width, height):
             (width / 2.0) / screen_left,
             (height / 2.0) / screen_top,
             (height / 2.0) / screen_bottom)
+    """
+    # define the scaling factor and the shape
+    sf = sample.get_large_3d_sf()
+    shape = sample.get_shape()
+    # add the half axis strokes
     strokes.extend([
         bpath_to_stroke(make_half_axis(0, +1, xp_rad), STYLE_X),
         bpath_to_stroke(make_half_axis(0, -1, xn_rad), STYLE_X),
@@ -168,7 +175,7 @@ def get_scene(shape, width, height):
         bpath_to_stroke(make_half_axis(2, -1, zn_rad), STYLE_Z)])
     # add the scaled bezier paths of the shape
     for bpath in shape.get_bezier_paths():
-        bpath.scale(scaling_factor)
+        bpath.scale(sf)
         strokes.append(bpath_to_stroke(bpath, STYLE_CURVE))
     # define the orthocircles at curve-plane intersections
     intersection_radius = 0.2
@@ -178,22 +185,20 @@ def get_scene(shape, width, height):
     for axis, point_seq, style in zip(axes, point_seqs, styles):
         for center in point_seq:
             bchunks = list(bezier.gen_bchunks_ortho_circle(
-                    center*scaling_factor, intersection_radius, axis))
+                    center*sf, intersection_radius, axis))
             bpath = pcurve.BezierPath(bchunks)
             strokes.append(bpath_to_stroke(bpath, style))
     # return the strokes
     return strokes
 
-def get_tikz_pane(shape):
+def get_tikz_pane(sample):
     """
     At this point the tikz styles main-style and axis-style have been defined.
-    @param shape: an interlacing.Shape object
+    @param sample: an interlacesample.Sample object
     @return: a tikz text string
     """
     min_gridsize = 0.001
-    width = 8.0
-    height = 6.0
-    strokes = get_scene(shape, width, height)
+    strokes = get_scene(sample)
     # rotate every control point in every bchunk in each curve
     for stroke in strokes:
         stroke.transform(rotate_to_view)
@@ -241,6 +246,21 @@ def get_tikz_pane(shape):
     return '\n'.join(arr)
 
 def get_tikz_style_definitions():
+    """
+    return [
+            '\\tikzstyle{x-style}=[thick,draw=white,double=w-blue,'
+            'double distance=\\pgflinewidth]',
+            '\\tikzstyle{y-style}=[thick,draw=white,double=w-red,'
+            'double distance=\\pgflinewidth]',
+            '\\tikzstyle{z-style}=[thick,draw=white,double=w-olive,'
+            'double distance=\\pgflinewidth]',
+            '\\tikzstyle{curve-style}=[thick,draw=white,double=black,'
+            'double distance=\\pgflinewidth]',
+            '\\tikzstyle{x-patch-style}=[thick,draw=w-blue]',
+            '\\tikzstyle{y-patch-style}=[thick,draw=w-red]',
+            '\\tikzstyle{z-patch-style}=[thick,draw=w-olive]',
+            '\\tikzstyle{curve-patch-style}=[thick,draw=black]']
+    """
     return [
             '\\tikzstyle{x-style}=[draw=white,double=w-blue,'
             'double distance=\\pgflinewidth]',
@@ -264,25 +284,26 @@ def get_tikz_lines():
     # define the tikzstyles for drawing the curve and the axes
     arr.extend(get_tikz_style_definitions())
     # draw the matrix
+    samples = interlacesample.get_samples()
     arr.extend([
         '\\matrix{',
-        get_tikz_pane(interlace.get_sample_shape_0()),
+        get_tikz_pane(samples[0]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_1()),
+        get_tikz_pane(samples[1]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_2()),
+        get_tikz_pane(samples[2]),
         '\\\\',
-        get_tikz_pane(interlace.get_sample_shape_3()),
+        get_tikz_pane(samples[3]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_4()),
+        get_tikz_pane(samples[4]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_5()),
+        get_tikz_pane(samples[5]),
         '\\\\',
-        get_tikz_pane(interlace.get_sample_shape_6()),
+        get_tikz_pane(samples[6]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_7()),
+        get_tikz_pane(samples[7]),
         '&',
-        get_tikz_pane(interlace.get_sample_shape_8()),
+        get_tikz_pane(samples[8]),
         '\\\\};'])
     return arr
 
@@ -336,34 +357,25 @@ def get_response_content(fs):
 
 
 def main(args):
-    for i, shape in enumerate(interlace.get_sample_shapes()):
-        filename = os.path.join(args.outdir, 'logo-%04d.tikz' % i)
+    for i, sample in enumerate(interlacesample.get_samples()):
+        filename = os.path.join(args.outdir, 'sample-%04d.tikz' % i)
         with open(filename, 'w') as fout:
             print 'writing', filename
             arr = []
             # add the remark about the invocation of the generating script
             arr.append('% ' + ' '.join(sys.argv))
-            # add the commands to import beamer theme colors
-            arr.extend([
-                '{\\usebeamercolor{palette sidebar tertiary}}',
-                '{\\usebeamercolor{palette sidebar primary}}'])
+            # add the commands to define custom colors
+            for name, rgb in color.wolfram_name_color_pairs:
+                arr.append(tikz.define_color(name, rgb))
             # add the tikz style definitions
-            bg = 'bg'
-            fg_main = 'palette sidebar primary.fg'
-            fg_axis = 'palette sidebar tertiary.fg'
-            arr.extend(get_tikz_style_definitions(bg, fg_axis, fg_main))
+            arr.extend(get_tikz_style_definitions())
             # add the tikz drawing functions
-            arr.append(get_tikz_pane(shape))
+            arr.append(get_tikz_pane(sample))
             # write the file
             print >> fout, '\n'.join(arr)
 
 if __name__ == '__main__':
-    # these options are kind of a hack
-    # to be compatible with the web interface
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--black_and_white', type=bool, default=False)
-    parser.add_argument('--basic_beamer_colors', type=bool, default=False)
-    parser.add_argument('--advanced_beamer_colors', type=bool, default=True)
     parser.add_argument('--outdir',
             default='', help='output directory')
     main(parser.parse_args())

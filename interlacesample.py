@@ -127,6 +127,16 @@ class OrthogonalPoly(Sample):
     def get_small_3d_sf(self):
         r = self.shape.get_infinity_radius()
         return 0.5 * (1.0 / r)
+    def get_large_3d_sf(self):
+        return 4.0 * self.get_small_3d_sf()
+    def get_axis_radii(self):
+        xp_rad = 8.0
+        xn_rad = 8.0
+        yp_rad = 3.0
+        yn_rad = 3.0
+        zp_rad = 3.0
+        zn_rad = 3.0
+        return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
 
 class SturmLiouville(Sample):
     """
@@ -143,6 +153,16 @@ class SturmLiouville(Sample):
     def get_small_3d_sf(self):
         r = self.shape.get_infinity_radius()
         return 0.5 * (1.0 / r)
+    def get_large_3d_sf(self):
+        return 4.0 * self.get_small_3d_sf()
+    def get_axis_radii(self):
+        xp_rad = 8.0
+        xn_rad = 8.0
+        yp_rad = 3.0
+        yn_rad = 3.0
+        zp_rad = 3.0
+        zn_rad = 3.0
+        return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
 
 class FiniteDifferences(Sample):
     """
@@ -175,6 +195,16 @@ class FiniteDifferences(Sample):
     def get_small_3d_sf(self):
         r = self.shape.get_infinity_radius()
         return 0.5 * (1.0 / r)
+    def get_large_3d_sf(self):
+        return 4.0 * self.get_small_3d_sf()
+    def get_axis_radii(self):
+        xp_rad = 8.0
+        xn_rad = 8.0
+        yp_rad = 3.0
+        yn_rad = 3.0
+        zp_rad = 3.0
+        zn_rad = 3.0
+        return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
 
 class LaplacePath(FiniteDifferences):
     """
@@ -194,9 +224,3 @@ class SchurTree(FiniteDifferences):
     of schur complement of edge-weighted tree laplacian
     """
     pass
-
-
-
-if __name__ == '__main__':
-    unittest.main()
-
