@@ -94,7 +94,6 @@ def get_sample_shape_4():
     exprs = [sympy.cos(n*(sympy.abc.t-1)*sympy.pi/2) for n in range(1,3+1)]
     return DifferentiableShape(exprs, -1.0, 1.0, 10)
 
-#FIXME
 def get_sample_shape_5():
     """
     linearly extended eigenvectors of an unweighted path laplacian
@@ -102,7 +101,31 @@ def get_sample_shape_5():
     the sturm liouville system
     use the five segment path
     """
-    return get_sample_shape_0()
+    # define the number of points
+    n = 6
+    # make the Laplacian matrix
+    L = np.zeros((n, n))
+    for i in range(n-1):
+        L[i, i+1] = -1
+        L[i+1, i] = -1
+    for i in range(n):
+        L[i, i] = 2
+    L[0, 0] = 1
+    L[-1, -1] = 1
+    print L
+    # define the eigenvector points
+    w, vt = scipy.linalg.eigh(L)
+    #x_values = vt.T[1] / math.sqrt(w[1])
+    #y_values = vt.T[2] / math.sqrt(w[2])
+    #z_values = vt.T[3] / math.sqrt(w[3])
+    x_values = vt.T[1]
+    y_values = -vt.T[2]
+    z_values = vt.T[3]
+    print x_values
+    print y_values
+    print z_values
+    points = np.array(zip(*(x_values, y_values, z_values)))
+    return PiecewiseLinearPathShape(points)
 
 #FIXME
 def get_sample_shape_6():
@@ -318,7 +341,6 @@ class PiecewiseLinearPathShape(Shape):
         return pcurve.BezierPath(bchunks)
     def get_bezier_paths(self):
         return [self.get_bezier_path()]
-
 
 
 def is_strictly_increasing(seq):
