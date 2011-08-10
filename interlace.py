@@ -33,6 +33,18 @@ import color
 import pcurve
 import bezier
 
+def get_sample_shapes():
+    return [
+            get_sample_shape_0(),
+            get_sample_shape_1(),
+            get_sample_shape_2(),
+            get_sample_shape_3(),
+            get_sample_shape_4(),
+            get_sample_shape_5(),
+            get_sample_shape_6(),
+            get_sample_shape_7(),
+            get_sample_shape_8()]
+
 def get_sample_shape_0():
     """
     A parametric curve defined by a cubic polynomial and its derivatives.

@@ -16,6 +16,8 @@ this simplifies the rendering a little bit.
 
 import argparse
 import math
+import os
+import sys
 
 import numpy as np
 import sympy
@@ -190,6 +192,12 @@ def get_tikz_pane(shape):
             arr.append(get_tikz_bezier(stroke))
     return '\n'.join(arr)
 
+def get_tikz_style_definitions(bg, fg_axis, fg_main):
+    return [
+        '\\tikzstyle{axis-style}=[draw=%s,double=%s,double distance=\\pgflinewidth]' % (bg, fg_axis),
+        '\\tikzstyle{main-style}=[draw=%s,double=%s,double distance=\\pgflinewidth]' % (bg, fg_main),
+        '\\tikzstyle{axis-patch-style}=[draw=%s]' % fg_axis,
+        '\\tikzstyle{main-patch-style}=[draw=%s]' % fg_main]
 
 def get_tikz_lines(fs):
     """
@@ -205,24 +213,20 @@ def get_tikz_lines(fs):
     # determine the foreground and background colors
     if fs.black_and_white:
         bg = 'white'
-        fg_main = 'black'
         fg_axis = 'black'
+        fg_main = 'black'
     elif fs.advanced_beamer_colors:
         bg = 'bg'
-        fg_main = 'palette sidebar primary.fg'
         fg_axis = 'palette sidebar tertiary.fg'
+        fg_main = 'palette sidebar primary.fg'
     elif fs.basic_beamer_colors:
         bg = 'bg'
-        fg_main = 'fg'
         fg_axis = 'fg'
+        fg_main = 'fg'
     else:
         raise ValueError
     # define the tikzstyles for drawing the curve and the axes
-    arr.extend([
-        '\\tikzstyle{main-style}=[draw=%s,double=%s,double distance=\\pgflinewidth]' % (bg, fg_main),
-        '\\tikzstyle{axis-style}=[draw=%s,double=%s,double distance=\\pgflinewidth]' % (bg, fg_axis),
-        '\\tikzstyle{main-patch-style}=[draw=%s]' % fg_main,
-        '\\tikzstyle{axis-patch-style}=[draw=%s]' % fg_axis])
+    arr.extend(get_tikz_style_definitions(bg, fg_axis, fg_main))
     # draw the matrix
     arr.extend([
         '\\matrix{',
@@ -294,11 +298,35 @@ def get_response_content(fs):
 
 
 def main(args):
-    get_tikz_lines(args)
+    for i, shape in enumerate(interlace.get_sample_shapes()):
+        filename = os.path.join(args.outdir, 'logo-%04d.tikz' % i)
+        with open(filename, 'w') as fout:
+            print 'writing', filename
+            arr = []
+            # add the remark about the invocation of the generating script
+            arr.append('% ' + ' '.join(sys.argv))
+            # add the commands to import beamer theme colors
+            arr.extend([
+                '{\\usebeamercolor{palette sidebar tertiary}}',
+                '{\\usebeamercolor{palette sidebar primary}}'])
+            # add the tikz style definitions
+            bg = 'bg'
+            fg_main = 'palette sidebar primary.fg'
+            fg_axis = 'palette sidebar tertiary.fg'
+            arr.extend(get_tikz_style_definitions(bg, fg_axis, fg_main))
+            # add the tikz drawing functions
+            arr.append(get_tikz_pane(shape))
+            # write the file
+            print >> fout, '\n'.join(arr)
 
 if __name__ == '__main__':
+    # these options are kind of a hack
+    # to be compatible with the web interface
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--black_and_white', type=bool, default=True)
-    parser.add_argument('--advanced_beamer_colors', type=bool, default=False)
+    parser.add_argument('--black_and_white', type=bool, default=False)
+    parser.add_argument('--basic_beamer_colors', type=bool, default=False)
+    parser.add_argument('--advanced_beamer_colors', type=bool, default=True)
+    parser.add_argument('--outdir',
+            default='', help='output directory')
     main(parser.parse_args())
 
