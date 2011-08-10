@@ -75,7 +75,6 @@ def get_sample_shape_2():
     """
     return get_sample_shape_0()
 
-#FIXME
 def get_sample_shape_3():
     """
     chebyshev polynomials
@@ -85,14 +84,15 @@ def get_sample_shape_3():
         i+1, sympy.abc.t, polys=True) for i in range(3)]
     return CubicPolyShape(polys, -1.0, 1.0)
 
-#FIXME
 def get_sample_shape_4():
     """
     sinusoidal functions
     solutions to -y'' = y with y'=0 at the boundaries
+    the functions are cos(n*(t-1)*pi/2)
     as an example of solution of a sturm liouville system
     """
-    return get_sample_shape_0()
+    exprs = [sympy.cos(n*(sympy.abc.t-1)*sympy.pi/2) for n in range(1,3+1)]
+    return DifferentiableShape(exprs, -1.0, 1.0, 10)
 
 #FIXME
 def get_sample_shape_5():
