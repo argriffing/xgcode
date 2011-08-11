@@ -277,6 +277,10 @@ def tikz_shape_superposition(shapes, width, height):
     for c, shape in zip(colors, shapes):
         for bpath in shape.get_bezier_paths():
             bpath.transform(f)
+            # Chop up the bpath so that the stupid bounding box that tikz
+            # makes will still be approximately correct.
+            bpath.refine_for_bb()
+            # Draw the bpath.
             arr.extend([
                 '\\draw[thick,%s]' % c,
                 get_tikz_bezier_2d(bpath)])

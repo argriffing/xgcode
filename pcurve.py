@@ -42,20 +42,67 @@ class BezierPath:
         return self.bchunks[0].start_time
     def get_stop_time(self):
         return self.bchunks[-1].stop_time
+    def refine_for_bb(self, abstol=1e-4):
+        """
+        Chop up the path to tighten the naive bounding box.
+        The naive bounding box uses only the bezier
+        endpoints and control points.
+        This is necessary for drawing into environments like TikZ
+        which only use the naive bounding box.
+        @param abstol: the axis aligned bounding box should have this error
+        """
+        for direction in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+            self.refine_for_dot(direction, abstol)
+    def refine_for_dot(self, direction_in, abstol=1e-4):
+        """
+        Chop up the path to reduce the dot product towards a direction.
+        This is mainly a helper function to help refine
+        the path so that the naive bounding box is tight.
+        @param direction_in: the direction for the refinement
+        @param abstol: the axis aligned bounding box should have this error
+        """
+        # initialize the direction and the greatest lower bound
+        direction = np.array(direction_in)
+        glb = None
+        # initialize the list of safe bchunks
+        safe_bchunks = []
+        # initialize the queue
+        q = []
+        for b in self.bchunks:
+            lb, ub = b.get_max_dot_bounds(direction)
+            if glb is None or glb < lb:
+                glb = lb
+            heapq.heappush(q, (-ub, -lb, b))
+        # repeatedly refine the queue
+        while True:
+            # Get the most promising bchunk (the greatest upper bound).
+            neg_ub, neg_lb, b = heapq.heappop(q)
+            ub, lb = -neg_ub, -neg_lb
+            # If the most promising one has a tight bound then we are finished.
+            if ub - lb < abstol:
+                safe_bchunks.append(b)
+                break
+            # Bisect the most promising bchunk and look at its pieces.
+            for child in b.bisect():
+                child_lb, child_ub = child.get_max_dot_bounds(direction)
+                # If the child is not promising then leave it out of the queue.
+                if child_ub < glb:
+                    safe_bchunks.append(child)
+                else:
+                    # Update the glb and put the child into the queue.
+                    if glb < child_lb:
+                        glb = child_lb
+                    heapq.heappush(q, (-child_ub, -child_lb, child))
+        # sort the bchunks by increasing time
+        new_bchunks = safe_bchunks + [b for neg_ub, neg_lb, b in q]
+        tb_pairs = [(b.start_time, b) for b in new_bchunks]
+        self.bchunks = [b for t, b in sorted(tb_pairs)]
     def scale(self, scaling_factor):
         f = lambda p: p*scaling_factor
         self.transform(f)
     def transform(self, f):
         for b in self.bchunks:
             b.transform(f)
-    def evaluate_ortho(self, t, axis):
-        """
-        @param t: time
-        @param axis: axis index
-        """
-        for b in self.bchunks:
-            if b.start_time <= t <= b.stop_time:
-                return b.eval_global_ortho(t)
     def evaluate(self, t):
         #TODO possibly add a faster function for simultaneous evaluation
         # at multiple times
