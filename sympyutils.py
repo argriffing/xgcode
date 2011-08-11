@@ -127,6 +127,42 @@ class TestSympyUtils(unittest.TestCase):
         observed = poly_fminbound(p, low, high)
         self.assertAlmostEqual(observed, expected)
 
+    def test_principal_submatrix_charpoly(self):
+        t = sympy.abc.t
+        M = sympy.Matrix([
+            [5, -4, 0],
+            [-4, 12, -5],
+            [0, -5, 7]])
+        tI = t*sympy.eye(3)
+        p3x3 = (tI - M).det()
+        p2x2 = (tI - M)[:2, :2].det()
+        p1x1 = (tI - M)[:1, :1].det()
+        p3x3_expected = t**3 - 24*(t**2) + 138*t - 183
+        p2x2_expected = t**2 - 17*t + 44
+        p1x1_expected = t - 5
+        self.assertEqual(p3x3, p3x3_expected)
+        self.assertEqual(p2x2, p2x2_expected)
+        self.assertEqual(p1x1, p1x1_expected)
+
+    def test_schur_complement_charpoly(self):
+        t = sympy.abc.t
+        M = sympy.Matrix([
+            [5, -4, 0],
+            [-4, 12, -5],
+            [0, -5, 7]])
+        tI = t*sympy.eye(3)
+        comp2x2 = (M[:2, :2] - M[:2, 2]*(1/M[2,2])*M[2, :2])
+        comp1x1 = (M[:1, :1] - M[0, 1:]*M[1:, 1:].inv()*M[1:, 0])
+        p3x3 = (tI - M).det()
+        p2x2 = (tI[:2, :2] - comp2x2).det()
+        p1x1 = (tI[:1, :1] - comp1x1).det()
+        p3x3_expected = t**3 - 24*(t**2) + 138*t - 183
+        p2x2_expected = t**2 - t*sympy.Rational(94, 7) + sympy.Rational(183, 7)
+        p1x1_expected = t - sympy.Rational(183, 59)
+        self.assertEqual(p3x3, p3x3_expected)
+        self.assertEqual(p2x2, p2x2_expected)
+        self.assertEqual(p1x1, p1x1_expected)
+
 
 if __name__ == '__main__':
     unittest.main()

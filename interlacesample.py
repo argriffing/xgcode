@@ -143,11 +143,39 @@ class PrincipalCharpoly(Sample):
         zn_rad = 5.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
 
-class SchurCharpoly(DerivativePoly):
+class SchurCharpoly(Sample):
     """
+    See sympyutils testing for more info on this specific example.
     characteristic polynomials of schur complement matrices
     """
-    pass
+    def __init__(self):
+        t = sympy.abc.t
+        p3x3 = sympy.Poly(
+                t**3 - 24*(t**2) + 138*t - 183)
+        p2x2 = sympy.Poly(
+                t**2 - t*sympy.Rational(94, 7) + sympy.Rational(183, 7))
+        p1x1 = sympy.Poly(
+            t - sympy.Rational(183, 59))
+        roots = [float(r) for r in p3x3.nroots()]
+        initial_t = min(roots) - 0.05 * (max(roots) - min(roots))
+        final_t = max(roots) + 0.05 * (max(roots) - min(roots))
+        polys = (p1x1, p2x2, p3x3)
+        self.shape =  interlace.CubicPolyShape(polys, initial_t, final_t)
+    def get_shape(self):
+        return self.shape
+    def get_small_3d_sf(self):
+        r = self.shape.get_infinity_radius()
+        return 0.6 * (1.0 / r)
+    def get_large_3d_sf(self):
+        return 8.0 * self.get_small_3d_sf()
+    def get_axis_radii(self):
+        xp_rad = 4.0
+        xn_rad = 4.0
+        yp_rad = 2.0
+        yn_rad = 2.0
+        zp_rad = 2.0
+        zn_rad = 5.0
+        return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
 
 class OrthogonalPoly(Sample):
     """
@@ -261,3 +289,4 @@ class SchurTree(FiniteDifferences):
     of schur complement of edge-weighted tree laplacian
     """
     pass
+

@@ -377,6 +377,8 @@ class Multiplex:
 
 
 
+
+
 class TestInterlacing(unittest.TestCase):
 
     def test_roots_to_poly(self):
@@ -439,7 +441,7 @@ class TestInterlacing(unittest.TestCase):
         observed = sorted(float(r) for r in sympy.roots(polys[2]))
         expected = sorted(roots)
         self.assertTrue(np.allclose(observed, expected))
-    
+
     def test_poly_eval(self):
         roots = (1, 4, 5)
         t = 3.2
@@ -454,7 +456,6 @@ class TestInterlacing(unittest.TestCase):
         observed = f(t)
         expected = np.array([x, y, z])
         self.assertTrue(np.allclose(observed, expected))
-
 
 
 if __name__ == '__main__':
