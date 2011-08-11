@@ -184,10 +184,17 @@ def get_scene(sample):
     styles = (STYLE_X, STYLE_Y, STYLE_Z)
     for axis, point_seq, style in zip(axes, point_seqs, styles):
         for center in point_seq:
+            # NOTE using four-stroke circles
+            # NOTE to avoid problems caused by thick back-erased lines
+            """
             bchunks = list(bezier.gen_bchunks_ortho_circle(
                     center*sf, intersection_radius, axis))
             bpath = pcurve.BezierPath(bchunks)
             strokes.append(bpath_to_stroke(bpath, style))
+            """
+            for b in bezier.gen_bchunks_ortho_circle(
+                    center*sf, intersection_radius, axis):
+                strokes.append(bpath_to_stroke(pcurve.BezierPath([b]), style))
     # return the strokes
     return strokes
 
@@ -248,20 +255,6 @@ def get_tikz_pane(sample):
 def get_tikz_style_definitions():
     """
     return [
-            '\\tikzstyle{x-style}=[thick,draw=white,double=w-blue,'
-            'double distance=\\pgflinewidth]',
-            '\\tikzstyle{y-style}=[thick,draw=white,double=w-red,'
-            'double distance=\\pgflinewidth]',
-            '\\tikzstyle{z-style}=[thick,draw=white,double=w-olive,'
-            'double distance=\\pgflinewidth]',
-            '\\tikzstyle{curve-style}=[thick,draw=white,double=black,'
-            'double distance=\\pgflinewidth]',
-            '\\tikzstyle{x-patch-style}=[thick,draw=w-blue]',
-            '\\tikzstyle{y-patch-style}=[thick,draw=w-red]',
-            '\\tikzstyle{z-patch-style}=[thick,draw=w-olive]',
-            '\\tikzstyle{curve-patch-style}=[thick,draw=black]']
-    """
-    return [
             '\\tikzstyle{x-style}=[draw=white,double=w-blue,'
             'double distance=\\pgflinewidth]',
             '\\tikzstyle{y-style}=[draw=white,double=w-red,'
@@ -274,6 +267,20 @@ def get_tikz_style_definitions():
             '\\tikzstyle{y-patch-style}=[draw=w-red]',
             '\\tikzstyle{z-patch-style}=[draw=w-olive]',
             '\\tikzstyle{curve-patch-style}=[draw=black]']
+    """
+    return [
+            '\\tikzstyle{x-style}=[thick,draw=white,double=w-blue,'
+            'double distance=\\pgflinewidth]',
+            '\\tikzstyle{y-style}=[thick,draw=white,double=w-red,'
+            'double distance=\\pgflinewidth]',
+            '\\tikzstyle{z-style}=[thick,draw=white,double=w-olive,'
+            'double distance=\\pgflinewidth]',
+            '\\tikzstyle{curve-style}=[thick,draw=white,double=black,'
+            'double distance=\\pgflinewidth]',
+            '\\tikzstyle{x-patch-style}=[thick,draw=w-blue]',
+            '\\tikzstyle{y-patch-style}=[thick,draw=w-red]',
+            '\\tikzstyle{z-patch-style}=[thick,draw=w-olive]',
+            '\\tikzstyle{curve-patch-style}=[thick,draw=black]']
 
 def get_tikz_lines():
     """

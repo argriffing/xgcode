@@ -31,10 +31,12 @@ class BezierPath:
         """
         self.bchunks = list(bchunks)
         self.characteristic_time = None
+        self.is_cyclic = False
     def clone(self):
         bchunks = [b.clone() for b in self.bchunks]
         bpath = self.__class__(bchunks)
         bpath.characteristic_time = self.characteristic_time
+        bpath.is_cyclic = self.is_cyclic
         return bpath
     def get_start_time(self):
         return self.bchunks[0].start_time
@@ -131,6 +133,23 @@ class BezierPath:
             patch.characteristic_time = tq
             patches.append(patch)
         return patches
+    #TODO finish or remove _cyclic_shatter
+    def _cyclic_shatter(self, times):
+        """
+        Return a collection of BezierPath objects.
+        The returned objects should be annotated
+        with characteristic times corresponding to intersections.
+        @param times: sorted filtered intersection times
+        @return: a collection of BezierPath objects
+        """
+        # Handle the edge case of no intersections.
+        if not times:
+            self.characteristic_time = 0.5 * (
+                    self.get_start_time() + self.get_stop_time())
+            return [self]
+        # If there is a single intersection
+        # then break the cycle at the opposite time.
+        return
     def shatter(self, times):
         """
         Return a collection of BezierPath objects.
