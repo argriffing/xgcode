@@ -122,8 +122,6 @@ def main(args):
             # add the commands to define custom colors
             for name, rgb in color.wolfram_name_color_pairs:
                 arr.append(tikz.define_color(name, rgb))
-            # add the tikz style definitions
-            arr.extend(get_tikz_style_definitions())
             # add the tikz drawing functions
             arr.append(get_tikz_pane(sample))
             # write the file
