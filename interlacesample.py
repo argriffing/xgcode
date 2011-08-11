@@ -46,6 +46,45 @@ def get_samples():
             LaplaceTree(),
             SchurTree()]
 
+def _get_cubic_superposition_shapes(
+        polys, initial_t, final_t):
+    """
+    This is a helper function.
+    """
+    shapes = []
+    # add the axis shape
+    x_axis = interlace.PiecewiseLinearPathShape([
+        (initial_t, 0),
+        (final_t, 0)])
+    shapes.append(x_axis)
+    # each 2d shape is a parametric cubic polynomial
+    t = sympy.abc.t
+    axis_poly = sympy.Poly(t, t)
+    for poly in polys:
+        shape = interlace.CubicPolyShape(
+                (axis_poly, poly), initial_t, final_t)
+        shapes.append(shape)
+    return shapes
+
+def _get_differentiable_superposition_shapes(
+        exprs, initial_t, final_t, nsegs=10):
+    """
+    This is a helper function.
+    @param exprs: sympy expressions
+    """
+    shapes = []
+    # add the axis shape
+    x_axis = interlace.PiecewiseLinearPathShape([
+        (initial_t, 0),
+        (final_t, 0)])
+    shapes.append(x_axis)
+    # each 2d shape is a differentiable shape
+    for expr in exprs:
+        shape = interlace.DifferentiableShape(
+                (sympy.abc.t, expr), initial_t, final_t, nsegs)
+        shapes.append(shape)
+    return shapes
+
 class Sample:
     """
     Default values to use for debugging.
@@ -78,16 +117,17 @@ class DerivativePoly(Sample):
         # f(x) = x^3 - 14 x^2 + 59 x - 70
         # f'(x) = 3 x^2 - 28 x + 59
         # f''(x) = 6 x - 28
-        initial_t = 0.9
+        self.initial_t = 0.9
         root_a = 1.0
         root_b = 2.5
         root_c = 3.5
-        final_t = 3.6
+        self.final_t = 3.6
         p3 = sympyutils.roots_to_poly((root_a, root_b, root_c))
         p2 = p3.diff()
         p1 = p2.diff()
-        polys = (p1, p2, p3)
-        self.shape =  interlace.CubicPolyShape(polys, initial_t, final_t)
+        self.polys = (p1, p2, p3)
+        self.shape =  interlace.CubicPolyShape(
+                self.polys, self.initial_t, self.final_t)
     def get_shape(self):
         return self.shape
     def get_small_3d_sf(self):
@@ -103,6 +143,9 @@ class DerivativePoly(Sample):
         zp_rad = 3.0
         zn_rad = 3.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_superposition_shapes(self):
+        return _get_cubic_superposition_shapes(
+                self.polys, self.initial_t, self.final_t)
 
 class PrincipalCharpoly(Sample):
     """
@@ -123,10 +166,11 @@ class PrincipalCharpoly(Sample):
         p2x2 = sympy.Poly(t**2 - 17*t + 44, t)
         p1x1 = sympy.Poly(t - 5, t)
         roots = [float(r) for r in p3x3.nroots()]
-        initial_t = min(roots) - 0.05 * (max(roots) - min(roots))
-        final_t = max(roots) + 0.05 * (max(roots) - min(roots))
-        polys = (p1x1, p2x2, p3x3)
-        self.shape =  interlace.CubicPolyShape(polys, initial_t, final_t)
+        self.initial_t = min(roots) - 0.05 * (max(roots) - min(roots))
+        self.final_t = max(roots) + 0.05 * (max(roots) - min(roots))
+        self.polys = (p1x1, p2x2, p3x3)
+        self.shape =  interlace.CubicPolyShape(
+                self.polys, self.initial_t, self.final_t)
     def get_shape(self):
         return self.shape
     def get_small_3d_sf(self):
@@ -142,6 +186,9 @@ class PrincipalCharpoly(Sample):
         zp_rad = 2.0
         zn_rad = 5.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_superposition_shapes(self):
+        return _get_cubic_superposition_shapes(
+                self.polys, self.initial_t, self.final_t)
 
 class SchurCharpoly(Sample):
     """
@@ -157,10 +204,11 @@ class SchurCharpoly(Sample):
         p1x1 = sympy.Poly(
             t - sympy.Rational(183, 59))
         roots = [float(r) for r in p3x3.nroots()]
-        initial_t = min(roots) - 0.05 * (max(roots) - min(roots))
-        final_t = max(roots) + 0.05 * (max(roots) - min(roots))
-        polys = (p1x1, p2x2, p3x3)
-        self.shape =  interlace.CubicPolyShape(polys, initial_t, final_t)
+        self.initial_t = min(roots) - 0.05 * (max(roots) - min(roots))
+        self.final_t = max(roots) + 0.05 * (max(roots) - min(roots))
+        self.polys = (p1x1, p2x2, p3x3)
+        self.shape =  interlace.CubicPolyShape(
+                self.polys, self.initial_t, self.final_t)
     def get_shape(self):
         return self.shape
     def get_small_3d_sf(self):
@@ -176,6 +224,9 @@ class SchurCharpoly(Sample):
         zp_rad = 2.0
         zn_rad = 5.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_superposition_shapes(self):
+        return _get_cubic_superposition_shapes(
+                self.polys, self.initial_t, self.final_t)
 
 class OrthogonalPoly(Sample):
     """
@@ -184,9 +235,12 @@ class OrthogonalPoly(Sample):
     """
     def __init__(self):
         # predefine the shape
-        polys = [sympy.chebyshevt_poly(
+        self.initial_t = -1.0
+        self.final_t = 1.0
+        self.polys = [sympy.chebyshevt_poly(
             i+1, sympy.abc.t, polys=True) for i in range(3)]
-        self.shape = interlace.CubicPolyShape(polys, -1.0, 1.0)
+        self.shape = interlace.CubicPolyShape(
+                self.polys, self.initial_t, self.final_t)
     def get_shape(self):
         return self.shape
     def get_small_3d_sf(self):
@@ -202,6 +256,9 @@ class OrthogonalPoly(Sample):
         zp_rad = 3.0
         zn_rad = 3.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_superposition_shapes(self):
+        return _get_cubic_superposition_shapes(
+                self.polys, self.initial_t, self.final_t)
 
 class SturmLiouville(Sample):
     """
@@ -211,8 +268,12 @@ class SturmLiouville(Sample):
     as an example of solution of a sturm liouville system
     """
     def __init__(self):
-        exprs = [sympy.cos(n*(sympy.abc.t-1)*sympy.pi/2) for n in range(1,3+1)]
-        self.shape = interlace.DifferentiableShape(exprs, -1.0, 1.0, 10)
+        self.initial_t = -1.0
+        self.final_t = 1.0
+        self.exprs = [
+                sympy.cos(n*(sympy.abc.t-1)*sympy.pi/2) for n in range(1,3+1)]
+        self.shape = interlace.DifferentiableShape(
+                self.exprs, self.initial_t, self.final_t, 10)
     def get_shape(self):
         return self.shape
     def get_small_3d_sf(self):
@@ -228,6 +289,9 @@ class SturmLiouville(Sample):
         zp_rad = 3.0
         zn_rad = 3.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_superposition_shapes(self):
+        return _get_differentiable_superposition_shapes(
+                self.exprs, self.initial_t, self.final_t)
 
 class FiniteDifferences(Sample):
     """
@@ -250,10 +314,11 @@ class FiniteDifferences(Sample):
         L[-1, -1] = 1
         # define the eigenvector points
         w, vt = scipy.linalg.eigh(L)
-        x_values = vt.T[1]
-        y_values = -vt.T[2]
-        z_values = vt.T[3]
-        points = np.array(zip(*(x_values, y_values, z_values)))
+        self.x_values = vt.T[1]
+        self.y_values = -vt.T[2]
+        self.z_values = vt.T[3]
+        points = np.array(zip(
+            self.x_values, self.y_values, self.z_values))
         self.shape = interlace.PiecewiseLinearPathShape(points)
     def get_shape(self):
         return self.shape
@@ -270,12 +335,72 @@ class FiniteDifferences(Sample):
         zp_rad = 3.0
         zn_rad = 3.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_superposition_shapes(self):
+        shapes = []
+        # add the axis shape
+        x_axis = interlace.PiecewiseLinearPathShape([
+            (0, 0),
+            (len(self.x_values)-1, 0)])
+        shapes.append(x_axis)
+        # add the other piecewise segments
+        for values in (self.x_values, self.y_values, self.z_values):
+            pairs = list(enumerate(values))
+            shape = interlace.PiecewiseLinearPathShape(pairs)
+            shapes.append(shape)
+        return shapes
 
-class LaplacePath(FiniteDifferences):
+
+class LaplacePath(Sample):
     """
     linearly extended eigenvector of edge-weighted path laplacian
     """
-    pass
+    def __init__(self):
+        # define the number of points
+        n = 6
+        # make the Laplacian matrix
+        L = np.array([
+            [ 2, -2,  0,  0,  0,  0],
+            [-2,  4, -2,  0,  0,  0],
+            [ 0, -2,  5, -3,  0,  0],
+            [ 0,  0, -3,  7, -4,  0],
+            [ 0,  0,  0, -4,  9, -5],
+            [ 0,  0,  0,  0, -5,  5]], dtype=float)
+        # define the eigenvector points
+        w, vt = scipy.linalg.eigh(L)
+        self.x_values = vt.T[1]
+        self.y_values = vt.T[2]
+        self.z_values = vt.T[3]
+        points = np.array(zip(
+            self.x_values, self.y_values, self.z_values))
+        self.shape = interlace.PiecewiseLinearPathShape(points)
+    def get_shape(self):
+        return self.shape
+    def get_small_3d_sf(self):
+        r = self.shape.get_infinity_radius()
+        return 0.5 * (1.0 / r)
+    def get_large_3d_sf(self):
+        return 5.0 * self.get_small_3d_sf()
+    def get_axis_radii(self):
+        xp_rad = 10.0
+        xn_rad = 10.0
+        yp_rad = 4.0
+        yn_rad = 4.0
+        zp_rad = 3.0
+        zn_rad = 3.0
+        return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_superposition_shapes(self):
+        shapes = []
+        # add the axis shape
+        x_axis = interlace.PiecewiseLinearPathShape([
+            (0, 0),
+            (len(self.x_values)-1, 0)])
+        shapes.append(x_axis)
+        # add the other piecewise segments
+        for values in (self.x_values, self.y_values, self.z_values):
+            pairs = list(enumerate(values))
+            shape = interlace.PiecewiseLinearPathShape(pairs)
+            shapes.append(shape)
+        return shapes
 
 class LaplaceTree(FiniteDifferences):
     """

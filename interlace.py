@@ -216,7 +216,7 @@ class PiecewiseLinearPathShape(Shape):
             for pa, pb in iterutils.pairwise(self.points):
                 if abs(pa[axis]) > abstol and abs(pb[axis]) > abstol:
                     if pa[axis]*pb[axis] < 0:
-                        p = (pa[axis]*pa - pb[axis]*pb) / (pa[axis] - pb[axis])
+                        p = (pb[axis]*pa - pa[axis]*pb) / (pb[axis] - pa[axis])
                         point_seq.append(p)
             point_seqs.append(point_seq)
         return point_seqs
