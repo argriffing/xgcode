@@ -72,9 +72,12 @@ class DerivativePoly(Sample):
     """
     A parametric curve defined by a cubic polynomial and its derivatives.
     """
-    def get_shape(self):
-        return self.shape
     def __init__(self):
+        # this is basically like 
+        # f(x) = (x-2)(x-5)(x-7)
+        # f(x) = x^3 - 14 x^2 + 59 x - 70
+        # f'(x) = 3 x^2 - 28 x + 59
+        # f''(x) = 6 x - 28
         initial_t = 0.9
         root_a = 1.0
         root_b = 2.5
@@ -85,6 +88,8 @@ class DerivativePoly(Sample):
         p1 = p2.diff()
         polys = (p1, p2, p3)
         self.shape =  interlace.CubicPolyShape(polys, initial_t, final_t)
+    def get_shape(self):
+        return self.shape
     def get_small_3d_sf(self):
         r = self.shape.get_infinity_radius()
         return 0.8 * (1.0 / r)
@@ -99,12 +104,44 @@ class DerivativePoly(Sample):
         zn_rad = 3.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
 
-class PrincipalCharpoly(DerivativePoly):
+class PrincipalCharpoly(Sample):
     """
     characteristic polynomials of principal submatrices
     cauchy interlace theorem
+    M is
+    5 -4 0
+    -4 12 -5
+    0 -5 7
+    the functions are charpolys of principal submatrices of M.
+    f3x3 = t^3 - 24 t^2 + 138 t - 183
+    f2x2 = t^2 - 17 t + 44
+    f1x1 = t - 5
     """
-    pass
+    def __init__(self):
+        t = sympy.abc.t
+        p3x3 = sympy.Poly(t**3 - 24*t**2 + 138*t - 183, t)
+        p2x2 = sympy.Poly(t**2 - 17*t + 44, t)
+        p1x1 = sympy.Poly(t - 5, t)
+        roots = [float(r) for r in p3x3.nroots()]
+        initial_t = min(roots) - 0.05 * (max(roots) - min(roots))
+        final_t = max(roots) + 0.05 * (max(roots) - min(roots))
+        polys = (p1x1, p2x2, p3x3)
+        self.shape =  interlace.CubicPolyShape(polys, initial_t, final_t)
+    def get_shape(self):
+        return self.shape
+    def get_small_3d_sf(self):
+        r = self.shape.get_infinity_radius()
+        return 0.6 * (1.0 / r)
+    def get_large_3d_sf(self):
+        return 8.0 * self.get_small_3d_sf()
+    def get_axis_radii(self):
+        xp_rad = 4.0
+        xn_rad = 4.0
+        yp_rad = 2.0
+        yn_rad = 2.0
+        zp_rad = 2.0
+        zn_rad = 5.0
+        return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
 
 class SchurCharpoly(DerivativePoly):
     """

@@ -278,7 +278,7 @@ def tikz_shape_superposition(shapes, width, height):
         for bpath in shape.get_bezier_paths():
             bpath.transform(f)
             arr.extend([
-                '\\draw[%s]' % c,
+                '\\draw[thick,%s]' % c,
                 get_tikz_bezier_2d(bpath)])
     return '\n'.join(arr)
 

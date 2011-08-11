@@ -138,8 +138,8 @@ def get_latex_text(tikz_text):
         '\\documentclass{article}',
         '\\usepackage{tikz}',
         '\\usepackage{color}'])
-    arr.extend(
-        tikz.define_color(*pair) for pair in color.wolfram_name_color_pairs)
+    for name, rgb in color.wolfram_name_color_pairs:
+        arr.append(tikz.define_color(name, rgb))
     arr.extend([
         '\\begin{document}',
         tikz_text,
@@ -178,9 +178,8 @@ def main(args):
         with open(filename, 'w') as fout:
             print 'writing', filename
             arr = []
-            for name, (r, g, b) in color.wolfram_name_color_pairs:
-                line = '\\definecolor{%s}{RGB}{%s,%s,%s}' % (name, r, g, b)
-                arr.append(line)
+            for name, rgb in color.wolfram_name_color_pairs:
+                arr.append(tikz.define_color(name, rgb))
             arr.append(get_tikzpicture_body(args.ncurves, args.nsegs, morph))
             print >> fout, '\n'.join(arr)
 
