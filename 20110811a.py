@@ -22,6 +22,7 @@ import bezier
 import sympyutils
 import bezintersect
 import color
+import typeutils
 
 def get_form():
     """
@@ -36,10 +37,8 @@ def get_form():
 def get_form_out():
     return FormOut.Tikz()
 
-def get_tikz_pane(sample):
+def get_tikz_pane(sample, width=6, height=6):
     shapes = sample.get_superposition_shapes()
-    width = 6
-    height = 6
     return interlace.tikz_shape_superposition(shapes, width, height)
 
 def get_tikz_lines():
@@ -123,12 +122,18 @@ def main(args):
             for name, rgb in color.wolfram_name_color_pairs:
                 arr.append(tikz.define_color(name, rgb))
             # add the tikz drawing functions
-            arr.append(get_tikz_pane(sample))
+            arr.append(get_tikz_pane(sample, args.width, args.height))
             # write the file
             print >> fout, '\n'.join(arr)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--width',
+            default=6, type=typeutils.positive_float,
+            help='max width in default tikz units')
+    parser.add_argument('--height',
+            default=6, type=typeutils.positive_float,
+            help='max height in default tikz units')
     parser.add_argument('--outdir',
             default='', help='output directory')
     main(parser.parse_args())

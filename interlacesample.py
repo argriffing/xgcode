@@ -355,16 +355,15 @@ class LaplacePath(Sample):
     linearly extended eigenvector of edge-weighted path laplacian
     """
     def __init__(self):
+        self.edge_weights = [2.0, 2.0, 3.0, 4.0, 5.0]
         # define the number of points
         n = 6
         # make the Laplacian matrix
-        L = np.array([
-            [ 2, -2,  0,  0,  0,  0],
-            [-2,  4, -2,  0,  0,  0],
-            [ 0, -2,  5, -3,  0,  0],
-            [ 0,  0, -3,  7, -4,  0],
-            [ 0,  0,  0, -4,  9, -5],
-            [ 0,  0,  0,  0, -5,  5]], dtype=float)
+        A = np.zeros((n,n))
+        for i, weight in enumerate(self.edge_weights):
+            A[i+1, i] = weight
+            A[i, i+1] = weight
+        L = np.diag(A.sum(axis=0)) - A
         # define the eigenvector points
         w, vt = scipy.linalg.eigh(L)
         self.x_values = vt.T[1]
@@ -389,15 +388,22 @@ class LaplacePath(Sample):
         zn_rad = 3.0
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
     def get_superposition_shapes(self):
+        # initialize the times
+        t = 0
+        times = [t]
+        for w in self.edge_weights:
+            t += 1.0 / w
+            times.append(t)
+        # initialize the shapes
         shapes = []
         # add the axis shape
         x_axis = interlace.PiecewiseLinearPathShape([
             (0, 0),
-            (len(self.x_values)-1, 0)])
+            (times[-1], 0)])
         shapes.append(x_axis)
         # add the other piecewise segments
         for values in (self.x_values, self.y_values, self.z_values):
-            pairs = list(enumerate(values))
+            pairs = zip(times, values)
             shape = interlace.PiecewiseLinearPathShape(pairs)
             shapes.append(shape)
         return shapes

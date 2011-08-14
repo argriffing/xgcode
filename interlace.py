@@ -231,6 +231,37 @@ class PiecewiseLinearPathShape(Shape):
     def get_bezier_paths(self):
         return [self.get_bezier_path()]
 
+class PiecewiseLinearTreeShape(Shape):
+    def __init__(self, wat):
+        pass
+
+
+class Hypershape:
+    """
+    A hypershape defines points in a more-than-geometric space.
+    For example each point could be like (x1, x2, y1, y2, y3) meaning
+    that at (x1, x2) the value is (y1, y2, y3).
+    A purely geometric shape would only care about
+    the set of (y1, y2, y3) triples and would not care about the domain.
+    """
+    pass
+
+class PiecewiseLinearPathHypershape(Hypershape):
+    """
+    This is a sequence of points augmented with timing information.
+    Practically, this should be used for the superposition figures and the 
+    sign cut figures.
+    """
+    pass
+
+class PiecewiseLinearTreeHypershape(Hypershape):
+    """
+    This is a set of points with 2d tree topology and layout information.
+    Practically, this should be used for the superposition figures and the 
+    sign cut figures.
+    """
+    pass
+
 
 def is_strictly_increasing(seq):
     for a, b in iterutils.pairwise(seq):
