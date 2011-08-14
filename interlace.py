@@ -203,6 +203,7 @@ class PiecewiseLinearPathShape(Shape):
     def get_orthoplanar_intersections(self):
         """
         Get the list of intersection points per axis.
+        This is a geometric concept.
         """
         abstol = 1e-6
         point_seqs = []

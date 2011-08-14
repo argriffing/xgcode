@@ -8,6 +8,7 @@ to be included in a larger tex document.
 import argparse
 import math
 import os
+import sys
 
 import sympy
 import sympy.abc
@@ -178,8 +179,12 @@ def main(args):
         with open(filename, 'w') as fout:
             print 'writing', filename
             arr = []
+            # add the remark about the invocation of the generating script
+            arr.append('% ' + ' '.join(sys.argv))
+            # add the color definitions
             for name, rgb in color.wolfram_name_color_pairs:
                 arr.append(tikz.define_color(name, rgb))
+            # add the tikz
             arr.append(get_tikzpicture_body(args.ncurves, args.nsegs, morph))
             print >> fout, '\n'.join(arr)
 
