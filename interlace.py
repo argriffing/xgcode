@@ -202,6 +202,7 @@ class ParametricPiecewiseLinearPathShape(ParametricShape):
             self.times.append(t)
         self.t_initial = self.times[0]
         self.t_final = self.times[-1]
+        self.fp = self.evaluate
         self.fps = [Demux(self.evaluate, i) for i in range(self.ndim)]
     def get_bb_min(self):
         """
@@ -315,8 +316,61 @@ class PiecewiseLinearPathShape(Shape):
         return [self.get_bezier_path()]
 
 class PiecewiseLinearTreeShape(Shape):
-    def __init__(self, wat):
-        pass
+    def __init__(self, T, v_to_point):
+        """
+        This is a purely geometric view of the tree.
+        The branch lengths are irrelevant given the points.
+        The layout is also irrelevant given the points.
+        The points are, for example, multiplexed eigenvector valuations
+        or inverse-sqrt-of-eigenvalue-scaled eigenvector valuations.
+        @param T: set of vertex frozensets as in the Ftree module
+        @param v_to_point: map a vertex to a numpy point
+        """
+        self.T = T
+        self.v_to_point = v_to_point
+        self.points = self.v_to_point.values()
+        self.ndim = len(self.points[0])
+    def get_bb_min(self):
+        """
+        Get the min value on each axis.
+        """
+        return np.min(self.points, axis=0)
+    def get_bb_max(self):
+        """
+        Get the max value on each axis.
+        """
+        return np.max(self.points, axis=0)
+    def get_orthoplanar_intersections(self):
+        """
+        Get the list of intersection points per axis.
+        This is a geometric concept.
+        """
+        abstol = 1e-6
+        point_seqs = []
+        for axis in range(self.ndim):
+            point_seq = []
+            # check points for exact intersections
+            for p in self.points:
+                if abs(p[axis]) < abstol:
+                    point_seq.append(p)
+            # check line segments for intersections
+            for va, vb in self.T:
+                pa, pb = self.v_to_point[va], self.v_to_point[vb]
+                if abs(pa[axis]) > abstol and abs(pb[axis]) > abstol:
+                    if pa[axis]*pb[axis] < 0:
+                        p = (pb[axis]*pa - pa[axis]*pb) / (pb[axis] - pa[axis])
+                        point_seq.append(p)
+            point_seqs.append(point_seq)
+        return point_seqs
+    def get_bezier_paths(self):
+        bpaths = []
+        for va, vb in self.T:
+            pa, pb = self.v_to_point[va], self.v_to_point[vb]
+            b = bezier.create_bchunk_line_segment(pa, pb)
+            b.start_time = 0.0
+            b.stop_time = 1.0
+            bpaths.append(pcurve.BezierPath([b]))
+        return bpaths
 
 
 class Hypershape:

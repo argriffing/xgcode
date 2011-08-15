@@ -33,6 +33,9 @@ from sympy import abc
 
 import sympyutils
 import interlace
+import Newick
+import FtreeIO
+import Ftree
 
 def get_samples():
     return [
@@ -412,16 +415,82 @@ class LaplacePath(Sample):
             shapes.append(shape)
         return shapes
 
-class LaplaceTree(FiniteDifferences):
+class LaplaceTree(Sample):
     """
     linearly extended eigenvectors of edge-weighted tree laplacian
     """
-    pass
+    def __init__(self):
+        self.tree_string = Newick.daylight_example_tree 
+        T, B, N = FtreeIO.newick_to_TBN(self.tree_string)
+        self.T = T
+        self.B = B
+        self.v_to_name = N
+        self.shape = self.get_shape()
+    def get_small_3d_sf(self):
+        r = self.shape.get_infinity_radius()
+        return 0.6 * (1.0 / r)
+    def get_large_3d_sf(self):
+        return 7.0 * self.get_small_3d_sf()
+    def get_axis_radii(self):
+        xp_rad = 5.0
+        xn_rad = 5.0
+        yp_rad = 2.0
+        yn_rad = 2.0
+        zp_rad = 5.0
+        zn_rad = 1.5
+        return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_shape(self):
+        # get the full tree laplacian matrix
+        vertices = Ftree.T_to_order(self.T)
+        L = Ftree.TB_to_L_principal(self.T, self.B, vertices)
+        # get the eigendecomposition by increasing eigenvalue
+        w, vt = scipy.linalg.eigh(L)
+        # get the point valuations of interest
+        x_values = vt.T[1]
+        y_values = vt.T[2]
+        z_values = vt.T[3]
+        points = [np.array(xyz) for xyz in zip(x_values, y_values, z_values)]
+        # get the vertex to point map
+        v_to_point = dict(zip(vertices, points))
+        return interlace.PiecewiseLinearTreeShape(self.T, v_to_point)
 
-class SchurTree(FiniteDifferences):
+class SchurTree(Sample):
     """
     harmonically extended eigenvectors
     of schur complement of edge-weighted tree laplacian
     """
-    pass
+    def __init__(self):
+        self.tree_string = Newick.daylight_example_tree 
+        T, B, N = FtreeIO.newick_to_TBN(self.tree_string)
+        self.T = T
+        self.B = B
+        self.v_to_name = N
+        self.shape = self.get_shape()
+    def get_small_3d_sf(self):
+        r = self.shape.get_infinity_radius()
+        return 0.6 * (1.0 / r)
+    def get_large_3d_sf(self):
+        return 7.0 * self.get_small_3d_sf()
+    def get_axis_radii(self):
+        xp_rad = 5.0
+        xn_rad = 5.0
+        yp_rad = 2.0
+        yn_rad = 2.0
+        zp_rad = 5.0
+        zn_rad = 1.5
+        return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
+    def get_shape(self):
+        # Get the leaf vertices and the internal vertices.
+        leaves = Ftree.T_to_leaves(self.T)
+        internal = Ftree.T_to_internal_vertices(self.T)
+        vertices = leaves + internal
+        # Get the harmonic extensions of eigenvectors of schur complement.
+        w, v = Ftree.TB_to_harmonic_extension(self.T, self.B, leaves, internal)
+        x_values = -v.T[0]
+        y_values = -v.T[1]
+        z_values = v.T[2]
+        points = [np.array(xyz) for xyz in zip(x_values, y_values, z_values)]
+        # get the vertex to point map
+        v_to_point = dict(zip(vertices, points))
+        return interlace.PiecewiseLinearTreeShape(self.T, v_to_point)
 
