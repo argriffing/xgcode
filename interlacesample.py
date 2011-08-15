@@ -34,8 +34,9 @@ from sympy import abc
 import sympyutils
 import interlace
 import Newick
-import FtreeIO
 import Ftree
+import FtreeIO
+import FtreeAux
 
 def get_samples():
     return [
@@ -425,7 +426,37 @@ class LaplaceTree(Sample):
         self.T = T
         self.B = B
         self.v_to_name = N
+        self.v_to_point = self._get_v_to_point()
+        self.v_to_layout_point = self._get_v_to_layout_point()
         self.shape = self.get_shape()
+    def _custom_transform_layout_point(self, p):
+        """
+        This is a hack.
+        """
+        theta = math.pi/2
+        x, y = p
+        return np.array([
+            x*math.cos(theta) - y*math.sin(theta),
+            x*math.sin(theta) + y*math.cos(theta)])
+    def _get_v_to_layout_point(self):
+        v_to_location = FtreeAux.equal_daylight_layout(self.T, self.B, 3)
+        d = {}
+        for v, p in v_to_location.items():
+            d[v] = self._custom_transform_layout_point(p)
+        return d
+    def _get_v_to_point(self):
+        # get the full tree laplacian matrix
+        vertices = Ftree.T_to_order(self.T)
+        L = Ftree.TB_to_L_principal(self.T, self.B, vertices)
+        # get the eigendecomposition by increasing eigenvalue
+        w, vt = scipy.linalg.eigh(L)
+        # get the point valuations of interest
+        x_values = vt.T[1]
+        y_values = vt.T[2]
+        z_values = vt.T[3]
+        points = [np.array(xyz) for xyz in zip(x_values, y_values, z_values)]
+        # get the vertex to point map
+        return dict(zip(vertices, points))
     def get_small_3d_sf(self):
         r = self.shape.get_infinity_radius()
         return 0.6 * (1.0 / r)
@@ -440,19 +471,7 @@ class LaplaceTree(Sample):
         zn_rad = 1.5
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
     def get_shape(self):
-        # get the full tree laplacian matrix
-        vertices = Ftree.T_to_order(self.T)
-        L = Ftree.TB_to_L_principal(self.T, self.B, vertices)
-        # get the eigendecomposition by increasing eigenvalue
-        w, vt = scipy.linalg.eigh(L)
-        # get the point valuations of interest
-        x_values = vt.T[1]
-        y_values = vt.T[2]
-        z_values = vt.T[3]
-        points = [np.array(xyz) for xyz in zip(x_values, y_values, z_values)]
-        # get the vertex to point map
-        v_to_point = dict(zip(vertices, points))
-        return interlace.PiecewiseLinearTreeShape(self.T, v_to_point)
+        return interlace.PiecewiseLinearTreeShape(self.T, self.v_to_point)
 
 class SchurTree(Sample):
     """
@@ -465,7 +484,37 @@ class SchurTree(Sample):
         self.T = T
         self.B = B
         self.v_to_name = N
+        self.v_to_point = self._get_v_to_point()
+        self.v_to_layout_point = self._get_v_to_layout_point()
         self.shape = self.get_shape()
+    def _custom_transform_layout_point(self, p):
+        """
+        This is a hack.
+        """
+        theta = math.pi/2
+        x, y = p
+        return np.array([
+            x*math.cos(theta) - y*math.sin(theta),
+            x*math.sin(theta) + y*math.cos(theta)])
+    def _get_v_to_layout_point(self):
+        v_to_location = FtreeAux.equal_daylight_layout(self.T, self.B, 3)
+        d = {}
+        for v, p in v_to_location.items():
+            d[v] = self._custom_transform_layout_point(p)
+        return d
+    def _get_v_to_point(self):
+        # Get the leaf vertices and the internal vertices.
+        leaves = Ftree.T_to_leaves(self.T)
+        internal = Ftree.T_to_internal_vertices(self.T)
+        vertices = leaves + internal
+        # Get the harmonic extensions of eigenvectors of schur complement.
+        w, v = Ftree.TB_to_harmonic_extension(self.T, self.B, leaves, internal)
+        x_values = -v.T[0]
+        y_values = -v.T[1]
+        z_values = v.T[2]
+        points = [np.array(xyz) for xyz in zip(x_values, y_values, z_values)]
+        # get the vertex to point map
+        return dict(zip(vertices, points))
     def get_small_3d_sf(self):
         r = self.shape.get_infinity_radius()
         return 0.6 * (1.0 / r)
@@ -480,17 +529,5 @@ class SchurTree(Sample):
         zn_rad = 1.5
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
     def get_shape(self):
-        # Get the leaf vertices and the internal vertices.
-        leaves = Ftree.T_to_leaves(self.T)
-        internal = Ftree.T_to_internal_vertices(self.T)
-        vertices = leaves + internal
-        # Get the harmonic extensions of eigenvectors of schur complement.
-        w, v = Ftree.TB_to_harmonic_extension(self.T, self.B, leaves, internal)
-        x_values = -v.T[0]
-        y_values = -v.T[1]
-        z_values = v.T[2]
-        points = [np.array(xyz) for xyz in zip(x_values, y_values, z_values)]
-        # get the vertex to point map
-        v_to_point = dict(zip(vertices, points))
-        return interlace.PiecewiseLinearTreeShape(self.T, v_to_point)
+        return interlace.PiecewiseLinearTreeShape(self.T, self.v_to_point)
 

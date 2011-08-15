@@ -39,17 +39,17 @@ def get_form():
 def get_form_out():
     return FormOut.Tikz()
 
-def get_tikz_pane(sample, width=6, height=6):
+def get_tree_tikz_pane(
+        shape, width, height, time_lists,
+        t_initial, t_final,
+        vgap, cut_radius):
+    pass
+
+def get_linear_tikz_pane(
+        shape, width, height, time_lists,
+        t_initial, t_final,
+        vgap, cut_radius):
     abstol = 1e-6
-    vgap = 0.5
-    cut_radius = 0.1
-    shape = sample.get_shape()
-    try:
-        time_lists = shape.get_orthoplanar_intersection_times()
-        t_initial = shape.t_initial
-        t_final = shape.t_final
-    except AttributeError, e:
-        return '\\node (0, 0) {sign cut not available};'
     duration = float(t_final - t_initial)
     arr = []
     for i in range(4):
@@ -86,6 +86,115 @@ def get_tikz_pane(sample, width=6, height=6):
                         tikz.point_to_tikz((x, -cut_radius-i*vgap)))
                 arr.append(line)
     return '\n'.join(arr)
+
+def get_tree_tikz_pane(sample, width, height, vgap, cut_radius):
+    # Use the target width to scale the layout.
+    # TODO rotate the layout for greatest width to height ratio.
+    unscaled_layout_points = sample.v_to_layout_point.values()
+    pmin = np.min(unscaled_layout_points, axis=0)
+    pmax = np.max(unscaled_layout_points, axis=0)
+    sf_width = width / (pmax[0] - pmin[0])
+    sf_height = height / ((pmax[1] - pmin[1]) * 4 + vgap * 3)
+    sf = min(sf_width, sf_height)
+    v_to_layout_point = dict(
+            (v, p*sf) for v, p in sample.v_to_layout_point.items())
+    # Compute the amount (in tikz units) to skip per tree.
+    vskip = (pmax[1] - pmin[1])*sf + vgap
+    # Draw the tikz.
+    arr = []
+    vskip_accum = 0.0
+    for i in range(4):
+        # define the current offset for drawing
+        offset = np.array([0, -vskip_accum])
+        # define the color of the tree
+        c = g_colors[i]
+        # draw the tree using thin line segments
+        for va, vb in sample.T:
+            pa, pb = v_to_layout_point[va], v_to_layout_point[vb]
+            # draw the thin line segment of the correct color
+            line = '\\draw[%s] %s -- %s;' % (
+                    c,
+                    tikz.point_to_tikz(pa + offset),
+                    tikz.point_to_tikz(pb + offset))
+            arr.append(line)
+        # draw the thick segments of the correct color
+        if i:
+            axis = i-1
+            for va, vb in sample.T:
+                vala = sample.v_to_point[va][axis]
+                valb = sample.v_to_point[vb][axis]
+                pa, pb = v_to_layout_point[va], v_to_layout_point[vb]
+                if vala > 0 and valb > 0:
+                    # If both endpoints are positive
+                    # then redraw the whole segment using a very thick line.
+                    line = '\\draw[very thick,%s] %s -- %s;' % (
+                            c,
+                            tikz.point_to_tikz(pa + offset),
+                            tikz.point_to_tikz(pb + offset))
+                    arr.append(line)
+                elif vala * valb < 0:
+                    # If the endpoints have opposite sign
+                    # then redraw only part of the line.
+                    t = vala / (vala - valb)
+                    p = (1 - t) * pa + t * pb
+                    if vala > 0:
+                        p_begin = pa
+                        p_end = p
+                    else:
+                        b_begin = p
+                        p_end = pb
+                    line = '\\draw[very thick,%s] %s -- %s;' % (
+                            c,
+                            tikz.point_to_tikz(p_begin + offset),
+                            tikz.point_to_tikz(p_end + offset))
+                    arr.append(line)
+        #TODO draw tick marks
+        if i < 3:
+            axis = i
+            for va, vb in sample.T:
+                vala = sample.v_to_point[va][axis]
+                valb = sample.v_to_point[vb][axis]
+                pa, pb = v_to_layout_point[va], v_to_layout_point[vb]
+                if vala * valb < 0:
+                    # If the endpoints have opposite sign
+                    # then draw a tick mark.
+                    t = vala / (vala - valb)
+                    p = (1 - t) * pa + t * pb
+                    theta = math.atan2((pb-pa)[1], (pb-pa)[0])
+                    phi = theta + math.pi/2
+                    cuta = p + offset
+                    cutb = p + offset
+                    cuta[0] += cut_radius * math.cos(phi)
+                    cuta[1] += cut_radius * math.sin(phi)
+                    cutb[0] -= cut_radius * math.cos(phi)
+                    cutb[1] -= cut_radius * math.sin(phi)
+                    line = '\\draw %s -- %s;' % (
+                            tikz.point_to_tikz(cuta),
+                            tikz.point_to_tikz(cutb))
+                    arr.append(line)
+        # skip some space
+        vskip_accum += vskip
+    # return the tikz text
+    return '\n'.join(arr)
+
+def get_tikz_pane(sample, width=6, height=6):
+    vgap = 0.5
+    cut_radius = 0.1
+    time_lists = None
+    try:
+        shape = sample.get_shape()
+        time_lists = shape.get_orthoplanar_intersection_times()
+        t_initial = shape.t_initial
+        t_final = shape.t_final
+    except AttributeError, e:
+        pass
+    if time_lists:
+        return get_linear_tikz_pane(
+                shape, width, height, time_lists,
+                t_initial, t_final,
+                vgap, cut_radius)
+    else:
+        return get_tree_tikz_pane(sample, width, height, vgap, cut_radius)
 
 def get_tikz_lines():
     """
