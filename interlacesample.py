@@ -1,6 +1,8 @@
 """
 Vignettes for interlacing.
 
+Basically everything in this module is a hack.
+-
 Most of the hardcoded values in this module should eventually
 be replaced by automatically obtained values.
 -
@@ -37,6 +39,28 @@ import Newick
 import Ftree
 import FtreeIO
 import FtreeAux
+
+def rotate_to_view(p):
+    """
+    This is a hardcoded transformation for viewing.
+    Rotate a few degrees around the z axis and then around the new y axis.
+    @param p: a 3d point
+    @return: a 3d point rotated around the origin
+    """
+    # use pi/4 for a more standard rotation
+    theta = -math.pi / 12
+    c = math.cos(theta)
+    s = math.sin(theta)
+    x0, y0, z0 = p
+    # first rotation
+    x1 = x0 * c - y0 * s
+    y1 = y0 * c + x0 * s
+    z1 = z0
+    # second rotation
+    x2 = x1 * c - z1 * s
+    y2 = y1
+    z2 = z1 * c + x1 * s
+    return np.array([x2, y2, z2])
 
 def get_samples():
     return [
@@ -416,7 +440,51 @@ class LaplacePath(Sample):
             shapes.append(shape)
         return shapes
 
-class LaplaceTree(Sample):
+class TreeSample(Sample):
+    """
+    The tree has a 2d layout and at least three functions on the vertices.
+    This is a pure base class.
+    """
+    def get_tree_superposition_shapes(self,
+            layout_width, layout_height, value_height):
+        """
+        @return: a few geometric tree shapes involving both layout and value
+        """
+        # compute the layout scaling factor
+        points = self.v_to_layout_point.values()
+        vmin = np.min(points, axis=0)
+        vmax = np.max(points, axis=0)
+        sfx = float(layout_width) / (vmax[0] - vmin[0])
+        sfy = float(layout_height) / (vmax[1] - vmin[1])
+        sf = min(sfx, sfy)
+        # compute the value scaling factor
+        points = self.v_to_point.values()
+        vmin = np.min(points)
+        vmax = np.max(points)
+        sfvalue = float(value_height) / (vmax - vmin)
+        # get the shapes using the layout scaling factor
+        shapes = []
+        for axis in range(-1, 3):
+            v_to_point = {}
+            for v, layout_point in self.v_to_layout_point.items():
+                x, y = layout_point
+                v_to_point[v] = np.array([x*sf, y*sf, 0])
+            if axis > -1:
+                for v, pt in self.v_to_point.items():
+                    v_to_point[v][-1] = pt[axis]*sfvalue
+            shape = interlace.PiecewiseLinearTreeShape(self.T, v_to_point)
+            shapes.append(shape)
+        return shapes
+    def _get_v_to_layout_point(self):
+        v_to_location = FtreeAux.equal_daylight_layout(self.T, self.B, 3)
+        d = {}
+        for v, p in v_to_location.items():
+            d[v] = self._custom_transform_layout_point(p)
+        return d
+    def get_shape(self):
+        return interlace.PiecewiseLinearTreeShape(self.T, self.v_to_point)
+
+class LaplaceTree(TreeSample):
     """
     linearly extended eigenvectors of edge-weighted tree laplacian
     """
@@ -438,12 +506,6 @@ class LaplaceTree(Sample):
         return np.array([
             x*math.cos(theta) - y*math.sin(theta),
             x*math.sin(theta) + y*math.cos(theta)])
-    def _get_v_to_layout_point(self):
-        v_to_location = FtreeAux.equal_daylight_layout(self.T, self.B, 3)
-        d = {}
-        for v, p in v_to_location.items():
-            d[v] = self._custom_transform_layout_point(p)
-        return d
     def _get_v_to_point(self):
         # get the full tree laplacian matrix
         vertices = Ftree.T_to_order(self.T)
@@ -470,10 +532,8 @@ class LaplaceTree(Sample):
         zp_rad = 5.0
         zn_rad = 1.5
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
-    def get_shape(self):
-        return interlace.PiecewiseLinearTreeShape(self.T, self.v_to_point)
 
-class SchurTree(Sample):
+class SchurTree(TreeSample):
     """
     harmonically extended eigenvectors
     of schur complement of edge-weighted tree laplacian
@@ -496,12 +556,6 @@ class SchurTree(Sample):
         return np.array([
             x*math.cos(theta) - y*math.sin(theta),
             x*math.sin(theta) + y*math.cos(theta)])
-    def _get_v_to_layout_point(self):
-        v_to_location = FtreeAux.equal_daylight_layout(self.T, self.B, 3)
-        d = {}
-        for v, p in v_to_location.items():
-            d[v] = self._custom_transform_layout_point(p)
-        return d
     def _get_v_to_point(self):
         # Get the leaf vertices and the internal vertices.
         leaves = Ftree.T_to_leaves(self.T)
@@ -528,6 +582,4 @@ class SchurTree(Sample):
         zp_rad = 5.0
         zn_rad = 1.5
         return xp_rad, xn_rad, yp_rad, yn_rad, zp_rad, zn_rad
-    def get_shape(self):
-        return interlace.PiecewiseLinearTreeShape(self.T, self.v_to_point)
 
