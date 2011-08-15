@@ -17,6 +17,7 @@ by taking the Schur complement gives a sequence
 of interlacing characteristic polynomials.
 """
 
+from StringIO import StringIO
 import math
 import unittest
 
@@ -182,6 +183,87 @@ class CubicPolyShape(ParametricShape):
                 self.fp(self.t_initial), self.fp(self.t_final),
                 self.fv(self.t_initial), self.fv(self.t_final))
         return pcurve.BezierPath([b])
+
+class ParametricPiecewiseLinearPathShape(ParametricShape):
+    def __init__(self, points, edge_lengths):
+        """
+        This exists for orthoplanar intersection times.
+        If the times are not needed then use the non parametric shape.
+        @param points: a sequence of high dimensional points as numpy arrays
+        @param edge_lengths: this is how long it takes to traverse each edge
+        """
+        self.points = [np.array(p) for p in points]
+        self.edge_lengths = edge_lengths
+        self.ndim = len(points[0])
+        self.times = [0.0]
+        t = 0.0
+        for length in self.edge_lengths:
+            t += length
+            self.times.append(t)
+        self.t_initial = self.times[0]
+        self.t_final = self.times[-1]
+        self.fps = [Demux(self.evaluate, i) for i in range(self.ndim)]
+    def get_bb_min(self):
+        """
+        Get the min value on each axis.
+        """
+        return np.min(self.points, axis=0)
+    def get_bb_max(self):
+        """
+        Get the max value on each axis.
+        """
+        return np.max(self.points, axis=0)
+    def get_orthoplanar_intersection_times(self):
+        """
+        Get the list of intersection points per axis.
+        This is a geometric concept.
+        """
+        npoints = len(self.points)
+        abstol = 1e-6
+        time_seqs = []
+        for axis in range(self.ndim):
+            time_seq = []
+            # check points for exact intersections
+            for p, t in zip(self.points, self.times):
+                if abs(p[axis]) < abstol:
+                    time_seq.append(t)
+            # check line segments for intersections
+            for i, j in iterutils.pairwise(range(npoints)):
+                pa, pb = self.points[i], self.points[j]
+                ta, tb = self.times[i], self.times[j]
+                if abs(pa[axis]) > abstol and abs(pb[axis]) > abstol:
+                    if pa[axis]*pb[axis] < 0:
+                        t_local = pa[axis] / (pa[axis] - pb[axis])
+                        t_global = ta + t_local * (tb - ta)
+                        time_seq.append(t_global)
+            time_seqs.append(sorted(time_seq))
+        return time_seqs
+    def evaluate(self, t_target):
+        """
+        This is slow.
+        @param t_target: target time
+        """
+        if not self.times[0] <= t_target <= self.times[-1]:
+            raise ValueError('out of range')
+        npoints = len(self.points)
+        for i, j in iterutils.pairwise(range(npoints)):
+            pa, pb = self.points[i], self.points[j]
+            ta, tb = self.times[i], self.times[j]
+            if ta <= t_target <= tb:
+                t_local = (t_target - ta) / (tb - ta)
+                p = (1 - t_local) * pa + t_local * pb
+                return p
+    def get_bezier_path(self):
+        bchunks = []
+        npoints = len(self.points)
+        for i, j in iterutils.pairwise(range(npoints)):
+            pa, pb = self.points[i], self.points[j]
+            ta, tb = self.times[i], self.times[j]
+            b = bezier.create_bchunk_line_segment(pa, pb)
+            b.start_time = ta
+            b.stop_time = tb
+            bchunks.append(b)
+        return pcurve.BezierPath(bchunks)
 
 class PiecewiseLinearPathShape(Shape):
     def __init__(self, points):
@@ -411,7 +493,12 @@ class Multiplex:
     def __call__(self, t):
         return np.array([f(t) for f in self.fs])
 
-
+class Demux:
+    def __init__(self, f, index):
+        self.f = f
+        self.index = index
+    def __call__(self, t):
+        return self.f(t)[self.index]
 
 
 

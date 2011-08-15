@@ -4,6 +4,7 @@ Draw nine hardcoded sign cut figures.
 The command line version will create tikz files.
 """
 
+from StringIO import StringIO
 import argparse
 import math
 import os
@@ -39,6 +40,7 @@ def get_form_out():
     return FormOut.Tikz()
 
 def get_tikz_pane(sample, width=6, height=6):
+    abstol = 1e-6
     vgap = 0.5
     cut_radius = 0.1
     shape = sample.get_shape()
@@ -67,7 +69,8 @@ def get_tikz_pane(sample, width=6, height=6):
                 t = (ta + tb) / 2.0
                 xa = ta * (width / duration)
                 xb = tb * (width / duration)
-                if shape.fps[i-1](t) > 0:
+                value = shape.fps[i-1](t)
+                if value > 0:
                     line = '\\draw[very thick,%s] %s -- %s;' % (
                             c,
                             tikz.point_to_tikz((xa, -i*vgap)),

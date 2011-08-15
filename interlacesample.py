@@ -319,7 +319,9 @@ class FiniteDifferences(Sample):
         self.z_values = vt.T[3]
         points = np.array(zip(
             self.x_values, self.y_values, self.z_values))
-        self.shape = interlace.PiecewiseLinearPathShape(points)
+        edge_lengths = [1.0]*5
+        self.shape = interlace.ParametricPiecewiseLinearPathShape(
+                points, edge_lengths)
     def get_shape(self):
         return self.shape
     def get_small_3d_sf(self):
@@ -371,7 +373,9 @@ class LaplacePath(Sample):
         self.z_values = vt.T[3]
         points = np.array(zip(
             self.x_values, self.y_values, self.z_values))
-        self.shape = interlace.PiecewiseLinearPathShape(points)
+        edge_lengths = [1.0 / weight for weight in self.edge_weights]
+        self.shape = interlace.ParametricPiecewiseLinearPathShape(
+                points, edge_lengths)
     def get_shape(self):
         return self.shape
     def get_small_3d_sf(self):
