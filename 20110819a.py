@@ -164,24 +164,50 @@ def wat():
     print >> out, 'schur complement of bottduff:'
     print >> out, schur_of_bottduff
 
-def sample_edm(nbig):
-    """
-    There is probably a nicer way to make an EDM.
-    """
-    nrows = nbig
-    ncols = nbig-1
-    X = np.random.rand(nrows, ncols)
-    M = np.zeros((nbig, nbig))
-    for i in range(nbig):
-        for j in range(nbig):
-            d = X[i] - X[j]
-            M[i, j] = np.dot(d, d)
-    return M
+def MatrixSampler:
+    def __init__(self, nbig):
+        self.nbig = nbig
 
-def search_for_generic_counterexample(fs):
+def SymmetricMatrixSampler(MatrixSampler):
+    pass
+
+def AsymmetricMatrixSampler(MatrixSampler):
+    # create a random matrix
+    B = 10 * (np.random.rand(fs.nbig, fs.nbig) - 0.5)
+    if fs.symmetric:
+        M = B + B.T
+    else:
+        M = B
+
+def DistanceMatrixSampler(MatrixSampler):
+    def __call__(self):
+        """
+        There is probably a nicer way to make an EDM.
+        """
+        nrows = self.nbig
+        ncols = self.nbig-1
+        X = np.random.rand(nrows, ncols)
+        M = np.zeros((self.nbig, self.nbig))
+        for i in range(self.nbig):
+            for j in range(self.nbig):
+                d = X[i] - X[j]
+                M[i, j] = np.dot(d, d)
+        return M
+
+def search_for_counterexample(fs, sampler):
     """
     Raise a Counterexample if one is found.
     """
+    for i in range(nsamples):
+        # draw a matrix from the distribution
+        M = sampler()
+        # assert pinvproj and bott-duffin identities
+        assert_pinvproj(fs, M)
+        # assert identities regarding double centering
+        assert_double_centering_identities(fs, M)
+
+
+def search_for_generic_counterexample(fs):
     for i in range(fs.nsamples):
         # create a random matrix
         B = 10 * (np.random.rand(fs.nbig, fs.nbig) - 0.5)
