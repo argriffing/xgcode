@@ -3,12 +3,19 @@ Try to do some naive symbolic matrix stuff.
 """
 
 from StringIO import StringIO
+import textwrap
+
 import numpy as np
 import scipy
 import scipy.linalg
 
 import Form
 import FormOut
+
+#g_left_paren = '\\left('
+#g_right_paren = '\\right)'
+g_left_paren = '('
+g_right_paren = ')'
 
 
 #TODO actually use precedence to place parentheses
@@ -153,6 +160,9 @@ class Inverse(UnaryOperator):
     def latex(self):
         #return '\\dfrac{1}{%s}' % self.element.latex()
         return '{%s}^{-1}' % self.element.latex()
+    def block_expanded(self):
+        self.element = self.element.block_expanded()
+        return get_block_matrix_inverse(self.element.elements)
     def get_shape(self):
         return self.element.get_shape()
 
@@ -165,11 +175,12 @@ class Negative(UnaryOperator):
         self.element = element
     def latex(self):
         return '-%s' % self.element.latex()
-    def expand(self):
-        try:
-            self.element.distribute_negation()
-        except AttributeError, e:
-            pass
+    def block_expanded(self):
+        self.element = self.element.block_expanded()
+        (a, b), (c, d) = self.element.elements
+        return BlockMatrixTwoByTwo([
+            [negated(a), negated(b)],
+            [negated(c), negated(d)]])
     def get_shape(self):
         return self.element.get_shape()
 
@@ -197,7 +208,8 @@ class PinvProj(UnaryOperator):
     def __init__(self, element):
         self.element = element
     def latex(self):
-        return '\\left( H %s H \\right)^\ddag' % self.element.latex()
+        return '%s H %s H %s^\ddag' % (
+                g_left_paren, self.element.latex(), g_right_paren)
     def expanded(self):
         block_structure = None
         try:
@@ -216,6 +228,8 @@ class PinvProj(UnaryOperator):
         terma = Inverse(Sum([Product([H, self.element, H]), P]))
         termb = Negative(P)
         return Sum([terma, termb])
+    def block_expanded(self):
+        return self.expanded().block_expanded()
     def get_shape(self):
         return self.element.get_shape()
 
@@ -228,7 +242,11 @@ class Product:
         self.elements = elements
     def latex(self):
         inside = ' '.join(x.latex() for x in self.elements)
-        return '\\left( %s \\right)' % inside
+        return '%s %s %s' % (g_left_paren, inside, g_right_paren)
+    def block_expanded(self):
+        #TODO this is subtle and probably wrong
+        self.elements = [x.block_expanded() for x in self.elements]
+        return get_block_matrix_product(self.elements)
     def get_shape(self):
         #TODO this is subtle and probably wrong
         first_shape = self.elements[0]
@@ -247,6 +265,8 @@ class Product:
         except AttributeError, e:
             return self.get_shape()
 
+
+
 class Schur:
     """
     Schur complement of lower right block in a 2x2 block matrix.
@@ -263,7 +283,7 @@ class Schur:
         """
         Assume the element is a two by two block matrix.
         """
-        #TODO do not make assumptions about the member
+        self.element = self.element.block_expanded()
         (a, b), (c, d) = self.element.elements
         return Sum([a, Negative(Product([b, Inverse(c), d]))])
 
@@ -284,14 +304,10 @@ class Sum:
                 if i:
                     parts.append('+')
                 parts.append(x.latex())
-        return '\\left( %s \\right)' % ' '.join(parts)
-    def distribute_negation(self):
-        next_elements = []
-        for e in self.elements:
-            if isinstance(e, Negative):
-                next_elements.append(e.element)
-            else:
-                next_elements.append(Negative(e))
+        return '%s %s %s' % (g_left_paren, ' '.join(parts), g_right_paren)
+    def block_expanded(self):
+        self.elements = [x.block_expanded() for x in self.elements]
+        return get_block_matrix_sum(self.elements)
     def get_shape(self):
         return self.elements[0].get_shape()
     def get_principal_shape(self):
@@ -320,6 +336,8 @@ class BlockMatrixTwoByTwo:
         print >> out, c.latex(), '&', d.latex()
         print >> out, '\\end{pmatrix}'
         return out.getvalue()
+    def block_expanded(self):
+        return self
     def get_shape(self):
         (a, b), (c, d) = self.elements
         nrows = Sum([a.get_shape()[0], c.get_shape()[0]])
@@ -338,6 +356,12 @@ class BlockMatrixTwoByTwo:
 
 
 # helper functions
+
+def negated(expr):
+    if isinstance(expr, Negative):
+        return expr.element
+    else:
+        return Negative(expr)
 
 def get_H_expression(order):
     """
@@ -385,6 +409,56 @@ def get_block_P_expression(block_structure):
     elements = [[A, B], [C, D]]
     return BlockMatrixTwoByTwo(elements)
 
+def get_schur_d_inverse(blocks):
+    """
+    This is a helper function for block matrix inversion.
+    """
+    (A, B), (C, D) = blocks
+    return Inverse(Sum([D, Negative(Product([C, Inverse(A), B]))]))
+
+def get_block_matrix_inverse(blocks):
+    """
+    This is a helper function for block matrix inversion.
+    """
+    (A, B), (C, D) = blocks
+    dschurinv = get_schur_d_inverse(blocks)
+    ainv = Inverse(A)
+    a = Sum([ainv, Negative(Product([ainv, B, dschurinv, C, ainv]))])
+    b = Negative(Product([ainv, B, dschurinv]))
+    c = Negative(Product([dschurinv, C, ainv]))
+    d = dschurinv
+    return BlockMatrixTwoByTwo([[a,b],[c,d]])
+
+def get_block_matrix_product(terms):
+    elements = terms[0].elements
+    for t in terms[1:]:
+        (la, lb), (lc, ld) = elements
+        (ra, rb), (rc, rd) = t.elements
+        elements = [
+                [
+                    Sum([Product([la, ra]), Product([lb, rc])]),
+                    Sum([Product([la, rb]), Product([lb, rd])])],
+                [
+                    Sum([Product([lc, ra]), Product([ld, rc])]),
+                    Sum([Product([lc, rb]), Product([ld, rd])])]]
+    return BlockMatrixTwoByTwo(elements)
+
+def get_block_matrix_sum(summands):
+    As = []
+    Bs = []
+    Cs = []
+    Ds = []
+    for s in summands:
+        (a, b), (c, d) = s.elements
+        As.append(a)
+        Bs.append(b)
+        Cs.append(c)
+        Ds.append(d)
+    elements = [
+            [Sum(As), Sum(Bs)],
+            [Sum(Cs), Sum(Ds)]]
+    return BlockMatrixTwoByTwo(elements)
+
 
 def get_form():
     """
@@ -408,17 +482,17 @@ def get_response_content(fs):
                 SymbolicColumnVector('b', n)],
             [
                 SymbolicRowVector('b', n),
-                SymbolicScalar('c')]])).expanded())
+                SymbolicScalar('c')]])).block_expanded()).expanded()
     # get some tex code
     out = StringIO()
     print >> out, '\\begin{equation*}'
     print >> out, '\\text{lhs} ='
-    print >> out, lhs.latex()
+    print >> out, '\n'.join(textwrap.wrap(lhs.latex()))
     print >> out, '\\end{equation*}'
     print >> out
     print >> out, '\\begin{equation*}'
     print >> out, '\\text{rhs} ='
-    print >> out, rhs.latex()
+    print >> out, '\n'.join(textwrap.wrap(rhs.latex()))
     print >> out, '\\end{equation*}'
     return out.getvalue()
 
