@@ -38,7 +38,19 @@ g_right_paren = ')'
 
 # everything has a two dimensional shape
 
-class Terminal: pass
+class Expression:
+    def __add__(self, other):
+        return Sum([self, other])
+    def __sub__(self, other):
+        return Sum([self, negated(other)])
+    def __mul__(self, other):
+        return Product([self, other])
+    def __div__(self, other):
+        return Product([self, Inverse(other)])
+    def __neg__(self):
+        return Inverse(self)
+
+class Terminal(Expression): pass
 
 class Zero(Terminal):
     def latex(self):
@@ -143,7 +155,7 @@ class SymbolicSymmetricMatrix(Terminal):
 
 # define non-terminal things
 
-class UnaryOperator:
+class UnaryOperator(Expression):
     def get_principal_shape(self):
         return self.element.get_principal_shape()
     def get_block_structure(self):
@@ -233,7 +245,7 @@ class PinvProj(UnaryOperator):
     def get_shape(self):
         return self.element.get_shape()
 
-class Product:
+class Product(Expression):
     """
     Product of multiple things.
     """
@@ -265,9 +277,7 @@ class Product:
         except AttributeError, e:
             return self.get_shape()
 
-
-
-class Schur:
+class Schur(Expression):
     """
     Schur complement of lower right block in a 2x2 block matrix.
     The single member element is the 2x2 block matrix.
@@ -287,7 +297,7 @@ class Schur:
         (a, b), (c, d) = self.element.elements
         return Sum([a, Negative(Product([b, Inverse(c), d]))])
 
-class Sum:
+class Sum(Expression):
     """
     Sum of multiple things.
     """
@@ -318,7 +328,7 @@ class Sum:
 
 # define non-terminal block matrices of non-symbolic fixed size
 
-class BlockMatrixTwoByTwo:
+class BlockMatrixTwoByTwo(Expression):
     """
     Two by two block matrix.
     Yes this is quite hardcoded.
@@ -474,7 +484,7 @@ def get_form_out():
 def get_response_content(fs):
     # define lhs and rhs math objects
     n = SymbolicInteger('n')
-    lhs = PinvProj(SymbolicSymmetricMatrix('A', n)).expanded()
+    lhs = PinvProj(SymbolicSymmetricMatrix('A', n))
     rhs = Schur(PinvProj(
         BlockMatrixTwoByTwo([
             [
@@ -482,9 +492,11 @@ def get_response_content(fs):
                 SymbolicColumnVector('b', n)],
             [
                 SymbolicRowVector('b', n),
-                SymbolicScalar('c')]])).block_expanded()).expanded()
+                SymbolicScalar('c')]])))
     # get some tex code
     out = StringIO()
+    print >> out, 'unexpanded:'
+    print >> out
     print >> out, '\\begin{equation*}'
     print >> out, '\\text{lhs} ='
     print >> out, '\n'.join(textwrap.wrap(lhs.latex()))
@@ -493,6 +505,19 @@ def get_response_content(fs):
     print >> out, '\\begin{equation*}'
     print >> out, '\\text{rhs} ='
     print >> out, '\n'.join(textwrap.wrap(rhs.latex()))
+    print >> out, '\\end{equation*}'
+    print >> out
+    print >> out
+    print >> out, 'expanded:'
+    print >> out
+    print >> out, '\\begin{equation*}'
+    print >> out, '\\text{lhs expanded} ='
+    print >> out, '\n'.join(textwrap.wrap(lhs.expanded().latex()))
+    print >> out, '\\end{equation*}'
+    print >> out
+    print >> out, '\\begin{equation*}'
+    print >> out, '\\text{rhs expanded} ='
+    print >> out, '\n'.join(textwrap.wrap(rhs.expanded().latex()))
     print >> out, '\\end{equation*}'
     return out.getvalue()
 
