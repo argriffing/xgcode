@@ -95,9 +95,10 @@ def schur(M, nleading):
     """
     A = M[:nleading, :nleading]
     B = M[:nleading, nleading:]
-    C = M[nleading:, nleading:]
-    C_inv = np.linalg.inv(C)
-    S = A - np.dot(B, np.dot(C_inv, B.T))
+    C = M[nleading:, :nleading]
+    D = M[nleading:, nleading:]
+    D_inv = np.linalg.inv(D)
+    S = A - np.dot(B, np.dot(D_inv, C))
     return S
 
 def schur_del(M, nkeep, ndelete):
@@ -109,28 +110,12 @@ def schur_del(M, nkeep, ndelete):
     X[:nkeep, :nkeep] = S
     return X
 
-def get_lhs(M, nkeep, ndelete):
-    n = nkeep + ndelete
-    P = get_p_centering_partial_del(nkeep, ndelete)
-    return np.linalg.pinv(ndot(P, M, P))
-
-def get_rhs(M, nkeep, ndelete):
-    n = nkeep + ndelete
-    P = get_p_centering_partial_del(nkeep, ndelete)
-    R = get_p_centering_partial(nkeep, ndelete)
-    H = get_p_centering(n)
-    D = get_p_del(nkeep, ndelete)
-    # define the target value in a few different ways
-    target_a = schur_del(np.linalg.pinv(ndot(H, M, H)), nkeep, ndelete)
-    target_b = np.linalg.pinv(ndot(P, M, P))
-    target_c = np.linalg.pinv(ndot(D, R, M, R.T, D))
-    # Try to find another way to get the target value using projections,
-    # hopefully a way that uses projections in a way that can be shown
-    # to be equivalent to taking a schur complement in a pseudoinverse.
-    return np.linalg.pinv(ndot(D, R, M, R.T, D))
+def sample_asymmetric_matrix(n):
+    B = 10.0 * np.random.rand(n, n) + 5.0
+    return B
 
 def sample_symmetric_matrix(n):
-    B = 10.0 * np.random.rand(n, n) + 5.0
+    B = sample_asymmetric_matrix(n)
     return B + B.T
 
 def assert_named_equation(a_name_pair, b_name_pair):
@@ -153,8 +138,8 @@ def get_response_content(fs):
     ntrailing = 3
     nullity = 2
     n = nleading + ntrailing
-    # get a random symmetric matrix assumed to be nonsingular
-    M_nonsingular = sample_symmetric_matrix(n)
+    # get a random matrix assumed to be nonsingular
+    M_nonsingular = sample_asymmetric_matrix(n)
     # get a random nullspace and its associated projections
     N = 10.0 * np.random.rand(n, nullity) - 5.0
     P_to_N = ndot(N, np.linalg.inv(ndot(N.T, N)), N.T)
@@ -199,5 +184,7 @@ def get_response_content(fs):
     print >> out, Sp_vt
     print >> out, 'this thing that is supposed to be the schur complement:'
     print >> out, mystery
+    print >> out, 'difference from the schur complement:'
+    print >> out, mystery - S
     return out.getvalue()
 
