@@ -30,7 +30,7 @@ g_example_rotated_matrix = np.array([
     [0.0786945522922, 0.0117297739385, -0.00988669475083, 1.17928263783, -1.18987848662, 0.0, 0.0],
     [0.0371881700454, 0.50209037107, 0.612105936374, -0.109497793077, 0.0506611360203, 0.0, 0.0]])
 
-class MatrixError(Exception):
+class MatrixError(ValueError):
     pass
 
 def assert_1d(M):

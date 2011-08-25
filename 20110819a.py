@@ -9,6 +9,8 @@ import scipy.linalg
 
 import Form
 import FormOut
+import MatrixUtil
+import numpyutils
 
 class Counterexample(Exception): pass
 
@@ -25,9 +27,14 @@ def get_form():
                 10, low=1, high=12),
             Form.Integer('nsmall', 'order of principal submatrix',
                 4, low=1, high=12),
-            Form.RadioGroup('options', 'symmetry of M', [
-                Form.RadioItem('symmetric', 'symmetric', True),
-                Form.RadioItem('asymmetric', 'asymmetric')])]
+            Form.RadioGroup('matrix_class', 'matrix class', [
+                Form.RadioItem('distance', 'distance', True),
+                Form.RadioItem('predistance', 'predistance'),
+                Form.RadioItem('nonnegsym', 'nonnegative symmetric'),
+                Form.RadioItem('symmetric', 'symmetric'),
+                Form.RadioItem('asymmetric', 'asymmetric'),
+                Form.RadioItem('posdef', 'positive definite'),
+                Form.RadioItem('negdef', 'negative definite')])]
     return form_objects
 
 def get_form_out():
@@ -57,45 +64,81 @@ def pinvproj(M):
     I = np.eye(nrows)
     P = np.outer(e, e) / np.inner(e, e)
     H = I - P
+    #
+    #HMH = MatrixUtil.double_centered(M)
+    #return np.linalg.pinv(HMH)
+    #
     HMH = np.dot(H, np.dot(M, H))
-    return np.linalg.inv(HMH + P) - P
+    W = HMH + P
+    d = np.linalg.det(W)
+    if abs(d) < 1e-5:
+        #raise ValueError('small determinant in pinvproj: %f' % d)
+        pass
+    return np.linalg.inv(W) - P
 
 def schur(M, nsmall):
+    A = M[:nsmall, :nsmall]
     B = M[:nsmall, nsmall:]
-    C = np.linalg.inv(M[nsmall:, nsmall:])
-    return M[:nsmall, :nsmall] - np.dot(B, np.dot(C, B.T))
+    C = M[nsmall:, nsmall:]
+    d = np.linalg.det(C)
+    if abs(d) < 1e-5:
+        raise ValueError('small determinant for schur complement')
+    C_inv = np.linalg.inv(C)
+    return A - np.dot(B, np.dot(C_inv, B.T))
 
-def assert_named_equation(a_name_pair, b_name_pair):
+def assert_named_equation(a_name_pair, b_name_pair, M):
     """
     This is a helper function to check for counterexamples.
+    Check that matrix A is the same as matrix B.
+    If they are not the same, report M and its eigendecomposition.
+    @param a_name_pair: (matrix A, name of A)
+    @param b_name_pair: (matrix B, name of B)
+    @param M: underlying matrix M
     """
     a, a_name = a_name_pair
     b, b_name = b_name_pair
     if not np.allclose(a, b):
+        w, vt = scipy.linalg.eigh(M)
         out = StringIO()
         print >> out, a_name + ':'
         print >> out, a
         print >> out, b_name + ':'
         print >> out, b
+        print >> out, 'M:'
+        print >> out, M
+        print >> out, 'eigenvalues of M:'
+        print >> out, w
+        print >> out, 'columns are eigenvectors of M:'
+        print >> out, vt
         raise Counterexample(out.getvalue())
 
 def assert_pinvproj(fs, M):
     """
     Raise a Counterexample if one is found.
     """
-    pinvproj_of_sub = pinvproj(M[:fs.nsmall, :fs.nsmall])
+    M_sub = M[:fs.nsmall, :fs.nsmall]
+    pinvproj_of_sub = pinvproj(M_sub)
     schur_of_pinvproj = schur(pinvproj(M), fs.nsmall)
-    bottduff_of_sub = bott_duffin(M[:fs.nsmall, :fs.nsmall])
-    schur_of_bottduff = schur(bott_duffin(M), fs.nsmall)
+    bottduff_of_sub = numpyutils.bott_duffin_const(M_sub)
+    schur_of_bottduff = schur(numpyutils.bott_duffin_const(M), fs.nsmall)
+    """
+    assert_named_equation(
+            (np.array([[1]]), 'one'),
+            (np.array([[2]]), 'two'),
+            MatrixUtil.double_centered(M))
+    """
     assert_named_equation(
             (pinvproj_of_sub, 'pinvproj of sub'),
-            (schur_of_pinvproj, 'schur of pinvproj'))
+            (schur_of_pinvproj, 'schur of pinvproj'),
+            MatrixUtil.double_centered(M))
     assert_named_equation(
             (pinvproj_of_sub, 'pinvproj of sub'),
-            (bottduff_of_sub, 'bottduff of sub'))
+            (bottduff_of_sub, 'bottduff of sub'),
+            MatrixUtil.double_centered(M))
     assert_named_equation(
             (schur_of_pinvproj, 'schur of pinvproj'),
-            (schur_of_bottduff, 'schur of bottduff'))
+            (schur_of_bottduff, 'schur of bottduff'),
+            MatrixUtil.double_centered(M))
 
 def double_centered(M):
     """
@@ -131,21 +174,25 @@ def assert_double_centering_identities(fs, M):
     HAH_indirect = double_centered(HMH_A)
     assert_named_equation(
             (HAH_direct, 'double centered submatrix'),
-            (HAH_indirect, 're-centered submatrix of doubly centered matrix'))
+            (HAH_indirect, 're-centered submatrix of doubly centered matrix'),
+            M)
     HAH = HAH_indirect
     # This is not true:
     # check that HAH <==inverse_in_H==> H A^-1 H
     HAH_pinv = inverse_in_H(HAH)
     H_Ainv_H = double_centered(np.linalg.inv(A))
+    """
     assert_named_equation(
             (HAH_pinv, 'inverse-in-H of HAH'),
             (H_Ainv_H, 'double centered inverse of A'))
+    """
     # check a submatrix-schur-inverse commutativity in double centering
     HMH_pinv = inverse_in_H(HMH)
     schur_of_HMH_pinv = schur(HMH_pinv, fs.nsmall)
     assert_named_equation(
             (HAH_pinv, 'inverse-in-H of HAH'),
-            (schur_of_HMH_pinv, 'schur of pinv of HMH'))
+            (schur_of_HMH_pinv, 'schur of pinv of HMH'),
+            M)
 
 
 
@@ -164,41 +211,64 @@ def wat():
     print >> out, 'schur complement of bottduff:'
     print >> out, schur_of_bottduff
 
-def MatrixSampler:
-    def __init__(self, nbig):
-        self.nbig = nbig
+def sample_square_matrix(n):
+    """
+    Sample a very generic square matrix.
+    """
+    return 10.0 * np.random.rand(n, n) - 5.0
 
-def SymmetricMatrixSampler(MatrixSampler):
-    pass
+class MatrixSampler:
+    def __init__(self, n):
+        self.n = n
 
-def AsymmetricMatrixSampler(MatrixSampler):
-    # create a random matrix
-    B = 10 * (np.random.rand(fs.nbig, fs.nbig) - 0.5)
-    if fs.symmetric:
-        M = B + B.T
-    else:
-        M = B
-
-def DistanceMatrixSampler(MatrixSampler):
+class DistanceMatrixSampler(MatrixSampler):
     def __call__(self):
-        """
-        There is probably a nicer way to make an EDM.
-        """
-        nrows = self.nbig
-        ncols = self.nbig-1
+        nrows = self.n
+        ncols = self.n-1
         X = np.random.rand(nrows, ncols)
-        M = np.zeros((self.nbig, self.nbig))
-        for i in range(self.nbig):
-            for j in range(self.nbig):
+        M = np.zeros((self.n, self.n))
+        for i in range(self.n):
+            for j in range(self.n):
                 d = X[i] - X[j]
                 M[i, j] = np.dot(d, d)
         return M
+
+class PredistanceMatrixSampler(MatrixSampler):
+    def __call__(self):
+        B = sample_square_matrix(self.n)
+        S = np.abs(B + B.T)
+        return S - np.diag(np.diag(S))
+
+class NonNegSymmetricMatrixSampler(MatrixSampler):
+    def __call__(self):
+        B = sample_square_matrix(self.n)
+        S = np.abs(B + B.T)
+        return S
+
+class SymmetricMatrixSampler(MatrixSampler):
+    def __call__(self):
+        B = sample_square_matrix(self.n)
+        return B + B.T
+
+class AsymmetricMatrixSampler(MatrixSampler):
+    def __call__(self):
+        return sample_square_matrix(self.n)
+
+class PositiveDefiniteMatrixSampler(MatrixSampler):
+    def __call__(self):
+        B = sample_square_matrix(self.n)
+        return np.dot(B, B.T)
+
+class NegativeDefiniteMatrixSampler(MatrixSampler):
+    def __call__(self):
+        B = sample_square_matrix(self.n)
+        return -np.dot(B, B.T)
 
 def search_for_counterexample(fs, sampler):
     """
     Raise a Counterexample if one is found.
     """
-    for i in range(nsamples):
+    for i in range(fs.nsamples):
         # draw a matrix from the distribution
         M = sampler()
         # assert pinvproj and bott-duffin identities
@@ -206,49 +276,34 @@ def search_for_counterexample(fs, sampler):
         # assert identities regarding double centering
         assert_double_centering_identities(fs, M)
 
-
-def search_for_generic_counterexample(fs):
-    for i in range(fs.nsamples):
-        # create a random matrix
-        B = 10 * (np.random.rand(fs.nbig, fs.nbig) - 0.5)
-        if fs.symmetric:
-            M = B + B.T
-        else:
-            M = B
-        # assert pinvproj and bott-duffin identities
-        assert_pinvproj(fs, M)
-        # assert identities regarding double centering
-        assert_double_centering_identities(fs, M)
-
-def search_for_distance_counterexample(fs):
-    """
-    Raise a Counterexample if one is found.
-    """
-    for i in range(fs.nsamples):
-        # create a random matrix
-        M = sample_edm(fs.nbig)
-        # assert pinvproj and bott-duffin identities
-        assert_pinvproj(fs, M)
-        # assert identities regarding double centering
-        assert_double_centering_identities(fs, M)
-
 def get_response_content(fs):
+    # tell numpy to print verbosely
+    np.set_printoptions(linewidth=200)
+    # select the matrix sampler chosen by the user
+    if fs.distance:
+        sampler = DistanceMatrixSampler(fs.nbig)
+    elif fs.predistance:
+        sampler = PredistanceMatrixSampler(fs.nbig)
+    elif fs.nonnegsym:
+        sampler = NonNegSymmetricMatrixSampler(fs.nbig)
+    elif fs.symmetric:
+        sampler = SymmetricMatrixSampler(fs.nbig)
+    elif fs.asymmetric:
+        sampler = AsymmetricMatrixSampler(fs.nbig)
+    elif fs.posdef:
+        sampler = PositiveDefiniteMatrixSampler(fs.nbig)
+    elif fs.negdef:
+        sampler = NegativeDefiniteMatrixSampler(fs.nbig)
+    else:
+        raise ValueError('invalid matrix class')
+    # look for a counterexample
     out = StringIO()
     try:
-        search_for_distance_counterexample(fs)
+        search_for_counterexample(fs, sampler)
     except Counterexample, e:
-        print >> out, 'Found a counterexample to a conjectured identity'
-        print >> out, 'using a random distance matrix.'
+        print >> out, 'Found a counterexample:'
         print >> out, str(e)
-        return out.getvalue()
-    print >> out, 'no counterexample found using random distance matrices'
-    try:
-        search_for_generic_counterexample(fs)
-    except Counterexample, e:
-        print >> out, 'Found a counterexample to a conjectured identity'
-        print >> out, 'using a random generic matrix.'
-        print >> out, str(e)
-        return out.getvalue()
-    print >> out, 'no counterexample found using random generic matrices'
+    else:
+        print >> out, 'no counterexample found'
     return out.getvalue()
 
