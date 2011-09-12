@@ -1,31 +1,50 @@
 """
-Check an identity relating the Schur complement to pseudoinversion.
+Transform a source string into a target string using some rules. [UNFINISHED]
 
-The identity which may or may not be true is that
-if M is a symmetric singular block matrix
-with nonsingular principal submatrix blocks,
-Then the Schur complement in M is equal to the
-pseudoinverse of (the double sided projection onto the subspace spanned by the
-schur complement of M) of the pseudoinverse of M.
+This uses a bidirectional graph search,
+and it is meant to help look for a certain linear algebra proof.
 """
 
+import textwrap
 from StringIO import StringIO
-
-import numpy as np
-import scipy
-import scipy.linalg
 
 import Form
 import FormOut
 
-class Counterexample(Exception): pass
+g_default_rules = textwrap.dedent("""
+        # r: reduce
+        # b: border
+        # c: center
+        # i: inverse
+        # p: pseudoinverse
+        # s: schur complement
+        # u: submatrix block
+
+        # inverses
+        ii => 1
+        pp <=> 1
+        i <=> iii
+
+        # properties that are easy to prove
+        cub <=> c
+        cpc <=> cp
+        rc <=> uc
+
+        # properties that are harder to prove
+        ibs <=> cp
+        r <=> cpui
+        """).strip()
+
+g_default_initial_string = 'cps'
+g_default_target_string = 'bcp'
 
 def get_form():
     """
     @return: the body of a form
     """
     # define the form objects
-    form_objects = []
+    form_objects = [
+            MultiLine('rules', 'rules', g_default_rules)]
     return form_objects
 
 def get_form_out():
