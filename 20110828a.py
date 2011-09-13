@@ -44,7 +44,7 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            MultiLine('rules', 'rules', g_default_rules)]
+            Form.MultiLine('rules', 'rules', g_default_rules)]
     return form_objects
 
 def get_form_out():

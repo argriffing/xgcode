@@ -22,6 +22,12 @@ POS_EDGE = 1
 ALT_EDGE = 2
 
 
+def ndot(*args):
+    M = args[0]
+    for B in args[1:]:
+        M = np.dot(M, B)
+    return M
+
 #####################################################
 # This section is for EqualDaylight layout.
 
@@ -189,6 +195,59 @@ def get_internal_vertex_to_leaf_distn(T, B):
     Lba = Ftree.TB_to_L_block(T, B, internal, leaves)
     # Get the numpy array of harmonic extensions to previously unknown values.
     interpolator = -np.dot(np.linalg.pinv(Lbb), Lba)
+    #print 'L interpolator:'
+    #print interpolator.shape
+    #print interpolator
+    d = {}
+    for i, v in enumerate(internal):
+        distn = {}
+        for j, leaf in enumerate(leaves):
+            distn[leaf] = interpolator[i, j]
+        d[v] = distn
+    return d
+
+def get_internal_vertex_to_leaf_distn_cov(T, B):
+    """
+    This is a possibly equivalent formualtion.
+    It is based on Schur complementation in the unrooted covariance matrix.
+    Return a map from an internal vertex to a leaf distribution.
+    @return: a dictionary that maps an internal vertex to a leaf distribution
+    """
+    leaves = Ftree.T_to_leaves(T)
+    internal = Ftree.T_to_internal_vertices(T)
+    vertices = leaves + internal
+    # Get the full tree Laplacian matrix.
+    L = Ftree.TB_to_L_principal(T, B, vertices)
+    # Get the unrooted covariance matrix.
+    HSH = np.linalg.pinv(L)
+    # Use the multivariate normal distribution wikipedia page
+    # for conditional distributions.
+    nleaves = len(leaves)
+    ninternal = len(internal)
+    #
+    # This interpolator works.
+    #Lbb = L[nleaves:, nleaves:]
+    #Lba = L[nleaves:, :nleaves]
+    #interpolator = -ndot(np.linalg.pinv(Lbb), Lba)
+    #
+    # This interpolator seems like it should work but it does not.
+    Saa = HSH[:nleaves, :nleaves]
+    Sba = HSH[nleaves:, :nleaves]
+    #print 'det(Saa)'
+    #print np.linalg.det(Saa)
+    interpolator = ndot(Sba, np.linalg.pinv(Saa))
+    #
+    # Try a hack.
+    #eps = 1e-12
+    #nvertices = len(vertices)
+    #J = np.ones((nvertices, nvertices))
+    #Saa = (HSH + J)[:nleaves, :nleaves]
+    #Sba = (HSH + J)[nleaves:, :nleaves]
+    #interpolator = ndot(Sba, np.linalg.pinv(Saa))
+    #
+    #print 'cov interpolator:'
+    #print interpolator.shape
+    #print interpolator
     d = {}
     for i, v in enumerate(internal):
         distn = {}
@@ -431,6 +490,9 @@ def get_multi_edges(T, edge_to_color):
 
 class TestFtreeAux(unittest.TestCase):
 
+    def setUp(self):
+        np.set_printoptions(linewidth=300)
+
     def test_get_multi_edges(self):
         T = set(frozenset(pair) for pair in [
             (0,2), (1,2), (2,3), (3,4), (3,5), (5,6), (5,7)])
@@ -525,6 +587,25 @@ class TestFtreeAux(unittest.TestCase):
         r = Ftree.R_to_root(R)
         # Get the leaf distribution associated with the root.
         internal_to_leaf_distn = get_internal_vertex_to_leaf_distn(T, B)
+        leaf_distn = internal_to_leaf_distn[r]
+        leaves = Ftree.T_to_leaves(T)
+        observed_name_weight_pairs = [
+                (N[v], leaf_distn[v]) for v in leaves]
+        # Do the comparaison for testing.
+        observed_name_to_weight = dict(observed_name_weight_pairs)
+        for name in LeafWeights.g_acl_ordered_names:
+            s_expected = LeafWeights.g_acl_expected_weights[name]
+            s_observed = '%.3f' % observed_name_to_weight[name]
+            self.assertEqual(s_expected, s_observed)
+
+    def test_leaf_distn_cov(self):
+        # Read the example tree.
+        example_tree = LeafWeights.g_acl_tree
+        R, B, N = FtreeIO.newick_to_RBN(example_tree)
+        T = Ftree.R_to_T(R)
+        r = Ftree.R_to_root(R)
+        # Get the leaf distribution associated with the root.
+        internal_to_leaf_distn = get_internal_vertex_to_leaf_distn_cov(T, B)
         leaf_distn = internal_to_leaf_distn[r]
         leaves = Ftree.T_to_leaves(T)
         observed_name_weight_pairs = [
