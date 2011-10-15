@@ -14,7 +14,7 @@ import os
 
 import iterutils
 
-def get_latex_text(preamble, document_body):
+def get_latex_text(preamble, document_body, documentclass='standalone'):
     """
     This may require the tex package called standalone.
     The package may not be packaged for the OS package manager.
@@ -25,7 +25,7 @@ def get_latex_text(preamble, document_body):
     http://www.tlhiv.org/ltxpreview/ .
     """
     return '\n'.join([
-        '\\documentclass{standalone}',
+        '\\documentclass{%s}' % documentclass,
         '\\usepackage{tikz}',
         preamble,
         '\\begin{document}',
@@ -98,8 +98,11 @@ def _create_temp_pdf_file(latex_text):
     # convert the file to a pdf
     args = [
             '/usr/bin/pdflatex',
-            '-output-directory', '/tmp',
-            '-interaction', 'nonstopmode', pathname]
+            '-output-directory=/tmp',
+            '-interaction=nonstopmode',
+            '-halt-on-error',
+            pathname]
+    # 
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
     p_output = p.stdout.read()
