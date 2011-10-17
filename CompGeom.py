@@ -9,6 +9,9 @@ import random
 import unittest
 import copy
 
+class ConvexPolygonError(Exception):
+    pass
+
 class Point:
     def __init__(self, pair=None):
         if pair:
@@ -17,11 +20,6 @@ class Point:
         return (self.x, self.y)
     def __repr__(self):
         return 'Point(%s)' % str(self.to_tuple())
-
-
-class ConvexPolygonError(Exception):
-    pass
-
 
 class ConvexPolygon:
     """
@@ -75,7 +73,8 @@ class CaliperState:
             ymin_index = min((p.y, i) for i, p in enumerate(convex_hull))[1]
             xmax_index = max((p.x, i) for i, p in enumerate(convex_hull))[1]
             ymax_index = max((p.y, i) for i, p in enumerate(convex_hull))[1]
-            self.corner_indices = [ymin_index, xmax_index, ymax_index, xmin_index]
+            self.corner_indices = [
+                    ymin_index, xmax_index, ymax_index, xmin_index]
             self.rotation = 0
             self.convex_hull = convex_hull
 
@@ -93,7 +92,8 @@ class CaliperState:
 
     def gen_rectangle_vertices(self):
         """
-        Yield ordered vertices of the bounding rectangle defined by the calipers.
+        Yield ordered vertices of the bounding rectangle.
+        The bounding rectangle is defined by the calipers.
         """
         for i, index in enumerate(self.corner_indices):
             p0 = self.convex_hull[index]
@@ -125,7 +125,8 @@ class CaliperState:
         best_rotation, best_corner = min(rotation_corner_pairs)
         next_state = self.clone()
         next_state.rotation = self.rotation + best_rotation
-        next_state.corner_indices[best_corner] = (next_state.corner_indices[best_corner] + 1) % npoints
+        nsbci = (next_state.corner_indices[best_corner] + 1) % npoints
+        next_state.corner_indices[best_corner] = nsbci
         return next_state
 
 def line_segments_intersect(a, b, c, d):
@@ -145,6 +146,9 @@ def line_segments_intersect(a, b, c, d):
 
 def ccw(p0, p1, p2):
     """
+    @param p0: a Point object
+    @param p1: a Point object
+    @param p2: a Point object
     @return: 0 when collinear, 1 when turning ccw, -1 when turning cw
     """
     dx1 = p1.x - p0.x
@@ -163,9 +167,10 @@ def ccw(p0, p1, p2):
 
 def pseudo_angle(p1, p2):
     """
-    @param p1: an object with x and y members
-    @param p2: an object with x and y members
-    @return: a number between 0 and 360 that has the same order properties as an angle
+    The returned value is a floating point number between 0 and 360.
+    @param p1: a Point object
+    @param p2: a Point object
+    @return: a value that has the same order properties as an angle
     """
     dx = p2.x - p1.x
     dy = p2.y - p1.y
@@ -186,6 +191,7 @@ def get_pivot_index(points):
     This is the first step of the Graham scan.
     Get the index with the min y value.
     Break ties by returning the index with the max x value.
+    @param points: a sequence of Point objects
     @return: the index of the pivot point
     """
     augmented = [(p.y, -p.x, i) for (i, p) in enumerate(points)]
@@ -196,6 +202,7 @@ class GrahamScanError(Exception):
 
 def graham_scan(points):
     """
+    @param points: a sequence of Point objects
     @return: a counter clockwise ordered list of points on the convex hull.
     """
     pivot_index = get_pivot_index(points)
@@ -219,6 +226,7 @@ def graham_scan(points):
 def get_interior_quadrilateral(points):
     """
     This function can be used for interior point elimination.
+    @param points: a sequence of Point objects
     @return: four corners defining a convex quadrilateral.
     """
     pxpy = max((+p.x + p.y, p) for p in points)[1]
@@ -232,10 +240,18 @@ class TestCompGeom(unittest.TestCase):
     def setUp(self):
         npoints = 10
         random.seed(0)
-        self.points = [Point((random.random(), random.random())) for i in range(npoints)]
+        self.points = []
+        for i in range(npoints):
+            rpoint = Point((random.random(), random.random()))
+            self.points.append(rpoint)
 
     def test_get_pivot_index(self):
-        points = (Point((0, 0)), Point((0, 1)), Point((5, 5)), Point((4, 0)), Point((3, 0)))
+        points = (
+                Point((0, 0)),
+                Point((0, 1)),
+                Point((5, 5)),
+                Point((4, 0)),
+                Point((3, 0)))
         pivot_index = get_pivot_index(points)
         self.assertEquals(pivot_index, 3)
 
@@ -248,9 +264,9 @@ class TestCompGeom(unittest.TestCase):
             dy = p.y - pivot.y
             pseudo_angle_index_pairs.append((pseudo_angle(pivot, p), i))
             angle_index_pairs.append((math.atan2(dy, dx) % (2*math.pi), i))
-        pseudo_angle_permutation = tuple(zip(*sorted(pseudo_angle_index_pairs))[1])
-        angle_permutation = tuple(zip(*sorted(angle_index_pairs))[1])
-        self.assertEquals(pseudo_angle_permutation, angle_permutation)
+        pseudo_angle_perm = tuple(zip(*sorted(pseudo_angle_index_pairs))[1])
+        angle_perm = tuple(zip(*sorted(angle_index_pairs))[1])
+        self.assertEquals(pseudo_angle_perm, angle_perm)
 
 def get_random_point():
     x = random.random()
@@ -364,14 +380,4 @@ def main():
     outfile.close()
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', help='output file')
-    parser.add_option('--test', action='store_true', dest='test', default=False)
-    options, args = parser.parse_args()
-    if options.test:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestCompGeom)
-        unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        main()
+    unittest.main()
