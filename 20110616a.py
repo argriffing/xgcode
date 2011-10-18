@@ -25,6 +25,7 @@ import scipy
 import Form
 import FormOut
 import tikz
+import latexutil
 import Ftree
 import FtreeIO
 import FtreeAux
@@ -366,7 +367,7 @@ def get_response_content(fs):
     # sanitize taxon labels if requested
     if fs.sanitization:
         for v in N:
-            N[v] = tikz.sanitize(N[v])
+            N[v] = latexutil.sanitize(N[v])
     # scale branch lengths so the diameter is 1
     diameter = np.max(Ftree.TB_to_D(T, B, Ftree.T_to_leaves(T)))
     # scale the branch lengths

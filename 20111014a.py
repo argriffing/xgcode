@@ -31,6 +31,7 @@ import FormOut
 from Codon import g_sorted_non_stop_codons
 from Codon import g_stop_codons
 import tikz
+import latexutil
 import color
 
 def get_form():
@@ -71,47 +72,7 @@ def is_nt_transversion(nta, ntb):
 def is_nt_identity(nta, ntb):
     return nta == ntb
 
-def get_response_content_old(fs):
-    out = StringIO()
-    # compose the response
-    #
-    # define the codon ordering
-    codons = g_sorted_non_stop_codons
-    codon_to_index = dict((c, i) for i, c in enumerate(codons))
-    # create the weighted adjacency matrix
-    A = np.zeros((61, 61))
-    for source_codon_index, source_codon in enumerate(codons):
-        source_nts = list(source_codon)
-        for i in range(3):
-            source_nt = source_nts[i]
-            for sink_nt in 'ACGT':
-                if is_nt_transition(source_nt, sink_nt):
-                    rate = fs.ts_rate
-                elif is_nt_transversion(source_nt, sink_nt):
-                    rate = fs.tv_rate
-                else:
-                    rate = 0.0
-                sink_nts = source_nts[:]
-                sink_nts[i] = sink_nt
-                sink_codon = ''.join(sink_nts)
-                if sink_codon not in g_stop_codons:
-                    sink_codon_index = codon_to_index[sink_codon]
-                    A[source_codon_index, sink_codon_index] = rate
-    # create the Laplacian matrix
-    L = np.diag(np.sum(A, axis=0)) - A
-    #print >> out, 'L:',
-    #print >> out, L
-    #print >> out
-    # get the eigendecomposition of L
-    #print >> out, 'eigendecomposition of L:'
-    #print >> out, scipy.linalg.eigh(L, eigvals=(0, 2))
-    #print >> out
-    # return the response
-    return out.getvalue()
-
 def get_tikz_lines(fs):
-    np.set_printoptions(linewidth=400)
-    np.set_printoptions(threshold=1000000)
     codons = g_sorted_non_stop_codons
     codon_to_index = dict((c, i) for i, c in enumerate(codons))
     # Compute all codon transitions and all codon transversions
@@ -176,41 +137,14 @@ def get_tikz_lines(fs):
     # return the lines
     return lines
 
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    """
-    preamble = '\\usepackage{color}'
-    arr = [tikz.define_color(*p) for p in color.wolfram_name_color_pairs]
-    arr.append(tikz_text)
-    document_body = '\n'.join(arr)
-    return tikz.get_latex_text(
-            preamble, document_body, documentclass='article')
-
-def get_tikz_text(tikz_body):
-    """
-    TikZ boilerplate code.
-    """
-    tikz_header = '\\begin{tikzpicture}[auto]'
-    tikz_footer = '\\end{tikzpicture}'
-    return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
 def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
-    # get the texts
-    tikz_lines = get_tikz_lines(fs)
-    tikz_text = get_tikz_text('\n'.join(tikz_lines))
-    latex_text = get_latex_text(tikz_text)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    return tikz.get_tikz_response(
+            tikz.get_w_color_package_set(),
+            tikz.get_w_color_preamble(),
+            '\n'.join(get_tikz_lines(fs)),
+            fs.tikzformat)
 

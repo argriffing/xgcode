@@ -1,5 +1,12 @@
 """
 Mediate between the interface and the scripts.
+
+Note that at least three interfaces are involved.
+The first is a very simple web-based interface which was originally
+based on a simple cgi subset of wsgi and has been replaced
+by a very simple cherrypy web-based interface.
+The second interface is through the galaxy project.
+The third interface is through the mobyle project.
 """
 
 import cgi

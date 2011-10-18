@@ -116,8 +116,9 @@ def get_png_contents(latex_text):
     # create the pdf file
     pathname = _create_temp_pdf_file(latex_text)
     # create the png file
+    png_pathname = pathname + '.png'
     input_arg = pathname + '.pdf'
-    output_arg = '-sOutputFile=%s.png' % pathname
+    output_arg = '-sOutputFile=' + png_pathname
     # sDEVICE used to be pngggray
     args = [
             'gs', '-dSAFER', '-dBATCH', '-dNOPAUSE', '-sDEVICE=png16m',
@@ -127,7 +128,6 @@ def get_png_contents(latex_text):
     p_output = p.stdout.read()
     p_error = p.stderr.read()
     # read the png file
-    png_pathname = pathname + '.png'
     try:
         fin = open(png_pathname, 'rb')
         png_contents = fin.read()
