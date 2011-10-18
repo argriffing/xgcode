@@ -19,6 +19,7 @@ import Form
 import FormOut
 import DrawEigenLacing
 import tikz
+import latexutil
 import Ftree
 import FtreeIO
 import FtreeAux
@@ -115,13 +116,13 @@ def get_response_content(fs):
         v_to_location = FtreeAux.equal_daylight_layout(T, B, 3)
     # draw the image
     physical_size = (fs.width, fs.height)
-    tikz_body = DrawEigenLacing.get_forest_image_ftree(
+    tikzpicture = DrawEigenLacing.get_forest_image_ftree(
             T, B, N, v_to_location,
             physical_size, valuations, nfigures, fs.inner_margin,
             fs.reflect_trees, fs.show_vertex_labels, fs.show_subfigure_labels)
     packages = []
     preamble = '\\usetikzlibrary{snakes}'
-    return tikz.get_centered_figure_response(
-            packages, preamble, tikz_body, fs.tikzformat,
-            g_figure_cpation, g_figure_label)
+    return tikz.get_figure_response(
+            tikzpicture, fs.tikzformat, g_figure_caption, g_figure_label,
+            packages, preamble)
 

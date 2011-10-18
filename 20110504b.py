@@ -12,7 +12,6 @@ import TreeProjection
 g_default_yaw = 0
 g_default_pitch = 0.2
 g_default_eigenvector_index = 2
-
 g_default_tree = Newick.daylight_example_tree
 
 def get_form():
@@ -49,5 +48,6 @@ def get_response_content(fs):
             'x' : '1em',
             'y' : '1em',
             'inner sep': '0pt'}
-    return tikz.get_tikz_response([], '', tikz_body, fs.tikzformat, options)
+    tikzpicture = tikz.get_picture(tikz_body, **options)
+    return tikz.get_response(tikzpicture, fs.tikzformat)
 

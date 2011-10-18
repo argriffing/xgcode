@@ -18,6 +18,12 @@ import EqualArcLayout
 g_tree_a = '((1:1, 2:1)x:1, 3:1, 4:1)y;'
 g_tree_b = '((1:1, 2:1)x:1, (3:1, 4:1)y:1, (5:1, 6:1)z:1)w;'
 
+g_figure_label = 'fig:with-and-without-deep-vertices'
+g_figure_caption = """\
+In tree (a) every internal vertex is adjacent to a leaf,
+whereas in tree (b) the deepest vertex of articulation
+is not adjacent to any leaf."""
+
 def get_form():
     """
     @return: the body of a form
@@ -59,11 +65,11 @@ def get_edge_line(va, vb):
     return line
 
 def get_tikz_text(newick, scaling_factor):
-    options = {'inner sep' : '0pt'}
-    if scaling_factor != 1:
-        options['scale'] = scaling_factor
+    options = {
+            'inner sep' : '0pt',
+            'scale' : scaling_factor}
     tikz_body = '\n'.join(get_tikz_lines(newick))
-    return tikz.get_picture(tikz_body, options)
+    return tikz.get_picture(tikz_body, **options)
 
 def get_tikz_lines(newick):
     tree = Newick.parse(newick, SpatialTree.SpatialTree) 
@@ -87,27 +93,19 @@ def get_tikz_lines(newick):
     return node_lines + edge_lines
 
 def get_latex_response(scaling_factor, latexformat):
-    document_lines = [
-        '\\begin{figure}',
-        '\\centering',
+    figure_body_lines = [
         '\\subfloat[]{\\label{fig:without-deep-vertex}',
         get_tikz_text(g_tree_a, scaling_factor),
         '}',
         '\\subfloat[]{\\label{fig:with-deep-vertex}',
         get_tikz_text(g_tree_b, scaling_factor),
-        '}',
-        '\\caption{',
-        'In tree (a) every internal vertex is adjacent to a leaf,',
-        'whereas in tree (b) the deepest vertex of articulation',
-        'is not adjacent to any leaf.}',
-        '\\label{fig:with-and-without-deep-vertices}',
-        '\\end{figure}']
-    document_body = '\n'.join(document_lines)
-    documentclass = 'article'
+        '}']
+    figure_body = '\n'.join(figure_body_lines)
     packages = ['tikz', 'subfig']
     preamble = ''
-    return latexutil.get_latex_response(
-            documentclass, packages, preamble, document_body, latexformat)
+    return latexutil.get_centered_figure_response(
+            figure_body, latexformat, g_figure_caption, g_figure_label,
+            packages, preamble)
 
 def get_response_content(fs):
     """

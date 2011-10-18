@@ -11,7 +11,8 @@ import latexutil
 g_segment_length = 1.0
 g_cross_radius = 0.2
 
-g_caption = """\
+g_figure_label = 'fig:subfloats'
+g_figure_caption = """\
 This figure illustrates an ad-hoc tree topology resolution,
 given that the signs of the entries of the
 $v^2$ (Fiedler) eigenvector of $L*$
@@ -66,25 +67,10 @@ def get_form_out():
     return FormOut.Latex()
 
 def get_tikz_text(tikz_body):
-    return tikz.get_picture(tikz_body, {'scale' : '0.8'})
-
-def get_latex_text(tikz_text):
-    latex_header = '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\usepackage{subfig}',
-        '\\begin{document}'])
-    latex_body = tikz_text
-    latex_footer = '\\end{document}'
-    return '\n'.join([latex_header, latex_body, latex_footer])
+    return tikz.get_picture(tikz_body, scale='0.8')
 
 def get_float_figure_lines(subfloat_pictures):
     arr = []
-    arr.extend([
-        '\\begin{figure}',
-        #'\\centering'
-        '\\begin{center}'
-        ])
     for i, picture_text in enumerate(subfloat_pictures):
         arr.extend([
             '\\subfloat[]{',
@@ -94,13 +80,6 @@ def get_float_figure_lines(subfloat_pictures):
         # add row breaks
         if i in (0, 4):
             arr.append('\\\\')
-    arr.extend([
-        '\\end{center}',
-        '\\caption {',
-        g_caption,
-        '}',
-        '\\label{fig:subfloats}',
-        '\\end{figure}'])
     return arr
 
 def get_tikz_uncrossed_line(pt, direction):
@@ -274,8 +253,11 @@ def get_response_content(fs):
             tikz_fiedler,
             tikz_t1, tikz_t2, tikz_t3, tikz_t4,
             tikz_fail, tikz_success]
-    figure_lines = get_float_figure_lines(subfloat_pictures)
-    # return the tresponse
-    return latexutil.get_latex_response('article', ['tikz', 'subfig'], '',
-            '\n'.join(figure_lines), fs.latexformat)
+    # return the response
+    figure_body = '\n'.join(get_float_figure_lines(subfloat_pictures))
+    packages = ('tikz', 'subfig')
+    preamble = ''
+    return latexutil.get_centered_figure_response(
+            figure_body, fs.latexformat, g_figure_caption, g_figure_label,
+            packages, preamble)
 

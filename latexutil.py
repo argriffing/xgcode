@@ -286,7 +286,7 @@ def get_centered_figure_response(
         figure_caption,
         '}',
         '\\label{%s}' % figure_label,
-        '\\end{figure}'
+        '\\end{figure}',
         '\\end{document}']
     latex_text = '\n'.join(c for c in chunks if c)
     # respond using the requested format
