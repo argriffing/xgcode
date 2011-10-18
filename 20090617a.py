@@ -4,7 +4,6 @@ This is probably useful only as an example.
 """
 
 from StringIO import StringIO
-import optparse
 
 from SnippetUtil import HandlingError
 from Form import RadioItem
@@ -13,44 +12,7 @@ import FormOut
 import tikz
 
 
-class Layout:
-    """
-    This is an abstract base class.
-    """
-
-    def get_tikz_text(self, scaling_factor, show_full_tree, show_pruned_trees):
-        """
-        @param scaling_factor: a float
-        @param show_full_tree: True if the full tree should be shown
-        @param show_pruned_trees: True if the pruned trees should be shown
-        @return: a multiline string that defines a tikzpicture
-        """
-        out = StringIO()
-        if scaling_factor == 1.0:
-            print >> out, '\\begin{tikzpicture}[auto]'
-        else:
-            print >> out, '\\begin{tikzpicture}[auto,scale=%s]' % str(scaling_factor)
-        print >> out, self.get_tikz_contents(show_full_tree, show_pruned_trees)
-        print >> out, '\\end{tikzpicture}'
-        return out.getvalue().strip()
-
-    def get_latex_text(self, scaling_factor, show_full_tree, show_pruned_trees):
-        """
-        @param scaling_factor: a float
-        @param show_full_tree: True if the full tree should be shown
-        @param show_pruned_trees: True if the pruned trees should be shown
-        @return: a multiline string that is the contents of a valid LaTeX file
-        """
-        out = StringIO()
-        print >> out, '\\documentclass{article}'
-        print >> out, '\\usepackage{tikz}'
-        print >> out, '\\begin{document}'
-        print >> out, self.get_tikz_text(scaling_factor, show_full_tree, show_pruned_trees)
-        print >> out, '\\end{document}'
-        return out.getvalue().strip()
-
-
-class SixLeafLayout(Layout):
+class SixLeafLayout():
 
     def get_left_stuff(self):
         """
@@ -147,7 +109,7 @@ class SixLeafLayout(Layout):
         return out.getvalue().strip()
 
 
-class SevenLeafLayout(Layout):
+class SevenLeafLayout():
 
     def get_left_stuff(self):
         """
@@ -357,21 +319,6 @@ def get_response_content(fs):
         show_pruned_trees = True
     # get the texts
     tikz_body = layout.get_tikz_contents(show_full_tree, show_pruned_trees)
-    """
-    tikz_text = layout.get_tikz_text(
-        fs.scaling_factor, show_full_tree, show_pruned_trees)
-    latex_text = layout.get_latex_text(
-        fs.scaling_factor, show_full_tree, show_pruned_trees)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
-    """
     options = {
             'auto' : None,
             'scale' : fs.scaling_factor}
