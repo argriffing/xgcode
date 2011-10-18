@@ -23,6 +23,11 @@ import Ftree
 import FtreeIO
 import FtreeAux
 
+g_figure_label = 'fig:interlacing'
+g_figure_caption = """\
+This figure shows the interlacing
+of harmonically extended eigenvectors."""
+
 
 def get_form():
     """
@@ -62,28 +67,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Tikz('tkz')
-
-def get_latex_text(latex_body):
-    return '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\usetikzlibrary{snakes}',
-        '\\begin{document}',
-        latex_body,
-        '\\end{document}'])
-
-def get_figure_text(figure_body):
-    return '\n'.join([
-        '\\begin{figure}',
-        '\\centering',
-        figure_body,
-        '\\caption{',
-        'This figure shows the interlacing',
-        'of harmonically extended eigenvectors.',
-        '}',
-        '\\label{fig:interlacing}',
-        '\\end{figure}'])
+    return FormOut.Tikz()
 
 #FIXME this is used because the analogous Ftree function does not
 #      include the constant vector
@@ -131,18 +115,13 @@ def get_response_content(fs):
         v_to_location = FtreeAux.equal_daylight_layout(T, B, 3)
     # draw the image
     physical_size = (fs.width, fs.height)
-    tikz_text = DrawEigenLacing.get_forest_image_ftree(
+    tikz_body = DrawEigenLacing.get_forest_image_ftree(
             T, B, N, v_to_location,
             physical_size, valuations, nfigures, fs.inner_margin,
             fs.reflect_trees, fs.show_vertex_labels, fs.show_subfigure_labels)
-    latex_text = get_latex_text(get_figure_text(tikz_text))
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    packages = []
+    preamble = '\\usetikzlibrary{snakes}'
+    return tikz.get_centered_figure_response(
+            packages, preamble, tikz_body, fs.tikzformat,
+            g_figure_cpation, g_figure_label)
 

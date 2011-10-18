@@ -74,49 +74,60 @@ def get_w_color_preamble():
 def get_w_color_package_set():
     return set(['color'])
 
-def get_picture(tikz_body, options=None):
+def get_picture(tikz_body, *args, **kwargs):
     """
     @param tikz_body: the text inside a tikzpicture environment
-    @param options: a tikzpicture environment options dict 
+    @param args: single tikzpicture options
+    @param kwargs: paired tikzpicture options
     @return: the text of a tikzpicture environment
     """
-    if options is None:
-        options = {}
-    options_string = latexutil.options_dict_to_string(options)
+    redundant_pair = ('scale', 1)
+    kwargs = dict(p for p in kwargs.items() if p != redundant_pair)
+    option_string = latexutil.options_to_string(*args, **kwargs)
     return '\n'.join((
-        '\\begin{tikzpicture}' + options_string,
+        '\\begin{tikzpicture}' + option_string,
         tikz_body,
         '\\end{tikzpicture}'))
 
-def get_tikz_response(
-        packages, preamble, tikz_body, tikzformat, tikzpicture_options=None):
+def get_response(tikzpicture, tikzformat, packages=(), preamble=''):
     """
-    This is a very simple tikz response.
-    For more complicated situations a less generic function
-    may be required.
-    For example a more specific function may be required
-    to add more options to the tikzpicture environment
-    or to the imported packages.
-    The tikz package is requested automatically.
+    @param tikzpicture: a complete tikzpicture environment
+    @param tikzformat: one of four tikz output formats
     @param packages: a collection of requested packages
     @param preamble: color definitions, for example
-    @param tikz_body: the text inside a tikzpicture environment
-    @param tikzformat: one of four tikz output formats
-    @param tikzpicture_options: a tikzpicture environment options dict or None
     @return: a response suitable to return from the get_response interface
     """
     # check the requested format
     assert_tikzformat(tikzformat)
-    # define the tikzpicture environment
-    if tikzpicture_options is None:
-        tikzpicture_options = {'auto' : None}
-    tikzpicture = get_picture(tikz_body, tikzpicture_options)
     # immediately return the tikzpicture if requested
     if tikzformat == TIKZFORMAT_TIKZ:
         return tikzpicture
     # delegate to latexutil
     requested_packages = set(packages) | set(['tikz'])
-    return latexutil.get_latex_response(
-            'standalone', requested_packages, preamble,
-            tikzpicture, tikzformat)
+    return latexutil.get_response(
+            'standalone', tikzpicture, tikzformat,
+            requested_packages, preamble)
+
+def get_figure_response(
+        tikzpicture, tikzformat, figure_caption, figure_label,
+        packages=(), preamble=''):
+    """
+    @param tikzpicture: a complete tikzpicture environment
+    @param tikzformat: one of four tikz output formats
+    @param figure_caption: figure caption
+    @param figure_label: figure label
+    @param packages: a collection of requested packages
+    @param preamble: color definitions, for example
+    @return: a response suitable to return from the get_response interface
+    """
+    # check the requested format
+    assert_tikzformat(tikzformat)
+    # immediately return the tikzpicture if requested
+    if tikzformat == TIKZFORMAT_TIKZ:
+        return tikzpicture
+    # delegate to latexutil
+    requested_packages = set(packages) | set(['tikz'])
+    return latexutil.get_centered_figure_response(
+            tikzpicture, tikzformat, figure_caption, figure_label,
+            requested_packages, preamble)
 

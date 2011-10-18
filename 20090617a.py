@@ -319,18 +319,6 @@ def get_response_content(fs):
         show_pruned_trees = True
     # get the texts
     tikz_body = layout.get_tikz_contents(show_full_tree, show_pruned_trees)
-    options = {'auto' : None}
-    if fs.scaling_factor != 1.0:
-        options['scale'] = fs.scaling_factor
-    return tikz.get_tikz_response(set(), '', tikz_body, fs.tikzformat, options)
+    tikzpicture = tikz.get_picture(tikz_body, 'auto', scale=fs.scaling_factor)
+    return tikz.get_response(tikzpicture, fs.tikzformat)
 
-def main():
-    layout = SevenLeafLayout()
-    tikz_body = layout.get_tikz_contents(True, True)
-    options = {
-            'auto' : None,
-            'scale' : 0.5}
-    print tikz.get_tikz_response(set(), '', tikz_body, 'tex', options)
-
-if __name__ == '__main__':
-    main()

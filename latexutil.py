@@ -32,18 +32,18 @@ def assert_latexformat(latexformat):
         msg = 'invalid requested format: ' + latexformat
         raise ValueError(msg)
 
-def options_dict_to_string(options_dict):
+def options_to_string(*args, **kwargs):
     """
-    The keys and the values of this dict are both stringified.
-    If a key is mapped to None then this will be treated specially.
-    @param options_dict: a dict
+    Everything is stringified.
+    @param args: single values
+    @param kwargs: argument pairs
+    @return: a string
     """
     arr = []
-    for k, v in sorted(options_dict.items()):
-        if v is None:
-            arr.append(str(k))
-        else:
-            arr.append(str(k) + '=' + str(v))
+    for v in sorted(args):
+        arr.append(v)
+    for k, v in sorted(kwargs.items()):
+        arr.append(str(k) + '=' + str(v))
     if arr:
         return '[' + ','.join(arr) + ']'
     else:
@@ -201,15 +201,15 @@ def latex_text_to_response(latex_text, latexformat):
     elif latexformat == LATEXFORMAT_PNG:
         return get_png_contents(latex_text)
 
-def get_latex_response(
-        requested_documentclass, packages, preamble,
-        document_body, latexformat):
+def get_response(
+        requested_documentclass, document_body, latexformat,
+        packages=(), preamble=''):
     """
     @param requested_documentclass: the documentclass
-    @param packages: a collection of requested packages
-    @param preamble: color definitions, for example
     @param document_body: the text inside a document environment
     @param latexformat: one of three latex output formats
+    @param packages: a collection of requested packages
+    @param preamble: color definitions, for example
     @return: a response suitable to return from the get_response interface
     """
     # check the requested format
@@ -254,19 +254,54 @@ def get_latex_response(
     # respond using the requested format
     return latex_text_to_response(latex_text, latexformat)
 
+def get_centered_figure_response(
+        figure_body, latexformat, figure_caption, figure_label,
+        packages=(), preamble=''):
+    # TODO check the following assumption
+    # When a figure is requested always use an article documentclass.
+    documentclass = 'article'
+    # The documentclass and usepackage list do not depend on the installation.
+    # Therefore only check for missing packages if compilation is requested.
+    requested_pkg_set = set(packages)
+    installed_pkg_set = check_packages(requested_pkg_set)
+    if latexformat in (LATEXFORMAT_PDF, LATEXFORMAT_PNG):
+        missing_list = sorted(requested_pkg_set - installed_pkg_set)
+        if missing_list:
+            msg = 'missing LaTeX packages: ' + ' '.join(missing_list)
+            raise LatexPackageError(msg)
+    # define the usepackage text
+    usepackage_list = sorted(requested_pkg_set)
+    usepackage_lines = ['\\usepackage{%s}' % s for s in usepackage_list]
+    usepackage_text = '\n'.join(usepackage_lines)
+    # define the latex body
+    chunks = [
+        '\\documentclass{%s}' % documentclass,
+        usepackage_text,
+        preamble,
+        '\\begin{document}',
+        '\\begin{figure}',
+        '\\centering',
+        figure_body,
+        '\\caption{',
+        figure_caption,
+        '}',
+        '\\label{%s}' % figure_label,
+        '\\end{figure}'
+        '\\end{document}']
+    latex_text = '\n'.join(c for c in chunks if c)
+    # respond using the requested format
+    return latex_text_to_response(latex_text, latexformat)
+
 
 class TestLatexUtil(unittest.TestCase):
 
     def test_options_dict_to_string_nonempty(self):
-        options_dict = {
-                'auto' : None,
-                'scale' : 0.5}
-        observed = options_dict_to_string(options_dict)
+        observed = options_to_string('auto', scale=0.5)
         expected = '[auto,scale=0.5]'
         self.assertEqual(observed, expected)
 
     def test_options_dict_to_string_empty(self):
-        observed = options_dict_to_string({})
+        observed = options_to_string()
         expected = ''
         self.assertEqual(observed, expected)
 
