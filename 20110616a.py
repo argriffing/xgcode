@@ -65,12 +65,12 @@ def get_form():
             Form.RadioGroup('tree_layout', 'tree layout options', [
                 Form.RadioItem('equal_arc', 'equal arc layout', True),
                 Form.RadioItem('equal_daylight', 'equal daylight layout')]),
-            Form.TikzFormat(),
+            Form.LatexFormat(),
             Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():
-    return FormOut.Tikz()
+    return FormOut.Latex()
 
 def gen_short_names():
     """
@@ -298,27 +298,6 @@ class FigureInfo:
         return '\n'.join(tikz_lines)
 
 
-def get_figure_text(figure_body):
-    return '\n'.join([
-        '\\begin{figure}',
-        figure_body,
-        '\\end{figure}'])
-
-def get_tikz_picture(tikz_body, scale):
-    tikz_header = '\\begin{tikzpicture}[auto,scale=%f]' % scale
-    tikz_footer = '\\end{tikzpicture}'
-    return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
-def get_latex_text(tikz_text):
-    latex_header = '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\usepackage{subfig}',
-        '\\begin{document}'])
-    latex_body = tikz_text
-    latex_footer = '\\end{document}'
-    return '\n'.join([latex_header, latex_body, latex_footer])
-
 def get_vertex_line(v, x, y):
     """
     @param v: the vertex
@@ -381,8 +360,10 @@ def get_response_content(fs):
             info.get_tikz_MDS_partial(),
             info.get_tikz_MDS_harmonic(),
             ]
-    tikz_pictures = [
-            get_tikz_picture(b, fs.scaling_factor) for b in tikz_bodies]
+    tikz_pictures = []
+    for b in tikz_bodies:
+        tikzpicture = tikz.get_picture(b, 'auto', scale=fs.scaling_factor)
+        tikz_pictures.append(tikzpicture)
     figure_body = '\n'.join([
         '\\subfloat[]{',
         tikz_pictures[0],
@@ -397,14 +378,11 @@ def get_response_content(fs):
         tikz_pictures[3],
         '}',
         ])
-    latex_text = get_latex_text(get_figure_text(figure_body))
-    # decide the output format
-    if fs.tikz:
-        return tikz_pictures[0]
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    packages = ['tikz', 'subfig']
+    preamble = ''
+    figure_caption = None
+    figure_label = None
+    return latexutil.get_centered_figure_response(
+            figure_body, fs.latexformat, figure_caption, figure_label,
+            packages, preamble)
 

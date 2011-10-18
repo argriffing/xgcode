@@ -142,9 +142,9 @@ def get_response_content(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
-    return tikz.get_tikz_response(
-            tikz.get_w_color_package_set(),
-            tikz.get_w_color_preamble(),
-            '\n'.join(get_tikz_lines(fs)),
-            fs.tikzformat)
+    tikz_body = '\n'.join(get_tikz_lines(fs))
+    tikzpicture = tikz.get_picture(tikz_body, 'auto')
+    return tikz.get_response(
+            tikzpicture, fs.tikzformat,
+            tikz.get_w_color_package_set(), tikz.get_w_color_preamble())
 

@@ -257,6 +257,16 @@ def get_response(
 def get_centered_figure_response(
         figure_body, latexformat, figure_caption, figure_label,
         packages=(), preamble=''):
+    """
+    @param requested_documentclass: the documentclass
+    @param figure_body: the contents of a centered figure environment
+    @param latexformat: one of three latex output formats
+    @param figure_caption: caption of the figure or None
+    @param figure_label: label of the figure or None
+    @param packages: a collection of requested packages
+    @param preamble: color definitions, for example
+    @return: a response suitable to return from the get_response interface
+    """
     # TODO check the following assumption
     # When a figure is requested always use an article documentclass.
     documentclass = 'article'
@@ -273,6 +283,13 @@ def get_centered_figure_response(
     usepackage_list = sorted(requested_pkg_set)
     usepackage_lines = ['\\usepackage{%s}' % s for s in usepackage_list]
     usepackage_text = '\n'.join(usepackage_lines)
+    # define the caption and label of the figure if they exist
+    caption_chunk = ''
+    if figure_caption:
+        caption_chunk = '\\caption{\n' + figure_caption + '\n}'
+    label_chunk = ''
+    if figure_label:
+        label_chunk = '\\label{' + figure_label + '}'
     # define the latex body
     chunks = [
         '\\documentclass{%s}' % documentclass,
@@ -282,10 +299,8 @@ def get_centered_figure_response(
         '\\begin{figure}',
         '\\centering',
         figure_body,
-        '\\caption{',
-        figure_caption,
-        '}',
-        '\\label{%s}' % figure_label,
+        caption_chunk,
+        label_chunk,
         '\\end{figure}',
         '\\end{document}']
     latex_text = '\n'.join(c for c in chunks if c)

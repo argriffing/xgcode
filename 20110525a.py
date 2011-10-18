@@ -43,25 +43,7 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Tikz('tkz')
-
-def get_latex_text(latex_body):
-    return '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\usetikzlibrary{snakes}',
-        '\\begin{document}',
-        latex_body,
-        '\\end{document}'])
-
-def get_figure_text(figure_body):
-    return '\n'.join([
-        '\\begin{figure}',
-        '\\centering',
-        figure_body,
-        #'\\caption{}',
-        '\\label{fig:interlacing}',
-        '\\end{figure}'])
+    return FormOut.Tikz()
 
 class TikzContext:
     def __init__(self):
@@ -220,15 +202,7 @@ def get_response_content(fs):
     draw_ticks_ftree(T, B, context, fiedler_valuations, v_to_location)
     draw_labels_ftree(T, N, context, v_to_location)
     context.finish()
-    tikz_text = context.get_text()
-    latex_text = get_latex_text(get_figure_text(tikz_text))
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    # get the response
+    tikzpicture = context.get_text()
+    return tikz.get_response(tikzpicture, fs.tikzformat)
 

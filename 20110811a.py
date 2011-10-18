@@ -175,47 +175,19 @@ def get_tikz_lines():
         '\\\\};'])
     return arr
 
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    """
-    preamble = '\\usepackage{color}'
-    # add color definitions
-    arr = [tikz.define_color(*p) for p in color.wolfram_name_color_pairs]
-    # add style definitions for the trees
-    arr.extend(get_tikz_style_definitions())
-    arr.append(tikz_text)
-    document_body = '\n'.join(arr)
-    return tikz.get_latex_text(preamble, document_body)
-
-def get_tikz_text(tikz_body):
-    """
-    TikZ boilerplate code.
-    """
-    return '\n'.join([
-            '\\begin{tikzpicture}[auto]',
-            tikz_body,
-            '\\end{tikzpicture}'])
-
 def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
-    # get the texts
-    tikz_lines = get_tikz_lines()
-    tikz_text = get_tikz_text('\n'.join(tikz_lines))
-    latex_text = get_latex_text(tikz_text)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
-
+    tikz_body = '\n'.join(get_tikz_lines())
+    tikzpicture = tikz.get_picture(tikz_body, 'auto')
+    packages = ['color']
+    preamble_lines = []
+    preamble_lines.append(tikz.get_w_color_preamble())
+    preamble_lines.extend(get_tikz_style_definitions())
+    preamble = '\n'.join(preamble_lines)
+    return tikz.get_response(tikzpicture, fs.tikzformat, packages, preamble)
 
 def main(args):
     for i, sample in enumerate(interlacesample.get_samples()):

@@ -147,20 +147,6 @@ class FigureInfo:
         return dict((vertices[i], tuple(pt)) for i, pt in enumerate(MDS))
 
 
-def get_tikz_text(tikz_body):
-    tikz_header = '\\begin{tikzpicture}[auto]'
-    tikz_footer = '\\end{tikzpicture}'
-    return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
-def get_latex_text(tikz_text):
-    latex_header = '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\begin{document}'])
-    latex_body = tikz_text
-    latex_footer = '\\end{document}'
-    return '\n'.join([latex_header, latex_body, latex_footer])
-
 def get_vertex_line(v, x, y):
     """
     @param v: the vertex
@@ -236,16 +222,7 @@ def get_response_content(fs):
     @return: the response
     """
     # get the texts
-    tikz_lines = get_tikz_lines(fs)
-    tikz_text = get_tikz_text('\n'.join(tikz_lines))
-    latex_text = get_latex_text(tikz_text)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    tikz_body = '\n'.join(get_tikz_lines(fs))
+    tikzpicture = tikz.get_picture(tikz_body, 'auto')
+    return tikz.get_response(tikzpicture, fs.tikzformat)
 

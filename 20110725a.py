@@ -130,47 +130,16 @@ def get_tikzpicture_body_beta(fs):
             t_seq_inv_warped, y_seqs, width, height)
     return text
 
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    """
-    arr = []
-    arr.extend([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\usepackage{color}'])
-    for name, rgb in color.wolfram_name_color_pairs:
-        arr.append(tikz.define_color(name, rgb))
-    arr.extend([
-        '\\begin{document}',
-        tikz_text,
-        '\\end{document}'])
-    return '\n'.join(arr)
-
-def get_tikzpicture(tikz_body):
-    return '\n'.join([
-        '\\begin{tikzpicture}[auto]',
-        tikz_body,
-        '\\end{tikzpicture}'])
-
 def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
-    # get the texts
     tikz_body = get_tikzpicture_body(fs.ncurves, fs.nsegs, fs.morph)
-    tikz_text = get_tikzpicture(tikz_body)
-    latex_text = get_latex_text(tikz_text)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    tikzpicture = tikz.get_picture(tikz_body, 'auto')
+    return tikz.get_response(
+            tikzpicture, fs.tikzformat,
+            tikz.get_w_color_package_set(), tikz.get_w_color_preamble())
 
 def main(args):
     for i in range(args.nframes):

@@ -263,42 +263,16 @@ def get_tikz_bezier(bpath):
     lines.append('%s;' % tikz.point_to_tikz(bpath.bchunks[-1].p3[1:]))
     return '\n'.join(lines)
 
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    """
-    preamble = '% preamble goes here'
-    document_body = tikz_text
-    return tikz.get_latex_text(preamble, document_body)
-
-def get_tikz_text(tikz_body):
-    """
-    TikZ boilerplate code.
-    """
-    return '\n'.join([
-            '\\begin{tikzpicture}[auto]',
-            tikz_body,
-            '\\end{tikzpicture}'])
-
 def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
-    # get the texts
-    tikz_lines = get_tikz_lines(fs)
-    tikz_text = get_tikz_text('\n'.join(tikz_lines))
-    latex_text = get_latex_text(tikz_text)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
-
+    tikz_body = '\n'.join(get_tikz_lines(fs))
+    tikzpicture = tikz.get_picture(tikz_body, 'auto')
+    packages = []
+    preamble = ''
+    return tikz.get_response(tikzpicture, fs.tikzformat, packages, preamble)
 
 def main(args):
     for i, sample in enumerate(interlacesample.get_samples()):

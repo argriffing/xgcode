@@ -86,7 +86,7 @@ def get_tikz_lines(fs):
     @return: a sequence of tikz lines
     """
     # construct a 'matrix' of three vertically stacked panes
-    colors = ('black', 'wolfram-blue', 'wolfram-red', 'wolfram-olive')
+    colors = ('black', 'w-blue', 'w-red', 'w-olive')
     p0 = sympy.Poly(1, sympy.abc.x)
     roots = (fs.root_a, fs.root_b, fs.root_c)
     polys = [p0] + interlace.roots_to_differential_polys(roots)
@@ -105,47 +105,13 @@ def get_tikz_lines(fs):
     lines.append('};')
     return lines
 
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    """
-    arr = []
-    arr.extend([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\usepackage{color}'])
-    arr.extend(
-        tikz.define_color(*pair) for pair in color.wolfram_name_color_pairs)
-    arr.extend([
-        '\\begin{document}',
-        tikz_text,
-        '\\end{document}'])
-    return '\n'.join(arr)
-
-def get_tikz_text(tikz_body):
-    """
-    TikZ boilerplate code.
-    """
-    tikz_header = '\\begin{tikzpicture}[auto]'
-    tikz_footer = '\\end{tikzpicture}'
-    return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
 def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
-    # get the texts
-    tikz_lines = get_tikz_lines(fs)
-    tikz_text = get_tikz_text('\n'.join(tikz_lines))
-    latex_text = get_latex_text(tikz_text)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
-
+    tikz_body = '\n'.join(get_tikz_lines(fs))
+    tikzpicture = tikz.get_picture(tikz_body, 'auto')
+    return tikz.get_response(
+            tikzpicture, fs.tikzformat,
+            tikz.get_w_color_package_set(), tikz.get_w_color_preamble())

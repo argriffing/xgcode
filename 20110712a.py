@@ -151,9 +151,9 @@ def get_tikz_lines(fs):
         x0, y0, z0 = p0
         x1, y1, z1 = p1
         color = {
-                STYLE_X: 'wolfram-blue',
-                STYLE_Y: 'wolfram-red',
-                STYLE_Z: 'wolfram-olive',
+                STYLE_X: 'w-blue',
+                STYLE_Y: 'w-red',
+                STYLE_Z: 'w-olive',
                 STYLE_CURVE: 'black'}[style]
         if fs.fancy_intersect:
             line_double = '\\draw[draw=white,double=%s] (%s, %s) -- (%s, %s);' % (color, y0, z0, y1, z1)
@@ -175,46 +175,13 @@ def get_tikz_lines(fs):
     """
     return lines
 
-def get_latex_text(tikz_text):
-    """
-    TikZ boilerplate code.
-    """
-    arr = []
-    arr.extend([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\usepackage{color}'])
-    arr.extend(
-        tikz.define_color(*pair) for pair in color.wolfram_name_color_pairs)
-    arr.extend([
-        '\\begin{document}',
-        tikz_text,
-        '\\end{document}'])
-    return '\n'.join(arr)
-
-def get_tikz_text(tikz_body):
-    """
-    TikZ boilerplate code.
-    """
-    tikz_header = '\\begin{tikzpicture}[auto]'
-    tikz_footer = '\\end{tikzpicture}'
-    return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
 def get_response_content(fs):
     """
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
-    # get the texts
-    tikz_lines = get_tikz_lines(fs)
-    tikz_text = get_tikz_text('\n'.join(tikz_lines))
-    latex_text = get_latex_text(tikz_text)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    tikz_body = '\n'.join(get_tikz_lines(fs))
+    tikzpicture = tikz.get_picture(tikz_body, 'auto')
+    return tikz.get_response(
+            tikzpicture, fs.tikzformat,
+            tikz.get_w_color_package_set(), tikz.get_w_color_preamble())
