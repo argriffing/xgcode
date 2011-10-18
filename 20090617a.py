@@ -319,9 +319,9 @@ def get_response_content(fs):
         show_pruned_trees = True
     # get the texts
     tikz_body = layout.get_tikz_contents(show_full_tree, show_pruned_trees)
-    options = {
-            'auto' : None,
-            'scale' : fs.scaling_factor}
+    options = {'auto' : None}
+    if fs.scaling_factor != 1.0:
+        options['scale'] = fs.scaling_factor
     return tikz.get_tikz_response(set(), '', tikz_body, fs.tikzformat, options)
 
 def main():
