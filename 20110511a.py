@@ -1,7 +1,6 @@
 """Draw an MDS with imputed internal nodes, using TikZ.
 """
 
-
 import numpy as np
 
 import Form
@@ -33,20 +32,6 @@ def get_form():
 
 def get_form_out():
     return FormOut.Tikz()
-
-def get_tikz_text(tikz_body):
-    tikz_header = '\\begin{tikzpicture}[auto]'
-    tikz_footer = '\\end{tikzpicture}'
-    return '\n'.join([tikz_header, tikz_body, tikz_footer])
-
-def get_latex_text(tikz_text):
-    latex_header = '\n'.join([
-        '\\documentclass{article}',
-        '\\usepackage{tikz}',
-        '\\begin{document}'])
-    latex_body = tikz_text
-    latex_footer = '\\end{document}'
-    return '\n'.join([latex_header, latex_body, latex_footer])
 
 def get_vertex_line(v, x, y):
     """
@@ -97,10 +82,6 @@ def get_tikz_lines(fs):
     # get the tikz lines
     axis_lines = [
             '% draw the axes',
-            #'\\node (axisleft) at (0, -1.2) {};',
-            #'\\node (axisright) at (0, 1.2) {};',
-            #'\\node (axistop) at (1.2, 0) {};',
-            #'\\node (axisbottom) at (-1.2, 0) {};',
             '\\node (axisleft) at (0, -5) {};',
             '\\node (axisright) at (0, 5) {};',
             '\\node (axistop) at (5, 0) {};',
@@ -122,16 +103,7 @@ def get_response_content(fs):
     @param fs: a FieldStorage object containing the cgi arguments
     @return: the response
     """
-    # get the texts
-    tikz_lines = get_tikz_lines(fs)
-    tikz_text = get_tikz_text('\n'.join(tikz_lines))
-    latex_text = get_latex_text(tikz_text)
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    tikz_body_lines = get_tikz_lines(fs)
+    tikz_body = '\n'.join(tikz_body_lines)
+    return tikz.get_tikz_response([], '', tikz_body, fs.tikzformat)
+

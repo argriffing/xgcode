@@ -6,6 +6,7 @@ from StringIO import StringIO
 import Form
 import FormOut
 import tikz
+import latexutil
 
 g_segment_length = 1.0
 g_cross_radius = 0.2
@@ -51,36 +52,21 @@ we are in this case able to deduce the topology of the tree.
 In general this is not always possible.\
 """
 
-#obsolete text from the caption
-"""
-Of the remaining possible tree topologies (b), (c), (d), and (e),
-only topology (d) allows a $v^3$ cut of the \'thin\' domain
-which in conjunction
-with the previously deduced $v^3$ thick domain cut
-sign-isolates leaf 5 from the other leaves
-(each path between leaf 5 and each leaf in \\{1,2,3,4\\}
-intersects an odd number of
-$v^3$ cuts while each path between two leaves in \\{1,2,3,4\\}
-intersects an even number of $v^3$ cuts).
-"""
-
 def get_form():
     """
     @return: a list of form objects
     """
     # define the form objects
     form_objects = [
-            Form.TikzFormat(),
+            Form.LatexFormat(),
             Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():
-    return FormOut.Tikz()
+    return FormOut.Latex()
 
 def get_tikz_text(tikz_body):
-    tikz_header = '\\begin{tikzpicture}[scale=0.8]'
-    tikz_footer = '\\end{tikzpicture}'
-    return '\n'.join([tikz_header, tikz_body, tikz_footer])
+    return tikz.get_picture(tikz_body, {'scale' : '0.8'})
 
 def get_latex_text(tikz_text):
     latex_header = '\n'.join([
@@ -288,16 +274,8 @@ def get_response_content(fs):
             tikz_fiedler,
             tikz_t1, tikz_t2, tikz_t3, tikz_t4,
             tikz_fail, tikz_success]
-    tikz_text = '\n'.join(subfloat_pictures)
     figure_lines = get_float_figure_lines(subfloat_pictures)
-    latex_text = get_latex_text('\n'.join(figure_lines))
-    # decide the output format
-    if fs.tikz:
-        return tikz_text
-    elif fs.tex:
-        return latex_text
-    elif fs.pdf:
-        return tikz.get_pdf_contents(latex_text)
-    elif fs.png:
-        return tikz.get_png_contents(latex_text)
+    # return the tresponse
+    return latexutil.get_latex_response('article', ['tikz', 'subfig'], '',
+            '\n'.join(figure_lines), fs.latexformat)
 
