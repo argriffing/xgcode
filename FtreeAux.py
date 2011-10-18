@@ -591,7 +591,7 @@ class TestFtreeAux(unittest.TestCase):
         leaves = Ftree.T_to_leaves(T)
         observed_name_weight_pairs = [
                 (N[v], leaf_distn[v]) for v in leaves]
-        # Do the comparaison for testing.
+        # Do the comparison for testing.
         observed_name_to_weight = dict(observed_name_weight_pairs)
         for name in LeafWeights.g_acl_ordered_names:
             s_expected = LeafWeights.g_acl_expected_weights[name]
@@ -599,6 +599,9 @@ class TestFtreeAux(unittest.TestCase):
             self.assertEqual(s_expected, s_observed)
 
     def test_leaf_distn_cov(self):
+        """
+        This test is known to fail.
+        """
         # Read the example tree.
         example_tree = LeafWeights.g_acl_tree
         R, B, N = FtreeIO.newick_to_RBN(example_tree)
@@ -610,7 +613,7 @@ class TestFtreeAux(unittest.TestCase):
         leaves = Ftree.T_to_leaves(T)
         observed_name_weight_pairs = [
                 (N[v], leaf_distn[v]) for v in leaves]
-        # Do the comparaison for testing.
+        # Do the comparison for testing.
         observed_name_to_weight = dict(observed_name_weight_pairs)
         for name in LeafWeights.g_acl_ordered_names:
             s_expected = LeafWeights.g_acl_expected_weights[name]
@@ -628,7 +631,7 @@ class TestFtreeAux(unittest.TestCase):
         leaves = Ftree.T_to_leaves(T)
         observed_name_weight_pairs = [
                 (N[v], leaf_distn[v]) for v in leaves]
-        # Do the comparaison for testing.
+        # Do the comparison for testing.
         observed_name_to_weight = dict(observed_name_weight_pairs)
         for name in LeafWeights.g_acl_ordered_names:
             s_expected = LeafWeights.g_acl_expected_weights[name]
@@ -646,7 +649,7 @@ class TestFtreeAux(unittest.TestCase):
         leaves = Ftree.T_to_leaves(T)
         observed_name_weight_pairs = [
                 (N[v], leaf_distn[v]) for v in leaves]
-        # Do the comparaison for testing.
+        # Do the comparison for testing.
         observed_name_to_weight = dict(observed_name_weight_pairs)
         for name in LeafWeights.g_acl_ordered_names:
             s_expected = LeafWeights.g_acl_expected_weights[name]

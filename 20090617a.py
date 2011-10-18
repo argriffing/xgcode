@@ -279,7 +279,10 @@ class Edge:
         """
         @return: a single line defining a TikZ node
         """
-        vars = (self.first_node.get_handle(), self.symbol, self.second_node.get_handle())
+        vars = (
+                self.first_node.get_handle(),
+                self.symbol,
+                self.second_node.get_handle())
         line = '\\path (%s) edge node {%s} (%s);' % vars
         return line
 
@@ -353,6 +356,8 @@ def get_response_content(fs):
         show_full_tree = True
         show_pruned_trees = True
     # get the texts
+    tikz_body = layout.get_tikz_contents(show_full_tree, show_pruned_trees)
+    """
     tikz_text = layout.get_tikz_text(
         fs.scaling_factor, show_full_tree, show_pruned_trees)
     latex_text = layout.get_latex_text(
@@ -366,13 +371,19 @@ def get_response_content(fs):
         return tikz.get_pdf_contents(latex_text)
     elif fs.png:
         return tikz.get_png_contents(latex_text)
+    """
+    options = {
+            'auto' : None,
+            'scale' : fs.scaling_factor}
+    return tikz.get_tikz_response(set(), '', tikz_body, fs.tikzformat, options)
 
-def main(options):
+def main():
     layout = SevenLeafLayout()
-    print layout.get_latex_text(0.5, True, True)
+    tikz_body = layout.get_tikz_contents(True, True)
+    options = {
+            'auto' : None,
+            'scale' : 0.5}
+    print tikz.get_tikz_response(set(), '', tikz_body, 'tex', options)
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    options, args = parser.parse_args()
-    main(options)
+    main()

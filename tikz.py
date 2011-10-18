@@ -74,7 +74,9 @@ def get_w_color_preamble():
 def get_w_color_package_set():
     return set(['color'])
 
-def get_tikz_response(packages, preamble, tikz_body, tikzformat):
+def get_tikz_response(
+        packages, preamble, tikz_body, tikzformat,
+        tikzpicture_options=None):
     """
     This is a very generic tikz response.
     For more complicated situations a less generic function
@@ -87,8 +89,15 @@ def get_tikz_response(packages, preamble, tikz_body, tikzformat):
     @param preamble: color definitions, for example
     @param tikz_body: tikzpicture contents
     @param tikzformat: one of four tikz output formats
+    @param tikzpicture_options: a tikzpicture environement options dict 
     @return: a response suitable to return from the get_response interface
     """
+    # use default tikzpicture options if none are specified
+    if tikzpicture_options is None:
+        tikzpicture_options = {'auto' : None}
+    # define the tikzpicture options string
+    tikzpicture_options_string = latexutil.options_dict_to_string(
+            tikzpicture_options)
     # check the requested format
     if tikzformat not in g_tikzformats:
         msg = 'invalid requested format: ' + tikzformat
@@ -126,7 +135,7 @@ def get_tikz_response(packages, preamble, tikz_body, tikzformat):
         '\n'.join(package_lines),
         preamble,
         '\\begin{document}',
-        '\\begin{tikzpicture}[auto]',
+        '\\begin{tikzpicture}' + tikzpicture_options_string,
         tikz_body,
         '\\end{tikzpicture}',
         '\\end{document}'))

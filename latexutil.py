@@ -5,6 +5,7 @@ This will probably work only for texlive.
 Also it requires ghostscript to make a png file.
 """
 
+import unittest
 import tempfile
 import subprocess
 import os
@@ -12,6 +13,23 @@ import os
 import iterutils
 
 class CheckPackageError(Exception): pass
+
+def options_dict_to_string(options_dict):
+    """
+    The keys and the values of this dict are both stringified.
+    If a key is mapped to None then this will be treated specially.
+    @param options_dict: a dict
+    """
+    arr = []
+    for k, v in sorted(options_dict.items()):
+        if v is None:
+            arr.append(str(k))
+        else:
+            arr.append(str(k) + '=' + str(v))
+    if arr:
+        return '[' + ','.join(arr) + ']'
+    else:
+        return ''
 
 def check_packages(package_names):
     """
@@ -153,3 +171,22 @@ def get_pdf_contents(latex_text):
         raise ValueError('failed to create a pdf file')
     return pdf_contents
 
+
+class TestLatexUtil(unittest.TestCase):
+
+    def test_options_dict_to_string_nonempty(self):
+        options_dict = {
+                'auto' : None,
+                'scale' : 0.5}
+        observed = options_dict_to_string(options_dict)
+        expected = '[auto,scale=0.5]'
+        self.assertEqual(observed, expected)
+
+    def test_options_dict_to_string_empty(self):
+        observed = options_dict_to_string({})
+        expected = ''
+        self.assertEqual(observed, expected)
+
+
+if __name__ == '__main__':
+    unittest.main()
