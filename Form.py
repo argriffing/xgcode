@@ -51,8 +51,18 @@ g_tikzformat_to_contenttype = {
         'pdf' : 'application/pdf',
         'png' : 'image/png'}
 
+g_latexformat_to_contenttype = {
+        'tex' : 'text/plain',
+        'pdf' : 'application/pdf',
+        'png' : 'image/png'}
+
 g_tikzformat_to_ext = {
         'tikz' : 'tikz',
+        'tex' : 'tex',
+        'pdf' : 'pdf',
+        'png' : 'png'}
+
+g_latexformat_to_ext = {
         'tex' : 'tex',
         'pdf' : 'pdf',
         'png' : 'png'}
@@ -1390,3 +1400,19 @@ class TikzFormat(RadioGroup):
             RadioItem('pdf', 'pdf'),
             RadioItem('png', 'png')]
         RadioGroup.__init__(self, label, description, radio_items)
+
+
+class LatexFormat(RadioGroup):
+    def __init__(self):
+        """
+        The group label is latexformat.
+        The description and radio items are hard coded.
+        """
+        label = 'latexformat'
+        description = 'output format'
+        radio_items = [
+            RadioItem('tex', 'LaTeX code', True),
+            RadioItem('pdf', 'pdf'),
+            RadioItem('png', 'png')]
+        RadioGroup.__init__(self, label, description, radio_items)
+

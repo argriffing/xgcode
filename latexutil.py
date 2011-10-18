@@ -12,7 +12,25 @@ import os
 
 import iterutils
 
+
+LATEXFORMAT_TEX = 'tex'
+LATEXFORMAT_PDF = 'pdf'
+LATEXFORMAT_PNG = 'png'
+
+g_latexformats = set((
+    LATEXFORMAT_TEX,
+    LATEXFORMAT_PDF,
+    LATEXFORMAT_PNG))
+
+
 class CheckPackageError(Exception): pass
+class LatexPackageError(Exception): pass
+
+
+def assert_latexformat(latexformat):
+    if latexformat not in g_latexformats:
+        msg = 'invalid requested format: ' + latexformat
+        raise ValueError(msg)
 
 def options_dict_to_string(options_dict):
     """
@@ -31,51 +49,49 @@ def options_dict_to_string(options_dict):
     else:
         return ''
 
-def check_packages(package_names):
+def _check_installed_files(filenames):
     """
-    @param package_names: a collection of package names
-    @return: the installed subset of package names
+    @param filenames: a collection of requested filenames
+    @return: the subset of installed filenames
     """
-    # get the file names corresponding to the packages
-    filename_args = [name + '.sty' for name in package_names]
-    # run the kpsewhich program and capture its output
-    args = ['kpsewhich'] + filename_args
+    requested_set = set(filenames)
+    requested_list = sorted(requested_set)
+    args = ['kpsewhich'] + requested_list
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
     p_output = p.stdout.read()
     p_error = p.stderr.read()
     # get the subset of installed package names
-    requested_name_set = set(package_names)
-    installed_name_set = set()
+    installed_set = set()
     for raw_line in p_output.splitlines():
         line = raw_line.strip()
-        if line.endswith('.sty'):
-            name, ext = os.path.splitext(os.path.basename(line))
-            if name in requested_name_set:
-                installed_name_set.add(name)
-            else:
-                raise CheckPackageError(line)
-    # return the set of installed package names
-    return installed_name_set
+        name = os.path.basename(line)
+        if name in requested_set:
+            installed_set.add(name)
+        else:
+            raise CheckPackageError(line)
+    # return the set of installed filenames
+    return installed_set
 
-def get_latex_text(preamble, document_body, documentclass='standalone'):
+def check_installation(class_names, package_names):
     """
-    This may require the tex package called standalone.
-    The package may not be packaged for the OS package manager.
-    https://help.ubuntu.com/community/LaTeX#Installing%20packages%20manually
-    http://www.ctan.org/tex-archive/macros/latex/contrib/standalone
-    Besides the .sty I also had to copy the .cls and the .cfg .
-    This format is supposed to be compatible with the previewer
-    http://www.tlhiv.org/ltxpreview/ .
+    @param class_names: a collection of class names
+    @param package_names: a collection of package names
+    @return: (installed_class_set, installed_package_set)
     """
-    return '\n'.join([
-        '\\documentclass{%s}' % documentclass,
-        '\\usepackage{tikz}',
-        preamble,
-        '\\begin{document}',
-        '\\thispagestyle{empty}',
-        document_body,
-        '\\end{document}'])
+    filenames = []
+    filenames.extend(s + '.cls' for s in class_names)
+    filenames.extend(s + '.sty' for s in package_names)
+    installed_filenames = _check_installed_files(filenames)
+    i_class = [s for s in class_names if s + '.cls' in installed_filenames]
+    i_packs = [s for s in package_names if s + '.sty' in installed_filenames]
+    return set(i_class), set(i_packs)
+
+def check_packages(package_names):
+    class_names = set([])
+    installed_classes, installed_packages = check_installation(
+            class_names, package_names)
+    return installed_packages
 
 def sanitize(text):
     """
@@ -170,6 +186,73 @@ def get_pdf_contents(latex_text):
     except IOError, e:
         raise ValueError('failed to create a pdf file')
     return pdf_contents
+
+def latex_text_to_response(latex_text, latexformat):
+    """
+    @param latex_text: the text of a latex file
+    @param latexformat: one of three possible formats
+    @return: a response suitable to return from the get_response interface
+    """
+    assert_latexformat(latexformat)
+    if latexformat == LATEXFORMAT_TEX:
+        return latex_text
+    elif latexformat == LATEXFORMAT_PDF:
+        return get_pdf_contents(latex_text)
+    elif latexformat == LATEXFORMAT_PNG:
+        return get_png_contents(latex_text)
+
+def get_latex_response(
+        requested_documentclass, packages, preamble,
+        document_body, latexformat):
+    """
+    @param requested_documentclass: the documentclass
+    @param packages: a collection of requested packages
+    @param preamble: color definitions, for example
+    @param document_body: the text inside a document environment
+    @param latexformat: one of three latex output formats
+    @return: a response suitable to return from the get_response interface
+    """
+    # check the requested format
+    assert_latexformat(latexformat)
+    # get the subset of installed class and package names
+    requested_class_names = set([requested_documentclass])
+    requested_package_names = set(packages)
+    installed_class_names, installed_package_names = check_installation(
+            requested_class_names, requested_package_names)
+    # If no essential packages are missing
+    # then define the documentclass and usepackage lines.
+    missing_list = sorted(requested_package_names - installed_package_names)
+    if not missing_list:
+        if requested_documentclass in installed_class_names:
+            documentclass = requested_documentclass
+        else:
+            documentclass = 'article'
+        usepackage_list = sorted(installed_package_names)
+    # If essential packages are missing and a compiled response
+    # has been requested then this is a problem.
+    # If essential packages are missing but a compiled response
+    # has not been requested, then show the most optimistic settings.
+    if missing_list:
+        if latexformat in (LATEXFORMAT_PDF, LATEXFORMAT_PNG):
+            msg = 'missing LaTeX packages: ' + ' '.join(missing_list)
+            raise LatexPackageError(msg)
+        else:
+            documentclass = requested_documentclass
+            usepackage_list = sorted(requested_set)
+    # define the usepackage text
+    usepackage_lines = ['\\usepackage{%s}' % s for s in usepackage_list]
+    usepackage_text = '\n'.join(usepackage_lines)
+    # define the latex body
+    chunks = [
+        '\\documentclass{%s}' % documentclass,
+        usepackage_text,
+        preamble,
+        '\\begin{document}',
+        document_body,
+        '\\end{document}']
+    latex_text = '\n'.join(c for c in chunks if c)
+    # respond using the requested format
+    return latex_text_to_response(latex_text, latexformat)
 
 
 class TestLatexUtil(unittest.TestCase):

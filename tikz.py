@@ -25,18 +25,18 @@ TIKZFORMAT_TEX = 'tex'
 TIKZFORMAT_PDF = 'pdf'
 TIKZFORMAT_PNG = 'png'
 
-g_tikzformats = set([
+g_tikzformats = set((
     TIKZFORMAT_TIKZ,
     TIKZFORMAT_TEX,
     TIKZFORMAT_PDF,
-    TIKZFORMAT_PNG])
-
-class DeprecationError(Exception): pass
-class LatexPackageError(Exception): pass
+    TIKZFORMAT_PNG))
 
 
-def get_latex_text(preamble, document_body, documentclass='standalone'):
-    raise DeprecationError('use latexutil instead')
+
+def assert_tikzformat(tikzformat):
+    if tikzformat not in g_tikzformats:
+        msg = 'invalid requested format: ' + tikzformat
+        raise ValueError(msg)
 
 def point_to_tikz(pt):
     """
@@ -74,11 +74,24 @@ def get_w_color_preamble():
 def get_w_color_package_set():
     return set(['color'])
 
-def get_tikz_response(
-        packages, preamble, tikz_body, tikzformat,
-        tikzpicture_options=None):
+def get_picture(tikz_body, options=None):
     """
-    This is a very generic tikz response.
+    @param tikz_body: the text inside a tikzpicture environment
+    @param options: a tikzpicture environment options dict 
+    @return: the text of a tikzpicture environment
+    """
+    if options is None:
+        options = {}
+    options_string = latexutil.options_dict_to_string(options)
+    return '\n'.join((
+        '\\begin{tikzpicture}' + options_string,
+        tikz_body,
+        '\\end{tikzpicture}'))
+
+def get_tikz_response(
+        packages, preamble, tikz_body, tikzformat, tikzpicture_options=None):
+    """
+    This is a very simple tikz response.
     For more complicated situations a less generic function
     may be required.
     For example a more specific function may be required
@@ -87,74 +100,23 @@ def get_tikz_response(
     The tikz package is requested automatically.
     @param packages: a collection of requested packages
     @param preamble: color definitions, for example
-    @param tikz_body: tikzpicture contents
+    @param tikz_body: the text inside a tikzpicture environment
     @param tikzformat: one of four tikz output formats
-    @param tikzpicture_options: a tikzpicture environement options dict 
+    @param tikzpicture_options: a tikzpicture environment options dict or None
     @return: a response suitable to return from the get_response interface
     """
-    # use default tikzpicture options if none are specified
+    # check the requested format
+    assert_tikzformat(tikzformat)
+    # define the tikzpicture environment
     if tikzpicture_options is None:
         tikzpicture_options = {'auto' : None}
-    # define the tikzpicture options string
-    tikzpicture_options_string = latexutil.options_dict_to_string(
-            tikzpicture_options)
-    # check the requested format
-    if tikzformat not in g_tikzformats:
-        msg = 'invalid requested format: ' + tikzformat
-        raise ValueError(msg)
-    # define some sets of requested packages
-    user_requested_set = set(packages) | set(['tikz'])
-    requested_set = user_requested_set | set(['standalone'])
-    # define the subset of available packages
-    installed_set = set(latexutil.check_packages(requested_set))
-    # If no essential packages are missing
-    # then define the documentclass and usepackage lines.
-    missing_list = sorted(user_requested_set - installed_set)
-    if not missing_list:
-        if 'standalone' in installed_set:
-            documentclass = 'standalone'
-        else:
-            documentclass = 'article'
-        installed_list = sorted(installed_set)
-        package_lines = ['\\usepackage{%s}' % s for s in installed_list]
-    # If essential packages are missing and a compiled response
-    # has been requested then this is a problem.
-    # If essential packages are missing but a compiled response
-    # has not been requested, then show the most optimistic settings.
-    if missing_list:
-        if tikzformat in (TIKZFORMAT_PDF, TIKZFORMAT_PNG):
-            msg = 'missing LaTeX packages: ' + ' '.join(missing_list)
-            raise LatexPackageError(msg)
-        else:
-            documentclass = 'standalone'
-            requested_list = sorted(requested_set)
-            package_lines = ['\\usepackage{%s}' % s for s in requested_list]
-    # define the latex body
-    latex_text = '\n'.join((
-        '\\documentclass{%s}' % documentclass,
-        '\n'.join(package_lines),
-        preamble,
-        '\\begin{document}',
-        '\\begin{tikzpicture}' + tikzpicture_options_string,
-        tikz_body,
-        '\\end{tikzpicture}',
-        '\\end{document}'))
-    # respond using the requested format
+    tikzpicture = get_picture(tikz_body, tikzpicture_options)
+    # immediately return the tikzpicture if requested
     if tikzformat == TIKZFORMAT_TIKZ:
-        return tikz_body
-    elif tikzformat == TIKZFORMAT_TEX:
-        return latex_text
-    elif tikzformat == TIKZFORMAT_PDF:
-        return latexutil.get_pdf_contents(latex_text)
-    elif tikzformat == TIKZFORMAT_PNG:
-        return latexutil.get_png_contents(latex_text)
-
-def _create_temp_pdf_file(latex_text):
-    raise DeprecationError('use latexutil instead')
-
-def get_png_contents(latex_text):
-    raise DeprecationError('use latexutil instead')
-
-def get_pdf_contents(latex_text):
-    raise DeprecationError('use latexutil instead')
+        return tikzpicture
+    # delegate to latexutil
+    requested_packages = set(packages) | set(['tikz'])
+    return latexutil.get_latex_response(
+            'standalone', requested_packages, preamble,
+            tikzpicture, tikzformat)
 
