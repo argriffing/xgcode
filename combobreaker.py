@@ -35,11 +35,15 @@ class RunInfo(object):
         self.stop_msg = stop_msg
 
     def get_response(self):
+        if self.state is None:
+            state_response = 'no state available'
+        else:
+            state_response = self.state.get_response()
         return '\n'.join([
             'termination condition: %s' % self.stop_msg,
             'completed iterations: %s' % self.iterations,
             'elapsed seconds: %s' % self.seconds,
-            self.state.get_response()])
+            state_response])
 
 
 def run(states, nseconds=None, niterations=None):
@@ -110,10 +114,17 @@ class TestComboBreaker(unittest.TestCase):
         info = run(Collatz(42), niterations=5)
         self.assertEqual(info.iterations, 5)
         self.assertEqual(info.stop_msg, STOP_ITERATION_LIMIT)
+
+    def test_collatz_premature(self):
         info = run(Collatz(42))
         self.assertEqual(info.iterations, 8)
         self.assertEqual(info.stop_msg, STOP_FINISHED)
         self.assertEqual(len(info.get_response().splitlines()), 5)
+
+    def test_collatz_degenerate(self):
+        info = run(Collatz(1))
+        self.assertEqual(info.iterations, 0)
+        self.assertEqual(info.stop_msg, STOP_FINISHED)
 
 
 if __name__ == '__main__':
