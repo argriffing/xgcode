@@ -349,7 +349,7 @@ class TestNewick(unittest.TestCase):
             return
         try:
             parse(s, self.TreeFactory)
-        except NewickSyntaxError, e:
+        except NewickSyntaxError as e:
             self.fail(e)
 
     # The following four tests assert the correctness of strings provided by Felsenstein.

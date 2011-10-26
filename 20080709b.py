@@ -82,7 +82,7 @@ def get_response_content(fs):
     # read the alignment
     try:
         alignment = Fasta.Alignment(StringIO(fs.fasta))
-    except Fasta.AlignmentError, e:
+    except Fasta.AlignmentError as e:
         raise HandlingError('fasta alignment error: ' + str(e))
     if alignment.get_sequence_count() < 2:
         raise HandlingError('expected at least two sequences')

@@ -44,7 +44,7 @@ def parse_lines(lines):
             latm = float(latm)
             lond = float(lond)
             lonm = float(lonm)
-        except ValueError, e:
+        except ValueError as e:
             raise HandlingError('error reading a value as a number')
         row = (city, latd, latm, lond, lonm)
         result.append(row)

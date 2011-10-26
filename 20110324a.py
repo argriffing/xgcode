@@ -47,12 +47,12 @@ def get_response_content(fs):
     try:
         layout = FastDaylightLayout.StraightBranchLayout()
         layout.do_layout(tree)
-    except RuntimeError, e:
+    except RuntimeError as e:
         pass
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return DrawEigenLacing.get_single_tree_image(
                 tree, (640, 480), ext, id_to_v1, id_to_v2)
-    except CairoUtil.CairoUtilError, e:
+    except CairoUtil.CairoUtilError as e:
         raise HandlingError(e)

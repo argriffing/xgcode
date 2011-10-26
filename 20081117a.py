@@ -244,7 +244,7 @@ def get_response_content(fs):
         triple = string_triple[:2]
         try:
             weight = float(string_triple[2])
-        except ValueError, e:
+        except ValueError as e:
             msg = 'edge weights should be floating point numbers'
             raise HandlingError(msg)
         if weight <= 0:

@@ -76,7 +76,7 @@ def write_directory_html_guts(script_directory, doc_directory, out):
                 description = '(no description)'
             print >> out, '%s [%s] [%s] %s<br/>' % (prefix, action_link, doc_link, description)
             del module
-        except ImportError, e:
+        except ImportError as e:
             action_link = '<span style="color:gray;">cgi</span>'
             doc_link = '<span style="color:gray;">src</span>'
             description = '<span style="color:gray;">%s</span>' % cgi.escape(str(e))

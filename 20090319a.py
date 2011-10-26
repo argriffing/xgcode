@@ -92,7 +92,7 @@ def parse_observation_lines(lines):
         for element_string in input_row[1:]:
             try:
                 element = float(element_string)
-            except ValueError, e:
+            except ValueError as e:
                 raise HandlingError('expected each observation element to be a number: ' + element_string)
             data_row.append(element)
         data_matrix.append(data_row)
@@ -116,11 +116,11 @@ def parse_module_lines(lines):
         gene_label, raw_module_index, raw_gene_index, foo, bar = values
         try:
             module_index = int(raw_module_index) - 1
-        except ValueError, e:
+        except ValueError as e:
             raise HandlingError('expected the module index to be an integer: ' + raw_module_index)
         try:
             gene_index = int(raw_gene_index) - 1
-        except ValueError, e:
+        except ValueError as e:
             raise HandlingError('expected the gene index to be an integer: ' + raw_gene_index)
         rows.append([gene_label, module_index, gene_index])
     # return the three lists

@@ -51,7 +51,7 @@ def get_response_content(fs):
     row_writer = RowWriter(out, line_limit=1000)
     try:
         process(row_source, row_writer)
-    except LineLimitError, e:
+    except LineLimitError as e:
         raise HandlingError(e)
     return out.getvalue()
 

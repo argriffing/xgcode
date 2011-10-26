@@ -146,7 +146,7 @@ def process(ntaxa, nseconds):
             nsamples_accepted += 1
     except KeyboardInterrupt, e:
         pass
-    except CounterexampleError, e:
+    except CounterexampleError as e:
         counterexample_message = str(e)
     # make the response
     out = StringIO()

@@ -271,9 +271,9 @@ def process(ntaxa, length, nseconds, branch_length_sampler, use_nj, use_modified
                 atteson = BuildTreeTopology.is_atteson(tree, D)
                 # record information about the splits
                 builder.evaluate(true_splits, D, atteson, use_nj, use_modified_nj, use_all_spectral, use_one_spectral)
-            except InfiniteDistanceError, e:
+            except InfiniteDistanceError as e:
                 n_infinite_errors += 1
-            except ZeroDistanceError, e:
+            except ZeroDistanceError as e:
                 n_zero_errors += 1
             except BuildTreeTopology.InvalidSpectralSplitException, e:
                 n_failed_spectral_splits += 1

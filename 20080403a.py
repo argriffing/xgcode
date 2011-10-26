@@ -40,7 +40,7 @@ def get_response_content(fs):
     nexus = Nexus.Nexus()
     try:
         nexus.load(StringIO(fs.nexus))
-    except Nexus.NexusError, e:
+    except Nexus.NexusError as e:
         raise HandlingError(e)
     # read the hyphy variables
     ns = Hyphy.get_hyphy_namespace(StringIO(fs.hyphy))
@@ -72,11 +72,11 @@ def get_response_content(fs):
         hyphy_tree = getattr(ns, tree_name)
         try:
             nexus_human_node = nexus_tree.get_unique_node('Human')
-        except Newick.NewickSearchError, e:
+        except Newick.NewickSearchError as e:
             raise HandlingError('nexus tree error: %s' % e)
         try:
             hyphy_human_node = hyphy_tree.get_unique_node('HUMAN')
-        except Newick.NewickSearchError, e:
+        except Newick.NewickSearchError as e:
             raise HandlingError('hyphy tree error: %s' % e)
         sf = hyphy_human_node.blen / nexus_human_node.blen
         rate_matrix_object.rescale(sf)
@@ -127,7 +127,7 @@ def do_analysis(mixture_model, alignment, tree):
     for header in alignment.headers:
         try:
             node = tree.get_unique_node(header)
-        except Newick.NewickSearchError, e:
+        except Newick.NewickSearchError as e:
             raise HandlingError(e)
         header_to_node[header] = node
     # get the information for each column

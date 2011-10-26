@@ -154,10 +154,10 @@ def process(ntaxa, nseconds, seqlen, nsamples, branch_length_sampler, use_pbar):
                 # If the sample was rejected then note the reason and go back to the drawing board.
                 try:
                     D = sample_distance_matrix(tree, seqlen)
-                except InfiniteDistanceError, e:
+                except InfiniteDistanceError as e:
                     nrejected_inf += 1
                     continue
-                except ZeroDistanceError, e:
+                except ZeroDistanceError as e:
                     nrejected_zero += 1
                     continue
                 # Attempt to estimate the primary split of the tree from the distance matrix.
@@ -187,7 +187,7 @@ def process(ntaxa, nseconds, seqlen, nsamples, branch_length_sampler, use_pbar):
             termination_reason = 'the requested number of samples per sequence length was attained'
     except KeyboardInterrupt, e:
         termination_reason = 'keyboard interrupt'
-    except TimeoutError, e:
+    except TimeoutError as e:
         termination_reason = 'time limit expired'
     if pbar:
         pbar.finish()
@@ -228,7 +228,7 @@ def main(options):
     use_pbar = True
     try:
         print process(options.ntaxa, options.nseconds, options.seqlen, options.nsamples, branch_length_sampler, use_pbar)
-    except HandlingError, e:
+    except HandlingError as e:
         print 'error:', e
 
 if __name__ == '__main__':

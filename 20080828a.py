@@ -384,7 +384,7 @@ class Simulation:
             # build the tree
             try:
                 reconstructed_tree = tree_builder.build()
-            except NeighborhoodJoining.NeighborhoodJoiningError, e:
+            except NeighborhoodJoining.NeighborhoodJoiningError as e:
                 print 'neighborhood joining error:', e
                 print 'simulated sequence list:'
                 for sequence in sequence_list:
@@ -438,7 +438,7 @@ def main():
         print 'running "%s"...' % sim.description
         try:
             sim.run()
-        except HandlingError, e:
+        except HandlingError as e:
             print 'Error:', e
     # print the simulation data
     print 'simulation results:'

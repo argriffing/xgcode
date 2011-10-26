@@ -28,7 +28,7 @@ def get_response_content(fs):
     # deserialize the xml data to create a DirectRnaMixture
     try:
         mixture_model = DirectRna.deserialize_mixture_model(fs.model)
-    except ValueError, e:
+    except ValueError as e:
         raise HandlingError(e)
     expected_rate = mixture_model.get_expected_rate()
     nt_distribution = mixture_model.get_nt_stationary_distribution()

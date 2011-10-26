@@ -31,7 +31,7 @@ def get_response_content(fs):
     # get the node
     try:
         node = tree.get_unique_node(fs.node)
-    except Newick.NewickSearchError, e:
+    except Newick.NewickSearchError as e:
         raise HandlingError(e)
     if node is tree.root:
         raise HandlingError('the root cannot be removed')

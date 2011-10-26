@@ -226,7 +226,7 @@ class PinvProj(UnaryOperator):
         block_structure = None
         try:
             block_structure = self.element.get_block_structure()
-        except AttributeError, e:
+        except AttributeError as e:
             pass
         if block_structure:
             # use the block structure to make block matrices
@@ -268,13 +268,13 @@ class Product(Expression):
         #TODO this is subtle and probably wrong
         try:
             return self.elements[0].get_principal_shape()
-        except AttributeError, e:
+        except AttributeError as e:
             return self.get_shape()
     def get_block_structure(self):
         #TODO this is subtle and probably wrong
         try:
             return self.elements[0].get_block_structure()
-        except AttributeError, e:
+        except AttributeError as e:
             return self.get_shape()
 
 class Schur(Expression):

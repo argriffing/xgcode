@@ -36,7 +36,7 @@ def get_response_content(fs):
     nexus = Nexus.Nexus()
     try:
         nexus.load(StringIO(fs.nexus))
-    except Nexus.NexusError, e:
+    except Nexus.NexusError as e:
         raise HandlingError(e)
     # define some paths
     baseml_ctl = os.path.join(Config.data_path, 'baseml.ctl')

@@ -42,7 +42,7 @@ class TestFinder:
         for i, module_name in enumerate(module_names):
             try:
                 module = __import__(module_name, globals(), locals())
-            except ImportError, e:
+            except ImportError as e:
                 self.module_import_errors.append(e)
             else:
                 self.imported_module_names.append(module_name)
@@ -50,7 +50,7 @@ class TestFinder:
                     try:
                         if issubclass(object, unittest.TestCase):
                             self.test_classes.append(object)
-                    except TypeError, e:
+                    except TypeError as e:
                         pass
             # update the progress bar
             pbar.update(i+1)

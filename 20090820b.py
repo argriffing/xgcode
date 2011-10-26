@@ -94,7 +94,7 @@ class Chromosome:
         """
         try:
             test_string = ','.join([strain_name, chromosome_name])
-        except ValueError, e:
+        except ValueError as e:
             raise ValueError('value error for names %s and %s: %s' % (strain_name, chromosome_name, e))
         # initialize some states
         self.strain_name = strain_name
@@ -197,7 +197,7 @@ def process(pathnames, good_coverage, bad_coverage, randomization_rate, nseconds
                 pbar.update(i + 1)
     except KeyboardInterrupt, e:
         termination_reason = 'early termination by control-c'
-    except TimeoutError, e:
+    except TimeoutError as e:
         termination_reason = 'early termination because of a time limit'
     if pbar:
         pbar.finish()

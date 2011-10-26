@@ -118,7 +118,7 @@ def get_response_content(fs):
         tree_builder.set_fallback_name('nj')
         try:
             query_tree = tree_builder.build()
-        except NeighborhoodJoining.NeighborhoodJoiningError, e:
+        except NeighborhoodJoining.NeighborhoodJoiningError as e:
             raise HandlingError(e)
         reconstructed_tree_count += 1
         # see if we need to stop reconstructing the trees

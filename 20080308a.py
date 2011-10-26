@@ -81,7 +81,7 @@ def get_response_content(fs):
     try:
         alignment = Fasta.Alignment(fs.alignment.splitlines())
         alignment.force_nucleotide()
-    except Fasta.AlignmentError, e:
+    except Fasta.AlignmentError as e:
         raise HandlingError(e)
     # create the mixture proportions
     weight_sum = sum(weights)
@@ -141,7 +141,7 @@ def do_analysis(mixture_model, alignment, tree):
     for header in alignment.headers:
         try:
             node = tree.get_unique_node(header)
-        except Newick.NewickSearchError, e:
+        except Newick.NewickSearchError as e:
             raise HandlingError(e)
         header_to_node[header] = node
     # get the information for each column

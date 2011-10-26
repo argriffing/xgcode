@@ -54,7 +54,7 @@ def get_response(fs):
     try:
         tree = Newick.parse(fs.tree, Newick.NewickTree)
         tree.assert_valid()
-    except Newick.NewickSyntaxError, e:
+    except Newick.NewickSyntaxError as e:
         raise HandlingError(str(e))
     # get the normalized model
     mixture_model = deserialize_mixture_model(fs.model)
@@ -62,7 +62,7 @@ def get_response(fs):
     try:
         alignment = PhyLikelihood.simulate_alignment(
                 tree, mixture_model, fs.ncols, fs.seed)
-    except PhyLikelihood.SimulationError, e:
+    except PhyLikelihood.SimulationError as e:
         raise HandlingError(e)
     # get the output string
     output_string = ''

@@ -217,9 +217,9 @@ def get_sample_results(sequence_length, ntaxa, nj_like, branch_length_sampler):
     # sample a distance matrix
     try:
         D = sample_distance_matrix(tree, sequence_length)
-    except InfiniteDistanceError, e:
+    except InfiniteDistanceError as e:
         return incr_attribute(attribute_array, 'nsamples.rejected.inf')
-    except ZeroDistanceError, e:
+    except ZeroDistanceError as e:
         return incr_attribute(attribute_array, 'nsamples.rejected.zero')
     except BuildTreeTopology.InvalidSpectralSplitException, e:
         return incr_attribute(attribute_array, 'nsamples.rejected.fail')
@@ -313,7 +313,7 @@ def process(ntaxa, nseconds, nlengths, nsamples, nj_like, branch_length_sampler,
             termination_reason = 'the requested number of samples per sequence length was attained'
     except KeyboardInterrupt, e:
         termination_reason = 'keyboard interrupt'
-    except TimeoutError, e:
+    except TimeoutError as e:
         termination_reason = 'time limit expired'
     if pbar:
         pbar.finish()
@@ -355,7 +355,7 @@ def main(options):
     use_pbar = True
     try:
         print process(options.ntaxa, options.nseconds, options.nlengths, options.nsamples, options.nj_like, branch_length_sampler, use_pbar)
-    except HandlingError, e:
+    except HandlingError as e:
         print 'Error:', e
 
 if __name__ == '__main__':

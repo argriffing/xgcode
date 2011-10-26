@@ -57,7 +57,7 @@ def get_response_content(fs):
     for name in set(node.name for node in tree.gen_tips()) - set(selection): 
         try: 
             node = tree.get_unique_node(name) 
-        except NewickSearchError, e: 
+        except NewickSearchError as e: 
             raise HandlingError(e) 
         tree.prune(node)
     # get the weights

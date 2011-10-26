@@ -78,7 +78,7 @@ def get_response_content(fs):
     for name, nt in name_to_nt.items():
         try:
             node = tree.get_unique_node(name)
-        except Newick.NewickSearchError, e:
+        except Newick.NewickSearchError as e:
             raise HandlingError(e)
         if node.children:
             msg = 'constraints on internal nodes are not implemented'
@@ -101,7 +101,7 @@ def get_response_content(fs):
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
-    except CairoUtil.CairoUtilError, e:
+    except CairoUtil.CairoUtilError as e:
         raise HandlingError(e)
 
 def simulate_branch_path(tree, node, rate_matrix_object):

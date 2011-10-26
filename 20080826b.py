@@ -36,7 +36,7 @@ def get_response_content(fs):
     # get the alignment object
     try:
         alignment = Fasta.Alignment(fs.fasta.splitlines())
-    except Fasta.AlignmentError, e:
+    except Fasta.AlignmentError as e:
         raise HandlingError('alignment error: ' + str(e))
     # assert that the alignment is of exactly two sequences
     if len(alignment.sequences) != 2:
@@ -45,7 +45,7 @@ def get_response_content(fs):
     old_column_count = alignment.get_column_count()
     try:
         alignment.force_nucleotide()
-    except Fasta.AlignmentError, e:
+    except Fasta.AlignmentError as e:
         raise HandlingError('nucleotide alignment error: ' + str(e))
     new_column_count = alignment.get_column_count()
     if old_column_count != new_column_count:

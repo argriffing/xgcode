@@ -130,7 +130,7 @@ def get_response_content(fs):
         try:
             x = float(x_string)
             y = float(y_string)
-        except ValueError, e:
+        except ValueError as e:
             msg = 'expected the coordinates to be floating point numbers'
             raise HandlingError(msg)
         labels.append(label)
@@ -146,5 +146,5 @@ def get_response_content(fs):
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return get_image_string(labels, points,
                 fs.total_width, fs.total_height, fs.border, ext)
-    except CairoUtil.CairoUtilError, e:
+    except CairoUtil.CairoUtilError as e:
         raise HandlingError(e)

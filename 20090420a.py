@@ -160,9 +160,9 @@ def process(ntaxa, length, nseconds, builders, branch_length_sampler):
                     #pachter_results[a][b] += 1
                 else:
                     non_atteson_results[a][b] += 1
-            except InfiniteDistanceError, e:
+            except InfiniteDistanceError as e:
                 n_infinite_errors += 1
-            except ZeroDistanceError, e:
+            except ZeroDistanceError as e:
                 n_zero_errors += 1
             except BuildTreeTopology.InvalidSpectralSplitException, e:
                 n_failed_spectral_splits += 1

@@ -248,7 +248,7 @@ def drosophila_position(value):
     """
     try:
         v = int(value)
-    except ValueError, e:
+    except ValueError as e:
         v = None
     if v is None:
         if value == 'none':
