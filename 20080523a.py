@@ -160,7 +160,7 @@ def get_response_content(fs):
     try:
         alignment = Fasta.Alignment(StringIO(fs.alignment))
         alignment.force_nucleotide()
-    except Fasta.AlignmentError, e:
+    except Fasta.AlignmentError as e
         raise HandlingError(e)
     # get the rate matrix defined by the nucleotide distribution and kappa
     row_major_rate_matrix = RateMatrix.get_unscaled_hky85_rate_matrix(

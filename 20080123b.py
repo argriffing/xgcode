@@ -41,7 +41,7 @@ def get_response_content(fs):
     try:
         alignment = Fasta.Alignment(fs.fasta.splitlines())
         alignment.force_nucleotide()
-    except Fasta.AlignmentError, e:
+    except Fasta.AlignmentError as e
         raise HandlingError(e)
     # define the jukes cantor rate matrix
     dictionary_rate_matrix = RateMatrix.get_jukes_cantor_rate_matrix()
@@ -54,7 +54,7 @@ def get_response_content(fs):
     try:
         alignment = PhyLikelihood.simulate_ancestral_alignment(
                 tree, alignment, rate_matrix_object)
-    except PhyLikelihood.SimulationError, e:
+    except PhyLikelihood.SimulationError as e
         raise HandlingError(e)
     # get the alignment string using an ordering defined by the tree
     arr = []

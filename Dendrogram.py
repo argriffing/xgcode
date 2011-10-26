@@ -80,7 +80,7 @@ def _build_clusters(hierarchy, clusters):
     try:
         for sub_element in hierarchy:
             all_indices.update(_build_clusters(sub_element, clusters))
-    except TypeError, e:
+    except TypeError as e
         return set([hierarchy])
     clusters.append(all_indices)
     return all_indices

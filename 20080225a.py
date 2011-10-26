@@ -35,7 +35,7 @@ def get_response_content(fs):
     T = fs.matrix
     try:
         v = TransitionMatrix.get_stationary_distribution(T.tolist())
-    except TransitionMatrix.TransitionMatrixError, e:
+    except TransitionMatrix.TransitionMatrixError as e
         raise HandlingError(e)
     # return the stationary distribution
     return '\n'.join(str(x) for x in v) + '\n'

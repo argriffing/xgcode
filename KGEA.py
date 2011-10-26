@@ -375,7 +375,7 @@ class Finder:
         # try to get the list of valid chromosome strings
         try:
             fin = open(chrom_list_filename)
-        except IOError, e:
+        except IOError as e
             msg_a = 'there was a problem opening '
             msg_b = 'the chromosome list file: ' + chrom_list_filename
             raise KGEAError(msg_a + msg_b)

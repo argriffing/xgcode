@@ -893,7 +893,7 @@ class Float:
             value_string = values[0]
             try:
                 value = float(value_string)
-            except ValueError, e:
+            except ValueError as e
                 lines = (
                         '%s could not be interpreted' % value_string,
                         'as a floating point number')
@@ -1034,7 +1034,7 @@ class Integer:
             value_string = values[0]
             try:
                 value = int(value_string)
-            except ValueError, e:
+            except ValueError as e
                 raise FormError('%s is not an integer' % value_string)
         elif len(values) > 2:
             msg = 'the value for the field "%s" is ambiguous' % self.label
@@ -1147,7 +1147,7 @@ class Matrix:
                     value = np.array(MatrixUtil.read_matrix(fin))
                     if self.matrix_assertion:
                         self.matrix_assertion(value)
-                except MatrixUtil.MatrixError, e:
+                except MatrixUtil.MatrixError as e
                     raise FormError(e)
         _set_unique(d_out, self.label, value)
 
@@ -1169,7 +1169,7 @@ class Matrix:
                 value = np.array(MatrixUtil.read_matrix(StringIO(values[0])))
                 if self.matrix_assertion:
                     self.matrix_assertion(value)
-            except MatrixUtil.MatrixError, e:
+            except MatrixUtil.MatrixError as e
                 raise FormError(e)
         elif len(values) > 2:
             msg = 'the value for the field "%s" is ambiguous' % self.label

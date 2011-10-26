@@ -55,7 +55,7 @@ def get_response_content(fs):
     try:
         layout = FastDaylightLayout.StraightBranchLayout()
         layout.do_layout(tree)
-    except RuntimeError, e:
+    except RuntimeError as e
         pass
     # draw the image
     try:
@@ -63,5 +63,5 @@ def get_response_content(fs):
         return DrawEigenLacing.get_forest_image(
                 tree, (640, 480), ext, valuations,
                 fs.draw_background, fs.draw_vertices, fs.draw_labels)
-    except CairoUtil.CairoUtilError, e:
+    except CairoUtil.CairoUtilError as e
         raise HandlingError(e)

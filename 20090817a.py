@@ -116,7 +116,7 @@ def get_log_likelihoods_per_strain(rows, models):
         if n > 0:
             try:
                 log_likelihoods = [m.get_log_likelihood(obs) for m in models]
-            except ValueError, e:
+            except ValueError as e
                 raise ValueError('error for observation %s: %s' % (str(obs), e))
         else:
             log_likelihoods = None
@@ -212,7 +212,7 @@ def process(input_lines, good_coverage, bad_coverage, randomization_rate, nsecon
         if pbar:
             pbar.finish()
         raise e
-    except TimeoutError, e:
+    except TimeoutError as e
         if pbar:
             pbar.finish()
         raise e

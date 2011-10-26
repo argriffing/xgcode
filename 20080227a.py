@@ -32,7 +32,7 @@ def get_response_content(fs):
     for line in iterutils.stripped_lines(fs.energies.splitlines()):
         try:
             energy = float(line)
-        except ValueError, e:
+        except ValueError as e
             raise HandlingError('invalid energy: %s' % line)
         energies.append(energy)
     # create the row major matrix

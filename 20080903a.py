@@ -310,7 +310,7 @@ class Simulation:
             # build the tree
             try:
                 query_tree = tree_builder.build()
-            except NeighborhoodJoining.NeighborhoodJoiningError, e:
+            except NeighborhoodJoining.NeighborhoodJoiningError as e
                 raise HandlingError(e)
             # Note the number and weight of partition errors
             # during the reconstruction.
@@ -682,6 +682,6 @@ if __name__ == '__main__':
     options, args = parser.parse_args()
     try:
         main(options)
-    except OptionError, e:
+    except OptionError as e
         print e
 

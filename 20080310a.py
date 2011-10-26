@@ -25,7 +25,7 @@ def get_response_content(fs):
     # deserialize the xml data to create a DirectProteinMixture
     try:
         mixture_model = DirectProtein.deserialize_mixture_model(fs.model)
-    except ValueError, e:
+    except ValueError as e
         raise HandlingError(e)
     expected_rate = mixture_model.get_expected_rate()
     codon_distribution = mixture_model.get_codon_stationary_distribution()

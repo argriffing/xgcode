@@ -127,16 +127,16 @@ def handler(req):
                 req.write(content_text)
         else:
             raise DispatchError('no web interface was found for this script')
-    except ImportError, e:
+    except ImportError as e
         req.content_type = "text/plain"
         print >> req, 'Uncaught ImportError:', e
-    except DispatchError, e:
+    except DispatchError as e
         req.content_type = "text/plain"
         print >> req, 'Error:', e
-    except HandlingError, e:
+    except HandlingError as e
         req.content_type = "text/plain"
         print >> req, 'Error:', e
-    except Form.FormError, e:
+    except Form.FormError as e
         req.content_type = "text/plain"
         print >> req, 'Form validation error:', e
     # pretend everything is OK

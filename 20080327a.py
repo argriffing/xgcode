@@ -29,7 +29,7 @@ def get_response_content(fs):
     try:
         tree = Newick.parse(fs.tree, Newick.NewickTree)
         tree.assert_valid()
-    except Newick.NewickSyntaxError, e:
+    except Newick.NewickSyntaxError as e
         raise HandlingError(e)
     # scale the branch lengths
     for node in tree.preorder():

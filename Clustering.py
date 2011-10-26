@@ -370,13 +370,13 @@ class TestClustering(unittest.TestCase):
         D = g_lior_singular
         try:
             stone = get_R_stone(D)
-        except scipy.linalg.LinAlgError, e:
+        except scipy.linalg.LinAlgError as e
             pass
         else:
             self.fail('inverting a singular matrix is supposed to fail')
         try:
             balaji = get_R_balaji(D)
-        except scipy.linalg.LinAlgError, e:
+        except scipy.linalg.LinAlgError as e
             self.fail('the pseudoinverse is supposed to work even on a singular matrix')
 
     def test_pseudoinverse_d(self):

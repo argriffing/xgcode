@@ -35,7 +35,7 @@ def get_response_content(fs):
     # get the stationary distribution of the rate matrix
     try:
         v = RateMatrix.get_stationary_distribution(R.tolist())
-    except RateMatrix.RateMatrixError, e:
+    except RateMatrix.RateMatrixError as e
         msg = 'error calculating the stationary distribution: ' + str(e)
         raise HandlingError(msg)
     # for each pair of entries, check the detailed balance equation

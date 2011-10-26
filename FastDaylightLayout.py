@@ -129,7 +129,7 @@ class CurvedBranchLayout:
                     dtree.reroot()
                     try:
                         dtree.equalize()
-                    except RuntimeError, e:
+                    except RuntimeError as e
                         raise LayoutError(e)
             # read the extension tree
             for node in tree.preorder():

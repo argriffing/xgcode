@@ -125,7 +125,7 @@ def get_test_image_format_and_string():
         layout = EqualDaylightLayout()
         layout.force_straight_branches = False
         layout.do_layout(tree)
-    except EqualDaylightLayoutError, e:
+    except EqualDaylightLayoutError as e
         print e
     # color some of the branches
     red = 'ff0000'

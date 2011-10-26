@@ -53,7 +53,7 @@ def get_response_content(fs):
         else:
             msg = 'this position has no corresponding amino acid'
             raise KGEA.KGEAError(msg)
-    except KGEA.KGEAError, e:
+    except KGEA.KGEAError as e
         raise HandlingError(e)
 
 
@@ -133,7 +133,7 @@ def main(options, args):
         # initialize the chromosome position and assert that it is plausible
         try:
             chromosome_position = int(chromosome_position_string)
-        except ValueError, e:
+        except ValueError as e
             raise MySyntaxError('the chromosome position should be an integer')
         # assert that the fasta directory has been created
         if not os.path.isdir(pieces_directory):
@@ -163,7 +163,7 @@ def main(options, args):
         # initialize the chromosome position and assert that it is plausible
         try:
             chromosome_position = int(chromosome_position_string)
-        except ValueError, e:
+        except ValueError as e
             raise MySyntaxError('the chromosome position should be an integer')
         # assert that the fasta directory has been created
         if not os.path.isdir(pieces_directory):
@@ -239,7 +239,7 @@ if __name__ == '__main__':
     try:
         response_string = main(options, args)
         print response_string
-    except MySyntaxError, e:
+    except MySyntaxError as e
         print 'Syntax error.'
         print e
         print 'Here are some examples:'
@@ -248,10 +248,10 @@ if __name__ == '__main__':
         print 'python %s split' % sys.argv[0]
         print 'python %s index' % sys.argv[0]
         print 'python %s summarize' % sys.argv[0]
-    except MyConfigError, e:
+    except MyConfigError as e
         print 'Configuration error.'
         print e
-    except KGEA.KGEAError, e:
+    except KGEA.KGEAError as e
         print 'Error.'
         print e
 

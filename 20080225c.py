@@ -36,7 +36,7 @@ def get_response_content(fs):
     try:
         rate_matrix_object = RateMatrix.RateMatrix(R.tolist(), states)
         expected_rate = rate_matrix_object.get_expected_rate()
-    except RateMatrix.RateMatrixError, e:
+    except RateMatrix.RateMatrixError as e
         raise HandlingError('error calculating the expected rate: ' + str(e))
     # return the response
     return str(expected_rate) + '\n'

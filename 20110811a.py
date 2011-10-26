@@ -47,7 +47,7 @@ def get_tikz_pane(sample, width=6, height=6):
     shapes = None
     try:
         shapes = sample.get_superposition_shapes()
-    except AttributeError, e:
+    except AttributeError as e
         pass
     if shapes:
         return interlace.tikz_shape_superposition(shapes, width, height)
