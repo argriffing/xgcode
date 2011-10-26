@@ -97,7 +97,7 @@ def get_response_content(fs):
     for i, (label, data_row) in enumerate(zip(labels, data_rows)):
         row = data_row + [str(label)]
         lines.append('\t'.join(row))
-    # return teh response
+    # return the response
     return '\n'.join(lines) + '\n'
 
 
@@ -117,6 +117,9 @@ class GlobalState(object):
         self.init_strategy = init_strategy
 
 class ClusterState:
+    """
+    This search seems to be used from the command line only.
+    """
 
     def __init__(self, global_state):
         """
@@ -126,7 +129,22 @@ class ClusterState:
         self.best_wcss = None
         self.best_labels = None
 
-    def get_response(self):
+    def __call__(self):
+        """
+        Do an iteration of the Lloyd algorithm.
+        """
+        centers = np.array(list(self.gs.init_strategy(
+            self.gs.points, self.gs.nclusters)))
+        sqdists = kmeans.get_point_center_sqdists(self.gs.points, centers)
+        labels = kmeans.get_labels(sqdists)
+        wcss, labels = kmeans.lloyd(self.gs.points, labels)
+        if (self.best_wcss is None) or (wcss < self.best_wcss):
+            self.best_wcss = wcss
+            self.best_labels = labels
+        # do not stop
+        return False
+
+    def __str__(self):
         """
         @return: a string
         """
@@ -140,23 +158,6 @@ class ClusterState:
                 lines.append('\t'.join(row))
             return '\n'.join(lines)
 
-    def __iter__(self):
-        return self
-
-    def next(self):
-        """
-        Do an iteration of the Lloyd algorithm.
-        """
-        centers = np.array(list(self.init_strategy(
-            self.gs.points, self.gs.nclusters)))
-        sqdists = kmeans.get_point_center_sqdists(self.gs.points, centers)
-        labels = kmeans.get_labels(sqdists)
-        wcss, labels = kmeans.lloyd(self.gs.points, labels)
-        if (self.best_wcss is None) or (wcss < self.best_wcss):
-            self.best_wcss = wcss
-            self.best_labels = labels
-        return self
-
 
 def main(args):
     """
@@ -169,22 +170,24 @@ def main(args):
     init_strategy = kmeans.InitStrategy().string_to_function(args.kmeans_init)
     gs = GlobalState(rtable, points, args.annotation, args.k, init_strategy)
     # go until iteration is stopped for some reason
-    info = combobreaker.run(ClusterState(gs), args.nseconds, args.nrestarts)
-    print info.get_response()
+    print combobreaker.run_callable(
+            ClusterState(gs), args.nseconds, args.nrestarts)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--table_filename', required=True,
             help='R table filename')
     parser.add_argument('--axes', required=True,
+            type=moretypes.whitespace_separated_sequence,
             help='column labels of Euclidean axes')
     parser.add_argument('--k', type=moretypes.int_ge(2), required=True,
             help='target number of clusters')
     parser.add_argument('--annotation', default='cluster',
             help='header of added column')
-    parser.add_argument('--nrestarts', type=moretypes.whole_number,
+    parser.add_argument('--nrestarts', type=moretypes.positive_integer,
             help='restart the k-means iterative refinement this many times')
     parser.add_argument('--nseconds', type=moretypes.positive_float,
             help='run for this many seconds')
     kmeans.InitStrategy().add_argument(parser)
     main(parser.parse_args())
+

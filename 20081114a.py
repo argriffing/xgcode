@@ -6,6 +6,7 @@ compare spectral sign splits with and without internal nodes.
 """
 
 from StringIO import StringIO
+import argparse
 
 import numpy as np
 
@@ -22,14 +23,13 @@ import combobreaker
 
 #FIXME use const data
 
-g_user_message = """\
+g_cmdline_message = """\
 Does the Fiedler split of a certain graph correspond to a cut
 of a single branch on the tree from which the graph was derived?
 To look for a counterexample to this conjecture,
 I am sampling a bunch of random trees.
 Force the program to stop running by using Ctrl-c when you get bored."""
 
-g_filename = 'counterexamples.out'
 
 def get_form():
     """
@@ -152,21 +152,12 @@ def get_response_content(fs):
     # write the response
     return out.getvalue()
 
-class Search:
-    def __init__(self):
+class TrackingChecker:
+    def __init__(self, counterexample_filename):
+        self.counterexample_filename = counterexample_filename
         self.ncounterexamples = 0
         self.fout = None
-    def get_response(self):
-        return 'found %d counterexamples' % self.ncounterexamples
-    def __iter__(self):
-        return self
-    def next(self):
-        # get a random tree
-        n_base_leaves = 4
-        n_expected_extra_leaves = 1
-        expected_branch_length = 1
-        tree = TreeSampler.sample_tree(n_base_leaves,
-                n_expected_extra_leaves, expected_branch_length)
+    def __call__(self, tree):
         # get the partitions implied by the tree
         valid_partitions = TreeComparison.get_partitions(tree)
         # Get the partition implied by the Fiedler split
@@ -186,16 +177,30 @@ class Search:
                 'tree:', NewickIO.get_newick_string(tree),
                 'invalid partition:', name_partition])
             if not self.fout:
-                self.fout = open(g_filename, 'wt')
+                self.fout = open(self.counterexample_filename, 'wt')
             print >> self.fout, msg
             print msg
             self.ncounterexamples += 1
-        return self
+        # do not stop looking, even if a counterexample is found
+        return False
+    def __str__(self):
+        return 'found %d counterexamples' % self.ncounterexamples
+
+def gen_trees():
+    n_base_leaves = 4
+    n_expected_extra_leaves = 1
+    expected_branch_length = 1
+    while True:
+        yield TreeSampler.sample_tree(
+                n_base_leaves, n_expected_extra_leaves, expected_branch_length)
 
 def main():
-    print g_user_message
-    info = combobreaker.run(Search())
-    print info.get_response()
+    parser = argparse.ArgumentParser(description=g_cmdline_message)
+    parser.add_argument('--counterexamples', default='counterexamples.out',
+            help='write counterexamples to this file')
+    args = parser.parse_args()
+    checker = TrackingChecker(args.counterexamples)
+    print combobreaker.run_checker(checker, gen_trees())
 
 if __name__ == '__main__':
     main()

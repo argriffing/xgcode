@@ -15,10 +15,10 @@ import argparse
 import numpy as np
 import scipy
 from scipy import linalg
-import combobreaker
 
 import Form
 import FormOut
+import combobreaker
 
 def get_form():
     """
@@ -73,7 +73,7 @@ def get_response_content(fs):
     print >> out, V
     return out.getvalue()
 
-def get_inertia(M, eps=1e-8):
+def get_inertia(M, eps):
     inertia = {-1:0, 0:0, 1:0}
     for w in np.linalg.eigvalsh(M):
         if w < -eps:
@@ -84,43 +84,57 @@ def get_inertia(M, eps=1e-8):
             inertia[0] += 1
     return inertia
 
-class Sampler:
-    def __init__(self, ndim):
-        self.ndim = ndim
+class TrackingChecker:
+    def __init__(self, eps):
+        """
+        @param eps: smaller eigenvalues are said to be zero
+        """
+        self.eps = eps
+        self.u = None
+        self.v = None
+        self.M = None
         self.inertia = None
-    def _resample(self):
-        self.u = np.array([1] + [0]*(self.ndim-1))
-        self.v = np.random.randn(self.ndim)
+    def _has_bad_inertia(self):
+        return (self.inertia[-1], self.inertia[1]) != (1, 1)
+    def __call__(self, uv_pair):
+        self.u, self.v = uv_pair
         self.M = np.outer(self.u, self.v) + np.outer(self.v, self.u)
-        self.inertia = get_inertia(self.M)
-    def __iter__(self):
-        return self
-    def next(self):
-        if self.inertia is not None:
-            if self.inertia != {-1:1, 0:self.ndim-2, 1:1}:
-                raise StopIteration
-        self._resample()
-        return self
-    def get_response(self):
-        # get eigendecomposition
-        W, V = scipy.linalg.eigh(self.M)
-        # get response
+        self.inertia = get_inertia(self.M, self.eps)
+        return self._has_bad_inertia()
+    def __str__(self):
         out = StringIO()
-        print >> out, 'inertia:', self.inertia
-        print >> out, 'u:', self.u
-        print >> out, 'v:', self.v
-        print >> out, 'M:', self.M
-        print >> out, 'eigenvalues:', W
-        print >> out, 'eigenvectors as columns:'
-        print >> out, V
-        return out.getvalue()
+        if self._has_bad_inertia():
+            print >> out, '*** found an example with invalid inertia! ***'
+            # get eigendecomposition
+            W, V = scipy.linalg.eigh(self.M)
+            # get response
+            print >> out, 'inertia:', self.inertia
+            print >> out, 'epsilon for eigenvalue zeroness:', self.eps
+            print >> out, 'u:', self.u
+            print >> out, 'v:', self.v
+            print >> out, 'M:', self.M
+            print >> out, 'eigenvalues:', W
+            print >> out, 'eigenvectors as columns:'
+            print >> out, V
+        else:
+            print >> out, 'nothing interesting was observed'
+        return out.getvalue().rstrip()
+
+def gen_uv_pairs(ndim):
+    while True:
+        u = np.array([1] + [0]*(ndim-1))
+        v = np.random.randn(ndim)
+        yield u, v
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
             '--n', type=int, default=6,
             help='use this many dimensions')
+    parser.add_argument(
+            '--eps', type=float, default='1e-8',
+            help='smaller eigenvalues are said to be zero')
     args = parser.parse_args()
-    sampler = Sampler(args.n)
-    info = combobreaker.run(sampler)
-    print info.get_response()
+    checker = TrackingChecker(args.eps)
+    print combobreaker.run_checker(checker, gen_uv_pairs(args.n))
+
