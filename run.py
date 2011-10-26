@@ -52,7 +52,7 @@ class Gadget:
         self.module_name, ext = os.path.splitext(filename)
         try:
             self.module = __import__(self.module_name)
-        except ImportError as e
+        except ImportError, e:
             self.import_error = e
         epydoc_filename = 'script-' + self.module_name + '_py-pysrc.html'
         if os.path.isfile(os.path.join(g_live_doc, epydoc_filename)):
@@ -80,7 +80,7 @@ def gen_gadgets():
         gadget_path = os.path.join(gadget_directory, filename)
         try:
             yield Gadget(gadget_path)
-        except GadgetError as e
+        except GadgetError, e:
             pass
 
 

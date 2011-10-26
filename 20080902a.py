@@ -286,5 +286,5 @@ def get_response_content(fs):
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return get_image_string(
                 pvalue_lists, headers, wild_list, mutant_list, ext)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)

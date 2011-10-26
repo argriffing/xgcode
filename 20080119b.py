@@ -23,7 +23,7 @@ def get_response_content(fs):
     try:
         alignment = Fasta.Alignment(fs.fasta.splitlines())
         print >> out, 'This is a valid alignment.'
-    except Fasta.AlignmentError as e
+    except Fasta.AlignmentError, e:
         alignment = None
         print >> out, 'This is not a valid alignment:', e
     if alignment:
@@ -36,7 +36,7 @@ def get_response_content(fs):
                 print >> out, 'columns this is a valid nucleotide alignment.'
             else:
                 print >> out, 'This is a valid nucleotide alignment.'
-        except Fasta.AlignmentError as e
+        except Fasta.AlignmentError, e:
             print >> out, 'This is not a valid nucleotide alignment:', e
     for header, seq in Fasta.gen_header_sequence_pairs(StringIO(fs.fasta)):
         print >> out, '%s: %d' % (header, len(seq))

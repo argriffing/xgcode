@@ -60,7 +60,7 @@ def get_response_content(fs):
     try:
         layout = FastDaylightLayout.StraightBranchLayout()
         layout.do_layout(tree)
-    except RuntimeError as e
+    except RuntimeError, e:
         pass
     # draw the image
     try:
@@ -70,6 +70,6 @@ def get_response_content(fs):
                 tree, physical_size, ext, valuations,
                 fs.draw_background, fs.draw_labels,
                 fs.inner_margin, fs.outer_margin, fs.reflect_trees)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
 

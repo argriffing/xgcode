@@ -166,7 +166,7 @@ def get_png_contents(latex_text):
         fin = open(png_pathname, 'rb')
         png_contents = fin.read()
         fin.close()
-    except IOError as e
+    except IOError, e:
         raise ValueError('failed to create a png file')
     return png_contents
 
@@ -183,7 +183,7 @@ def get_pdf_contents(latex_text):
         fin = open(pdf_pathname, 'rb')
         pdf_contents = fin.read()
         fin.close()
-    except IOError as e
+    except IOError, e:
         raise ValueError('failed to create a pdf file')
     return pdf_contents
 

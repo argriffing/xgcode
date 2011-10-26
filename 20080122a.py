@@ -39,7 +39,7 @@ def get_response_content(fs):
     try:
         alignment = Fasta.Alignment(fs.fasta.splitlines())
         alignment.force_nucleotide()
-    except Fasta.AlignmentError as e
+    except Fasta.AlignmentError, e:
         raise HandlingError(e)
     # get the log likelihood
     dictionary_rate_matrix = RateMatrix.get_jukes_cantor_rate_matrix()

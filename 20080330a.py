@@ -49,7 +49,7 @@ def get_response_content(fs):
     nexus = Nexus.Nexus()
     try:
         nexus.load(StringIO(fs.nexus))
-    except Nexus.NexusError as e
+    except Nexus.NexusError, e:
         raise HandlingError(e)
     # get the mixture weights
     mixture_weights = [fs.weight_a, fs.weight_b]
@@ -119,7 +119,7 @@ def do_analysis(mixture_model, alignment, tree):
     for header in alignment.headers:
         try:
             node = tree.get_unique_node(header)
-        except Newick.NewickSearchError as e
+        except Newick.NewickSearchError, e:
             raise HandlingError(e)
         header_to_node[header] = node
     # get the information for each column

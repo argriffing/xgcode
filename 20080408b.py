@@ -63,7 +63,7 @@ def get_response(fs):
     nexus = Nexus.Nexus()
     try:
         nexus.load(StringIO(fs.nexus))
-    except Nexus.NexusError as e
+    except Nexus.NexusError, e:
         raise HandlingError(e)
     # move to the data directory
     original_directory = os.getcwd()

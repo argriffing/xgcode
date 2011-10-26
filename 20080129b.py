@@ -79,7 +79,7 @@ def get_response(fs):
     for name, nucleotide in name_to_nucleotide.items():
         try:
             node = tree.get_unique_node(name)
-        except Newick.NewickSearchError as e
+        except Newick.NewickSearchError, e:
             raise HandlingError(e)
         if node.children:
             msg = 'constraints on internal nodes are not implemented'
@@ -104,7 +104,7 @@ def get_response(fs):
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
 
 def simulate_branch_path(tree, node):

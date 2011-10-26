@@ -140,7 +140,7 @@ def get_response_content(fs):
             print >> out, '\n'.join(lines)
         else:
             print >> out, 'no aligned amino acids were found at this position'
-    except KGEA.KGEAError as e
+    except KGEA.KGEAError, e:
         print >> out, e
     return out.getvalue()
 

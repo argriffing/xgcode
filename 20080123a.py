@@ -65,18 +65,18 @@ def get_response_content(fs):
     for name, rgb in name_to_rgb.items():
         try:
             node = tree.get_unique_node(name)
-        except Newick.NewickSearchError as e
+        except Newick.NewickSearchError, e:
             raise HandlingError(e)
         node.branch_color = rgb
     # do the layout
     try:
         layout = FastDaylightLayout.StraightBranchLayout()
         layout.do_layout(tree)
-    except RuntimeError as e
+    except RuntimeError, e:
         pass
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)

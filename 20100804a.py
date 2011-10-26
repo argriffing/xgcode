@@ -344,7 +344,7 @@ def process(args, table_lines):
     try:
         with open(temp_plot_name, 'rb') as fin:
             image_data = fin.read()
-    except IOError as e
+    except IOError, e:
         raise HandlingError('the R call seems to not have created the plot')
     # Delete the temporary image file.
     os.unlink(temp_plot_name)

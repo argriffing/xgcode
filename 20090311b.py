@@ -115,7 +115,7 @@ def process(edges, epsilon, nsamples, deadline, pbar):
             raise HandlingError('sorry this was taking way too long')
         try:
             state_to_value = get_joint_sample(edges, epsilon)
-        except RejectionError as e
+        except RejectionError, e:
             continue
         naccepted_samples += 1
         if pbar:
@@ -146,7 +146,7 @@ def get_response_content(fs):
         source, sink, distance_string = items
         try:
             distance = float(distance_string)
-        except ValueError as e
+        except ValueError, e:
             raise HandlingError('expected each edge distance to be readable as a floating point number')
         edges.append(Edge(source, sink, distance))
     # if we exceed this many seconds since 1970 then we fail

@@ -61,7 +61,7 @@ def lines_to_annotated_snps(lines):
     for clump in gen_clumped_lines(lines):
         try:
             yield Snp(clump)
-        except KnownBadSnpError as e
+        except KnownBadSnpError, e:
             pass
 
 def gen_clumped_lines(lines):

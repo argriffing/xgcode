@@ -83,7 +83,7 @@ def get_response_content(fs):
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return create_image_string(ext, physical_size, F, fs.xaxis_length)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
 
 def create_image_string(image_format, physical_size, F, xaxis_length):

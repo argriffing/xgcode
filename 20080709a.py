@@ -76,7 +76,7 @@ def get_response_content(fs):
     # read the alignment
     try:
         alignment = Fasta.Alignment(fs.fasta.splitlines())
-    except Fasta.AlignmentError as e
+    except Fasta.AlignmentError, e:
         raise HandlingError('fasta alignment error: ' + str(e))
     if alignment.get_sequence_count() != 2:
         raise HandlingError('expected a sequence pair')

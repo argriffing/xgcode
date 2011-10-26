@@ -186,7 +186,7 @@ def get_tikz_pane(sample, width=6, height=6):
         time_lists = shape.get_orthoplanar_intersection_times()
         t_initial = shape.t_initial
         t_final = shape.t_final
-    except AttributeError as e
+    except AttributeError, e:
         pass
     if time_lists:
         return get_linear_tikz_pane(

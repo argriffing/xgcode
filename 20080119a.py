@@ -41,7 +41,7 @@ def get_response_content(fs):
     try:
         parent = tree.get_unique_node(fs.parent)
         child = tree.get_unique_node(fs.child)
-    except Newick.NewickSearchError as e
+    except Newick.NewickSearchError, e:
         raise HandlingError(e)
     # allow the parent and child nodes to be specified in the reverse order
     if (parent is not child.parent) and (child is parent.parent):

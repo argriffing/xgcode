@@ -193,7 +193,7 @@ def get_response_context(fs):
         image_size = (640, 480)
         draw_axes = True
         return get_image(laplacian_matrix, image_size, ext, draw_axes)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
 
 def main():

@@ -45,7 +45,7 @@ def get_response_content(fs):
     try:
         alignment = PhyLikelihood.simulate_alignment(tree,
                 mixture_model, fs.ncols)
-    except PhyLikelihood.SimulationError as e
+    except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
     # get the alignment
     arr = []

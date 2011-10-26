@@ -241,7 +241,7 @@ def get_response_content(fs):
         image_size = (640, 480)
         return get_image(projected_points, nleaves,
                 incidence_matrix, ordered_names, image_size, ext)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
 
 def examine_projected_distance_matrix():

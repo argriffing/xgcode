@@ -192,7 +192,7 @@ def get_response_content(fs):
         helper = ImgHelper(allpoints, alledges,
                 fs.total_width, fs.total_height, fs.border)
         return helper.get_image_string(colors, radii, ext)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)
 
 

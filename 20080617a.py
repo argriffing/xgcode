@@ -111,7 +111,7 @@ def get_response_content(fs):
     for name in selected_taxa:
         try:
             node = tree.get_unique_node(name)
-        except NewickIO.NewickSearchError as e
+        except NewickIO.NewickSearchError, e:
             raise HandlingError(e)
         if node.children:
             raise HandlingError('an internal node was selected: ' + name)
@@ -124,11 +124,11 @@ def get_response_content(fs):
     try:
         layout = FastDaylightLayout.StraightBranchLayout()
         layout.do_layout(tree)
-    except RuntimeError as e
+    except RuntimeError, e:
         pass
     # draw the image
     try:
         ext = Form.g_imageformat_to_ext[fs.imageformat]
         return DrawTreeImage.get_tree_image(tree, (640, 480), ext)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)

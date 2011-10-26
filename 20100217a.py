@@ -190,11 +190,11 @@ def read_points_and_edges(multiline):
     lines = [x for x in lines if x]
     try:
         POINTS_index = lines.index('POINTS')
-    except ValueError as e
+    except ValueError, e:
         raise HandlingError('expected a line that says POINTS')
     try:
         EDGES_index = lines.index('EDGES')
-    except ValueError as e
+    except ValueError, e:
         raise HandlingError('expected a line that says EDGES')
     if POINTS_index > EDGES_index:
         raise HandlingError('expected points before edges')
@@ -210,7 +210,7 @@ def read_points_and_edges(multiline):
             index = int(s_index)
             x = float(s_x)
             y = float(s_y)
-        except ValueError as e
+        except ValueError, e:
             raise HandlingError('a value in a POINTS row has the wrong type')
         if index != i:
             raise HandlingError('the POINTS indices should match their order')
@@ -227,7 +227,7 @@ def read_points_and_edges(multiline):
         try:
             i = int(s_i)
             j = int(s_j)
-        except ValueError as e
+        except ValueError, e:
             raise HandlingError('a value in a EDGES row has the wrong type')
         edge = (i, j)
         edges.add(edge)

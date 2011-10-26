@@ -121,7 +121,7 @@ def handler(req):
             try:
                 script_directory = get_script_directory(req)
                 doc_directory = os.path.join(get_doc_root(req), 'phydoc')
-            except DirectoryError as e
+            except DirectoryError, e:
                 req.content_type = "text/plain"
                 print >> req, 'Error:', e
             else:
@@ -176,10 +176,10 @@ def handler(req):
                     req.write(content_text)
             else:
                 raise DispatchError('no web interface was found for this script')
-    except DispatchError as e
+    except DispatchError, e:
         req.content_type = "text/plain"
         print >> req, 'Error:', e
-    except HandlingError as e
+    except HandlingError, e:
         req.content_type = "text/plain"
         print >> req, 'Error:', e
     # pretend everything is OK

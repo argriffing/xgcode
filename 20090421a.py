@@ -229,9 +229,9 @@ def process(ntaxa, length, nseconds, branch_length_sampler):
                 D = sample_distance_matrix(tree, length)
                 # record information about the splits
                 builder.evaluate(true_splits, D)
-            except InfiniteDistanceError as e
+            except InfiniteDistanceError, e:
                 n_infinite_errors += 1
-            except ZeroDistanceError as e
+            except ZeroDistanceError, e:
                 n_zero_errors += 1
             except BuildTreeTopology.InvalidSpectralSplitException, e:
                 n_failed_spectral_splits += 1

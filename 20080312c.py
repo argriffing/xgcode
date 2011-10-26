@@ -38,7 +38,7 @@ def get_response_content(fs):
     try:
         tree = Newick.parse(fs.tree, Newick.NewickTree)
         tree.assert_valid()
-    except Newick.NewickSyntaxError as e
+    except Newick.NewickSyntaxError, e:
         raise HandlingError(e)
     # get the normalized Direct RNA mixture model
     mixture_model = DirectProtein.deserialize_mixture_model(fs.model)
@@ -47,7 +47,7 @@ def get_response_content(fs):
     try:
         alignment = PhyLikelihood.simulate_alignment(tree,
                 mixture_model, fs.ncols)
-    except PhyLikelihood.SimulationError as e
+    except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
     # get the alignment
     arr = []

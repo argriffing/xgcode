@@ -132,7 +132,7 @@ def read_matrix(lines):
             for element_string in line.split():
                 try:
                     element = float(element_string)
-                except ValueError as e
+                except ValueError, e:
                     error_lines = [
                             'error on line ' + str(i),
                             line,

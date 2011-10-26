@@ -60,7 +60,7 @@ def get_response(fs):
     try:
         tree = Newick.parse(fs.tree, Newick.NewickTree)
         tree.assert_valid()
-    except Newick.NewickSyntaxError as e
+    except Newick.NewickSyntaxError, e:
         raise HandlingError(str(e))
     # get the mixture weights
     mixture_weights = [fs.weight_a, fs.weight_b]
@@ -90,7 +90,7 @@ def get_response(fs):
     try:
         alignment = PhyLikelihood.simulate_alignment(
                 tree, mixture_model, fs.ncols)
-    except PhyLikelihood.SimulationError as e
+    except PhyLikelihood.SimulationError, e:
         raise HandlingError(e)
     # get the output string
     output_string = ''

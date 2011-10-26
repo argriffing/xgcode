@@ -51,7 +51,7 @@ def get_response_content(fs):
     try:
         alignment = Fasta.Alignment(fs.alignment.splitlines())
         alignment.force_nucleotide()
-    except Fasta.AlignmentError as e
+    except Fasta.AlignmentError, e:
         raise HandlingError(e)
     # get the normalized Direct RNA mixture model
     mixture_model = DirectRna.deserialize_mixture_model(fs.model)
@@ -100,7 +100,7 @@ def do_analysis(mixture_model, alignment, tree):
     for header in alignment.headers:
         try:
             node = tree.get_unique_node(header)
-        except Newick.NewickSearchError as e
+        except Newick.NewickSearchError, e:
             raise HandlingError(e)
         header_to_node[header] = node
     # get the information for each column

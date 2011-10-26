@@ -172,7 +172,7 @@ def get_response_content(fs):
         try:
             x = float(sx)
             y = float(sy)
-        except ValueError as e
+        except ValueError, e:
             raise HandlingError('expected x and y coordinates to be numbers')
         parsed_triples.append((label, x, y))
     labels, X, Y = zip(*parsed_triples)

@@ -195,5 +195,5 @@ def get_response_content(fs):
         image_size = (640, 480)
         return get_image(R_matrix, incidence_matrix, ordered_names,
                 image_size, ext, fs.axes, fs.connections)
-    except CairoUtil.CairoUtilError as e
+    except CairoUtil.CairoUtilError, e:
         raise HandlingError(e)

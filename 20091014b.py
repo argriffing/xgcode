@@ -108,7 +108,7 @@ def process(nseconds=None):
             nsamples_accepted += 1
     except KeyboardInterrupt, e:
         pass
-    except CounterexampleError as e
+    except CounterexampleError, e:
         counterexample_message = str(e)
     # make the response
     out = StringIO()

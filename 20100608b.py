@@ -98,7 +98,7 @@ def row_to_temperature(row):
         raise MissingError
     try:
         temperature = float(t)
-    except ValueError as e
+    except ValueError, e:
         raise DataRowError(row, e)
     return temperature
 
@@ -108,7 +108,7 @@ def row_to_precipitation(row):
         raise MissingError
     try:
         precipitation = float(p)
-    except ValueError as e
+    except ValueError, e:
         raise DataRowError(row, e)
     return precipitation
 
@@ -144,7 +144,7 @@ def process(hud_lines, info_lines):
                     row_to_location(row),
                     row_to_temperature(row),
                     row_to_precipitation(row)]
-        except MissingError as e
+        except MissingError, e:
             continue
         otu_to_info[otu] = info
     # write the R table

@@ -185,7 +185,7 @@ def process(ntaxa, nseconds, nsamples, branch_length_sampler, use_pbar):
             termination_reason = 'the requested number of samples was attained'
     except KeyboardInterrupt, e:
         termination_reason = 'keyboard interrupt'
-    except TimeoutError as e
+    except TimeoutError, e:
         termination_reason = 'time limit expired'
     if pbar:
         pbar.finish()
