@@ -33,6 +33,12 @@ g_example_rotated_matrix = np.array([
 class MatrixError(ValueError):
     pass
 
+def ndot(*args):
+    M = args[0]
+    for B in args[1:]:
+        M = np.dot(M, B)
+    return M
+
 def assert_1d(M):
     """
     @param M: a numpy array
