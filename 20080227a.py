@@ -203,9 +203,15 @@ def get_response_content(fs):
     print >> out
     print >> out
     # Try another couple rate matrices.
+    e2 = math.exp(2)
+    en2 = math.exp(-2)
     rate_matrices = [
             np.array([[-2.0, 2.0], [2.0, -2.0]]),
-            np.array([[-1.0, 1.0], [3.0, -3.0]])]
+            np.array([[-1.0, 1.0], [3.0, -3.0]]),
+            np.array([[-1, 1, 0], [1, -2, 1], [0, 1, -1]]),
+            #np.array([[-4.0, 4.0, 0], [1, -2, 1], [0, 4, -4]])]
+            #np.array([[-1, 1, 0], [7, -14, 7], [0, 1, -1]])]
+            np.array([[-en2, en2, 0], [e2, -2*e2, e2], [0, en2, -en2]])]
     t = 3.0
     for R in rate_matrices:
         coeffs, rates, c = get_identicality_params(R)
