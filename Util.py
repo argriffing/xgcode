@@ -35,6 +35,20 @@ def get_coordinate_triple(string_triple):
 def list_starts_with(mylist, prefix):
     return mylist[:len(prefix)] == prefix
 
+def create_tmp_file(data=None):
+    """
+    Make a file optionally initialized with some data.
+    The file exists after this function is called,
+    and the filename is returned.
+    @return: the name of an extant temporary file
+    """
+    f = tempfile.NamedTemporaryFile(delete=False)
+    if data is not None:
+        f.write(data)
+    name = f.name
+    f.close()
+    return name
+
 def get_tmp_filename():
     """
     The old tempfile.mktemp is deprecated.

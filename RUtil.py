@@ -25,6 +25,15 @@ g_rlocations = (
         'R',
         '/usr/local/apps/R/em64t/R-2.11.1/bin/R')
 
+
+class RError(Exception): pass
+
+def mk_call_str(name, *args, **kwargs):
+    args_v = [str(v) for v in args]
+    kwargs_v = ['%s=%s' % kv for kv in kwargs.items()]
+    arr = args_v + kwargs_v
+    return '%s(%s)' % (name, ', '.join(arr))
+
 def run(pathname):
     """
     Run the R script.
@@ -57,27 +66,69 @@ def run_with_table(table, user_data, callback):
     @param callback: this callback is like f(user_data, table_filename)
     @return: the R output as a string
     """
+    retcode, r_out, r_err = run_with_table_verbose(
+            table, user_data, callback)
+    if retcode:
+        raise RError(r_err)
+    return r_err
+
+def run_with_table_verbose(table, user_data, callback):
+    """
+    @param table: the table string
+    @param user_data: typically a fieldstorage-like object
+    @param callback: this callback is like f(user_data, table_filename)
+    @return: returncode, r_stdout, r_stderr
+    """
     # Create a temporary data table file for R.
     f_temp_table = tempfile.NamedTemporaryFile(delete=False)
     f_temp_table.write(table)
     f_temp_table.close()
-    # Create a temporary pathname for the plot created by R.
-    temp_plot_name = Util.get_tmp_filename()
     # Create a temporary R script file.
-    f_temp_script = tempfile.NamedTemporaryFile(delete=False)
     script_content = callback(user_data, f_temp_table.name)
+    f_temp_script = tempfile.NamedTemporaryFile(delete=False)
     f_temp_script.write(script_content)
     f_temp_script.close()
     # Call R.
     retcode, r_out, r_err = run(f_temp_script.name)
+    # To facilitate debugging, only delete temporary files if R was successful.
+    if not retcode:
+        # Delete the temporary data table file.
+        os.unlink(f_temp_table.name)
+        # Delete the temporary script file.
+        os.unlink(f_temp_script.name)
+    # Return the R results.
+    return retcode, r_out, r_err
+
+def run_plotter(table, user_script_content, device_name):
+    """
+    @param table: the table string
+    @param user_script_content: script without header or footer
+    @param device_name: an R device function name
+    @return: returncode, r_stdout, r_stderr, image_data
+    """
+    temp_table_name = Util.create_tmp_file(table)
+    temp_plot_name = Util.get_tmp_filename()
+    script_content = '\n'.join([
+        'my.table <- read.table("%s")' % temp_table_name,
+        '%s("%s")' % (device_name, temp_plot_name),
+        user_script_content,
+        'dev.off()']) + '\n'
+    temp_script_name = Util.create_tmp_file(script_content)
+    retcode, r_out, r_err = run(temp_script_name)
     if retcode:
-        raise ValueError('R error:\n' + r_err)
-    # Delete the temporary data table file.
-    os.unlink(f_temp_table.name)
-    # Delete the temporary script file.
-    os.unlink(f_temp_script.name)
-    # Return the R stderr as a string.
-    return r_err
+        image_data = None
+    else:
+        os.unlink(temp_table_name)
+        os.unlink(temp_script_name)
+        try:
+            with open(temp_plot_name, 'rb') as fin:
+                image_data = fin.read()
+        except IOError as e:
+            msg_a = 'could not open the plot image file'
+            msg_b = ' that R was supposed to write'
+            raise RError(msg_a + msg_b)
+        os.unlink(temp_plot_name)
+    return retcode, r_out, r_err, image_data
 
 def get_table_string(M, column_headers):
     """
@@ -117,15 +168,10 @@ def float_to_R(value):
 
 class TestRUtil(unittest.TestCase):
 
-    def test_placeholder(self):
-        """
-        do nothing
-        """
-        pass
-
+    def test_mk_call_str(self):
+        observed = mk_call_str('wat', 'x', 'y', z='foo', w='bar')
+        expected = 'wat(x, y, z=foo, w=bar)'
+        self.assertEqual(observed, expected)
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestRUtil)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
-
+    unittest.main()
