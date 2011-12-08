@@ -6,7 +6,6 @@ from scipy import linalg
 
 from MatrixUtil import ndot
 
-
 def R_to_relaxation_time(R):
     n = len(R)
     Wl, Vl = scipy.linalg.eig(R, left=True, right=False)
@@ -26,6 +25,14 @@ def R_to_distn(R):
     total = np.sum(pi_eigenvector)
     pi_arr = np.array([v/total for v in pi_eigenvector])
     return pi_arr
+
+def R_to_total_rate(R):
+    n = len(R)
+    distn = R_to_distn(R)
+    total_rate = 0.0
+    for i in range(n):
+        total_rate -= distn[i] * R[i, i]
+    return total_rate
 
 def symmetrized(R):
     """
