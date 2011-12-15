@@ -6,11 +6,19 @@ from scipy import linalg
 
 from MatrixUtil import ndot
 
-def R_to_relaxation_time(R):
+def _R_to_eigenpair(R):
     n = len(R)
     Wl, Vl = scipy.linalg.eig(R, left=True, right=False)
     val_vec_pairs = [(abs(Wl[i]), Vl[:,i]) for i in range(n)]
     r_recip, fiedler = sorted(val_vec_pairs)[1]
+    return r_recip, fiedler
+
+def R_to_fiedler(R):
+    r_recip, fiedler = _R_to_eigenpair(R)
+    return fiedler
+
+def R_to_relaxation_time(R):
+    r_recip, fiedler = _R_to_eigenpair(R)
     return 1 / r_recip
 
 def R_to_distn(R):
