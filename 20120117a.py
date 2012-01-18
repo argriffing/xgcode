@@ -60,6 +60,8 @@ def get_response_content(fs):
     # get some properties of the rate matrix
     distn = mrate.R_to_distn(R)
     spectrum = np.linalg.eigvalsh(mrate.symmetrized(R))
+    #spectrum, U = np.linalg.eigh(mrate.symmetrized(R))
+    #spectrum = np.linalg.eigvals(R)
     # report some information about the mutual information curve
     #mi_a = divtime.get_mutual_information(R, t - h)
     mi_b = divtime.get_mutual_information(R, t)
@@ -83,6 +85,21 @@ def get_response_content(fs):
     print >> out, 'mutual information at t = %f:' % t
     print >> out, mi_b
     print >> out
+    print >> out, 'large t approximation of MI at t = %f:' % t
+    print >> out, divtime.get_mutual_information_approx(R, t)
+    print >> out
+    print >> out, 'large t approximation of MI at t = %f (ver. 2):' % t
+    print >> out, divtime.get_mutual_information_approx_b(R, t)
+    print >> out
+    print >> out, 'mutual information diff at t = %f:' % t
+    print >> out, mi_diff_b
+    print >> out
+    print >> out, 'large t approximation of MI diff at t = %f:' % t
+    print >> out, divtime.get_mutual_information_diff_approx(R, t)
+    print >> out
+    print >> out, 'large t approximation of MI diff at t = %f: (ver. 2)' % t
+    print >> out, divtime.get_mutual_information_diff_approx_b(R, t)
+    print >> out
     print >> out, 'log of mutual information at t = %f:' % t
     print >> out, math.log(mi_b)
     print >> out
@@ -90,9 +107,19 @@ def get_response_content(fs):
     #print >> out, 'of log of mutual information at t = %f:' % t
     #print >> out, (math.log(mi_c) - math.log(mi_a)) / (2*h)
     #print >> out
-    print >> out, 'estimated derivative of log of mutual information',
+    print >> out, 'estimated derivative of log of MI',
     print >> out, 'at t = %f:' % t
     print >> out, mi_diff_b / mi_b
+    print >> out
+    print >> out, 'large t approximation of derivative of log of MI',
+    print >> out, 'at t = %f:' % t
+    print >> out, divtime.get_mutual_information_diff_approx(R,
+            t) / divtime.get_mutual_information_approx(R, t)
+    print >> out
+    print >> out, 'large t approximation of derivative of log of MI',
+    print >> out, 'at t = %f (ver. 2):' % t
+    print >> out, divtime.get_mutual_information_diff_approx_b(R,
+            t) / divtime.get_mutual_information_approx_b(R, t)
     print >> out
     print >> out, 'twice the relevant eigenvalue:'
     print >> out, 2 * spectrum[-2]

@@ -55,6 +55,109 @@ def to_gtr_halpern_bruno(S, v):
     R -= np.diag(np.sum(R, axis=1))
     return R
 
+def get_mutual_information_stable(R, t):
+    """
+    This is a more stable function.
+    @return: unscaled_result, log_of_scaling_factor
+    """
+    #FIXME under construction
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    P = np.zeros_like(R)
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            for k in range(n):
+                a = (v[j] / v[i])**0.5
+                b = U[i, k] * U[j, k]
+                c = math.exp(t * w[k])
+                P[i, j] += a * b * c
+    # compute the unscaled part of log(X(i,j)/(X(i)*X(j)))
+    for i in range(n):
+        for j in range(n):
+            if v[i] and P[i, j]:
+                coeff = v[i] * P[i, j]
+                numerator = P[i, j]
+                denominator = v[j]
+                # the problem is that the following log is nearly zero
+                value = coeff * math.log(numerator / denominator)
+                accum += np.real(value)
+    return accum
+
+def get_mutual_information_approx(R, t):
+    """
+    This is an approximation for large times.
+    It can be rewritten using orthogonality.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            b = 0
+            for k in range(n-1):
+                b += U[i,k]*U[j,k]*math.exp(t*w[k])
+            accum += (b * b) / 2
+    return accum
+
+def get_mutual_information_approx_b(R, t):
+    """
+    This is an approximation for large times.
+    It has been rewritten using orthogonality.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            for k in range(n-1):
+                accum += ((U[i,k]*U[j,k])**2) * math.exp(2*t*w[k]) / 2
+    return accum
+
+def get_mutual_information_diff_approx(R, t):
+    """
+    This is an approximation for large times.
+    It can be rewritten using orthogonality.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            b = 0
+            for k in range(n-1):
+                b += U[i,k]*U[j,k]*math.exp(t*w[k])
+            c = 0
+            for k in range(n-1):
+                c += U[i,k]*U[j,k]*w[k]*math.exp(t*w[k])
+            accum += b * c
+    return accum
+
+def get_mutual_information_diff_approx_b(R, t):
+    """
+    This is an approximation for large times.
+    It has been rewritten using orthogonality.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            for k in range(n-1):
+                prefix = (U[i,k]*U[j,k])**2
+                accum += prefix * w[k] * math.exp(2*t*w[k])
+    return accum
+
 def get_mutual_information(R, t):
     """
     Get the mutual information between two observations.
