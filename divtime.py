@@ -165,6 +165,21 @@ def get_mutual_information_approx_b(R, t):
                 accum += ((U[i,k]*U[j,k])**2) * math.exp(2*t*w[k]) / 2
     return accum
 
+def get_mutual_information_approx_c(R, t):
+    """
+    This is an approximation for large times.
+    It has been rewritten using orthogonality.
+    It has also been rewritten using orthonormality.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum = 0
+    for k in range(n-1):
+        accum += math.exp(2*t*w[k])
+    return accum / 2
+
 def get_mutual_information_diff_approx(R, t):
     """
     This is an approximation for large times.
@@ -201,6 +216,21 @@ def get_mutual_information_diff_approx_b(R, t):
             for k in range(n-1):
                 prefix = (U[i,k]*U[j,k])**2
                 accum += prefix * w[k] * math.exp(2*t*w[k])
+    return accum
+
+def get_mutual_information_diff_approx_c(R, t):
+    """
+    This is an approximation for large times.
+    It has been rewritten using orthogonality.
+    It has also been rewritten using orthonormality.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum = 0
+    for k in range(n-1):
+        accum += w[k]*math.exp(2*t*w[k])
     return accum
 
 def get_mutual_information(R, t):
