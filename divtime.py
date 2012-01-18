@@ -55,6 +55,66 @@ def to_gtr_halpern_bruno(S, v):
     R -= np.diag(np.sum(R, axis=1))
     return R
 
+def get_mutual_information(R, t):
+    """
+    Get the mutual information between two observations.
+    The two observations are of a
+    reversible finite-state continuous-time Markov process
+    and are separated by time t.
+    @param R: rate matrix
+    @param t: the amount of time separating the two observations
+    """
+    return get_expected_ll_ratio(R, t)
+
+def get_mutual_information_diff(R, t):
+    # define the number of states
+    n = len(R)
+    # define the transition matrix and its derivative
+    P = scipy.linalg.expm(R*t)
+    P_diff = mrate.expm_diff_spectral(R, t)
+    # define the stationary distribution
+    p = mrate.R_to_distn(R)
+    # get the expected log likelihood ratio
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            if p[i] and P[i, j]:
+                prefix = p[i] * P_diff[i, j]
+                suffix = 1 + math.log(P[i, j]) - math.log(p[j])
+                accum += prefix * suffix
+    return accum
+
+def get_expected_ll_ratio(R, t):
+    """
+    This is also the mutual information.
+    It is the mutual information between two observations
+    of a finite-state continuous-time Markov process at equilibrium
+    where the observations are separated by time t.
+    """
+    # define the number of states
+    n = len(R)
+    # define the transition matrix
+    P = scipy.linalg.expm(R*t)
+    # define the stationary distribution
+    p = mrate.R_to_distn(R)
+    # get the expected log likelihood ratio
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            if p[i] and P[i, j]:
+                coeff = p[i] * P[i, j]
+                # cancel the p[i] in the numerator and denominator
+                #numerator = p[i] * P[i, j]
+                #denominator = p[i] * p[j]
+                numerator = P[i, j]
+                denominator = p[j]
+                value = coeff * math.log(numerator / denominator)
+                if not np.allclose(np.imag(value), 0):
+                    raise ValueError('rogue imaginary number')
+                accum += np.real(value)
+    return accum
+
+
 def get_p_id_deriv_ratio(R, t):
     """
     Get (second derivative of p_identity) divided by (first derivative of p_id)
