@@ -1,10 +1,10 @@
 """
-Plot mutual information decay for a reversible continuous time Markov process.
+Show mutual information decay for a reversible continuous time Markov process.
 
 When a reversible finite-state continuous-time
 Markov process is at equilibrium,
 two observations separated by time t
-will be non-independent in the sense that
+will be non-independent
 in a way that can be quantified by their mutual information.
 This mutual information is also mathematically equivalent
 to the expected log-likelihood ratio
