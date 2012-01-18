@@ -91,6 +91,9 @@ def get_response_content(fs):
     print >> out, 'large t approximation of MI at t = %f (ver. 2):' % t
     print >> out, divtime.get_mutual_information_approx_b(R, t)
     print >> out
+    print >> out, 'large t approximation of MI at t = %f (ver. 3):' % t
+    print >> out, divtime.cute_MI_alternate(R, t)
+    print >> out
     print >> out, 'mutual information diff at t = %f:' % t
     print >> out, mi_diff_b
     print >> out

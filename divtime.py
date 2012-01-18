@@ -55,6 +55,51 @@ def to_gtr_halpern_bruno(S, v):
     R -= np.diag(np.sum(R, axis=1))
     return R
 
+def cute_MI_alternate(R, t):
+    """
+    This is yet another implementation of a large t approximation of MI.
+    It is related the expectation of the ratio of the probability
+    of what you actually saw to the probability of seeing
+    what you saw given independence.
+    It is half of one less than this expectation.
+    It is not as numerically stable as other large t approximations.
+    """
+    # define the number of states
+    n = len(R)
+    # define the transition matrix
+    P = scipy.linalg.expm(R*t)
+    # define the stationary distribution
+    p = mrate.R_to_distn(R)
+    s = np.sqrt(p)
+    # get the expected log likelihood ratio
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            p_joint = p[i] * P[i, j]
+            p_independent = p[i] * p[j]
+            accum += p_joint * (p_joint / p_independent)
+    return (accum - 1) / 2
+
+def cute_MI_alternate_b(R, t):
+    """
+    It should closely approximate mutual information when t is not tiny.
+    """
+    # define the number of states
+    n = len(R)
+    # define the transition matrix
+    P = scipy.linalg.expm(R*t)
+    # define the stationary distribution
+    p = mrate.R_to_distn(R)
+    s = np.sqrt(p)
+    # get the expected log likelihood ratio
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            p_joint = p[i] * P[i, j]
+            value = p_joint / (s[i] * s[j]) - (s[i] * s[j])
+            accum += (value * value) / 2
+    return accum
+
 def get_mutual_information_stable(R, t):
     """
     This is a more stable function.
