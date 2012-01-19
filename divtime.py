@@ -55,6 +55,12 @@ def to_gtr_halpern_bruno(S, v):
     R -= np.diag(np.sum(R, axis=1))
     return R
 
+
+
+############################################################################
+# MUTUAL INFORMATION STUFF
+
+
 def cute_MI_alternate(R, t):
     """
     This is yet another implementation of a large t approximation of MI.
@@ -293,6 +299,162 @@ def get_expected_ll_ratio(R, t):
     return accum
 
 
+############################################################################
+# ASYMPTOTIC VARIANCE STUFF
+
+def get_asymptotic_variance(R, t):
+    """
+    Asymptotic variance is the negative reciprocal of an expectation.
+    The expectation is of the second derivative of the log likelihood.
+    Use a fact about the second derivative of logarithm
+    to evaluate this asymptotic variance.
+    Also this is probably a dumb non-spectral way that will be improved later.
+    """
+    # get non-spectral summaries
+    n = len(R)
+    P = scipy.linalg.expm(R*t)
+    p = mrate.R_to_distn(R)
+    # get spectral summaries
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    # compute the asymptotic variance
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            # define f
+            f = p[i] * P[i, j]
+            # define the first derivative of f
+            f_dt = 0
+            for k in range(n):
+                f_dt += U[i, k] * U[j, k] * w[k] * math.exp(t * w[k])
+            f_dt *= (p[i] * p[j])**.5
+            # define the second derivative of f
+            f_dtt = 0
+            for k in range(n):
+                f_dtt += U[i, k] * U[j, k] * w[k] * w[k] * math.exp(t * w[k])
+            f_dtt *= (p[i] * p[j])**.5
+            # accumulate the contribution of this entry to the expectation
+            accum += f_dtt - (f_dt * f_dt) / f
+    return - 1 / accum
+
+def get_asymptotic_variance_b(R, t):
+    """
+    Break up the sum into two parts and investigate each separately.
+    The second part with only the second derivative is zero.
+    """
+    # get non-spectral summaries
+    n = len(R)
+    P = scipy.linalg.expm(R*t)
+    p = mrate.R_to_distn(R)
+    # get spectral summaries
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    # compute the asymptotic variance
+    accum_a = 0
+    for i in range(n):
+        for j in range(n):
+            # define f
+            f = p[i] * P[i, j]
+            # define the first derivative of f
+            f_dt = 0
+            for k in range(n):
+                f_dt += U[i, k] * U[j, k] * w[k] * math.exp(t * w[k])
+            f_dt *= (p[i] * p[j])**.5
+            accum_a -= (f_dt * f_dt) / f
+    accum_b = 0
+    for i in range(n):
+        for j in range(n):
+            # define the second derivative of f
+            f_dtt = 0
+            for k in range(n):
+                f_dtt += U[i, k] * U[j, k] * w[k] * w[k] * math.exp(t * w[k])
+            f_dtt *= (p[i] * p[j])**.5
+            # accumulate the contribution of this entry to the expectation
+            accum_b += f_dtt
+    return - 1 / (accum_a + accum_b)
+
+def get_asymptotic_variance_c(R, t):
+    """
+    Re-evaluate, this time throwing away the part that is structurally zero.
+    """
+    # get non-spectral summaries
+    n = len(R)
+    P = scipy.linalg.expm(R*t)
+    p = mrate.R_to_distn(R)
+    # get spectral summaries
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    # compute the asymptotic variance
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            # define f
+            f = p[i] * P[i, j]
+            # define the first derivative of f
+            f_dt = 0
+            for k in range(n):
+                f_dt += U[i, k] * U[j, k] * w[k] * math.exp(t * w[k])
+            f_dt *= (p[i] * p[j])**.5
+            accum -= (f_dt * f_dt) / f
+    return - 1 / accum
+
+def get_asymptotic_variance_d(R, t):
+    """
+    Use a very aggressive approximation.
+    """
+    # get non-spectral summaries
+    n = len(R)
+    P = scipy.linalg.expm(R*t)
+    p = mrate.R_to_distn(R)
+    # get spectral summaries
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    # compute the asymptotic variance approximation
+    accum = 0
+    for k in range(n-1):
+        accum += w[k] * w[k] * math.exp(2 * t * w[k])
+    return 1 / accum
+
+def get_asymptotic_variance_e(R, t):
+    """
+    Try to mitigate the damage of the aggressive approximation.
+    The next step is to try to simplify this complicated correction.
+    But I have not been able to do this.
+    """
+    # get non-spectral summaries
+    n = len(R)
+    P = scipy.linalg.expm(R*t)
+    p = mrate.R_to_distn(R)
+    # get spectral summaries
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    # compute the asymptotic variance approximation
+    accum = 0
+    for k in range(n-1):
+        accum += w[k] * w[k] * math.exp(2 * t * w[k])
+    accum_b = 0
+    G_a = np.zeros_like(R)
+    G_b = np.zeros_like(R)
+    for i in range(n):
+        for j in range(n):
+            prefix = (p[i] * p[j]) ** -.5
+            a = 0
+            for k in range(n-1):
+                a += U[i, k] * U[j, k] * math.exp(t * w[k])
+            b = 0
+            for k in range(n-1):
+                b += U[i, k] * U[j, k] * w[k] * math.exp(t * w[k])
+            suffix = a * b * b
+            value = prefix * suffix
+            accum_b += value
+    return 1 / (accum - accum_b)
+
+
+############################################################################
+# UNKNOWN OLD STUFF
+
+
+
 def get_p_id_deriv_ratio(R, t):
     """
     Get (second derivative of p_identity) divided by (first derivative of p_id)
@@ -363,7 +525,7 @@ def _get_expectation_dt(R, t):
     return expectation_dt
 
 def get_ml_variance(R, t):
-    return -1 / _get_expectation(R, t)
+    return - 1 / _get_expectation(R, t)
 
 def get_ml_variance_ratio(R, t):
     """
@@ -428,7 +590,7 @@ class TestDivtime(unittest.TestCase):
             [a, -(a+c), c],
             [a, b, -(a+b)]])
         """
-        t = 7.5
+        t = 5.0
         dt = 0.0000001
         rtime = mrate.R_to_relaxation_time(R)
         var_a = get_ml_variance(R, t)
@@ -446,6 +608,15 @@ class TestDivtime(unittest.TestCase):
         print '2 / relaxation_time:', 2 / rtime
         print "p_id(t)'' / p_id(t)':", deriv_ratio
         print
+        print '--- new attempt ---'
+        print 'mutual information:', get_mutual_information(R, t)
+        print 'reciprocal of MI:', 1.0 / get_mutual_information(R, t)
+        print 'asymptotic variance:', get_asymptotic_variance(R, t)
+        print 'asymptotic variance (ver. 2):', get_asymptotic_variance_b(R, t)
+        print 'asymptotic variance (ver. 3):', get_asymptotic_variance_c(R, t)
+        print 'AV approx (ver. 4):', get_asymptotic_variance_d(R, t)
+        print 'AV approx (ver. 5):', get_asymptotic_variance_e(R, t)
+        print
 
     def test_variance(self):
         a = .4
@@ -460,5 +631,6 @@ class TestDivtime(unittest.TestCase):
         self.assertTrue(np.allclose(observed, expected))
 
 if __name__ == '__main__':
+    np.set_printoptions(linewidth=200)
     unittest.main()
 
