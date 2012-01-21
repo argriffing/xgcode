@@ -186,6 +186,135 @@ def get_mutual_information_approx_c(R, t):
         accum += math.exp(2*t*w[k])
     return accum / 2
 
+def get_mutual_information_small_approx(R, t):
+    """
+    This is an approximation for small times.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum = 0
+    for i in range(n):
+        a = 0
+        for k in range(n):
+            a += (U[i, k]**2) * math.exp(t * w[k])
+        accum += v[i] * a * math.log(a / v[i])
+    #print [R[i, i] for i in range(n)]
+    #print [sum(U[i, k] * U[i, k] * w[k] for k in range(n)) for i in range(n)]
+    #print [sum(U[i, k] * U[i, k] for k in range(n)) for i in range(n)]
+    return accum
+
+def get_mutual_information_small_approx_b(R, t):
+    """
+    This is an approximation for small times.
+    Check a decomposition.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum_a = 0
+    accum_b = 0
+    accum_c = 0
+    accum_d = 0
+    for i in range(n):
+        a = 0
+        b = 0
+        for k in range(n):
+            prefix = U[i, k] * U[i, k]
+            a += prefix * math.exp(t * w[k])
+        for k in range(n-1):
+            prefix = U[i, k] * U[i, k]
+            b += prefix * math.exp(t * w[k])
+        x1 = v[i] * v[i]
+        x2 = v[i] * b
+        y1 = math.log(a)
+        y2 = -math.log(v[i])
+        accum_a += x1 * y1
+        accum_b += x1 * y2
+        accum_c += x2 * y1
+        accum_d += x2 * y2
+    return accum_a + accum_b + accum_c + accum_d
+
+def get_mutual_information_small_approx_c(R, t):
+    """
+    This is an approximation for small times.
+    This is an even more aggressive approximation.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum = 0
+    for i in range(n):
+        a = 0
+        for k in range(n):
+            prefix = U[i, k] * U[i, k]
+            a += prefix * math.exp(t * w[k])
+        accum += - v[i] * math.log(v[i]) * a
+    return accum
+
+def get_mutual_information_small_approx_d(R, t):
+    """
+    This is an approximation for small times.
+    This uses all of the off-diagonal entries of the mutual information
+    and also uses an approximation of the off-diagonal entries.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum_diag_a = 0
+    accum_diag_b = 0
+    accum_diag_c = 0
+    accum_diag_d = 0
+    for i in range(n):
+        a = 0
+        b = 0
+        for k in range(n):
+            prefix = U[i, k] * U[i, k]
+            a += prefix * math.exp(t * w[k])
+        for k in range(n-1):
+            prefix = U[i, k] * U[i, k]
+            b += prefix * math.exp(t * w[k])
+        x1 = v[i] * v[i]
+        x2 = v[i] * b
+        y1 = math.log(a)
+        y2 = -math.log(v[i])
+        accum_diag_a += x1 * y1
+        accum_diag_b += x1 * y2
+        accum_diag_c += x2 * y1
+        accum_diag_d += x2 * y2
+    accum_a = 0
+    accum_b = 0
+    accum_c = 0
+    accum_d = 0
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                prefix = (v[i] * v[j]) ** .5
+                a = 0
+                for k in range(n):
+                    a += U[i, k] * U[j, k] * math.exp(t * w[k])
+                b = 0
+                for k in range(n-1):
+                    b += U[i, k] * U[j, k] * math.exp(t * w[k])
+                x1 = v[i] * v[j]
+                x2 = prefix * b
+                y1 = math.log(a)
+                y2 = -math.log(prefix)
+                accum_a += x1 * y1
+                accum_b += x1 * y2
+                accum_c += x2 * y1
+                accum_d += x2 * y2
+    terms = [
+            accum_diag_a, accum_diag_b, accum_diag_c, accum_diag_d,
+            accum_a, accum_b, accum_c, accum_d]
+    for term in terms:
+        print term
+    return sum(terms)
+
 def get_mutual_information_diff_approx(R, t):
     """
     This is an approximation for large times.
@@ -239,6 +368,58 @@ def get_mutual_information_diff_approx_c(R, t):
         accum += w[k]*math.exp(2*t*w[k])
     return accum
 
+def get_mutual_information_b(R, t):
+    """
+    This uses some cancellation.
+    """
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    accum_diag_a = 0
+    accum_diag_b = 0
+    accum_diag_c = 0
+    for i in range(n):
+        a = 0
+        b = 0
+        for k in range(n):
+            prefix = U[i, k] * U[i, k]
+            a += prefix * math.exp(t * w[k])
+        for k in range(n-1):
+            prefix = U[i, k] * U[i, k]
+            b += prefix * math.exp(t * w[k])
+        x1 = v[i] * v[i]
+        x2 = v[i] * b
+        y1 = math.log(a)
+        y2 = -math.log(v[i])
+        accum_diag_a += x1 * y1
+        accum_diag_b += x1 * y2
+        accum_diag_c += x2 * y1
+    accum_a = 0
+    accum_b = 0
+    accum_c = 0
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                prefix = (v[i] * v[j]) ** .5
+                a = 0
+                for k in range(n):
+                    a += U[i, k] * U[j, k] * math.exp(t * w[k])
+                b = 0
+                for k in range(n-1):
+                    b += U[i, k] * U[j, k] * math.exp(t * w[k])
+                x1 = v[i] * v[j]
+                x2 = prefix * b
+                y1 = math.log(a)
+                y2 = -math.log(prefix)
+                accum_a += x1 * y1
+                accum_b += x1 * y2
+                accum_c += x2 * y1
+    terms = [
+            accum_diag_a, accum_diag_b, accum_diag_c,
+            accum_a, accum_b, accum_c]
+    return sum(terms)
+
 def get_mutual_information(R, t):
     """
     Get the mutual information between two observations.
@@ -267,6 +448,94 @@ def get_mutual_information_diff(R, t):
                 suffix = 1 + math.log(P[i, j]) - math.log(p[j])
                 accum += prefix * suffix
     return accum
+
+def get_mutual_information_diff_b(R, t):
+    """
+    This is a more symmetrized version.
+    Note that two of the three terms are probably structurally zero.
+    """
+    # get non-spectral summaries
+    n = len(R)
+    P = scipy.linalg.expm(R*t)
+    p = mrate.R_to_distn(R)
+    # get spectral summaries
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    G = np.zeros_like(R)
+    for i in range(n):
+        for j in range(n):
+            G[i, j] = 0
+            for k in range(n):
+                G[i, j] += U[i, k] * U[j, k] * math.exp(t * w[k])
+    G_diff = np.zeros_like(R)
+    for i in range(n):
+        for j in range(n):
+            G_diff[i, j] = 0
+            for k in range(n):
+                G_diff[i, j] += U[i, k] * U[j, k] * w[k] * math.exp(t * w[k])
+    B = np.outer(U.T[-1], U.T[-1])
+    term_a = np.sum(B * G_diff)
+    term_b = np.sum(B * G_diff * np.log(G))
+    term_c = -np.sum(B * G_diff * np.log(B))
+    #print term_a
+    #print term_b
+    #print term_c
+    return term_b
+
+def get_mutual_information_diff_c(R, t):
+    """
+    This is a more symmetrized version.
+    Some structurally zero terms have been removed.
+    """
+    # get non-spectral summaries
+    n = len(R)
+    P = scipy.linalg.expm(R*t)
+    p = mrate.R_to_distn(R)
+    # get spectral summaries
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    B = np.outer(U.T[-1], U.T[-1])
+    G = np.zeros_like(R)
+    for i in range(n):
+        for j in range(n):
+            G[i, j] = 0
+            for k in range(n):
+                G[i, j] += U[i, k] * U[j, k] * math.exp(t * w[k])
+    G_diff = np.zeros_like(R)
+    for i in range(n):
+        for j in range(n):
+            G_diff[i, j] = 0
+            for k in range(n):
+                G_diff[i, j] += U[i, k] * U[j, k] * w[k] * math.exp(t * w[k])
+    return np.sum(B * G_diff * np.log(G))
+
+def get_mutual_information_diff_zero(R):
+    """
+    Derivative of mutual information at time zero.
+    Haha apparently this does not exist.
+    """
+    # get non-spectral summaries
+    n = len(R)
+    # get spectral summaries
+    S = mrate.symmetrized(R)
+    w, U = np.linalg.eigh(S)
+    B = np.outer(U.T[-1], U.T[-1])
+    G = np.zeros_like(R)
+    for i in range(n):
+        for j in range(n):
+            G[i, j] = 0
+            for k in range(n):
+                G[i, j] += U[i, k] * U[j, k]
+    G_diff = np.zeros_like(R)
+    for i in range(n):
+        for j in range(n):
+            G_diff[i, j] = 0
+            for k in range(n):
+                G_diff[i, j] += U[i, k] * U[j, k] * w[k]
+    print G
+    print G_diff
+    print B
+    return np.sum(B * G_diff * np.log(G))
 
 def get_expected_ll_ratio(R, t):
     """

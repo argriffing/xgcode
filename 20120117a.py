@@ -63,13 +63,10 @@ def get_response_content(fs):
     #spectrum, U = np.linalg.eigh(mrate.symmetrized(R))
     #spectrum = np.linalg.eigvals(R)
     # report some information about the mutual information curve
-    #mi_a = divtime.get_mutual_information(R, t - h)
-    mi_b = divtime.get_mutual_information(R, t)
-    #mi_c = divtime.get_mutual_information(R, t + h)
-    if mi_b < 0:
-        msg = 'non-positive numerically computed mutual information: %f' % mi_b
-        raise ValueError(msg)
-    mi_diff_b = divtime.get_mutual_information_diff(R, t)
+    mi = divtime.get_mutual_information(R, t)
+    mi_diff = divtime.get_mutual_information_diff(R, t)
+    mi_diff_b = divtime.get_mutual_information_diff_b(R, t)
+    mi_diff_c = divtime.get_mutual_information_diff_c(R, t)
     print >> out, 'arbitrary large-ish divergence time:'
     print >> out, t
     print >> out
@@ -83,7 +80,10 @@ def get_response_content(fs):
     print >> out, spectrum
     print >> out
     print >> out, 'mutual information at t = %f:' % t
-    print >> out, mi_b
+    print >> out, mi
+    print >> out
+    print >> out, 'mutual information at t = %f (ver. 2):' % t
+    print >> out, divtime.get_mutual_information_b(R, t)
     print >> out
     print >> out, 'large t approximation of MI at t = %f:' % t
     print >> out, divtime.get_mutual_information_approx(R, t)
@@ -97,8 +97,26 @@ def get_response_content(fs):
     print >> out, 'large t approximation of MI at t = %f (ver. 4):' % t
     print >> out, divtime.get_mutual_information_approx_c(R, t)
     print >> out
+    print >> out, 'small t approximation of MI at t = %f:' % t
+    print >> out, divtime.get_mutual_information_small_approx(R, t)
+    print >> out
+    print >> out, 'small t approximation of MI at t = %f (ver. 2):' % t
+    print >> out, divtime.get_mutual_information_small_approx_b(R, t)
+    print >> out
+    print >> out, 'small t approximation of MI at t = %f (ver. 3):' % t
+    print >> out, divtime.get_mutual_information_small_approx_c(R, t)
+    print >> out
+    print >> out, 'small t approximation of MI at t = %f (ver. 4):' % t
+    print >> out, divtime.get_mutual_information_small_approx_d(R, t)
+    print >> out
     print >> out, 'mutual information diff at t = %f:' % t
+    print >> out, mi_diff
+    print >> out
+    print >> out, 'mutual information diff at t = %f (ver. 2):' % t
     print >> out, mi_diff_b
+    print >> out
+    print >> out, 'mutual information diff at t = %f (ver. 3):' % t
+    print >> out, mi_diff_c
     print >> out
     print >> out, 'large t approximation of MI diff at t = %f:' % t
     print >> out, divtime.get_mutual_information_diff_approx(R, t)
@@ -110,7 +128,7 @@ def get_response_content(fs):
     print >> out, divtime.get_mutual_information_diff_approx_c(R, t)
     print >> out
     print >> out, 'log of mutual information at t = %f:' % t
-    print >> out, math.log(mi_b)
+    print >> out, math.log(mi)
     print >> out
     #print >> out, 'estimated derivative',
     #print >> out, 'of log of mutual information at t = %f:' % t
@@ -118,7 +136,7 @@ def get_response_content(fs):
     #print >> out
     print >> out, 'estimated derivative of log of MI',
     print >> out, 'at t = %f:' % t
-    print >> out, mi_diff_b / mi_b
+    print >> out, mi_diff / mi
     print >> out
     print >> out, 'large t approximation of derivative of log of MI',
     print >> out, 'at t = %f:' % t
