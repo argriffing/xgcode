@@ -29,6 +29,7 @@ import FormOut
 from MatrixUtil import ndot
 import mrate
 import divtime
+import ctmcmi
 
 def get_form():
     """
@@ -63,10 +64,10 @@ def get_response_content(fs):
     #spectrum, U = np.linalg.eigh(mrate.symmetrized(R))
     #spectrum = np.linalg.eigvals(R)
     # report some information about the mutual information curve
-    mi = divtime.get_mutual_information(R, t)
-    mi_diff = divtime.get_mutual_information_diff(R, t)
-    mi_diff_b = divtime.get_mutual_information_diff_b(R, t)
-    mi_diff_c = divtime.get_mutual_information_diff_c(R, t)
+    mi = ctmcmi.get_mutual_information(R, t)
+    mi_diff = ctmcmi.get_mutual_information_diff(R, t)
+    mi_diff_b = ctmcmi.get_mutual_information_diff_b(R, t)
+    mi_diff_c = ctmcmi.get_mutual_information_diff_c(R, t)
     print >> out, 'arbitrary large-ish divergence time:'
     print >> out, t
     print >> out
@@ -83,31 +84,31 @@ def get_response_content(fs):
     print >> out, mi
     print >> out
     print >> out, 'mutual information at t = %f (ver. 2):' % t
-    print >> out, divtime.get_mutual_information_b(R, t)
+    print >> out, ctmcmi.get_mutual_information_b(R, t)
     print >> out
     print >> out, 'large t approximation of MI at t = %f:' % t
-    print >> out, divtime.get_mutual_information_approx(R, t)
+    print >> out, ctmcmi.get_mutual_information_approx(R, t)
     print >> out
     print >> out, 'large t approximation of MI at t = %f (ver. 2):' % t
-    print >> out, divtime.get_mutual_information_approx_b(R, t)
+    print >> out, ctmcmi.get_mutual_information_approx_b(R, t)
     print >> out
     print >> out, 'large t approximation of MI at t = %f (ver. 3):' % t
-    print >> out, divtime.cute_MI_alternate(R, t)
+    print >> out, ctmcmi.cute_MI_alternate(R, t)
     print >> out
     print >> out, 'large t approximation of MI at t = %f (ver. 4):' % t
-    print >> out, divtime.get_mutual_information_approx_c(R, t)
+    print >> out, ctmcmi.get_mutual_information_approx_c(R, t)
     print >> out
     print >> out, 'small t approximation of MI at t = %f:' % t
-    print >> out, divtime.get_mutual_information_small_approx(R, t)
+    print >> out, ctmcmi.get_mutual_information_small_approx(R, t)
     print >> out
     print >> out, 'small t approximation of MI at t = %f (ver. 2):' % t
-    print >> out, divtime.get_mutual_information_small_approx_b(R, t)
+    print >> out, ctmcmi.get_mutual_information_small_approx_b(R, t)
     print >> out
     print >> out, 'small t approximation of MI at t = %f (ver. 3):' % t
-    print >> out, divtime.get_mutual_information_small_approx_c(R, t)
+    print >> out, ctmcmi.get_mutual_information_small_approx_c(R, t)
     print >> out
     print >> out, 'small t approximation of MI at t = %f (ver. 4):' % t
-    print >> out, divtime.get_mutual_information_small_approx_d(R, t)
+    print >> out, ctmcmi.get_mutual_information_small_approx_d(R, t)
     print >> out
     print >> out, 'mutual information diff at t = %f:' % t
     print >> out, mi_diff
@@ -119,13 +120,13 @@ def get_response_content(fs):
     print >> out, mi_diff_c
     print >> out
     print >> out, 'large t approximation of MI diff at t = %f:' % t
-    print >> out, divtime.get_mutual_information_diff_approx(R, t)
+    print >> out, ctmcmi.get_mutual_information_diff_approx(R, t)
     print >> out
     print >> out, 'large t approximation of MI diff at t = %f: (ver. 2)' % t
-    print >> out, divtime.get_mutual_information_diff_approx_b(R, t)
+    print >> out, ctmcmi.get_mutual_information_diff_approx_b(R, t)
     print >> out
     print >> out, 'large t approximation of MI diff at t = %f: (ver. 4)' % t
-    print >> out, divtime.get_mutual_information_diff_approx_c(R, t)
+    print >> out, ctmcmi.get_mutual_information_diff_approx_c(R, t)
     print >> out
     print >> out, 'log of mutual information at t = %f:' % t
     print >> out, math.log(mi)
@@ -140,13 +141,13 @@ def get_response_content(fs):
     print >> out
     print >> out, 'large t approximation of derivative of log of MI',
     print >> out, 'at t = %f:' % t
-    print >> out, divtime.get_mutual_information_diff_approx(R,
-            t) / divtime.get_mutual_information_approx(R, t)
+    print >> out, ctmcmi.get_mutual_information_diff_approx(R,
+            t) / ctmcmi.get_mutual_information_approx(R, t)
     print >> out
     print >> out, 'large t approximation of derivative of log of MI',
     print >> out, 'at t = %f (ver. 2):' % t
-    print >> out, divtime.get_mutual_information_diff_approx_b(R,
-            t) / divtime.get_mutual_information_approx_b(R, t)
+    print >> out, ctmcmi.get_mutual_information_diff_approx_b(R,
+            t) / ctmcmi.get_mutual_information_approx_b(R, t)
     print >> out
     print >> out, 'twice the relevant eigenvalue:'
     print >> out, 2 * spectrum[-2]

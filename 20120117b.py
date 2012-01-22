@@ -26,6 +26,7 @@ import FormOut
 from MatrixUtil import ndot
 import mrate
 import divtime
+import ctmcmi
 
 def get_form():
     """
@@ -125,7 +126,7 @@ def get_response_content(fs):
         print >> out, np.sum(E)
         print >> out
         print >> out, 'mutual information:'
-        print >> out, divtime.get_mutual_information(R, t)
+        print >> out, ctmcmi.get_mutual_information(R, t)
         print >> out
         print >> out
     return out.getvalue()
