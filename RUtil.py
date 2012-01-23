@@ -129,11 +129,14 @@ def run_with_table_verbose(table, user_data, callback):
     # Return the R results.
     return retcode, r_out, r_err
 
-def run_plotter(table, user_script_content, device_name):
+def run_plotter(table, user_script_content, device_name,
+        width=None, height=None):
     """
     @param table: the table string
     @param user_script_content: script without header or footer
     @param device_name: an R device function name
+    @param width: optional width passed to tikz
+    @param height: optional height passed to tikz
     @return: returncode, r_stdout, r_stderr, image_data
     """
     temp_table_name = Util.create_tmp_file(table)
@@ -141,8 +144,16 @@ def run_plotter(table, user_script_content, device_name):
     s = StringIO()
     if device_name == 'tikz':
         print >> s, 'require(tikzDevice)'
+        call_string = 'tikz("%s"' % temp_plot_name
+        if width:
+            call_string += ', width=%f' % width
+        if height:
+            call_string += ', height=%f' % height
+        call_string += ')'
+    else:
+        call_string = '%s("%s")' % (device_name, temp_plot_name)
     print >> s, 'my.table <- read.table("%s")' % temp_table_name
-    print >> s, '%s("%s")' % (device_name, temp_plot_name)
+    print >> s, call_string
     print >> s, user_script_content
     print >> s, 'dev.off()'
     script_content = s.getvalue()
@@ -163,17 +174,29 @@ def run_plotter(table, user_script_content, device_name):
         os.unlink(temp_plot_name)
     return retcode, r_out, r_err, image_data
 
-def run_plotter_no_table(user_script_content, device_name):
+def run_plotter_no_table(user_script_content, device_name,
+        width=None, height=None):
     """
     @param user_script_content: script without header or footer
     @param device_name: an R device function name
+    @param width: optional width passed to tikz
+    @param height: optional height passed to tikz
     @return: returncode, r_stdout, r_stderr, image_data
     """
     temp_plot_name = Util.get_tmp_filename()
     s = StringIO()
     if device_name == 'tikz':
         print >> s, 'require(tikzDevice)'
-    print >> s, '%s("%s")' % (device_name, temp_plot_name)
+        call_string = 'tikz("%s"' % temp_plot_name
+        if width:
+            call_string += ', width=%f' % width
+        if height:
+            call_string += ', height=%f' % height
+        call_string += ')'
+    else:
+        call_string = '%s("%s")' % (device_name, temp_plot_name)
+    s = StringIO()
+    print >> s, call_string
     print >> s, user_script_content
     print >> s, 'dev.off()'
     script_content = s.getvalue()
@@ -238,3 +261,4 @@ class TestRUtil(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

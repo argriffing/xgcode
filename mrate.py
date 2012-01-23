@@ -9,12 +9,52 @@ continuous-time Markov processes.
 
 import math
 import unittest
+import itertools
 
 import numpy as np
 import scipy
 from scipy import linalg
 
 from MatrixUtil import ndot
+
+def get_dense_sequence_rate_matrix(nresidues, nsites):
+    """
+    Create an reversible rate matrix with uniform stationary distribution.
+    Each sequences changes to each other sequence at the same rate.
+    The matrix is normalized by expected rate.
+    @param nresidues: for example 4 for DNA or 20 for amino acids
+    @param nsites: jointly consider this many sites
+    """
+    nstates = nresidues**nsites
+    R = np.ones((nstates, nstates))
+    for i in range(nstates):
+        R[i, i] = -(nstates - 1)
+    uniform_pi = np.reciprocal(nstates * np.ones(nstates))
+    expected_rate = -sum(uniform_pi[i] * R[i, i] for i in range(nstates))
+    return R / expected_rate
+
+def get_sparse_sequence_rate_matrix(nresidues, nsites):
+    """
+    Create an reversible rate matrix with uniform stationary distribution.
+    Sites change change independently.
+    The matrix is normalized by expected rate.
+    @param nresidues: for example 4 for DNA or 20 for amino acids
+    @param nsites: jointly consider this many sites
+    """
+    nstates = nresidues**nsites
+    R = np.zeros((nstates, nstates))
+    for alpha in itertools.product(range(nresidues), repeat=nsites):
+        for beta in itertools.product(range(nresidues), repeat=nsites):
+            alpha_index = sum(alpha[i]*(nresidues ** i) for i in range(nsites))
+            beta_index = sum(beta[i]*(nresidues ** i) for i in range(nsites))
+            hamming_dist = sum(1 for a, b in zip(alpha, beta) if a != b)
+            if hamming_dist == 1:
+                R[alpha_index, beta_index] = 1
+    for i in range(nstates):
+        R[i, i] = -np.sum(R[i])
+    uniform_pi = np.reciprocal(nstates * np.ones(nstates))
+    expected_rate = -sum(uniform_pi[i] * R[i, i] for i in range(nstates))
+    return R / expected_rate
 
 def expm_spectral(R, t):
     """
@@ -66,9 +106,20 @@ def R_to_fiedler(R):
     r_recip, fiedler = _R_to_eigenpair(R)
     return fiedler
 
-def R_to_relaxation_time(R):
+def R_to_relaxation_time_obsolete(R):
+    """
+    This fails when the corresponding eigenvalue is indistinct.
+    """
     r_recip, fiedler = _R_to_eigenpair(R)
     return 1 / r_recip
+
+def R_to_relaxation_time(R):
+    """
+    This assumes a reversible irreducible rate matrix.
+    """
+    W = np.linalg.eigvalsh(R)
+    abs_eigenvalue = sorted(abs(w) for w in W)[1]
+    return 1 / abs_eigenvalue
 
 def R_to_distn(R):
     """

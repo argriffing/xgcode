@@ -11,6 +11,7 @@ import random
 import numpy as np
 import scipy
 from scipy import linalg
+from scipy import stats
 
 import Form
 import FormOut
@@ -21,70 +22,10 @@ import latexutil
 import tikz
 import RUtil
 
-UNIFORM = 'uniform'
-ONE_INC = 'one_big'
-TWO_INC = 'two_big'
-ONE_DEC = 'one_small'
-TWO_DEC = 'two_small'
-
-BALANCED = 'balanced'
-HALPERN_BRUNO = 'halpern_bruno'
-
-g_mode_to_color = {
-        UNIFORM : 'black',
-        ONE_INC : 'red',
-        TWO_INC : 'orange',
-        ONE_DEC : 'green',
-        TWO_DEC : 'blue',
-        }
-
-g_ordered_modes = (
-        UNIFORM,
-        ONE_INC,
-        TWO_INC,
-        ONE_DEC,
-        TWO_DEC,
-        )
-
 TOPLEFT = 'topleft'
 BOTTOMLEFT = 'bottomleft'
 TOPRIGHT = 'topright'
 BOTTOMRIGHT = 'bottomright'
-
-def get_dense_sequence_rate_matrix(nsites):
-    """
-    Each sequences changes to each other sequence at the same rate.
-    The matrix is normalized by expected rate.
-    """
-    dna = 4
-    nstates = dna**nsites
-    R = np.ones((nstates, nstates))
-    for i in range(nstates):
-        R[i, i] = -(nstates - 1)
-    uniform_pi = np.reciprocal(nstates * np.ones(nstates))
-    expected_rate = -sum(uniform_pi[i] * R[i, i] for i in range(nstates))
-    return R / expected_rate
-
-def get_sparse_sequence_rate_matrix(nsites):
-    """
-    Sites change change independently.
-    The matrix is normalized by expected rate.
-    """
-    dna = 4
-    nstates = dna**nsites
-    R = np.zeros((nstates, nstates))
-    for alpha in itertools.product(range(dna), repeat=nsites):
-        for beta in itertools.product(range(dna), repeat=nsites):
-            alpha_index = sum(alpha[i]*(dna ** i) for i in range(nsites))
-            beta_index = sum(beta[i]*(dna ** i) for i in range(nsites))
-            hamming_dist = sum(1 for a, b in zip(alpha, beta) if a != b)
-            if hamming_dist == 1:
-                R[alpha_index, beta_index] = 1
-    for i in range(nstates):
-        R[i, i] = -np.sum(R[i])
-    uniform_pi = np.reciprocal(nstates * np.ones(nstates))
-    expected_rate = -sum(uniform_pi[i] * R[i, i] for i in range(nstates))
-    return R / expected_rate
 
 
 def get_form():
@@ -93,10 +34,12 @@ def get_form():
     """
     # define the form objects
     form_objects = [
+            Form.Integer('nresidues', 'number of states per site',
+                4, low=2, high=64),
             Form.Integer('nsites', 'number of nucleotide sites',
-                3, low=1, high=3),
+                2, low=1, high=3),
             Form.RadioGroup('mut_type', 'mutation matrix form', [
-                Form.RadioItem('sparse', 'J-C one site at a time', True),
+                Form.RadioItem('sparse', 'one site at a time', True),
                 Form.RadioItem('dense', 'all seq-seq rates equal')]),
             Form.Integer('nselections', 'number of mutation-selection samples',
                 100, low=100, high=1000),
@@ -113,7 +56,7 @@ def get_form():
             Form.Float('t_high', 'final time',
                 '3.0', low_exclusive=0),
             Form.Integer('ntimes', 'sample this many time points',
-                100, low=3, high=100),
+                10, low=3, high=100),
             Form.CheckGroup('surrogate_functions',
                 'show mutual information correlation with these functions', [
                     Form.CheckItem('mi_diag_approx',
@@ -147,35 +90,90 @@ def get_r_tikz_stub():
         raise RUtil.RError(r_err)
     return tikz_code
 
-def get_r_tikz_mi_plot(times, Q_mut, Q_sels):
+def get_time_point_summary(Q_mut, Q_sels, t):
+    """
+    @param Q_mut: the mutation rate matrix
+    @param Q_sels: sequence of mutation-selection rate matrices
+    @param t: the time point under consideration
+    @return: a sequence of statistics
+    """
+    # Compute the following statistics at this time point:
+    # t
+    # mutation MI
+    # selection MI max
+    # selection MI high
+    # selection MI mean
+    # selection MI low
+    # selection MI min
+    # correlation fn 1
+    # correlation fn 2
+    # correlation fn 3
+    # correlation fn 4
+    # correlation fn 5
+    # proportion sign agreement fn 1
+    # proportion sign agreement fn 2
+    # proportion sign agreement fn 3
+    # proportion sign agreement fn 4
+    # proportion sign agreement fn 5
+    #
+    # First compute the mutual information for mut and mut-sel.
+    mi_mut = ctmcmi.get_mutual_information(Q_mut, t)
+    mi_sels = [ctmcmi.get_mutual_information(Q, t) for Q in Q_sels]
+    mi_signs = [1 if mi_sel > mi_mut else -1 for mi_sel in mi_sels]
+    # Now compute some other functions
+    v0 = [ctmcmi.get_mutual_information_small_approx(Q, t) for Q in Q_sels]
+    v1 = [ctmcmi.get_mutual_information_small_approx_c(Q, t) for Q in Q_sels]
+    v2 = [ctmcmi.get_mutual_information_approx_c(Q, t) for Q in Q_sels]
+    v3 = [math.exp(-2*t/mrate.R_to_relaxation_time(Q)) for Q in Q_sels]
+    v4 = [math.exp(-t*mrate.R_to_total_rate(Q)) for Q in Q_sels]
+    # Now that we have computed all of the vectors at this time point,
+    # we can compute the statistics that we want to report.
+    statistics = []
+    statistics.append(t)
+    statistics.append(mi_mut)
+    # add the mutual information statistics
+    sorted_mi = sorted(mi_sels)
+    n_extreme = len(Q_sels) / 20
+    statistics.append(sorted_mi[-1])
+    statistics.append(sorted_mi[-n_extreme])
+    statistics.append(sum(sorted_mi) / len(Q_sels))
+    statistics.append(sorted_mi[n_extreme-1])
+    statistics.append(sorted_mi[0])
+    # add the correlations
+    for v in (v0, v1, v2, v3, v4):
+        r, p = scipy.stats.stats.pearsonr(v, mi_sels)
+        statistics.append(r)
+    # add the sign proportions
+    for v in (v0, v1, v2, v3, v4):
+        v_signs = [1 if value > mi_mut else -1 for value in v]
+        total = sum(1 if a == b else 0 for a, b in zip(mi_signs, v_signs))
+        p = float(total) / len(v)
+        statistics.append(p)
+    # return the statistics
+    return statistics
+
+g_time_stats_headers = (
+        't', 'mut', 'mut.sel.max', 'mut.sel.high',
+        'mut.sel.mean', 'mut.sel.low', 'mut.sel.min',
+        'corr.mi.diag.approx', 'corr.mi.diag', 'corr.large.t.approx',
+        'corr.expon.eigen', 'corr.expon.e.rate',
+        'prop.mi.diag.approx', 'prop.mi.diag', 'prop.large.t.approx',
+        'prop.expon.eigen', 'prop.expon.e.rate')
+
+def get_r_tikz_mi_plot(nsels, time_stats):
     """
     At each time point plot mutual information for all matrices.
-    @param times: a list of times
-    @param Q_mut: a mutation rate matrix
-    @param Q_sels: a sequence of mutation-selection rate matrices
+    @param time_stats: a list of stats for each time point
     @return: tikz code corresponding to an R plot
     """
-    mi_mut = [ctmcmi.get_mutual_information(Q_mut, t) for t in times]
-    mi_max_sels = []
-    mi_high_sels = []
-    mi_mean_sels = []
-    mi_low_sels = []
-    mi_min_sels = []
-    n_extreme = len(Q_sels) / 20
-    for t in times:
-        data = sorted(ctmcmi.get_mutual_information(Q, t) for Q in Q_sels)
-        mi_max_sels.append(data[-1])
-        mi_high_sels.append(data[-n_extreme])
-        mi_mean_sels.append(sum(data) / len(Q_sels))
-        mi_low_sels.append(data[n_extreme-1])
-        mi_min_sels.append(data[0])
     # define the R data table
-    column_headers = ('t', 'mut', 'mut.sel.max', 'mut.sel.high',
-            'mut.sel.mean', 'mut.sel.low', 'mut.sel.min')
-    M = zip(*(times, mi_mut, mi_max_sels, mi_high_sels,
-        mi_mean_sels, mi_low_sels, mi_min_sels))
+    table_string = RUtil.get_table_string(time_stats, g_time_stats_headers)
     # define the script content
     out = StringIO()
+    time_stats_trans = zip(*time_stats)
+    mi_mut = time_stats_trans[1]
+    mi_min_sels = time_stats_trans[6]
+    mi_max_sels = time_stats_trans[2]
     y_low = min(mi_min_sels + mi_mut)
     y_high = max(mi_max_sels + mi_mut)
     ylim = RUtil.mk_call_str('c', y_low, y_high)
@@ -187,9 +185,11 @@ def get_r_tikz_mi_plot(times, Q_mut, Q_sels):
             ylim=ylim,
             xlab='"time"',
             ylab='"MI"',
-            main='"MI for mut process and %d mut.sel processes"' % len(Q_sels))
+            main='"MI for mut process and %d mut.sel processes"' % nsels)
     colors = ('red', 'blue', 'green', 'black', 'green', 'blue')
-    for c, header in zip(colors, column_headers[1:]):
+    plot_indices = (1, 2, 3, 4, 5, 6)
+    for c, plot_index in zip(colors, plot_indices):
+        header = g_time_stats_headers[plot_index]
         print >> out, RUtil.mk_call_str(
                 'lines',
                 'my.table$t',
@@ -197,9 +197,89 @@ def get_r_tikz_mi_plot(times, Q_mut, Q_sels):
                 col='"%s"' % c)
     user_script_content = out.getvalue()
     # call R to get the tikz code
-    table_string = RUtil.get_table_string(M, column_headers)
     retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
-            table_string, user_script_content, 'tikz')
+            table_string, user_script_content, 'tikz',
+            width=5, height=5)
+    if retcode:
+        raise RUtil.RError(r_err)
+    return tikz_code
+
+def get_r_tikz_corr_plot(nsels, time_stats):
+    """
+    @param time_stats: a list of stats for each time point
+    @return: tikz code corresponding to an R plot
+    """
+    # define the R data table
+    table_string = RUtil.get_table_string(time_stats, g_time_stats_headers)
+    # define the script content
+    out = StringIO()
+    time_stats_trans = zip(*time_stats)
+    y_low = -1
+    y_high = 1
+    ylim = RUtil.mk_call_str('c', y_low, y_high)
+    print >> out, RUtil.mk_call_str(
+            'plot',
+            'my.table$t',
+            'my.table$corr.mi.diag.approx',
+            type='"n"',
+            ylim=ylim,
+            xlab='"time"',
+            ylab='"correlation"',
+            main='"correlation with mutual information"')
+    colors = ('red', 'orange', 'green', 'blue', 'black')
+    plot_indices = (7, 8, 9, 10, 11)
+    for c, plot_index in zip(colors, plot_indices):
+        header = g_time_stats_headers[plot_index]
+        print >> out, RUtil.mk_call_str(
+                'lines',
+                'my.table$t',
+                'my.table$%s' % header,
+                col='"%s"' % c)
+    user_script_content = out.getvalue()
+    # call R to get the tikz code
+    retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
+            table_string, user_script_content, 'tikz',
+            width=5, height=5)
+    if retcode:
+        raise RUtil.RError(r_err)
+    return tikz_code
+
+def get_r_tikz_prop_plot(nsels, time_stats):
+    """
+    @param time_stats: a list of stats for each time point
+    @return: tikz code corresponding to an R plot
+    """
+    # define the R data table
+    table_string = RUtil.get_table_string(time_stats, g_time_stats_headers)
+    # define the script content
+    out = StringIO()
+    time_stats_trans = zip(*time_stats)
+    y_low = 0
+    y_high = 1
+    ylim = RUtil.mk_call_str('c', y_low, y_high)
+    print >> out, RUtil.mk_call_str(
+            'plot',
+            'my.table$t',
+            'my.table$prop.mi.diag.approx',
+            type='"n"',
+            ylim=ylim,
+            xlab='"time"',
+            ylab='"proportion"',
+            main='"proportion of same sign difference as MI"')
+    colors = ('red', 'orange', 'green', 'blue', 'black')
+    plot_indices = (12, 13, 14, 15, 16)
+    for c, plot_index in zip(colors, plot_indices):
+        header = g_time_stats_headers[plot_index]
+        print >> out, RUtil.mk_call_str(
+                'lines',
+                'my.table$t',
+                'my.table$%s' % header,
+                col='"%s"' % c)
+    user_script_content = out.getvalue()
+    # call R to get the tikz code
+    retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
+            table_string, user_script_content, 'tikz',
+            width=5, height=5)
     if retcode:
         raise RUtil.RError(r_err)
     return tikz_code
@@ -209,12 +289,14 @@ def get_latex_documentbody(fs):
     The latex documentbody should have a bunch of tikz pieces in it.
     Each tikz piece should have been generated from R.
     """
-    nstates = 4 ** fs.nsites
+    nstates = fs.nresidues ** fs.nsites
+    if nstates > 256:
+        raise ValueError('the mutation rate matrix is too big')
     # get the mutation matrix
     if fs.sparse:
-        Q_mut = get_sparse_sequence_rate_matrix(fs.nsites)
+        Q_mut = mrate.get_sparse_sequence_rate_matrix(fs.nresidues, fs.nsites)
     elif fs.dense:
-        Q_mut = get_dense_sequence_rate_matrix(fs.nsites)
+        Q_mut = mrate.get_dense_sequence_rate_matrix(fs.nresidues, fs.nsites)
     # sample a bunch of mutation-selection rate matrices
     Q_sels = []
     for selection_index in range(fs.nselections):
@@ -246,11 +328,16 @@ def get_latex_documentbody(fs):
     # define the time points
     incr = (fs.t_high - fs.t_low) / (fs.ntimes - 1)
     times = [fs.t_low + i*incr for i in range(fs.ntimes)]
+    # compute the statistics
+    nsels = len(Q_sels)
+    time_stats = [get_time_point_summary(Q_mut, Q_sels, t) for t in times]
     # write the latex code
     out = StringIO()
-    print >> out, 'Hello world!'
+    print >> out, get_r_tikz_mi_plot(nsels, time_stats)
     print >> out
-    print >> out, get_r_tikz_mi_plot(times, Q_mut, Q_sels)
+    print >> out, get_r_tikz_corr_plot(nsels, time_stats)
+    print >> out
+    print >> out, get_r_tikz_prop_plot(nsels, time_stats)
     return out.getvalue()
 
 def get_response_content(fs):
