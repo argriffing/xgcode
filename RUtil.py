@@ -2,6 +2,7 @@
 Utility functions for interfacing with R.
 """
 
+from StringIO import StringIO
 import os
 import tempfile
 import unittest
@@ -26,7 +27,36 @@ g_rlocations = (
         '/usr/local/apps/R/em64t/R-2.11.1/bin/R')
 
 
+# This is an example R code from
+# http://www.texample.net/tikz/examples/tikzdevice-demo/
+#
+g_stub = r"""
+# Normal distribution curve
+x <- seq(-4.5,4.5,length.out=100)
+y <- dnorm(x)
+#
+# Integration points
+xi <- seq(-2,2,length.out=30)
+yi <- dnorm(xi)
+#
+# plot the curve
+plot(x,y,type='l',col='blue',ylab='$p(x)$',xlab='$x$')
+# plot the panels
+lines(xi,yi,type='s')
+lines(range(xi),c(0,0))
+lines(xi,yi,type='h')
+#
+#Add some equations as labels
+title(main="$p(x)=\\frac{1}{\\sqrt{2\\pi}}e^{-\\frac{x^2}{2}}$")
+int <- integrate(dnorm,min(xi),max(xi),subdivisions=length(xi))
+text(2.8, 0.3, paste("\\small$\\displaystyle\\int_{", min(xi),
+        "}^{", max(xi), "}p(x)dx\\approx", round(int[['value']],3),
+            '$', sep=''))
+""".strip()
+
 class RError(Exception): pass
+
+g_devices = set(['pdf', 'postscript', 'png', 'tikz'])
 
 def mk_call_str(name, *args, **kwargs):
     args_v = [str(v) for v in args]
@@ -108,17 +138,50 @@ def run_plotter(table, user_script_content, device_name):
     """
     temp_table_name = Util.create_tmp_file(table)
     temp_plot_name = Util.get_tmp_filename()
-    script_content = '\n'.join([
-        'my.table <- read.table("%s")' % temp_table_name,
-        '%s("%s")' % (device_name, temp_plot_name),
-        user_script_content,
-        'dev.off()']) + '\n'
+    s = StringIO()
+    if device_name == 'tikz':
+        print >> s, 'require(tikzDevice)'
+    print >> s, 'my.table <- read.table("%s")' % temp_table_name
+    print >> s, '%s("%s")' % (device_name, temp_plot_name)
+    print >> s, user_script_content
+    print >> s, 'dev.off()'
+    script_content = s.getvalue()
     temp_script_name = Util.create_tmp_file(script_content)
     retcode, r_out, r_err = run(temp_script_name)
     if retcode:
         image_data = None
     else:
         os.unlink(temp_table_name)
+        os.unlink(temp_script_name)
+        try:
+            with open(temp_plot_name, 'rb') as fin:
+                image_data = fin.read()
+        except IOError as e:
+            msg_a = 'could not open the plot image file'
+            msg_b = ' that R was supposed to write'
+            raise RError(msg_a + msg_b)
+        os.unlink(temp_plot_name)
+    return retcode, r_out, r_err, image_data
+
+def run_plotter_no_table(user_script_content, device_name):
+    """
+    @param user_script_content: script without header or footer
+    @param device_name: an R device function name
+    @return: returncode, r_stdout, r_stderr, image_data
+    """
+    temp_plot_name = Util.get_tmp_filename()
+    s = StringIO()
+    if device_name == 'tikz':
+        print >> s, 'require(tikzDevice)'
+    print >> s, '%s("%s")' % (device_name, temp_plot_name)
+    print >> s, user_script_content
+    print >> s, 'dev.off()'
+    script_content = s.getvalue()
+    temp_script_name = Util.create_tmp_file(script_content)
+    retcode, r_out, r_err = run(temp_script_name)
+    if retcode:
+        image_data = None
+    else:
         os.unlink(temp_script_name)
         try:
             with open(temp_plot_name, 'rb') as fin:

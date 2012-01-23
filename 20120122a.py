@@ -5,6 +5,8 @@ Plot mutual information over time and over many mutuation-selection processes.
 from StringIO import StringIO
 import argparse
 import math
+import itertools
+import random
 
 import numpy as np
 import scipy
@@ -16,6 +18,7 @@ from MatrixUtil import ndot
 import mrate
 import ctmcmi
 import latexutil
+import tikz
 import RUtil
 
 UNIFORM = 'uniform'
@@ -48,32 +51,6 @@ BOTTOMLEFT = 'bottomleft'
 TOPRIGHT = 'topright'
 BOTTOMRIGHT = 'bottomright'
 
-def sample_low_variance_params(n):
-    variance = 0.01
-    mu = 0.0
-    s = math.sqrt(variance)
-    return [random.gauss(mu, s) for i in range(n)]
-
-def sample_high_variance_params(n):
-    variance = 0.1
-    mu = 0.0
-    s = math.sqrt(variance)
-    return [random.gauss(mu, s) for i in range(n)]
-
-def sample_neg_skewed_params(n):
-    variance = 0.02
-    mu = 0.0
-    s = math.sqr(variance)
-    rate = s
-    return [random.gauss(mu, s) - random.expovariate(rate) for i in range(n)]
-
-def sample_pos_skewed_params(n):
-    variance = 0.02
-    mu = 0.0
-    s = math.sqr(variance)
-    rate = s
-    return [random.gauss(mu, s) + random.expovariate(rate) for i in range(n)]
-
 def get_dense_sequence_rate_matrix(nsites):
     """
     Each sequences changes to each other sequence at the same rate.
@@ -98,17 +75,16 @@ def get_sparse_sequence_rate_matrix(nsites):
     R = np.zeros((nstates, nstates))
     for alpha in itertools.product(range(dna), repeat=nsites):
         for beta in itertools.product(range(dna), repeat=nsites):
-            alpha_index = [alpha[i]*(dna ** i) for i in range(nsites)]
-            beta_index = [beta[i]*(dna ** i) for i in range(nsites)]
+            alpha_index = sum(alpha[i]*(dna ** i) for i in range(nsites))
+            beta_index = sum(beta[i]*(dna ** i) for i in range(nsites))
             hamming_dist = sum(1 for a, b in zip(alpha, beta) if a != b)
             if hamming_dist == 1:
-                R[alpha_index, beta_index] = -1
-    for i in range(n):
+                R[alpha_index, beta_index] = 1
+    for i in range(nstates):
         R[i, i] = -np.sum(R[i])
     uniform_pi = np.reciprocal(nstates * np.ones(nstates))
     expected_rate = -sum(uniform_pi[i] * R[i, i] for i in range(nstates))
     return R / expected_rate
-
 
 
 def get_form():
@@ -123,7 +99,7 @@ def get_form():
                 Form.RadioItem('sparse', 'J-C one site at a time', True),
                 Form.RadioItem('dense', 'all seq-seq rates equal')]),
             Form.Integer('nselections', 'number of mutation-selection samples',
-                100, low=3, high=1000),
+                100, low=100, high=1000),
             Form.RadioGroup('sel_var', 'selection parameter variance', [
                 Form.RadioItem('low_var', 'low variance'),
                 Form.RadioItem('medium_var', 'medium variance', True),
@@ -162,11 +138,126 @@ def get_form():
 def get_form_out():
     return FormOut.Latex('mutual-information-report')
 
+def get_r_tikz_stub():
+    user_script = RUtil.g_stub
+    device_name = 'tikz'
+    retcode, r_out, r_err, tikz_code = RUtil.run_plotter_no_table(
+            user_script, device_name)
+    if retcode:
+        raise RUtil.RError(r_err)
+    return tikz_code
+
+def get_r_tikz_mi_plot(times, Q_mut, Q_sels):
+    """
+    At each time point plot mutual information for all matrices.
+    @param times: a list of times
+    @param Q_mut: a mutation rate matrix
+    @param Q_sels: a sequence of mutation-selection rate matrices
+    @return: tikz code corresponding to an R plot
+    """
+    mi_mut = [ctmcmi.get_mutual_information(Q_mut, t) for t in times]
+    mi_max_sels = []
+    mi_high_sels = []
+    mi_mean_sels = []
+    mi_low_sels = []
+    mi_min_sels = []
+    n_extreme = len(Q_sels) / 20
+    for t in times:
+        data = sorted(ctmcmi.get_mutual_information(Q, t) for Q in Q_sels)
+        mi_max_sels.append(data[-1])
+        mi_high_sels.append(data[-n_extreme])
+        mi_mean_sels.append(sum(data) / len(Q_sels))
+        mi_low_sels.append(data[n_extreme-1])
+        mi_min_sels.append(data[0])
+    # define the R data table
+    column_headers = ('t', 'mut', 'mut.sel.max', 'mut.sel.high',
+            'mut.sel.mean', 'mut.sel.low', 'mut.sel.min')
+    M = zip(*(times, mi_mut, mi_max_sels, mi_high_sels,
+        mi_mean_sels, mi_low_sels, mi_min_sels))
+    # define the script content
+    out = StringIO()
+    y_low = min(mi_min_sels + mi_mut)
+    y_high = max(mi_max_sels + mi_mut)
+    ylim = RUtil.mk_call_str('c', y_low, y_high)
+    print >> out, RUtil.mk_call_str(
+            'plot',
+            'my.table$t',
+            'my.table$mut',
+            type='"n"',
+            ylim=ylim,
+            xlab='"time"',
+            ylab='"MI"',
+            main='"MI for mut process and %d mut.sel processes"' % len(Q_sels))
+    colors = ('red', 'blue', 'green', 'black', 'green', 'blue')
+    for c, header in zip(colors, column_headers[1:]):
+        print >> out, RUtil.mk_call_str(
+                'lines',
+                'my.table$t',
+                'my.table$%s' % header,
+                col='"%s"' % c)
+    user_script_content = out.getvalue()
+    # call R to get the tikz code
+    table_string = RUtil.get_table_string(M, column_headers)
+    retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
+            table_string, user_script_content, 'tikz')
+    if retcode:
+        raise RUtil.RError(r_err)
+    return tikz_code
+
+def get_latex_documentbody(fs):
+    """
+    The latex documentbody should have a bunch of tikz pieces in it.
+    Each tikz piece should have been generated from R.
+    """
+    nstates = 4 ** fs.nsites
+    # get the mutation matrix
+    if fs.sparse:
+        Q_mut = get_sparse_sequence_rate_matrix(fs.nsites)
+    elif fs.dense:
+        Q_mut = get_dense_sequence_rate_matrix(fs.nsites)
+    # sample a bunch of mutation-selection rate matrices
+    Q_sels = []
+    for selection_index in range(fs.nselections):
+        # sample the selection parameters
+        if fs.low_var:
+            v = 0.1
+        elif fs.medium_var:
+            v = 0.4
+        elif fs.high_var:
+            v = 1.0
+        s = math.sqrt(v)
+        if fs.neg_skew:
+            sels = [-random.expovariate(s) for i in range(nstates)]
+        elif fs.no_skew:
+            sels = [random.gauss(0, s) for i in range(nstates)]
+        elif fs.pos_skew:
+            sels = [random.expovariate(s) for i in range(nstates)]
+        # define the mutation-selection rate matrix using Halpern-Bruno
+        Q = np.zeros_like(Q_mut)
+        for i in range(nstates):
+            for j in range(nstates):
+                if i != j:
+                    tau = math.exp(-(sels[j] - sels[i]))
+                    coeff = math.log(tau) / (1 - 1/tau)
+                    Q[i, j] = Q_mut[i, j] * coeff
+        for i in range(nstates):
+            Q[i, i] = -np.sum(Q[i])
+        Q_sels.append(Q)
+    # define the time points
+    incr = (fs.t_high - fs.t_low) / (fs.ntimes - 1)
+    times = [fs.t_low + i*incr for i in range(fs.ntimes)]
+    # write the latex code
+    out = StringIO()
+    print >> out, 'Hello world!'
+    print >> out
+    print >> out, get_r_tikz_mi_plot(times, Q_mut, Q_sels)
+    return out.getvalue()
+
 def get_response_content(fs):
     requested_documentclass = 'article'
-    document_body = 'o hai'
+    document_body = get_latex_documentbody(fs)
     latexformat = fs.latexformat
-    packages = ()
+    packages = ('tikz', 'verbatim')
     preamble = ''
     return latexutil.get_response(
             requested_documentclass, document_body, latexformat,
