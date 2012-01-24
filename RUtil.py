@@ -140,11 +140,9 @@ def run_with_table_verbose(table, user_data, callback):
     # Return the R results.
     return retcode, r_out, r_err
 
-def _get_device_specific_preamble(temp_plot_name, device_name,
+def _get_device_specific_call(temp_plot_name, device_name,
         width=None, height=None):
-    out = StringIO()
     if device_name == 'tikz':
-        print >> out, 'require(tikzDevice)'
         call_string = 'system.time(tikz("%s"' % temp_plot_name
         if width:
             call_string += ', width=%f' % width
@@ -153,8 +151,7 @@ def _get_device_specific_preamble(temp_plot_name, device_name,
         call_string += '))'
     else:
         call_string = '%s("%s")' % (device_name, temp_plot_name)
-    print >> out, call_string
-    return out.getvalue().rstrip()
+    return call_string
 
 def run_plotter(table, user_script_content, device_name,
         width=None, height=None):
@@ -170,7 +167,9 @@ def run_plotter(table, user_script_content, device_name,
     temp_plot_name = Util.get_tmp_filename()
     s = StringIO()
     print >> s, 'my.table <- read.table("%s")' % temp_table_name
-    print >> s, _get_device_specific_preamble(temp_plot_name, device_name,
+    if device_name == 'tikz':
+        print >> s, 'require(tikzDevice)'
+    print >> s, _get_device_specific_call(temp_plot_name, device_name,
             width, height)
     print >> s, user_script_content
     print >> s, 'dev.off()'
@@ -191,6 +190,46 @@ def run_plotter(table, user_script_content, device_name,
             raise RError(msg_a + msg_b)
         os.unlink(temp_plot_name)
     return retcode, r_out, r_err, image_data
+
+def run_plotter_multiple_scripts(table, scripts, device_name,
+        width=None, height=None):
+    """
+    @param table: the table string
+    @param scripts: user scripts without header or footer
+    @param device_name: an R device function name
+    @param width: optional width passed to tikz
+    @param height: optional height passed to tikz
+    @return: returncode, r_stdout, r_stderr, image_data
+    """
+    #TODO: reorganize the code to combine this with run_plotter
+    temp_table_name = Util.create_tmp_file(table)
+    temp_plot_names = [Util.get_tmp_filename() for x in scripts]
+    s = StringIO()
+    print >> s, 'my.table <- read.table("%s")' % temp_table_name
+    if device_name == 'tikz':
+        print >> s, 'require(tikzDevice)'
+    for (plot_name, script) in zip(temp_plot_names, scripts):
+        print >> s, _get_device_specific_call(plot_name, device_name,
+                width, height)
+        print >> s, script
+        print >> s, 'dev.off()'
+    script_content = s.getvalue()
+    temp_script_name = Util.create_tmp_file(script_content)
+    retcode, r_out, r_err = run(temp_script_name)
+    image_data_list = []
+    if not retcode:
+        os.unlink(temp_table_name)
+        os.unlink(temp_script_name)
+        try:
+            for temp_plot_name in temp_plot_names:
+                with open(temp_plot_name, 'rb') as fin:
+                    image_data_list.append(fin.read())
+        except IOError as e:
+            msg_a = 'could not open the plot image file'
+            msg_b = ' that R was supposed to write'
+            raise RError(msg_a + msg_b)
+        os.unlink(temp_plot_name)
+    return retcode, r_out, r_err, image_data_list
 
 def run_plotter_no_table(user_script_content, device_name,
         width=None, height=None):

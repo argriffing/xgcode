@@ -3,6 +3,7 @@ Utilities for LaTeX.
 
 This will probably work only for texlive.
 Also it requires ghostscript to make a png file.
+It seems like the png files made by ghostscript are not so great.
 """
 
 import unittest
@@ -116,10 +117,11 @@ def sanitize(text):
             arr.append(c)
     return ''.join(arr)
 
-def _create_temp_pdf_file(latex_text):
+def _create_temp_pdf_file(latex_text, output_format='pdf'):
     """
-    The returned path name base does not yet have the pdf extension.
+    The returned path name base does not yet have the pdf or dvi extension.
     @param latex_text: contents of a LaTeX file
+    @param output_format: either pdf or dvi
     @return: the base of the path name of a temporary pdf file
     """
     # write a named temporary latex file
@@ -132,18 +134,42 @@ def _create_temp_pdf_file(latex_text):
             '/usr/bin/pdflatex',
             '-output-directory=/tmp',
             '-interaction=nonstopmode',
+            '-output-format=%s' % output_format,
             '-halt-on-error',
             pathname]
     # 
-    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p.wait()
-    p_output = p.stdout.read()
-    p_error = p.stderr.read()
+    proc = subprocess.Popen(args,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc_stdout, proc_stderr = proc.communicate()
     return pathname
 
-def get_png_contents(latex_text):
+def get_png_contents_imagemagick(latex_text):
     """
-    This involves using temporary files.
+    This involves lots of temporary files.
+    pdflatex foo.tex
+    convert -density 300 foo.pdf foo.png
+    """
+    # make the pdf file
+    pathname = _create_temp_pdf_file(latex_text)
+    # make the png file
+    cmd = [
+        'convert',
+        #'-density', '100',
+        pathname + '.pdf',
+        pathname + '.png']
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc_stdout, proc_stderr = proc.communicate()
+    if proc.returncode:
+        raise ValueError(proc_stderr)
+    # read the png file
+    with open(pathname + '.png', 'rb') as fin:
+        image_data = fin.read()
+    return image_data
+
+def get_png_contents_ghostscript(latex_text):
+    """
+    This seemed to give ugly looking png files for some reason.
+    It involves using temporary files.
     @param latex_text: contents of a LaTeX file
     @return: contents of a png file
     """
@@ -154,8 +180,10 @@ def get_png_contents(latex_text):
     input_arg = pathname + '.pdf'
     output_arg = '-sOutputFile=' + png_pathname
     # sDEVICE used to be pngggray
+    # sDEVICE used to be png16m
     args = [
-            'gs', '-dSAFER', '-dBATCH', '-dNOPAUSE', '-sDEVICE=png16m',
+            'gs', '-dUseCropBox', '-r144',
+            '-dSAFER', '-dBATCH', '-dNOPAUSE', '-sDEVICE=pngalpha',
             output_arg, input_arg]
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
@@ -199,7 +227,7 @@ def latex_text_to_response(latex_text, latexformat):
     elif latexformat == LATEXFORMAT_PDF:
         return get_pdf_contents(latex_text)
     elif latexformat == LATEXFORMAT_PNG:
-        return get_png_contents(latex_text)
+        return get_png_contents_ghostscript(latex_text)
 
 def get_response(
         requested_documentclass, document_body, latexformat,

@@ -4,8 +4,9 @@ Plot statistics of mutation-selection processes with random selection.
 Look at histograms of ratios of statistics of
 random mutation-selection balance rate matrices to
 those of the pure mutation rate matrix.
-In particular consider the expected rate (ER)
-and the normalized saturation rate (NSR).
+In particular consider the expected rate (ER),
+the normalized saturation rate (NSR),
+and their product.
 """
 
 from StringIO import StringIO
@@ -32,6 +33,12 @@ BOTTOMLEFT = 'bottomleft'
 TOPRIGHT = 'topright'
 BOTTOMRIGHT = 'bottomright'
 
+# This script was originally written
+# as a bunch of separate R tikz plots that were pasted together
+# into a latex file.
+# But it has been rewritten so that all of the plots
+# are generated as a single R image which
+# can be converted in a better way to other image formats.
 
 def get_form():
     """
@@ -40,31 +47,33 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.Integer('nresidues', 'number of states per site',
-                4, low=2, high=64),
+                2, low=2, high=256),
             Form.Integer('nsites', 'number of sites',
-                2, low=1, high=3),
+                2, low=1, high=8),
             Form.Integer('nselections', 'number of mutation-selection samples',
-                100, low=100, high=1000),
+                100, low=1, high=10000),
             Form.RadioGroup('sel_var', 'selection parameter variance', [
                 Form.RadioItem('low_var', 'low variance'),
                 Form.RadioItem('medium_var', 'medium variance', True),
                 Form.RadioItem('high_var', 'high variance'),
                 Form.RadioItem('really_high_var', 'really high variance')]),
             Form.RadioGroup('sel_skew', 'selection parameter skew', [
-                Form.RadioItem('neg_skew', 'some very fit'),
+                Form.RadioItem('neg_skew', 'some are very fit'),
                 Form.RadioItem('no_skew', 'no skew', True),
-                Form.RadioItem('pos_skew', 'some very unfit')]),
+                Form.RadioItem('pos_skew', 'some are very unfit')]),
             #Form.RadioGroup('legend_placement', 'plot legend location', [
                 #Form.RadioItem(TOPLEFT, 'top left'),
                 #Form.RadioItem(BOTTOMLEFT, 'bottom left'),
                 #Form.RadioItem(TOPRIGHT, 'top right', True),
                 #Form.RadioItem(BOTTOMRIGHT, 'bottom right')]),
-            Form.LatexFormat(),
+            #Form.LatexFormat(),
+            Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():
-    return FormOut.Latex('random-selection-report')
+    #return FormOut.Latex('random-selection-report')
+    return FormOut.Image('random-selection-plot')
 
 def get_r_tikz_stub():
     user_script = RUtil.g_stub
@@ -114,47 +123,41 @@ def get_statistic_ratios(Q_mut, Q_sels):
     """
     return ER_ratios, NSR_ratios, ER_NSR_ratios
 
-def get_r_tikz_hist(nsels, table_string, name):
+def get_r_tikz_script(nsels, name):
     """
-    @param table_string: the R table string
+    This is obsolete because I am now using pure R output.
+    @param nsels: the number of mutation-selection balance matrices
     @param name: the name of the variable whose histogram should be plotted
     @return: tikz code corresponding to an R plot
     """
-    # define the script content
     out = StringIO()
     print >> out, RUtil.mk_call_str(
             'hist',
             'my.table$%s' % name,
             xlab = '"%s"' % name,
             ylab = '"counts"',
-            main='"%s for %d selection samples"' % (
-                name, nsels))
-    user_script_content = out.getvalue()
-    #j
-    #print 'table string:'
-    #print table_string
-    #print 'user script:'
-    #print user_script_content
-    #
-    # call R to get the tikz code
-    retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
-            table_string, user_script_content, 'tikz',
-            width=5, height=5)
-    if retcode:
-        raise RUtil.RError(r_err)
-    #
-    # show some timings
-    print 'R did not fail, but here is its stderr:'
-    print r_err
-    #
-    # return the tikz that R generates
-    return tikz_code
+            main='"%s; N=%d"' % (name, nsels))
+    return out.getvalue()
 
-def get_latex_documentbody(fs):
+def get_r_comboscript(nsels, names):
     """
-    The latex documentbody should have a bunch of tikz pieces in it.
-    Each tikz piece should have been generated from R.
+    Do all of the plots at once.
+    @param nsels: the number of mutation-selection balance matrices
+    @param names: the names of the variable whose histogram should be plotted
+    @return: tikz code corresponding to an R plot
     """
+    out = StringIO()
+    print >> out, 'par(mfrow=c(3,1))'
+    for name in names:
+        print >> out, RUtil.mk_call_str(
+                'hist',
+                'my.table$%s' % name,
+                xlab = '"%s"' % name,
+                ylab = '"counts"',
+                main='"%s; N=%d"' % (name, nsels))
+    return out.getvalue()
+
+def get_qmut_qsels(fs):
     nstates = fs.nresidues ** fs.nsites
     if nstates > 256:
         raise ValueError('the mutation rate matrix is too big')
@@ -190,20 +193,49 @@ def get_latex_documentbody(fs):
         for i in range(nstates):
             Q[i, i] = -np.sum(Q[i])
         Q_sels.append(Q)
+    return Q_mut, Q_sels
+
+def get_latex_documentbody(fs):
+    """
+    This is obsolete because I am now using pure R output.
+    The latex documentbody should have a bunch of tikz pieces in it.
+    Each tikz piece should have been generated from R.
+    """
+    Q_mut, Q_sels = get_qmut_qsels(fs)
     # compute the statistics
     ER_ratios, NSR_ratios, ER_NSR_ratios  = get_statistic_ratios(Q_mut, Q_sels)
     M = zip(*(ER_ratios, NSR_ratios, ER_NSR_ratios))
     column_headers = ('ER.ratio', 'NSR.ratio', 'ER.times.NSR.ratio')
     table_string = RUtil.get_table_string(M, column_headers)
     nsels = len(Q_sels)
+    # define the R scripts
+    scripts = []
+    for name in column_headers:
+        scripts.append(get_r_tikz_script(nsels, name))
+    # get the tikz codes from R, for each histogram
+    retcode, r_out, r_err, tikz_code_list = RUtil.run_plotter_multiple_scripts(
+            table_string, scripts, 'tikz',
+            width=3, height=2)
+    if retcode:
+        raise RUtil.RError(r_err)
+    #
+    # show some timings
+    print 'R did not fail, but here is its stderr:'
+    print r_err
+    #
     # write the latex code
     out = StringIO()
-    for name in column_headers:
-        print >> out, get_r_tikz_hist(nsels, table_string, name)
+    #print >> out, '\\pagestyle{empty}'
+    for tikz_code in tikz_code_list:
+        print >> out, tikz_code
+    # return the latex code, consisting mainly of a bunch of tikz plots
     return out.getvalue()
 
-def get_response_content(fs):
-    requested_documentclass = 'article'
+def get_response_content_latex(fs):
+    """
+    This is obsolete because I am now using pure R output.
+    """
+    requested_documentclass = 'standalone'
     document_body = get_latex_documentbody(fs)
     latexformat = fs.latexformat
     packages = ('tikz', 'verbatim')
@@ -211,3 +243,22 @@ def get_response_content(fs):
     return latexutil.get_response(
             requested_documentclass, document_body, latexformat,
             packages, preamble)
+
+def get_response_content(fs):
+    Q_mut, Q_sels = get_qmut_qsels(fs)
+    # compute the statistics
+    ER_ratios, NSR_ratios, ER_NSR_ratios  = get_statistic_ratios(Q_mut, Q_sels)
+    M = zip(*(ER_ratios, NSR_ratios, ER_NSR_ratios))
+    column_headers = ('ER.ratio', 'NSR.ratio', 'ER.times.NSR.ratio')
+    table_string = RUtil.get_table_string(M, column_headers)
+    nsels = len(Q_sels)
+    # get the R script
+    comboscript = get_r_comboscript(nsels, column_headers)
+    # create the R plot image 
+    device_name = Form.g_imageformat_to_r_function[fs.imageformat] 
+    retcode, r_out, r_err, image_data = RUtil.run_plotter( 
+        table_string, comboscript, device_name) 
+    if retcode: 
+        raise RUtil.RError(r_err) 
+    return image_data 
+

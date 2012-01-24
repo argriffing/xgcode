@@ -1,5 +1,17 @@
 """
-Plot mutual information over time and over many mutuation-selection processes.
+Plot correlations of functions related to mutual information.
+
+The red curve is an approximation of the
+diagonal contribution to the mutual information.
+The orange curve is the exact
+diagonal contribution to the mutual information.
+The green curve is a good large-time approximation.
+The blue curve is an exponential function of the lambda_2 eigenvalue.
+The black curve is an exponential function of the expected rate.
+The idea is that some of these functions could have a more intuitive meaning
+or a closer connection to the spectral or parametric representations
+of the rate matrices while being asymptotically related
+to the mutual information.
 """
 
 from StringIO import StringIO
@@ -35,49 +47,51 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.Integer('nresidues', 'number of states per site',
-                4, low=2, high=64),
-            Form.Integer('nsites', 'number of nucleotide sites',
-                2, low=1, high=3),
+                2, low=2, high=256),
+            Form.Integer('nsites', 'number of sites',
+                2, low=1, high=8),
             Form.Integer('nselections', 'number of mutation-selection samples',
                 100, low=100, high=1000),
             Form.RadioGroup('sel_var', 'selection parameter variance', [
                 Form.RadioItem('low_var', 'low variance'),
                 Form.RadioItem('medium_var', 'medium variance', True),
                 Form.RadioItem('high_var', 'high variance'),
-                Form.RadioItem('really_high_var', 'really_high variance')]),
+                Form.RadioItem('really_high_var', 'really high variance')]),
             Form.RadioGroup('sel_skew', 'selection parameter skew', [
-                Form.RadioItem('neg_skew', 'some very fit'),
+                Form.RadioItem('neg_skew', 'some are very fit'),
                 Form.RadioItem('no_skew', 'no skew', True),
-                Form.RadioItem('pos_skew', 'some very unfit')]),
+                Form.RadioItem('pos_skew', 'some are very unfit')]),
             Form.Float('t_low', 'initial time',
                 '0.001', low_exclusive=0),
             Form.Float('t_high', 'final time',
-                '3.0', low_exclusive=0),
+                '4.0', low_exclusive=0),
             Form.Integer('ntimes', 'sample this many time points',
                 10, low=3, high=100),
-            Form.CheckGroup('surrogate_functions',
-                'show mutual information correlation with these functions', [
-                    Form.CheckItem('mi_diag_approx',
-                        'diagonal contribution to mutual info (approx)', True),
-                    Form.CheckItem('mi_diag',
-                        'diagonal contribution to mutual info', True),
-                    Form.CheckItem('large_t_approx',
-                        'large time approximation to mutual info', True),
-                    Form.CheckItem('eigenvalue',
-                        'exponential function of second eigenvalue', True),
-                    Form.CheckItem('expected_rate',
-                        'exponential function of expected rate', True)]),
+            #Form.CheckGroup('surrogate_functions',
+                #'show mutual information correlation with these functions', [
+                    #Form.CheckItem('mi_diag_approx',
+                        #'diagonal contribution to mutual info (approx)', True),
+                    #Form.CheckItem('mi_diag',
+                        #'diagonal contribution to mutual info', True),
+                    #Form.CheckItem('large_t_approx',
+                        #'large time approximation to mutual info', True),
+                    #Form.CheckItem('eigenvalue',
+                        #'exponential function of second eigenvalue', True),
+                    #Form.CheckItem('expected_rate',
+                        #'exponential function of expected rate', True)]),
             #Form.RadioGroup('legend_placement', 'plot legend location', [
                 #Form.RadioItem(TOPLEFT, 'top left'),
                 #Form.RadioItem(BOTTOMLEFT, 'bottom left'),
                 #Form.RadioItem(TOPRIGHT, 'top right', True),
                 #Form.RadioItem(BOTTOMRIGHT, 'bottom right')]),
-            Form.LatexFormat(),
+            #Form.LatexFormat(),
+            Form.ImageFormat(),
             Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():
-    return FormOut.Latex('mutual-information-report')
+    #return FormOut.Latex('mutual-information-report')
+    return FormOut.Image('mutual-information-correlates')
 
 def get_r_tikz_stub():
     user_script = RUtil.g_stub
@@ -113,14 +127,20 @@ def get_time_point_summary(Q_mut, Q_sels, t):
     # proportion sign agreement fn 3
     # proportion sign agreement fn 4
     # proportion sign agreement fn 5
+    # informativeness fn 1
+    # informativeness fn 2
+    # informativeness fn 3
+    # informativeness fn 4
+    # informativeness fn 5
     #
     # First compute the mutual information for mut and mut-sel.
+    nsels = len(Q_sels)
     mi_mut = ctmcmi.get_mutual_information(Q_mut, t)
     mi_sels = [ctmcmi.get_mutual_information(Q, t) for Q in Q_sels]
     mi_signs = [1 if mi_sel > mi_mut else -1 for mi_sel in mi_sels]
     # Now compute some other functions
-    v0 = [ctmcmi.get_mutual_information_small_approx(Q, t) for Q in Q_sels]
-    v1 = [ctmcmi.get_mutual_information_small_approx_c(Q, t) for Q in Q_sels]
+    v0 = [ctmcmi.get_mutual_information_small_approx_c(Q, t) for Q in Q_sels]
+    v1 = [ctmcmi.get_mutual_information_small_approx(Q, t) for Q in Q_sels]
     v2 = [ctmcmi.get_mutual_information_approx_c(Q, t) for Q in Q_sels]
     v3 = [math.exp(-2*t/mrate.R_to_relaxation_time(Q)) for Q in Q_sels]
     v4 = [math.exp(-t*mrate.R_to_total_rate(Q)) for Q in Q_sels]
@@ -131,10 +151,10 @@ def get_time_point_summary(Q_mut, Q_sels, t):
     statistics.append(mi_mut)
     # add the mutual information statistics
     sorted_mi = sorted(mi_sels)
-    n_extreme = len(Q_sels) / 20
+    n_extreme = nsels / 20
     statistics.append(sorted_mi[-1])
     statistics.append(sorted_mi[-n_extreme])
-    statistics.append(sum(sorted_mi) / len(Q_sels))
+    statistics.append(sum(sorted_mi) / nsels)
     statistics.append(sorted_mi[n_extreme-1])
     statistics.append(sorted_mi[0])
     # add the correlations
@@ -144,9 +164,25 @@ def get_time_point_summary(Q_mut, Q_sels, t):
     # add the sign proportions
     for v in (v0, v1, v2, v3, v4):
         v_signs = [1 if value > mi_mut else -1 for value in v]
-        total = sum(1 if a == b else 0 for a, b in zip(mi_signs, v_signs))
-        p = float(total) / len(v)
+        total = sum(1 for a, b in zip(mi_signs, v_signs) if a == b)
+        p = float(total) / nsels
         statistics.append(p)
+    # add the informativenesses
+    for v in (v0, v1, v2, v3, v4):
+        v_signs = [1 if value > mi_mut else -1 for value in v]
+        informativeness = 0
+        for pair in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+            v_value, m_value = pair
+            v_marginal_count = sum(1 for x in v_signs if x == v_value)
+            m_marginal_count = sum(1 for x in mi_signs if x == m_value)
+            joint_count = sum(1 for x in zip(v_signs, mi_signs) if x == pair)
+            if joint_count:
+                joint_prob = joint_count / float(nsels)
+                a = math.log(joint_prob)
+                b = math.log(v_marginal_count / float(nsels))
+                c = math.log(m_marginal_count / float(nsels))
+                informativeness += joint_prob * (a - b - c)
+        statistics.append(informativeness)
     # return the statistics
     return statistics
 
@@ -156,17 +192,16 @@ g_time_stats_headers = (
         'corr.mi.diag.approx', 'corr.mi.diag', 'corr.large.t.approx',
         'corr.expon.eigen', 'corr.expon.e.rate',
         'prop.mi.diag.approx', 'prop.mi.diag', 'prop.large.t.approx',
-        'prop.expon.eigen', 'prop.expon.e.rate')
+        'prop.expon.eigen', 'prop.expon.e.rate',
+        'info.mi.diag.approx', 'info.mi.diag', 'info.large.t.approx',
+        'info.expon.eigen', 'info.expon.e.rate')
 
-def get_r_tikz_mi_plot(nsels, time_stats):
+def get_r_tikz_mi_plot_script(nsels, time_stats):
     """
     At each time point plot mutual information for all matrices.
     @param time_stats: a list of stats for each time point
     @return: tikz code corresponding to an R plot
     """
-    # define the R data table
-    table_string = RUtil.get_table_string(time_stats, g_time_stats_headers)
-    # define the script content
     out = StringIO()
     time_stats_trans = zip(*time_stats)
     mi_mut = time_stats_trans[1]
@@ -193,23 +228,13 @@ def get_r_tikz_mi_plot(nsels, time_stats):
                 'my.table$t',
                 'my.table$%s' % header,
                 col='"%s"' % c)
-    user_script_content = out.getvalue()
-    # call R to get the tikz code
-    retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
-            table_string, user_script_content, 'tikz',
-            width=5, height=5)
-    if retcode:
-        raise RUtil.RError(r_err)
-    return tikz_code
+    return out.getvalue()
 
 def get_r_tikz_corr_plot(nsels, time_stats):
     """
     @param time_stats: a list of stats for each time point
     @return: tikz code corresponding to an R plot
     """
-    # define the R data table
-    table_string = RUtil.get_table_string(time_stats, g_time_stats_headers)
-    # define the script content
     out = StringIO()
     time_stats_trans = zip(*time_stats)
     y_low = -1
@@ -233,23 +258,13 @@ def get_r_tikz_corr_plot(nsels, time_stats):
                 'my.table$t',
                 'my.table$%s' % header,
                 col='"%s"' % c)
-    user_script_content = out.getvalue()
-    # call R to get the tikz code
-    retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
-            table_string, user_script_content, 'tikz',
-            width=5, height=5)
-    if retcode:
-        raise RUtil.RError(r_err)
-    return tikz_code
+    return out.getvalue()
 
 def get_r_tikz_prop_plot(nsels, time_stats):
     """
     @param time_stats: a list of stats for each time point
     @return: tikz code corresponding to an R plot
     """
-    # define the R data table
-    table_string = RUtil.get_table_string(time_stats, g_time_stats_headers)
-    # define the script content
     out = StringIO()
     time_stats_trans = zip(*time_stats)
     y_low = 0
@@ -273,16 +288,39 @@ def get_r_tikz_prop_plot(nsels, time_stats):
                 'my.table$t',
                 'my.table$%s' % header,
                 col='"%s"' % c)
-    user_script_content = out.getvalue()
-    # call R to get the tikz code
-    retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
-            table_string, user_script_content, 'tikz',
-            width=5, height=5)
-    if retcode:
-        raise RUtil.RError(r_err)
-    return tikz_code
+    return out.getvalue()
 
-def get_latex_documentbody(fs):
+def get_r_tikz_info_plot(nsels, time_stats):
+    """
+    @param time_stats: a list of stats for each time point
+    @return: tikz code corresponding to an R plot
+    """
+    out = StringIO()
+    time_stats_trans = zip(*time_stats)
+    y_low = 0
+    y_high = math.log(2)
+    ylim = RUtil.mk_call_str('c', y_low, y_high)
+    print >> out, RUtil.mk_call_str(
+            'plot',
+            'my.table$t',
+            'my.table$info.mi.diag.approx',
+            type='"n"',
+            ylim=ylim,
+            xlab='"time"',
+            ylab='"info"',
+            main='"informativeness with respect to MI"')
+    colors = ('red', 'orange', 'green', 'blue', 'black')
+    plot_indices = (17, 18, 19, 20, 21)
+    for c, plot_index in zip(colors, plot_indices):
+        header = g_time_stats_headers[plot_index]
+        print >> out, RUtil.mk_call_str(
+                'lines',
+                'my.table$t',
+                'my.table$%s' % header,
+                col='"%s"' % c)
+    return out.getvalue()
+
+def get_table_string_and_scripts(fs):
     """
     The latex documentbody should have a bunch of tikz pieces in it.
     Each tikz piece should have been generated from R.
@@ -328,16 +366,31 @@ def get_latex_documentbody(fs):
     # compute the statistics
     nsels = len(Q_sels)
     time_stats = [get_time_point_summary(Q_mut, Q_sels, t) for t in times]
-    # write the latex code
+    # get the R scripts
+    scripts = [
+            #get_r_tikz_mi_plot(nsels, time_stats),
+            get_r_tikz_corr_plot(nsels, time_stats),
+            get_r_tikz_prop_plot(nsels, time_stats),
+            get_r_tikz_info_plot(nsels, time_stats)]
+    table_string = RUtil.get_table_string(time_stats, g_time_stats_headers)
+    return table_string, scripts
+
+def get_latex_documentbody(fs):
+    """
+    This is obsolete.
+    """
     out = StringIO()
-    print >> out, get_r_tikz_mi_plot(nsels, time_stats)
-    print >> out
-    print >> out, get_r_tikz_corr_plot(nsels, time_stats)
-    print >> out
-    print >> out, get_r_tikz_prop_plot(nsels, time_stats)
+    table_string, scripts = get_table_string_and_scripts(fs)
+    for script in scripts:
+        retcode, r_out, r_err, tikz_code = RUtil.run_plotter(
+                table_string, script, 'tikz',
+                width=5, height=5)
+        if retcode:
+            raise RUtil.RError(r_err)
+        print >> out, tikz_code
     return out.getvalue()
 
-def get_response_content(fs):
+def get_response_content_latex(fs):
     requested_documentclass = 'article'
     document_body = get_latex_documentbody(fs)
     latexformat = fs.latexformat
@@ -346,6 +399,23 @@ def get_response_content(fs):
     return latexutil.get_response(
             requested_documentclass, document_body, latexformat,
             packages, preamble)
+
+def get_response_content(fs):
+    # get the table string and scripts
+    table_string, scripts = get_table_string_and_scripts(fs)
+    # create a comboscript
+    out = StringIO()
+    print >> out, 'par(mfrow=c(3,1))'
+    for script in scripts:
+        print >> out, script
+    comboscript = out.getvalue()
+    # create the R plot image 
+    device_name = Form.g_imageformat_to_r_function[fs.imageformat] 
+    retcode, r_out, r_err, image_data = RUtil.run_plotter( 
+        table_string, comboscript, device_name) 
+    if retcode: 
+        raise RUtil.RError(r_err) 
+    return image_data 
 
 def OBSOLETE_make_table(args, distn_modes):
     """
