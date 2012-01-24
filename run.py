@@ -111,6 +111,7 @@ class GadgetForm(object):
 
     @cherrypy.expose
     def process(self, **param_dict):
+        start_time = time.time()
         self._init_form()
         fs = FieldStorage(param_dict)
         for form_item in self.form_objects:
@@ -124,6 +125,7 @@ class GadgetForm(object):
         else:
             deprecated_header_pairs, content = self.module.get_response(fs)
         cherrypy.response.headers.update(dict(header_pairs))
+        print 'processed in %f seconds' % (time.time() - start_time)
         return content
 
     @cherrypy.expose
