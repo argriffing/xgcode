@@ -1,7 +1,7 @@
 """
 Continuous time Markov chain mutual information.
 
-In particular it is about reversible finite-state
+This module is about reversible finite-state
 continuous-time Markov processes and the mutual information
 between two points in the process separated by a given amount of time.
 Reversibility in this context means that the rate matrix
@@ -17,6 +17,8 @@ An alternate formulation of mutual information between these random variables
 is the expected log likelihood ratio between the joint distribution
 of the separated points in the process and the product of their
 marginal distributions.
+Note that scipy gives eigenvalues in increasing order,
+whereas numpy does not make any guarantees about their order.
 """
 
 import math
@@ -586,3 +588,11 @@ def get_expected_ll_ratio(R, t):
                 accum += np.real(value)
     return accum
 
+def get_mi_decomposed(U, W, t):
+    """
+    Get the mutual information at a given time using the decomposition.
+    Q = diag(p)^-(1/2) U W U' diag(p)^(1/2)
+    The stationary distribution is p.
+    Also sqrt(p) is the column of U corresponding to eigenvalue 0.
+    """
+    pass

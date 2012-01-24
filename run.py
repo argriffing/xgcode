@@ -135,12 +135,17 @@ class GadgetForm(object):
         arr = []
         arr += ['<html>']
         title = SnippetUtil.docstring_to_title(self.module.__doc__)
+        arr += ['<head>']
         if title:
-            arr += ['<head>']
             arr += ['<title>']
             arr += [title]
             arr += ['</title>']
-            arr += ['</head>']
+        mathjax_js = 'cdn.mathjax.org/mathjax/latest/MathJax.js'
+        mathjax_params = 'config=TeX-AMS-MML_HTMLorMML'
+        mathjax_url = 'http://' + mathjax_js + '?' + mathjax_params
+        arr += ['<script type="text/javascript" src="%s">' % mathjax_url]
+        arr += ['</script>']
+        arr += ['</head>']
         arr += ['<body>']
         arr += [SnippetUtil.docstring_to_html(self.module.__doc__)]
         arr += ['<br/><br/>']
