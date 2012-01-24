@@ -1,5 +1,10 @@
 """
 Utility functions for interfacing with R.
+
+Note that to use tikz with R,
+you should put a tikzMetricsDictionary path into your Rprofile.
+Otherwise it takes a few seconds to generate a temporary dictionary
+every time you want to make a tikz.
 """
 
 from StringIO import StringIO
@@ -74,9 +79,15 @@ def run(pathname):
     @return: (returncode, r_stdout, r_stderr)
     """
     for rlocation in g_rlocations:
+        # Note that we do not use --vanilla because we need ~/.Rprofile
+        # to have the path to the tikz metrics dictionary
+        # so that the tikz device does rebuild the dictionary each time.
         cmd = [
                 rlocation, 'CMD', 'BATCH',
-                '--vanilla', '--silent', '--slave',
+                '--no-save', '--no-restore',
+                # the following flags would be added by --vanilla:
+                #'--no-environ', '--no-site-file', '--no-init-file',
+                '--silent', '--slave',
                 pathname, '/dev/stderr']
         try:
             proc = subprocess.Popen(cmd,
@@ -129,6 +140,22 @@ def run_with_table_verbose(table, user_data, callback):
     # Return the R results.
     return retcode, r_out, r_err
 
+def _get_device_specific_preamble(temp_plot_name, device_name,
+        width=None, height=None):
+    out = StringIO()
+    if device_name == 'tikz':
+        print >> out, 'require(tikzDevice)'
+        call_string = 'system.time(tikz("%s"' % temp_plot_name
+        if width:
+            call_string += ', width=%f' % width
+        if height:
+            call_string += ', height=%f' % height
+        call_string += '))'
+    else:
+        call_string = '%s("%s")' % (device_name, temp_plot_name)
+    print >> out, call_string
+    return out.getvalue().rstrip()
+
 def run_plotter(table, user_script_content, device_name,
         width=None, height=None):
     """
@@ -142,18 +169,9 @@ def run_plotter(table, user_script_content, device_name,
     temp_table_name = Util.create_tmp_file(table)
     temp_plot_name = Util.get_tmp_filename()
     s = StringIO()
-    if device_name == 'tikz':
-        print >> s, 'require(tikzDevice)'
-        call_string = 'tikz("%s"' % temp_plot_name
-        if width:
-            call_string += ', width=%f' % width
-        if height:
-            call_string += ', height=%f' % height
-        call_string += ')'
-    else:
-        call_string = '%s("%s")' % (device_name, temp_plot_name)
     print >> s, 'my.table <- read.table("%s")' % temp_table_name
-    print >> s, call_string
+    print >> s, _get_device_specific_preamble(temp_plot_name, device_name,
+            width, height)
     print >> s, user_script_content
     print >> s, 'dev.off()'
     script_content = s.getvalue()
@@ -185,18 +203,8 @@ def run_plotter_no_table(user_script_content, device_name,
     """
     temp_plot_name = Util.get_tmp_filename()
     s = StringIO()
-    if device_name == 'tikz':
-        print >> s, 'require(tikzDevice)'
-        call_string = 'tikz("%s"' % temp_plot_name
-        if width:
-            call_string += ', width=%f' % width
-        if height:
-            call_string += ', height=%f' % height
-        call_string += ')'
-    else:
-        call_string = '%s("%s")' % (device_name, temp_plot_name)
-    s = StringIO()
-    print >> s, call_string
+    print >> s, _get_device_specific_preamble(temp_plot_name, device_name,
+            width, height)
     print >> s, user_script_content
     print >> s, 'dev.off()'
     script_content = s.getvalue()

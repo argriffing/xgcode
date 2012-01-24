@@ -117,8 +117,18 @@ def R_to_relaxation_time(R):
     """
     This assumes a reversible irreducible rate matrix.
     """
-    W = np.linalg.eigvalsh(R)
+    # get the abs eigenvalue directly
+    W = np.linalg.eigvals(R)
     abs_eigenvalue = sorted(abs(w) for w in W)[1]
+    # get the abs eigenvalue using symmetrization
+    W_h = np.linalg.eigvalsh(symmetrized(R))
+    abs_eigenvalue_h = sorted(abs(w) for w in W_h)[1]
+    # check that the absolute values of the eigenvalues is the same
+    if not np.allclose(abs_eigenvalue, abs_eigenvalue_h):
+        msg = 'relaxation time computation error: %f != %f' % (abs_eigenvalue,
+                abs_eigenvalue_h)
+        raise ValueError(msg)
+    # return the relaxation time
     return 1 / abs_eigenvalue
 
 def R_to_distn(R):

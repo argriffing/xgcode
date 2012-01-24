@@ -43,15 +43,13 @@ def get_form():
                 4, low=2, high=64),
             Form.Integer('nsites', 'number of sites',
                 2, low=1, high=3),
-            Form.RadioGroup('mut_type', 'mutation matrix form', [
-                Form.RadioItem('sparse', 'one site changes at a time', True),
-                Form.RadioItem('dense', 'all seq-seq rates equal')]),
             Form.Integer('nselections', 'number of mutation-selection samples',
                 100, low=100, high=1000),
             Form.RadioGroup('sel_var', 'selection parameter variance', [
                 Form.RadioItem('low_var', 'low variance'),
                 Form.RadioItem('medium_var', 'medium variance', True),
-                Form.RadioItem('high_var', 'high variance')]),
+                Form.RadioItem('high_var', 'high variance'),
+                Form.RadioItem('really_high_var', 'really high variance')]),
             Form.RadioGroup('sel_skew', 'selection parameter skew', [
                 Form.RadioItem('neg_skew', 'some very fit'),
                 Form.RadioItem('no_skew', 'no skew', True),
@@ -90,21 +88,30 @@ def get_statistic_ratios(Q_mut, Q_sels):
     ER_NSR_sels = [1 / mrate.R_to_relaxation_time(Q) for Q in Q_sels]
     ER_NSR_ratios = [ER_NSR_sel / ER_NSR_mut for ER_NSR_sel in ER_NSR_sels]
     NSR_ratios = [a / b for a, b in zip(ER_NSR_ratios, ER_ratios)]
-    #print
-    #print 'ER_mut:'
-    #print ER_mut
-    #print
-    #print 'ER_NSR_mut:'
-    #print ER_NSR_mut
-    #print
-    #print 'ER_sels:'
-    #for x in ER_sels:
-        #print x
-    #print
-    #print 'ER_NSR_sels:'
-    #for x in ER_NSR_sels:
-        #print x
-    #print
+    # do some extra investigation
+    """
+    nsels = len(Q_sels)
+    for i in range(nsels):
+        if ER_NSR_ratios[i] < 1:
+            print 'found a slower-decaying mutation-selection matrix:'
+            print Q_sels[i]
+            print
+    print
+    print 'ER_mut:'
+    print ER_mut
+    print
+    print 'ER_NSR_mut:'
+    print ER_NSR_mut
+    print
+    print 'ER_sels:'
+    for x in ER_sels:
+        print x
+    print
+    print 'ER_NSR_sels:'
+    for x in ER_NSR_sels:
+        print x
+    print
+    """
     return ER_ratios, NSR_ratios, ER_NSR_ratios
 
 def get_r_tikz_hist(nsels, table_string, name):
@@ -135,6 +142,12 @@ def get_r_tikz_hist(nsels, table_string, name):
             width=5, height=5)
     if retcode:
         raise RUtil.RError(r_err)
+    #
+    # show some timings
+    print 'R did not fail, but here is its stderr:'
+    print r_err
+    #
+    # return the tikz that R generates
     return tikz_code
 
 def get_latex_documentbody(fs):
@@ -146,27 +159,26 @@ def get_latex_documentbody(fs):
     if nstates > 256:
         raise ValueError('the mutation rate matrix is too big')
     # get the mutation matrix
-    if fs.sparse:
-        Q_mut = mrate.get_sparse_sequence_rate_matrix(fs.nresidues, fs.nsites)
-    elif fs.dense:
-        Q_mut = mrate.get_dense_sequence_rate_matrix(fs.nresidues, fs.nsites)
+    Q_mut = mrate.get_sparse_sequence_rate_matrix(fs.nresidues, fs.nsites)
     # sample a bunch of mutation-selection rate matrices
     Q_sels = []
     for selection_index in range(fs.nselections):
         # sample the selection parameters
         if fs.low_var:
-            v = 0.1
+            v = 0.2
         elif fs.medium_var:
-            v = 0.4
-        elif fs.high_var:
             v = 1.0
+        elif fs.high_var:
+            v = 5.0
+        elif fs.really_high_var:
+            v = 25.0
         s = math.sqrt(v)
         if fs.neg_skew:
-            sels = [-random.expovariate(s) for i in range(nstates)]
+            sels = [-random.expovariate(1/s) for i in range(nstates)]
         elif fs.no_skew:
             sels = [random.gauss(0, s) for i in range(nstates)]
         elif fs.pos_skew:
-            sels = [random.expovariate(s) for i in range(nstates)]
+            sels = [random.expovariate(1/s) for i in range(nstates)]
         # define the mutation-selection rate matrix using Halpern-Bruno
         Q = np.zeros_like(Q_mut)
         for i in range(nstates):
