@@ -4,7 +4,6 @@ Plot mutual information using the dygraph javascript.
 
 
 from StringIO import StringIO
-from collections import defaultdict
 import math
 import random
 
@@ -14,7 +13,6 @@ import Form
 import FormOut
 import mrate
 import ctmcmi
-import iterutils
 
 
 def get_form():
@@ -84,62 +82,6 @@ def get_time_point_summary(Q_mut, Q_sels, t):
     statistics.append(sorted_mi[n_extreme-1])
     statistics.append(sorted_mi[0])
     return statistics
-
-g_time_stats_headers = (
-        't', 'mut', 'mut.sel.max', 'mut.sel.high',
-        'mut.sel.mean', 'mut.sel.low', 'mut.sel.min',
-        'prop.sel.vs.mut')
-
-def get_r_band_script(nsels, time_stats):
-    """
-    @param time_stats: a list of stats for each time point
-    @return: R code
-    """
-    out = StringIO()
-    time_stats_trans = zip(*time_stats)
-    mi_mut = time_stats_trans[1]
-    # set up the correctly sized plot
-    mi_min_sels = time_stats_trans[6]
-    mi_max_sels = time_stats_trans[2]
-    y_low = min(mi_min_sels + mi_mut)
-    y_high = max(mi_max_sels + mi_mut)
-    ylim = RUtil.mk_call_str('c', y_low, y_high)
-    print >> out, RUtil.mk_call_str(
-            'plot',
-            'my.table$t',
-            'my.table$mut',
-            type='"n"',
-            ylim=ylim,
-            xlab='"time"',
-            ylab='"MI"',
-            main='"MI for mut process (red) and %d mut-sel processes"' % nsels)
-    # draw a light gray polygon covering all selection mutual information
-    print >> out, RUtil.mk_call_str(
-            'polygon',
-            'c(my.table$t, rev(my.table$t))',
-            'c(my.table$mut.sel.max, rev(my.table$mut.sel.min))',
-            col='"gray80"',
-            border='NA')
-    # draw a darker gray polygon covering most of selection mutual information
-    print >> out, RUtil.mk_call_str(
-            'polygon',
-            'c(my.table$t, rev(my.table$t))',
-            'c(my.table$mut.sel.high, rev(my.table$mut.sel.low))',
-            col='"gray50"',
-            border='NA')
-    # draw the black line representing the mean selection mutual information
-    print >> out, RUtil.mk_call_str(
-            'lines',
-            'my.table$t',
-            'my.table$mut.sel.mean',
-            col='"black"')
-    # draw the red line representing the mutation mutual information
-    print >> out, RUtil.mk_call_str(
-            'lines',
-            'my.table$t',
-            'my.table$mut',
-            col='"red"')
-    return out.getvalue()
 
 def get_time_stats(fs):
     nstates = fs.nresidues ** fs.nsites
