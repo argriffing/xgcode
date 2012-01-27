@@ -150,8 +150,9 @@ class GadgetForm(object):
         arr += [SnippetUtil.docstring_to_html(self.module.__doc__)]
         arr += ['<br/><br/>']
         arr += ['<form action="process" method="post">']
-        arr += [form_html]
-        arr += ['<br/><br/>']
+        if form_html:
+            arr += [form_html]
+            arr += ['<br/><br/>']
         arr += ['<input type="submit" name="mysubmit" value="Submit"/><br/>']
         arr += ['</form>']
         arr += ['</body>']
