@@ -8,6 +8,10 @@ import math
 import numpy as np
 import scipy
 from scipy import optimize
+import mpmath as mp
+from mpmath import mpf
+from mpmath import calculus
+from mpmath.calculus import optimization
 
 
 def get_key_time_points(lam, p, N):
@@ -62,9 +66,187 @@ def get_key_time_points(lam, p, N):
     # Therefore this provides the necessary bounds
     # because the mutual information is bounded away from zero
     # and its upper and lower bounds have the same decay exponent.
+    #
+    #
     return time_to_uniformity, time_to_usefulness
 
+def get_sophisticated_time_bound(r1, r2, N1, N2, p1, p2):
+    """
+    This will use the O(x^3) rather than a rougher O(x^2) error.
+    These error asymptotics follow from a second order Taylor approximation.
+    This sophisticated time bound will only work after
+    the point at which we have a uniform bound on
+    the entries of a certain matrix
+    so that we can control the sum of the entries.
+    We are calling this prerequisite time point the time to uniformity.
+    @param r1: absolute value of the slow second eigenvalue
+    @param r2: absolute value of the fast second eigenvalue
+    @param N1: number of states in slow process
+    @param N2: number of states in fast process
+    @param p1: min stationary probability in the slow process
+    @param p2: min stationary probability in the fast process
+    """
+    # use four times as much precision as usual
+    #mp.prec = 53 * 4
+    #
+    # Now define a new time point.
+    # This should be after uniformity,
+    # and it should be computed by numerical approximation.
+    # It is the intersection of two functions of time,
+    # where each function is the sum of two
+    # not-necessarily-positive exponentials.
+    # A key substitution will be x = exp(-t).
+    #
+    # Let 0 < r1 < r2 be the negatives of the second eigenvalues.
+    # Let 1 < N1, 1 < N2 be the integer numbers of states.
+    # Let 0 < p1 < 1, 0 < p2 < 1 be the min stationary probabilities.
+    #
+    # The dynamics of the mutual information can be divided
+    # into several time scales.
+    # At the smallest scale at times near zero,
+    # the mutual information is defined entirely by the
+    # entropy of the stationary distribution.
+    # At slightly larger time scales
+    # it is determined by complicated dynamics
+    # involving the stationary probabilities.
+    # At even larger time scales, it becomes possible
+    # to obtain bounds using relatively simple functions,
+    # in particular the sum of two exponential functions.
+    # This is the time scale of interest here.
+    # At even larger time scales which we do not consider here,
+    # it is possible to obtain informative bounds
+    # that are pure exponential functions rather than the
+    # sum of two exponential functions.
+    #
+    # The simple form is:
+    # a1 exp(-2 r1 t) - b1 exp(-3 r1 t) = a2 exp(-2 r2 t) + b2 exp(-3 r2 t)
+    # where the lhs is a lower bound of a slowly decaying function
+    # and the rhs is an upper bound of a quickly decaying function
+    #
+    # Substituting x = exp(-t):
+    # a1 x^(2 r1) - b1 x^(3 r1) = a2 x^(2 r2) + b2 x*(3 r2)
+    #
+    # define coefficient bounds of the cubic error term
+    b1 = mpf( (N1**2) * ((N1-1)**3) * (3 - 2*math.log(4)) * (p1**-1) )
+    b2 = mpf( (N2**2) * ((N2-1)**3) * (3 - 2*math.log(4)) * (p2**-1) )
+    # define coefficient bounds of the quadratic taylor approximation
+    # note that c1a <= c2a
+    a1 = mpf( 0.5 )
+    a2 = mpf( 0.5 * (N2 - 1) )
+    # get the solution
+    f = SumDefinitionMP(a1, b1, r1, a2, b2, r2)
+    try:
+        y0 = mp.findroot(
+                f,
+                [0, 1],
+                solver=mp.calculus.optimization.Anderson,
+                maxsteps=1000)
+    except ValueError, e:
+        return None
+    print 'y0 =', y0
+    #y0, r = scipy.optimize.brentq(f, 0.0, 1.0, full_output=True)
+    #print f(0)
+    #print f(1)
+    #print y0
+    #print 'root:', r.root
+    #print 'iterations:', r.iterations
+    #print 'function_calls:', r.function_calls
+    #print 'converged:', r.converged
+    # y0 = exp(-2 r2 t)
+    try:
+        t0 = -mp.log(y0) / (2 * r2)
+    except ValueError, e:
+        return None
+    return t0
+
+class SumDefinition:
+    """
+    This is for the numerical solution of an equation with a single root.
+    The equation arises when we want to find the intersection of
+    two functions which are each almost exponential functions.
+    In particular, each one is the sum of a slowly decaying exponential
+    and a faster exponential of particular forms,
+    and the functions have particular relations to each other.
+    This function has been transformed here so that x = exp(-t).
+    Find the value of x that satisfies this inequality:
+    a1 x^(2 r1) - b1 x^(3 r1) = a2 x^(2 r2) + b2 x*(3 r2)
+    where
+    0 < r1 < r2
+    0 < a1 <= a2
+    0 < b1
+    0 < b2
+    0 < x < 1
+    make the substitution
+    y = x^(2 r1)
+    a1 y - b1 y^(3/2) = a2 y^(r2 / r1) + b2 y^((3/2)(r2/r1))
+    divide by positive y
+    a1 - b1 y^(1/2) = a2 y^(r2/r1 - 1) + b2 y^((3/2)(r2/r1) - 1)
+    this function evaluates this difference
+    """
+    def __init__(self, a1, b1, r1, a2, b2, r2):
+        """
+        Initialize the constants.
+        """
+        error_message = 'bounds error'
+        if not (0 < r1 < r2):
+            raise ValueError(error_message)
+        if not (0 < a1 <= a2):
+            raise ValueError(error_message)
+        if not (0 < b1):
+            raise ValueError(error_message)
+        if not (0 < b2):
+            raise ValueError(error_message)
+        self.a1 = a1
+        self.b1 = b1
+        self.r1 = r1
+        self.a2 = a2
+        self.b2 = b2
+        self.r2 = r2
+    def __call__(self, y):
+        """
+        This function should be used by the root finder.
+        If the brentq root finder is used then the derivative does not help.
+        """
+        r = self.r2 / self.r1
+        lhs = self.a1 - self.b1 * (y**0.5)
+        rhs = self.a2 * (y**(r - 1)) + self.b2 * (y**(1.5*r - 1))
+        return rhs - lhs
+
+class SumDefinitionMP:
+    """
+    Multiple precision.
+    """
+    def __init__(self, a1, b1, r1, a2, b2, r2):
+        """
+        Initialize the constants.
+        """
+        error_message = 'bounds error'
+        if not (0 < r1 < r2):
+            raise ValueError(error_message)
+        if not (0 < a1 <= a2):
+            raise ValueError(error_message)
+        if not (0 < b1):
+            raise ValueError(error_message)
+        if not (0 < b2):
+            raise ValueError(error_message)
+        self.a1 = a1
+        self.b1 = b1
+        self.r1 = r1
+        self.a2 = a2
+        self.b2 = b2
+        self.r2 = r2
+    def __call__(self, y):
+        """
+        This function should be used by the root finder.
+        If the brentq root finder is used then the derivative does not help.
+        """
+        r = self.r2 / self.r1
+        lhs = self.a1 - self.b1 * mp.root(y, 2)
+        rhs = self.a2 * mp.power(y, r - 1) + self.b2 * mp.power(y, 1.5*r - 1)
+        return rhs - lhs
+
 def get_M(p):
+    # This is the coefficient of a uniform bound.
     # M = 2 * mi_taylor_h(-p/2, p) / p
     # Now algebraically find this value in terms of p.
     # this is apparently 2 * (3/2 - log(4)) / p
@@ -90,6 +272,22 @@ def mi_taylor_h_grad(x, y):
     d_dx = - w * (x**-3) * y
     d_dy = w * (x**-2)
     return np.array([d_dx, d_dy])
+
+def mi_cubic_abs(coeff, lam, t):
+    """
+    This is a pure exponential function.
+    It is an upper bound on
+    the absolute value of the sum of the O(x^3) Taylor error terms.
+    The coefficient should be
+    something like N^2 (N-1)^3 (3 - 2 log 4) (1/p).
+    This is probably not going to work unless we switch to logarithms.
+    But the value could be negative.
+    @param coeff: the coefficient of the exponential function
+    @param lam: the eigenvalue
+    @param t: time
+    """
+    return coeff * math.exp(3 * lam * t)
+
 
 #############################################
 # Define functions for numerical optimization.
