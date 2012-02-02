@@ -41,7 +41,7 @@ def get_form():
     form_objects = [
             Form.Float('p_mid',
                 'mutation-selection probability for the down-weighted state',
-                '0.001', low_exclusive=0, high_exclusive=1),
+                '0.001', low_exclusive=0, high_exclusive=0.125),
             Form.RadioGroup('mut_type', 'mutation graph structure', [
                 Form.RadioItem('mut_path_2',
                     r'path \( P_2 \)'),
@@ -55,6 +55,10 @@ def get_form():
                     r'complete graph \( K_4 \)'),
                 Form.RadioItem('mut_hyper_2_2',
                     r'square \( Q_2 \)', True),
+                Form.RadioItem('mut_weighted_square',
+                    r'weighted square (a segment is down-weighted)'),
+                Form.RadioItem('mut_funkily_weighted_square',
+                    r'funkily weighted square'),
                 Form.RadioItem('mut_hyper_2_3',
                     r'cube \( Q_3 \)'),
                 Form.RadioItem('mut_hyper_2_3_square',
@@ -118,7 +122,7 @@ def do_mut_hyper_2_3_square(fs, to_gtr):
     print >> out
     print >> out
     # kill the last state by natural selection
-    p_other = (1 - fs.p_mid)/4
+    p_other = (1 - 4*fs.p_mid)/4
     p_target = [p_other]*4 + [fs.p_mid]*4
     Q = to_gtr(M, p_target)
     print >> out, '*** mutation-selection balance ***'
@@ -193,6 +197,60 @@ def do_mut_hyper_2_2(fs, to_gtr):
     print >> out, '*** reference mutation rate matrix (3-state path) ***'
     print >> out
     print >> out, get_rate_matrix_summary(M)
+    print >> out
+    print >> out
+    return out.getvalue().rstrip()
+
+def do_weighted_square(fs, to_gtr):
+    out = StringIO()
+    # define the mutation rate matrix
+    A = np.array([
+        [0, 9, 0, 1],
+        [9, 0, 1, 0],
+        [0, 1, 0, 9],
+        [1, 0, 9, 0]], dtype=float)
+    M = A - np.diag(np.sum(A, axis=1))
+    M /= mrate.R_to_total_rate(M)
+    print >> out, '*** mutation rate matrix (4-state square) ***'
+    print >> out
+    print >> out, get_rate_matrix_summary(M)
+    print >> out
+    print >> out
+    # kill the last two states by natural selection
+    p_other = (1 - 2*fs.p_mid)/2
+    p_target = (p_other, p_other, fs.p_mid, fs.p_mid)
+    Q = to_gtr(M, p_target)
+    print >> out, '*** mutation-selection balance ***'
+    print >> out
+    print >> out, get_rate_matrix_summary(Q)
+    print >> out
+    print >> out
+    return out.getvalue().rstrip()
+
+def do_funkily_weighted_square(fs, to_gtr):
+    out = StringIO()
+    # define the mutation rate matrix
+    A = np.array([
+        [0, 1, 0, 1],
+        [1, 0, 1, 0],
+        [0, 1, 0, 1],
+        [1, 0, 1, 0]], dtype=float)
+    M = A - np.diag(np.sum(A, axis=1))
+    M /= mrate.R_to_total_rate(M)
+    print >> out, '*** mutation rate matrix (4-state square) ***'
+    print >> out
+    print >> out, get_rate_matrix_summary(M)
+    print >> out
+    print >> out
+    # Use funky weights.
+    p_small = fs.p_mid
+    p_medium = 0.3
+    p_big = 1.0 - (p_medium + 2*p_small)
+    p_target = (p_big, p_medium, p_small, p_small)
+    Q = to_gtr(M, p_target)
+    print >> out, '*** mutation-selection balance ***'
+    print >> out
+    print >> out, get_rate_matrix_summary(Q)
     print >> out
     print >> out
     return out.getvalue().rstrip()
@@ -344,6 +402,10 @@ def get_response_content(fs):
         print >> out, do_mut_complete_4(fs, to_gtr)
     elif fs.mut_hyper_2_2:
         print >> out, do_mut_hyper_2_2(fs, to_gtr)
+    elif fs.mut_weighted_square:
+        print >> out, do_weighted_square(fs, to_gtr)
+    elif fs.mut_funkily_weighted_square:
+        print >> out, do_funkily_weighted_square(fs, to_gtr)
     elif fs.mut_hyper_2_3:
         print >> out, do_mut_hyper_2_3(fs, to_gtr)
     elif fs.mut_hyper_2_3_square:
