@@ -41,17 +41,24 @@ def get_form():
     form_objects = [
             Form.Float('p_mid',
                 'mutation-selection probability for the down-weighted state',
-                '0.01', low_exclusive=0, high_exclusive=1),
+                '0.001', low_exclusive=0, high_exclusive=1),
             Form.RadioGroup('mut_type', 'mutation graph structure', [
-                Form.RadioItem('mut_path_2', 'path (2 states)'),
+                Form.RadioItem('mut_path_2',
+                    r'path \( P_2 \)'),
                 Form.RadioItem('mut_path_3_mid',
-                    'path (3 states; middle is down-weighted)'),
+                    r'path \( P_3 \) (middle state is down-weighted)'),
                 Form.RadioItem('mut_path_3_end',
-                    'path (3 states; end is down-weighted)'),
-                Form.RadioItem('mut_complete_3', 'complete graph (3 states)'),
-                Form.RadioItem('mut_complete_4', 'complete graph (4 states)'),
-                Form.RadioItem('mut_hyper_2_2', 'square H(2, 2)', True),
-                Form.RadioItem('mut_hyper_2_3', 'cube H(2, 3)')]),
+                    r'path \( P_3 \) (end state is down-weighted)'),
+                Form.RadioItem('mut_complete_3',
+                    r'complete graph \( K_3 \)'),
+                Form.RadioItem('mut_complete_4',
+                    r'complete graph \( K_4 \)'),
+                Form.RadioItem('mut_hyper_2_2',
+                    r'square \( Q_2 \)', True),
+                Form.RadioItem('mut_hyper_2_3',
+                    r'cube \( Q_3 \)'),
+                Form.RadioItem('mut_hyper_2_3_square',
+                    r'cube \( Q_3 \) (a square is down-weighted)')]),
             Form.RadioGroup('sel_type', 'selection approximation', [
                 Form.RadioItem('sel_sqrt', 'simple'),
                 Form.RadioItem('sel_log', 'sophisticated', True)])]
@@ -100,6 +107,33 @@ def get_rate_matrix_summary(Q):
     print >> out
     return out.getvalue().rstrip()
 
+
+def do_mut_hyper_2_3_square(fs, to_gtr):
+    out = StringIO()
+    # define the path mutation rate matrix
+    M = mrate.get_sparse_sequence_rate_matrix(2, 3)
+    print >> out, '*** mutation rate matrix (8-state cube) ***'
+    print >> out
+    print >> out, get_rate_matrix_summary(M)
+    print >> out
+    print >> out
+    # kill the last state by natural selection
+    p_other = (1 - fs.p_mid)/4
+    p_target = [p_other]*4 + [fs.p_mid]*4
+    Q = to_gtr(M, p_target)
+    print >> out, '*** mutation-selection balance ***'
+    print >> out
+    print >> out, get_rate_matrix_summary(Q)
+    print >> out
+    print >> out
+    # define a reference mutation rate matrix
+    M = mrate.get_sparse_sequence_rate_matrix(2, 2)
+    print >> out, '*** reference mutation rate matrix (square) ***'
+    print >> out
+    print >> out, get_rate_matrix_summary(M)
+    print >> out
+    print >> out
+    return out.getvalue().rstrip()
 
 def do_mut_hyper_2_3(fs, to_gtr):
     out = StringIO()
@@ -312,5 +346,7 @@ def get_response_content(fs):
         print >> out, do_mut_hyper_2_2(fs, to_gtr)
     elif fs.mut_hyper_2_3:
         print >> out, do_mut_hyper_2_3(fs, to_gtr)
+    elif fs.mut_hyper_2_3_square:
+        print >> out, do_mut_hyper_2_3_square(fs, to_gtr)
     return out.getvalue()
 
