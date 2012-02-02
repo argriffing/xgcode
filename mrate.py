@@ -17,10 +17,27 @@ from scipy import linalg
 
 from MatrixUtil import ndot
 
+def get_path_rate_matrix(nstates):
+    """
+    This is a 3-state path rate matrix.
+    The stationary distribution is uniform.
+    The sparsity structure is also known as a path graph.
+    The matrix is normalized by expected rate.
+    """
+    A = np.zeros((nstates, nstates))
+    for i in range(nstates-1):
+        A[i,i+1] = 1.0
+        A[i+1,i] = 1.0
+    Q = -A
+    for i in range(nstates):
+        Q[i, i] = -np.sum(Q[i])
+    return Q / R_to_total_rate(Q)
+
 def get_dense_sequence_rate_matrix(nresidues, nsites):
     """
     Create an reversible rate matrix with uniform stationary distribution.
     Each sequences changes to each other sequence at the same rate.
+    The sparsity structure is also known as a complete graph.
     The matrix is normalized by expected rate.
     @param nresidues: for example 4 for DNA or 20 for amino acids
     @param nsites: jointly consider this many sites
@@ -36,7 +53,8 @@ def get_dense_sequence_rate_matrix(nresidues, nsites):
 def get_sparse_sequence_rate_matrix(nresidues, nsites):
     """
     Create an reversible rate matrix with uniform stationary distribution.
-    Sites change change independently.
+    Sites change independently.
+    The sparsity structure is also known as a Hamming graph.
     The matrix is normalized by expected rate.
     @param nresidues: for example 4 for DNA or 20 for amino acids
     @param nsites: jointly consider this many sites
@@ -55,6 +73,52 @@ def get_sparse_sequence_rate_matrix(nresidues, nsites):
     uniform_pi = np.reciprocal(nstates * np.ones(nstates))
     expected_rate = -sum(uniform_pi[i] * R[i, i] for i in range(nstates))
     return R / expected_rate
+
+
+########################################################################
+## These are rate matrix transformations which preserve detailed balance.
+
+def to_gtr_balanced(M, v):
+    """
+    @param M: time-reversible rate matrix
+    @param v: target stationary distribution
+    @return: a time-reversible rate matrix
+    """
+    n = len(v)
+    p = R_to_distn(M)
+    R = M.copy()
+    # adjust the entries of the rate matrix
+    for a in range(n):
+        for b in range(n):
+            tau = (v[b] / p[b]) / (v[a] / p[a])
+            R[a, b] *= math.sqrt(tau)
+    # reset the diagonal entries of the rate matrix
+    R -= np.diag(np.sum(R, axis=1))
+    return R
+
+def to_gtr_halpern_bruno(M, v):
+    """
+    @param M: a time-reversible rate matrix
+    @param v: target stationary distribution
+    @return: a time-reversible rate matrix
+    """
+    n = len(v)
+    p = R_to_distn(M)
+    R = M.copy()
+    # adjust the entries of the rate matrix
+    for a in range(n):
+        for b in range(n):
+            if a != b:
+                tau = (v[b] / p[b]) / (v[a] / p[a])
+                if not np.allclose(tau, 1):
+                    R[a, b] *= math.log(tau) / (1 - 1/tau)
+    # reset the diagonal entries of the rate matrix
+    R -= np.diag(np.sum(R, axis=1))
+    return R
+
+
+###########################
+## These are misc functions.
 
 def expm_spectral(R, t):
     """

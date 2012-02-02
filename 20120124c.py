@@ -21,7 +21,10 @@ def get_form():
     @return: the body of a form
     """
     # define the form objects
-    form_objects = []
+    form_objects = [
+            Form.Float('p_mid',
+                'mutation process probability for intermediate state',
+                '0.01', low_exclusive=0, high_exclusive=1)]
             #Form.Integer('nstates', 'number of states', 4, low=2, high=9)]
             #Form.Float('divtime', 'arbitrary large-ish divergence time',
                 #'3', low_exclusive=0)]
@@ -32,7 +35,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_barbell_rate_matrix():
+def get_barbell_rate_matrix(p_mid):
     # define a hollow exchangeability-like matrix
     nstates = 3
     Z = np.array([
@@ -40,7 +43,6 @@ def get_barbell_rate_matrix():
         [1.0, 0.0, 1.0],
         [0.0, 1.0, 0.0]])
     # define the stationary distribution
-    p_mid = 0.01
     p = np.array([(1 - p_mid)/2, p_mid, (1 - p_mid)/2])
     # define the mutation matrix
     D = np.diag(p)
@@ -55,7 +57,7 @@ def get_response_content(fs):
     out = StringIO()
     np.set_printoptions(linewidth=200)
     # define the barbell mutation rate matrix
-    M, p = get_barbell_rate_matrix()
+    M, p = get_barbell_rate_matrix(fs.p_mid)
     nstates = len(p)
     print >> out, 'barbell mutation matrix:'
     print >> out, M
