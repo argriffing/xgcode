@@ -234,9 +234,6 @@ class TestIterutils(unittest.TestCase):
         result = tuple(rle(seq))
         self.assertEquals(result, ((1, 3), (2, 2), (3, 1)))
 
-    def test_dot_product(self):
-        self.assertEquals(dot_product((1, 2, 3), (4, 5, 6)), 1*4 + 2*5 + 3*6)
-
 
 
 if __name__ == '__main__':
