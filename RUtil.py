@@ -2,7 +2,7 @@
 Utility functions for interfacing with R.
 
 Note that to use tikz with R,
-you should put a tikzMetricsDictionary path into your Rprofile.
+you should put a tikzMetricsDictionary path into your .Rprofile dotfile.
 Otherwise it takes a few seconds to generate a temporary dictionary
 every time you want to make a tikz.
 """
@@ -15,7 +15,6 @@ import subprocess
 
 import Util
 
-#TODO replace assert with exceptions
 #TODO allow RTable flexibility to not have row headers
 
 #FIXME
@@ -55,11 +54,11 @@ lines(xi,yi,type='h')
 title(main="$p(x)=\\frac{1}{\\sqrt{2\\pi}}e^{-\\frac{x^2}{2}}$")
 int <- integrate(dnorm,min(xi),max(xi),subdivisions=length(xi))
 text(2.8, 0.3, paste("\\small$\\displaystyle\\int_{", min(xi),
-        "}^{", max(xi), "}p(x)dx\\approx", round(int[['value']],3),
-            '$', sep=''))
+"}^{", max(xi), "}p(x)dx\\approx", round(int[['value']],3),
+'$', sep=''))
 """.strip()
 
-g_devices = set(['pdf', 'postscript', 'png', 'tikz'])
+g_devices = {'pdf', 'postscript', 'png', 'tikz'}
 
 class RError(Exception):
     """
@@ -279,16 +278,15 @@ def get_table_string(M, column_headers):
     @param M: a row major matrix
     @param column_headers: the labels of the data columns
     """
-    # assert that the matrix is rectangular
-    assert len(set(len(row) for row in M)) == 1
-    # Assert that the number of columns
-    # is the same as the number of column headers.
-    assert len(M[0]) == len(column_headers)
-    # assert that the headers are valid
+    if len(set(len(row) for row in M)) != 1:
+        raise ValueError('all rows should have the same length')
+    if len(M[0]) != len(column_headers):
+        msg = 'the number of columns does not match the number of headers'
+        raise ValueError(msg)
     for header in column_headers:
         if '_' in header:
             msg_a = 'the header "%s" is invalid '
-            msg_b = 'because it uses an underscore' % header
+            msg_b = 'because it has an underscore' % header
             raise ValueError(msg_a + msg_b)
     # define each line in the output string
     lines = []
