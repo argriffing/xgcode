@@ -83,7 +83,7 @@ def get_detailed_balance_error(Q):
         for j in range(nstates):
             error = p[i] * Q[i, j] - p[j] * Q[j, i]
             errors.append(error)
-    return min(abs(x) for x in errors)
+    return max(abs(x) for x in errors)
 
 def get_rate_matrix_summary(Q):
     out = StringIO()

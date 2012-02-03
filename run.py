@@ -31,8 +31,7 @@ def get_first_line(multi_line_string):
     """
     @return: a single line string or None
     """
-    lines = StringIO(multi_line_string).readlines()
-    lines = [line.strip() for line in lines]
+    lines = [line.strip() for line in multi_line_string.splitlines()]
     lines = [line for line in lines if line]
     if lines:
         return lines[0]
