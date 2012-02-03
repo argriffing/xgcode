@@ -59,9 +59,19 @@ text(2.8, 0.3, paste("\\small$\\displaystyle\\int_{", min(xi),
             '$', sep=''))
 """.strip()
 
-class RError(Exception): pass
-
 g_devices = set(['pdf', 'postscript', 'png', 'tikz'])
+
+class RError(Exception):
+    """
+    This is an error running R.
+    """
+    pass
+
+class RTableError(Exception):
+    """
+    This is an R table parsing error.
+    """
+    pass
 
 def mk_call_str(name, *args, **kwargs):
     args_v = [str(v) for v in args]
@@ -298,6 +308,88 @@ def float_to_R(value):
         return 'Inf'
     else:
         return str(value)
+
+
+class RTable:
+    """
+    Do things with a user-supplied R table in a way that expects errors.
+    When the user inevitably wants to do something that causes an error,
+    try to provide enough information so that they can decide
+    how to change the table or their query.
+    For example they may ask by name for a column that is not in the table,
+    or multiple columns may have the same name,
+    or they may want to use a column as a primary key
+    but the column may have repeated values.
+    This was initially implemented for some work with Ignazio Carbone
+    who wanted access to R from the internet,
+    specifically through Mobyle running on a Rocks cluster on CentOS.
+    """
+    def __init__(self, raw_lines):
+        """
+        Initialize some member variables.
+        """
+        # a list of header strings
+        self.headers = []
+        # a row major list of string data elements
+        self.data = []
+        # maps a header string to a column index
+        self.h_to_i = {}
+        # initialize the member variables.
+        self._parse_r_table(raw_lines)
+        self.h_to_i = dict((h, i+1) for i, h in enumerate(self.headers))
+
+    def _parse_r_table(self, raw_lines):
+        """
+        Parse an R table into a header row and data rows.
+        Each element of the data table is a string.
+        """
+        lines = Util.get_stripped_lines(raw_lines)
+        header_line, data_lines = lines[0], lines[1:]
+        self.headers = header_line.split()
+        self.data = [line.split() for line in data_lines]
+        nheaders = len(self.headers)
+        if len(set(self.headers)) != nheaders:
+            msg = 'multiple columns are labeled with the same header'
+            raise RTableError(msg)
+        for row in self.data:
+            if len(row) != nheaders+1:
+                msg_a = 'the header row has %d elements ' % nheaders
+                msg_b = 'and a data row has %d elements; ' % len(row)
+                msg_c = 'all data rows should have one more element '
+                msg_d = 'than the header row'
+                raise RTableError(msg_a + msg_b + msg_c + msg_d)
+    
+    def header_to_column_index(self, header):
+        if header not in self.h_to_i:
+            msg = 'the column header %s was not found in the table' % header
+            raise RTableError(msg)
+        return self.h_to_i[header]
+
+    def header_to_column(self, header):
+        column_index = self.header_to_column_index(header)
+        column = [row[column_index] for row in self.data]
+        return column
+
+    def header_to_primary_column(self, header):
+        """
+        This is a strict variant of header_to_column.
+        It requires the column entries to be unique.
+        """
+        column = self.header_to_column(header)
+        d = defaultdict(int)
+        for x in column:
+            d[x] += 1
+        repeated_keys = [k for k, v in d.items() if v > 1]
+        if len(repeated_keys) > 5:
+            msg_a = '%d repeated keys ' % len(repeated_keys)
+            msg_b = 'found in the primary column'
+            raise RTableError(msg_a + msg_b)
+        elif repeated_keys:
+            msg_a = 'repeated keys in the primary column: '
+            msg_b = ', '.join(repeated_keys)
+            raise RTableError(msg_a + msg_b)
+        return column
+
 
 class TestRUtil(unittest.TestCase):
 

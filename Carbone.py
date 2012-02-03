@@ -49,69 +49,6 @@ def clean_isolate_table(table):
     return [clean_isolate_row(row) for row in table]
 
 
-class RTableError(Exception): pass
-
-class RTable(object):
-    def __init__(self, raw_lines):
-        """
-        Initialize some member variables.
-        The member .headers is a list of header strings.
-        The member .data is a row major list of list of string data elements
-        The member .h_to_i maps a header string to a column index
-        """
-        self._parse_r_table(raw_lines)
-        self.h_to_i = dict((h, i+1) for i, h in enumerate(self.headers))
-
-    def _parse_r_table(self, raw_lines):
-        """
-        Parse and R table into a header row and data rows.
-        Each element of the data table is a string.
-        Error checking is minimal.
-        """
-        lines = Util.get_stripped_lines(raw_lines)
-        header_line, data_lines = lines[0], lines[1:]
-        self.headers = header_line.split()
-        self.data = [line.split() for line in data_lines]
-        nheaders = len(self.headers)
-        if len(set(self.headers)) != nheaders:
-            msg = 'multiple columns are labeled with the same header'
-            raise RTableError(msg)
-        for row in self.data:
-            if len(row) != nheaders+1:
-                msg_a = 'the header row has %d elements ' % nheaders
-                msg_b = 'and a data row has %d elements; ' % len(row)
-                msg_c = 'all data rows should have one more element '
-                msg_d = 'than the header row'
-                raise RTableError(msg_a + msg_b + msg_c + msg_d)
-    
-    def header_to_column_index(self, header):
-        if header not in self.h_to_i:
-            msg = 'the column header %s was not found in the table' % header
-            raise RTableError(msg)
-        return self.h_to_i[header]
-
-    def header_to_column(self, header):
-        column_index = self.header_to_column_index(header)
-        column = [row[column_index] for row in self.data]
-        return column
-
-    def header_to_primary_column(self, header):
-        column_index = self.header_to_column_index(header)
-        column = [row[column_index] for row in self.data]
-        d = defaultdict(int)
-        for x in column:
-            d[x] += 1
-        repeated_keys = [k for k, v in d.items() if v > 1]
-        if len(repeated_keys) > 5:
-            msg_a = '%d repeated keys ' % len(repeated_keys)
-            msg_b = 'found in the primary column'
-            raise RTableError(msg_a + msg_b)
-        elif repeated_keys:
-            msg_a = 'repeated keys in the primary column: '
-            msg_b = ', '.join(repeated_keys)
-            raise RTableError(msg_a + msg_b)
-        return column
-
 class NumericError(Exception): pass
 
 def get_numeric_column(data, index):
