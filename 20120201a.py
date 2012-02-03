@@ -88,7 +88,7 @@ def get_detailed_balance_error(Q):
 def get_rate_matrix_summary(Q):
     out = StringIO()
     Q_v = mrate.R_to_distn(Q)
-    Q_r = mrate.R_to_total_rate(Q)
+    Q_r = mrate.Q_to_expected_rate(Q)
     Q_t = mrate.R_to_relaxation_time(Q)
     print >> out, 'rate matrix:'
     print >> out, Q
@@ -166,7 +166,7 @@ def do_mut_hyper_2_3(fs, to_gtr):
             if i != j:
                 M[i, j] = R[i, j]
     M -= np.diag(np.sum(M, axis=1))
-    M /= mrate.R_to_total_rate(M)
+    M /= mrate.Q_to_expected_rate(M)
     print >> out, '*** reference mutation rate matrix (corner removed) ***'
     print >> out
     print >> out, get_rate_matrix_summary(M)
@@ -210,7 +210,7 @@ def do_weighted_square(fs, to_gtr):
         [0, 1, 0, 9],
         [1, 0, 9, 0]], dtype=float)
     M = A - np.diag(np.sum(A, axis=1))
-    M /= mrate.R_to_total_rate(M)
+    M /= mrate.Q_to_expected_rate(M)
     print >> out, '*** mutation rate matrix (4-state square) ***'
     print >> out
     print >> out, get_rate_matrix_summary(M)
@@ -236,7 +236,7 @@ def do_funkily_weighted_square(fs, to_gtr):
         [0, 1, 0, 1],
         [1, 0, 1, 0]], dtype=float)
     M = A - np.diag(np.sum(A, axis=1))
-    M /= mrate.R_to_total_rate(M)
+    M /= mrate.Q_to_expected_rate(M)
     print >> out, '*** mutation rate matrix (4-state square) ***'
     print >> out
     print >> out, get_rate_matrix_summary(M)

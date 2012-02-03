@@ -31,7 +31,7 @@ def get_path_rate_matrix(nstates):
     Q = -A
     for i in range(nstates):
         Q[i, i] = -np.sum(Q[i])
-    return Q / R_to_total_rate(Q)
+    return Q / Q_to_expected_rate(Q)
 
 def get_dense_sequence_rate_matrix(nresidues, nsites):
     """
@@ -208,14 +208,29 @@ def R_to_distn(R):
     pi_arr = np.array([v/total for v in pi_eigenvector])
     return pi_arr
 
-def R_to_total_rate(R):
-    #TODO: the jargon should be 'expected rate' rather than 'total rate'
-    n = len(R)
-    distn = R_to_distn(R)
-    total_rate = 0.0
+def Q_to_expected_rate(Q):
+    """
+    The rate matrix Q should be irreducible.
+    But it does not have to be reversible.
+    The term "expected rate" is preferred by Jeff Thorne
+    and is used in the wikipedia article about
+    models of DNA evolution.
+    The term is also used in source code in PAL
+    by Korbinian Strimmer and Alexei Drummond
+    as the "expected number of substitutions".
+    This quantitiy is also called "total rate of change per unit time",
+    for example in the paper
+    "Toward Extracting All Phylogenetic Information
+    from Matrices of Evolutionary Distances"
+    by Sebastien Roch.
+    @param Q: a rate matrix
+    """
+    n = len(Q)
+    distn = R_to_distn(Q)
+    expected_rate = 0.0
     for i in range(n):
-        total_rate -= distn[i] * R[i, i]
-    return total_rate
+        expected_rate -= distn[i] * Q[i, i]
+    return expected_rate
 
 def symmetrized(R):
     """

@@ -324,7 +324,7 @@ class TestDivtime(unittest.TestCase):
         S = sample_symmetric_rate_matrix(n)
         R = to_gtr_halpern_bruno(S, v)
         t = 0.0000001
-        total_rate = mrate.R_to_total_rate(R)
+        total_rate = mrate.Q_to_expected_rate(R)
         var = get_ml_variance(R, t)
         print 'time:', t
         print 'variance:', var

@@ -110,7 +110,7 @@ class RateProperties:
         print >> out, self.p
         print >> out
         print >> out, 'expected rate:'
-        print >> out, mrate.R_to_total_rate(self.Q)
+        print >> out, mrate.Q_to_expected_rate(self.Q)
         print >> out
         print >> out, 'time to uniform-over-entries taylor h_2 bound:'
         print >> out, self.time_to_uniformity

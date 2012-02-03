@@ -90,8 +90,8 @@ def get_statistic_ratios(Q_mut, Q_sels):
     @param Q_sels: mutations-selection balance rate matrices
     @return: ER_ratios, NSR_ratios, ER_NSR_ratios
     """
-    ER_mut = mrate.R_to_total_rate(Q_mut)
-    ER_sels = [mrate.R_to_total_rate(Q) for Q in Q_sels]
+    ER_mut = mrate.Q_to_expected_rate(Q_mut)
+    ER_sels = [mrate.Q_to_expected_rate(Q) for Q in Q_sels]
     ER_ratios = [ER_sel / ER_mut for ER_sel in ER_sels]
     ER_NSR_mut = 1 / mrate.R_to_relaxation_time(Q_mut)
     ER_NSR_sels = [1 / mrate.R_to_relaxation_time(Q) for Q in Q_sels]

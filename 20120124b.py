@@ -90,7 +90,7 @@ def get_time_point_summary(Q_mut, Q_sels, t):
     v1 = [ctmcmi.get_mutual_information_small_approx(Q, t) for Q in Q_sels]
     v2 = [ctmcmi.get_mutual_information_approx_c(Q, t) for Q in Q_sels]
     v3 = [math.exp(-2*t/mrate.R_to_relaxation_time(Q)) for Q in Q_sels]
-    v4 = [math.exp(-t*mrate.R_to_total_rate(Q)) for Q in Q_sels]
+    v4 = [math.exp(-t*mrate.Q_to_expected_rate(Q)) for Q in Q_sels]
     # Now that we have computed all of the vectors at this time point,
     # we can compute the statistics that we want to report.
     statistics = []

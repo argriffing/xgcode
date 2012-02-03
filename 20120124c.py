@@ -68,7 +68,7 @@ def get_response_content(fs):
             print >> out, p[i] * M[i, j] - p[j]*M[j, i]
     print >> out
     print >> out, 'expected rate of the barbell mutation matrix:'
-    print >> out, mrate.R_to_total_rate(M)
+    print >> out, mrate.Q_to_expected_rate(M)
     print >> out
     p_target = np.array([1/3., 1/3., 1/3.])
     print >> out, 'target stationary distribution:'
@@ -83,7 +83,7 @@ def get_response_content(fs):
     print >> out, v
     print >> out
     print >> out, 'expected rate of the mutation-selection balance rate matrix:'
-    print >> out, mrate.R_to_total_rate(Q)
+    print >> out, mrate.Q_to_expected_rate(Q)
     print >> out
     print >> out, 'all of these should be zero for detailed balance:'
     for i in range(nstates):
