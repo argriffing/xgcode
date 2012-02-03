@@ -16,7 +16,7 @@ import subprocess
 import Util
 
 #TODO replace assert with exceptions
-#TODO move RTable into this module, with or without row headers
+#TODO allow RTable flexibility to not have row headers
 
 #FIXME
 # This is a horrible hack.

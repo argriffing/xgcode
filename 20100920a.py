@@ -45,7 +45,7 @@ def get_response_content(fs):
     indep = Util.get_stripped_lines(fs.independent.splitlines())
     dep = fs.dependent
     # get the r table
-    rtable = Carbone.RTable(fs.table.splitlines())
+    rtable = RUtil.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
     # Do a more stringent check of the column headers.

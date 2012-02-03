@@ -96,7 +96,7 @@ def get_response_content(fs):
     """
     else:
         # read the table
-        rtable = Carbone.RTable(fs.table.splitlines())
+        rtable = RUtil.RTable(fs.table.splitlines())
         header_row = rtable.headers
         data_rows = rtable.data
         # Do a more stringent check of the column headers.
@@ -323,7 +323,7 @@ def process(args, table_lines):
     @param table_lines: input lines
     @return: the image data as a string
     """
-    rtable = Carbone.RTable(table_lines)
+    rtable = RUtil.RTable(table_lines)
     header_row = rtable.headers
     data_rows = rtable.data
     # Do a more stringent check of the column headers.

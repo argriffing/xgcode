@@ -46,7 +46,7 @@ def get_form_out():
 
 def get_rtable_info(rtable, cluster_header, axis_headers):
     """
-    @param rtable: a Carbone.RTable object
+    @param rtable: a RUtil.RTable object
     @param cluster_header: header of the new column to add
     @param axis_headers: tuple of column headers
     @return: points as rows in a numpy array
@@ -86,7 +86,7 @@ def get_response_content(fs):
     # define constants
     nrestarts = 10
     # read the input
-    rtable = Carbone.RTable(fs.table.splitlines())
+    rtable = RUtil.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
     points = get_rtable_info(rtable, 'annotation', fs.axes)

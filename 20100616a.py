@@ -52,8 +52,8 @@ def get_response_content(fs):
     return process(fs, fs.table_a.splitlines(), fs.table_b.splitlines()) + '\n'
 
 def process(args, raw_a_lines, raw_b_lines):
-    a_table = Carbone.RTable(raw_a_lines)
-    b_table = Carbone.RTable(raw_b_lines)
+    a_table = RUtil.RTable(raw_a_lines)
+    b_table = RUtil.RTable(raw_b_lines)
     if args.join_header not in a_table.headers:
         msg = 'the first table does not have the requested column'
         raise ValueError(msg)

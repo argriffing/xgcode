@@ -46,7 +46,7 @@ def get_form_out():
 
 def get_rtable_info(rtable, cluster_header, axis_headers):
     """
-    @param rtable: a Carbone.RTable object
+    @param rtable: a RUtil.RTable object
     @param cluster_header: header of the new column to add
     @param axis_headers: a tuple of column headers
     @return: points as rows in a numpy array
@@ -83,7 +83,7 @@ def get_rtable_info(rtable, cluster_header, axis_headers):
     return points
 
 def get_response_content(fs):
-    rtable = Carbone.RTable(fs.table.splitlines())
+    rtable = RUtil.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
     points = get_rtable_info(rtable, fs.annotation, fs.axes)
@@ -104,7 +104,7 @@ def get_response_content(fs):
 class GlobalState(object):
     def __init__(self, rtable, points, annotation, nclusters, init_strategy):
         """
-        @param rtable: a Carbone.RTable object
+        @param rtable: a RUtil.RTable object
         @param points: points as rows in a numpy array
         @param annotation: the name of the new column header
         @param nclusters: target this many clusters
@@ -165,7 +165,7 @@ def main(args):
     """
     # get some state that will not change between k-means restarts
     with open(args.table_filename) as fin:
-        rtable = Carbone.RTable(fin)
+        rtable = RUtil.RTable(fin)
     points = get_rtable_info(rtable, args.annotation, args.axes)
     init_strategy = kmeans.InitStrategy().string_to_function(args.kmeans_init)
     gs = GlobalState(rtable, points, args.annotation, args.k, init_strategy)

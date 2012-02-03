@@ -42,7 +42,7 @@ def get_form_out():
 
 def get_response_content(fs):
     # read the table
-    rtable = Carbone.RTable(fs.table.splitlines())
+    rtable = RUtil.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
     Carbone.validate_headers(header_row)

@@ -45,7 +45,7 @@ def get_response_content(fs):
     # get the initialization strategy
     init_strategy = kmeans.InitStrategy().string_to_function(fs.kmeans_init)
     # read the table
-    rtable = Carbone.RTable(fs.table.splitlines())
+    rtable = RUtil.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
     Carbone.validate_headers(header_row)
