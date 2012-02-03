@@ -1,9 +1,11 @@
-"""Compare methods of estimating the stationary codon distribution. [FLAWED]
+"""
+Compare methods of estimating the stationary codon distribution. [FLAWED]
 """
 
 from StringIO import StringIO
 import math
 
+import numpy as np
 import scipy.optimize
 
 from SnippetUtil import HandlingError
@@ -12,7 +14,6 @@ import Codon
 import DirectProtein
 import Form
 import FormOut
-import iterutils
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
 from Codon import g_sorted_non_stop_codons as codons
@@ -80,10 +81,9 @@ def get_response_content(fs):
             aa = Codon.g_codon_to_aa_letter[codon]
             sibling_codons = Codon.g_aa_letter_to_codons[aa]
             codon_aa_weight = aa_to_weight[aa]
-            codon_nt_weight = iterutils.product(nt_to_weight[nt]
-                    for nt in codon)
-            sibling_nt_weight_sum = sum(iterutils.product(nt_to_weight[nt]
-                for nt in sibling) for sibling in sibling_codons)
+            codon_nt_weight = np.prod([nt_to_weight[nt] for nt in codon])
+            sibling_nt_weight_sum = sum(np.prod([nt_to_weight[nt]
+                for nt in sibling]) for sibling in sibling_codons)
             weight = codon_aa_weight * codon_nt_weight
             weight /= sibling_nt_weight_sum
             unnormalized_codon_distribution.append(weight)

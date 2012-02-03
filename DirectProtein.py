@@ -9,15 +9,14 @@ import unittest
 from StringIO import StringIO
 import math
 
+import numpy as np
+
 import Util
 import Codon
 import RateMatrix
 import SubModel
 import MatrixUtil
 import XmlUtil
-import iterutils
-
-# for testing
 import PhyLikelihood
 import Newick
 import Fasta
@@ -113,7 +112,7 @@ def get_nt_distribution_and_aa_energies(mutation_distribution, aa_distribution):
     codon_to_weight = {}
     for codon in codons_ordered:
         aa = Codon.g_codon_to_aa_letter[codon]
-        weight = iterutils.product(nt_to_weight[nt] for nt in codon)
+        weight = np.prod([nt_to_weight[nt] for nt in codon])
         codon_to_weight[codon] = weight
         aa_to_weight[aa] += weight
     # rescale codon and amino acid weights to sum to one

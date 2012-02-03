@@ -65,12 +65,6 @@ def stripped_lines(lines):
         if line:
             yield line
 
-def product(numbers):
-    x = 1
-    for number in numbers:
-        x *= number
-    return x
-
 def rle(sequence):
     """
     Yield (value, length) pairs.

@@ -1,4 +1,5 @@
-"""Given a nt distribution and an aa distribution, get a codon distribution.
+"""
+Given a nt distribution and an aa distribution, get a codon distribution.
 
 Given a nucletoide distribution and an amino acid distribution,
 get a codon distribution.
@@ -7,12 +8,13 @@ Calculate codon frequencies according to equation (14) of Halpern-Bruno 1998.
 
 from StringIO import StringIO
 
+import numpy as np
+
 from SnippetUtil import HandlingError
 import SnippetUtil
 import Codon
 import Form
 import FormOut
-import iterutils
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
 
@@ -61,10 +63,10 @@ def get_response_content(fs):
         aa = Codon.g_codon_to_aa_letter[codon]
         sibling_codons = Codon.g_aa_letter_to_codons[aa]
         codon_aa_weight = aa_distribution[aa]
-        codon_nt_weight = iterutils.product(nt_distribution[nt] for nt in codon)
+        codon_nt_weight = np.prod([nt_distribution[nt] for nt in codon])
         sibling_nt_weight_sum = 0
         for sibling in sibling_codons:
-            product = iterutils.product(nt_distribution[nt] for nt in sibling)
+            product = np.prod([nt_distribution[nt] for nt in sibling])
             sibling_nt_weight_sum += product
         codon_to_weight[codon] = codon_aa_weight * codon_nt_weight
         codon_to_weight[codon] /= sibling_nt_weight_sum

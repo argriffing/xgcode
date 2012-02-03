@@ -692,7 +692,7 @@ class TestHMM(unittest.TestCase):
         # using the scaled forward algorithm.
         f, s = hmm.scaled_forward_durbin(observations)
         # assert that the product of the scaling factors is the total probability
-        self.assertAlmostEqual(iterutils.product(s), total_probability)
+        self.assertAlmostEqual(np.prod(s), total_probability)
 
     def test_scaled_posterior_durbin(self):
         hmm = DishonestCasino()

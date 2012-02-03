@@ -1,4 +1,5 @@
-"""Infer the mutational distribution from the nt and aa distributions. [FLAWED]
+"""
+Infer the mutational distribution from the nt and aa distributions. [FLAWED]
 
 The idea was to the mutational stationary distribution
 from the nucleotide and amino acid stationary distributions.
@@ -13,6 +14,7 @@ from StringIO import StringIO
 import math
 import random
 
+import numpy as np
 import scipy
 import scipy.optimize
 
@@ -22,7 +24,6 @@ import Codon
 import DirectProtein
 import Form
 import FormOut
-import iterutils
 from Codon import g_sorted_nt_letters as nt_letters
 from Codon import g_sorted_aa_letters as aa_letters
 from Codon import g_sorted_non_stop_codons as codons
@@ -224,9 +225,9 @@ def halpern_bruno_nt_estimate(nt_to_weight, aa_to_weight):
         aa = Codon.g_codon_to_aa_letter[codon]
         sibling_codons = Codon.g_aa_letter_to_codons[aa]
         codon_aa_weight = aa_to_weight[aa]
-        codon_nt_weight = iterutils.product(nt_to_weight[nt] for nt in codon)
-        sibling_nt_weight_sum = sum(iterutils.product(nt_to_weight[nt]
-            for nt in sibling) for sibling in sibling_codons)
+        codon_nt_weight = np.prod([nt_to_weight[nt] for nt in codon])
+        sibling_nt_weight_sum = sum(np.prod([nt_to_weight[nt]
+            for nt in sibling]) for sibling in sibling_codons)
         weight = (codon_aa_weight * codon_nt_weight) / sibling_nt_weight_sum
         unnormalized_codon_distribution.append(weight)
     codon_distribution = normalized(unnormalized_codon_distribution)
