@@ -4,9 +4,9 @@ For more information about this model see:
 "Population genetics without intraspecific data" by Thorne et al.
 """
 
+from StringIO import StringIO
 from xml.etree import ElementTree as ET
 import unittest
-from StringIO import StringIO
 import math
 
 import Codon
@@ -247,20 +247,6 @@ def get_sample_xml_string():
     tree.write(out)
     return out.getvalue()
 
-def main():
-    pass
-
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', default='-', help='output file')
-    parser.add_option('--test', action='store_true', dest='test', default=False, help='run some unit tests')
-    options, args = parser.parse_args()
-    # run a test or run a demo
-    if options.test:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestDirectRna)
-        unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        main()
+    unittest.main()
 

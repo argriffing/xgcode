@@ -2,6 +2,10 @@
 Convert a rate matrix to a transition matrix.
 Use matrix exponentiation to get a transition matrix
 from a rate matrix and a time or branch length.
+This module is filled with application specific things,
+it does not use numpy very well,
+and the newer mrate module is more specific to rate matrices.
+So use that instead.
 """
 
 from StringIO import StringIO

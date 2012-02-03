@@ -1,14 +1,17 @@
-"""Do mixture models.
+"""
+Do mixture models.
+This module is not up to the standards of the other modules.
 """
 
 from StringIO import StringIO
 import unittest
 
+import numpy as np
+
 import Codon
 import MatrixUtil
 import RateMatrix
 import Util
-import iterutils
 
 
 class MixtureModelError(Exception):
@@ -59,11 +62,11 @@ class MixtureModel:
         @return: the expected rate of the substitution model
         """
         expected_rates = [matrix.get_expected_rate() for matrix in self.rate_matrices]
-        return iterutils.dot_product(self.mixture_parameters, expected_rates)
+        return np.dot(self.mixture_parameters, expected_rates)
 
     def get_stationary_distribution(self):
         stationary_distributions = [matrix.get_stationary_distribution() for matrix in self.rate_matrices]
-        return [iterutils.dot_product(proportions, self.mixture_parameters) for proportions in zip(*stationary_distributions)]
+        return [np.dot(proportions, self.mixture_parameters) for proportions in zip(*stationary_distributions)]
 
     def simulate_states(self, tree):
         """
@@ -90,7 +93,7 @@ class MixtureModel:
         @param tree: a tree with branch lengths and leaf states
         """
         likelihoods = [matrix.get_likelihood(tree) for matrix in self.rate_matrices]
-        return iterutils.dot_product(self.mixture_parameters, likelihoods)
+        return np.dot(self.mixture_parameters, likelihoods)
 
     def get_membership(self, tree):
         """
@@ -99,7 +102,7 @@ class MixtureModel:
         @return: an ordered list of membership proportions
         """
         likelihoods = [matrix.get_likelihood(tree) for matrix in self.rate_matrices]
-        total = iterutils.dot_product(self.mixture_parameters, likelihoods)
+        total = np.dot(self.mixture_parameters, likelihoods)
         return [(p * likelihood) / total for p, likelihood in zip(self.mixture_parameters, likelihoods)]
 
 
@@ -109,20 +112,6 @@ class TestSubModel(unittest.TestCase):
         pass
 
 
-def main():
-    pass
-
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', help='output file')
-    parser.add_option('--test', action='store_true', dest='test', default=False)
-    options, args = parser.parse_args()
-    if options.test:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestRateMatrix)
-        unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        main()
-
+    unittest.main()
 

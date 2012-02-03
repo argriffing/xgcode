@@ -65,9 +65,6 @@ def stripped_lines(lines):
         if line:
             yield line
 
-def dot_product(va, vb):
-    return sum(a * b for a, b in itertools.izip(va, vb))
-
 def product(numbers):
     x = 1
     for number in numbers:
