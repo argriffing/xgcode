@@ -13,6 +13,9 @@ import re
 import argparse
 import cherrypy
 
+import SnippetUtil
+import Form
+
 g_web_doc = 'doc'
 g_live_doc = 'doc'
 g_live_code = 'code'
@@ -292,8 +295,6 @@ if __name__ == '__main__':
         create_documentation()
     sys.path.remove(g_script_directory)
     sys.path.append(os.path.abspath(g_live_code))
-    import SnippetUtil
-    import Form
     gadgets = list(reversed(sorted(gen_gadgets())))
     cherrypy.config.update({
         'server.socket_host': args.host,
@@ -304,3 +305,4 @@ if __name__ == '__main__':
             form = GadgetForm(g.module)
             setattr(main_form, g.module_name, form)
     cherrypy.quickstart(main_form, '/', config=get_static_conf())
+

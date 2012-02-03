@@ -2,7 +2,7 @@
 Utilities for LaTeX.
 
 This will probably work only for texlive.
-Also it requires ghostscript to make a png file.
+Also it requires ghostscript or imagemagick to make a png file.
 It seems like the png files made by ghostscript are not so great.
 """
 
@@ -11,17 +11,12 @@ import tempfile
 import subprocess
 import os
 
-import iterutils
-
 
 LATEXFORMAT_TEX = 'tex'
 LATEXFORMAT_PDF = 'pdf'
 LATEXFORMAT_PNG = 'png'
 
-g_latexformats = set((
-    LATEXFORMAT_TEX,
-    LATEXFORMAT_PDF,
-    LATEXFORMAT_PNG))
+g_latexformats = {LATEXFORMAT_TEX, LATEXFORMAT_PDF, LATEXFORMAT_PNG}
 
 
 class CheckPackageError(Exception): pass

@@ -1,5 +1,7 @@
 """
 Friendlier eigendecomposition.
+This module is unnecessary because the linalg module of the scipy package
+already does more intelligent things with eigendecomposition than numpy does.
 """
 
 import numpy as np
