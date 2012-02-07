@@ -103,6 +103,7 @@ def run_checker(
 def run_callable(f, nseconds=None, niterations=None):
     """
     Return a RunInfo object containing the final state.
+    The callable returns true if the search has finished.
     @param states: a state iterator, probably a generator object
     @param nseconds: a time limit
     @param niterations: a limit on the number of iterations

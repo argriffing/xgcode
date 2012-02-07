@@ -84,6 +84,15 @@ def rle(sequence):
             count = 1
     yield (value, count)
 
+def powerset(iterable):
+    """
+    powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+    This is an itertools recipe from docs.python.org.
+    """
+    s = list(iterable)
+    n = len(s)
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(n+1))
+
 def unique_everseen(iterable, key=None):
     """
     List unique elements, preserving order. Remember all elements ever seen.
