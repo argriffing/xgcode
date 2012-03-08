@@ -20,6 +20,7 @@ import FelTree
 import SchurAlgebra
 import EigUtil
 import const
+import RUtil
 
 g_tree_string = '((1:1, 2:0.5)6:1, 5:1, (3:0.2, 4:0.5)7:1)8;'
 

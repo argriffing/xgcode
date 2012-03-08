@@ -19,6 +19,7 @@ import Util
 import Carbone
 import kmeans
 import const
+import RUtil
 
 g_tags = ['pca:misc']
 

@@ -23,6 +23,7 @@ import agglom
 import kmeans
 import tibshirani
 import const
+import RUtil
 
 g_tags = ['pca:compute']
 

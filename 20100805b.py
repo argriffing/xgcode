@@ -20,6 +20,7 @@ import Carbone
 import agglom
 import kmeans
 import const
+import RUtil
 
 g_tags = ['pca:compute']
 

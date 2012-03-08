@@ -16,6 +16,7 @@ import Carbone
 import kmeans
 import moretypes
 import const
+import RUtil
 
 g_tags = ['pca:compute']
 

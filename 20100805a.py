@@ -16,6 +16,7 @@ import FormOut
 import Util
 import Carbone
 import agglom
+import RUtil
 import const
 
 g_tags = ['pca:compute']

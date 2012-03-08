@@ -20,6 +20,7 @@ import kmeans
 import combobreaker
 import const
 import moretypes
+import RUtil
 
 g_tags = ['pca:compute']
 
