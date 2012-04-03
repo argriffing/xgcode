@@ -5,6 +5,7 @@ Use tikz to draw a sample path from a continuous time Markov chain.
 from StringIO import StringIO
 
 import random
+import string
 import numpy as np
 import scipy
 from scipy import linalg
@@ -71,6 +72,9 @@ def get_tikz_lines(fs):
     # read the user variables
     R = np.array(fs.R)
     colors = fs.colorseq
+    invalid_colors = [s for s in colors if set(s) - set(string.lowercase)]
+    if invalid_colors:
+        raise ValueError('invalid colors: ' + str(invalid_colors))
     t_max = fs.interval
     length_total = fs.tikzlength
     # sample the initial state
