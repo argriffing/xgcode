@@ -1,5 +1,9 @@
 """
 Do things related to likelihoods on phylogenetic trees.
+
+Umm I am getting negative column likelihood
+-0.000131552378251
+what is this.
 """
 
 import unittest
@@ -35,7 +39,10 @@ def get_log_likelihood(tree, alignment, substitution_model):
         column_likelihood = substitution_model.get_likelihood(tree)
         if not column_likelihood:
             return None
-        log_likelihood += math.log(column_likelihood) * count
+        try:
+            log_likelihood += math.log(column_likelihood) * count
+        except ValueError as e:
+            raise ValueError(str(e) + '\n' + str(column_likelihood))
     return log_likelihood
 
 def simulate_alignment(tree, substitution_model, ncolumns, seed=None):

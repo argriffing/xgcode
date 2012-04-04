@@ -56,7 +56,6 @@ def sample(k):
         B[frozenset([r, vb])] = t - v_to_age[vb]
     return R, B
 
-
 def get_paths_to_root(R):
     sources, sinks = zip(*R)
     leaves = set(sinks) - set(sources)
@@ -68,6 +67,22 @@ def get_paths_to_root(R):
             path.append(v_to_source[path[-1]])
         paths_to_root.append(path)
     return paths_to_root
+
+def RB_to_v_to_age(R, B):
+    """
+    @param R: directed topology
+    @param B: branch lengths in time units
+    @return: map from vertex to age
+    """
+    sources, sinks = zip(*R)
+    leaves = set(sinks) - set(sources)
+    v_to_age = dict((v, 0) for v in leaves)
+    v_to_source = Ftree.R_to_v_to_source(R)
+    for v in Ftree.R_to_postorder(R):
+        p = v_to_source.get(v, None)
+        if p is not None:
+            v_to_age[p] = v_to_age[v] + B[frozenset([v, p])]
+    return v_to_age
 
 
 class TestKingman(unittest.TestCase):
