@@ -254,6 +254,12 @@ class Html(FormOut):
     def get_contenttype(self, fs):
         return 'text/html'
 
+class BeastXml(FormOut):
+    def __init__(self, fmt='out', ext='xml', interpolants=None):
+        FormOut.__init__(self, fmt, interpolants)
+    def get_contenttype(self, fs):
+        return 'text/xml'
+
 class RateMatrix(FormOut):
     def __init__(self, fmt='rate_matrix', ext='txt', interpolants=None):
         FormOut.__init__(self, fmt, ext, interpolants)
