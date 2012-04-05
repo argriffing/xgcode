@@ -230,3 +230,5 @@ One of the column defines (bad) clusters.
 20110616a.dat
 A primate newick tree from UCSC.
 
+20120405a.dat
+A primate fasta alignment from the BEAST tutorial.
