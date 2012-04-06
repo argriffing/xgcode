@@ -6,6 +6,7 @@ It uses the twelve-taxon primate analysis from the BEAST tutorial.
 Running this should take a few seconds
 before showing moments of posterior distributions
 of a few rate statistics.
+Extra functionality is available from the command line.
 """
 
 from StringIO import StringIO
@@ -13,6 +14,7 @@ import math
 import random
 import os
 import subprocess
+import argparse
 
 import numpy as np
 
@@ -22,11 +24,19 @@ import const
 import mcmc
 import Util
 import Fasta
+import RUtil
+
 
 g_fasta_string = const.read('20120405a').strip()
 g_ntax = 12
 g_nchar = 898
 g_beast_root = os.path.expanduser('~/svn-repos/beast-mcmc-read-only')
+
+g_headers = (
+        'sequence.length',
+        'mean.low', 'mean.mean', 'mean.high',
+        'var.low', 'var.mean', 'var.high',
+        'cov.low' ,'cov.mean', 'cov.high')
 
 #TODO use lxml
 
@@ -79,7 +89,8 @@ g_xml_pre_alignment = """
 	</taxa>
 """.strip()
 
-g_xml_post_alignment = """
+def get_xml_post_alignment(nsamples):
+    return """
 	<yuleModel id="yule" units="substitutions">
 		<birthRate>
 			<parameter id="yule.birthRate" value="1.0"
@@ -277,7 +288,7 @@ g_xml_post_alignment = """
 		</uniformIntegerOperator>
 	</operators>
 	<!-- Define MCMC -->
-	<mcmc id="mcmc" chainLength="8000" autoOptimize="true">
+	<mcmc id="mcmc" chainLength="%d" autoOptimize="true">
 		<posterior id="posterior">
 			<prior id="prior">
 				<booleanLikelihood>
@@ -323,7 +334,7 @@ g_xml_post_alignment = """
 			</column>
 		</log>
         -->
-""".rstrip()
+    """ % nsamples
 
 class BeastLogFileError(Exception): pass
 
@@ -373,7 +384,7 @@ def get_log_xml(log_loc):
         """ % log_loc
     return s
 
-def make_xml(start_pos, stop_pos):
+def make_xml(start_pos, stop_pos, nsamples):
     """
     @return: location of xml file, location of log file
     """
@@ -395,7 +406,7 @@ def make_xml(start_pos, stop_pos):
             <alignment idref="alignment"/>
         </patterns>
     """ % (start_pos, stop_pos)
-    print >> out, g_xml_post_alignment
+    print >> out, get_xml_post_alignment(nsamples)
     log_loc = Util.get_tmp_filename(prefix='beast', suffix='.log')
     print >> out, get_log_xml(log_loc)
     xml_loc = Util.create_tmp_file(
@@ -429,6 +440,9 @@ def get_form_out():
     return FormOut.Html()
 
 def get_html(values_name_pairs):
+    """
+    Web based only.
+    """
     out = StringIO()
     #
     #print >> out, 'statistic:', name
@@ -484,15 +498,15 @@ def get_html(values_name_pairs):
     # return the html string
     return out.getvalue().rstrip()
 
-def get_response_content(fs):
-    # init the response and get the user variables
-    start_pos = fs.start
-    stop_pos = fs.stop
+def get_value_lists(start_pos, stop_pos, nsamples):
+    """
+    Command-line and also web based.
+    """
+    # input validation
     if stop_pos < start_pos:
         raise ValueError('the stop pos must be after the start pos')
-    out = StringIO()
     # create the xml describing the analysis
-    xml_loc, log_loc = make_xml(start_pos, stop_pos)
+    xml_loc, log_loc = make_xml(start_pos, stop_pos, nsamples)
     print 'log file location:', log_loc
     # run beast
     run_beast(xml_loc)
@@ -501,7 +515,7 @@ def get_response_content(fs):
         lines = [line.strip() for line in fin.readlines()]
         iines = [line for line in line if line]
     # check the number of non-whitespace lines
-    expected = 8004
+    expected = nsamples + 3 + 1
     observed = len(lines)
     if expected != observed:
         msg= 'expected %d lines but observed %d' % (expected, observed)
@@ -531,13 +545,25 @@ def get_response_content(fs):
     # skip the first three lines
     # skip the initial state
     # skip ten percent of the remaining states
-    nburnin = (len(lines) - 3 - 1) / 10
+    nburnin = nsamples / 10
     for line in lines[3 + 1 + nburnin:]:
         s1, s2, s3, s4 = line.split()
         state = int(s1)
         means.append(float(s2))
         variations.append(float(s3))
         covariances.append(float(s4))
+    return means, variations, covariances
+
+
+def get_response_content(fs):
+    # init the response and get the user variables
+    start_pos = fs.start
+    stop_pos = fs.stop
+    nsamples = 8000
+    out = StringIO()
+    # do the analysis
+    means, variations, covariances = get_value_lists(
+            start_pos, stop_pos, nsamples)
     values_names_pairs = (
             (means, 'mean rate among branches'),
             (variations, 'coefficient of variation of rates among branches'),
@@ -545,4 +571,191 @@ def get_response_content(fs):
     print >> out, get_html(values_names_pairs)
     # return the response
     return out.getvalue()
+
+def get_R_tick_cmd(axis, positions):
+    """
+    @param axis: 1 for x, 2 for y
+    @param positions: a sequence of positions
+    @return: a single line R command to draw the ticks
+    """
+    s = 'c(' + ', '.join(str(x) for x in positions) + ')'
+    return RUtil.mk_call_str('axis', axis, at=s)
+
+def get_ggplot2_x_tick_cmd(positions):
+    s = 'c(' + ', '.join(str(x) for x in positions) + ')'
+    return RUtil.mk_call_str('scale_x_discrete', breaks=s)
+
+
+def get_ggplot2_scripts(sequence_lengths):
+    scripts = []
+    # get the plot for the mean
+    out = StringIO()
+    print >> out, RUtil.mk_call_str(
+            'ggplot', 'my.table',
+            RUtil.mk_call_str(
+                'aes',
+                x='sequence.length',
+                y='mean.mean')), '+'
+    print >> out, RUtil.mk_call_str(
+            'geom_errorbar',
+            RUtil.mk_call_str(
+                'aes',
+                ymin='mean.low',
+                ymax='mean.high'),
+            width='20'), '+'
+    print >> out, "geom_point() + xlab('sequence length') + ylab('mean') +"
+    print >> out, get_ggplot2_x_tick_cmd(sequence_lengths)
+    scripts.append(out.getvalue().rstrip())
+    # get the plot for the coefficient of variation
+    out = StringIO()
+    print >> out, RUtil.mk_call_str(
+            'ggplot', 'my.table',
+            RUtil.mk_call_str(
+                'aes',
+                x='sequence.length',
+                y='var.mean')), '+'
+    print >> out, RUtil.mk_call_str(
+            'geom_errorbar',
+            RUtil.mk_call_str(
+                'aes',
+                ymin='var.low',
+                ymax='var.high'),
+            width='20'), '+'
+    print >> out, "geom_point() + xlab('sequence length') +"
+    print >> out, "ylab('coefficient of variation') +"
+    print >> out, get_ggplot2_x_tick_cmd(sequence_lengths)
+    scripts.append(out.getvalue().rstrip())
+    # get the plot for the correlation
+    out = StringIO()
+    print >> out, RUtil.mk_call_str(
+            'ggplot', 'my.table',
+            RUtil.mk_call_str(
+                'aes',
+                x='sequence.length',
+                y='cov.mean')), '+'
+    print >> out, RUtil.mk_call_str(
+            'geom_errorbar',
+            RUtil.mk_call_str(
+                'aes',
+                ymin='cov.low',
+                ymax='cov.high'),
+            width='20'), '+'
+    print >> out, "geom_point() + xlab('sequence length') +"
+    print >> out, "ylab('parent child correlation') +"
+    print >> out, get_ggplot2_x_tick_cmd(sequence_lengths)
+    scripts.append(out.getvalue().rstrip())
+    return scripts
+
+
+def get_plot_scripts(sequence_lengths):
+    scripts = []
+    # get the plot for the mean
+    out = StringIO()
+    print >> out, RUtil.mk_call_str(
+            'plot',
+            'my.table$sequence.length',
+            'my.table$mean.mean',
+            xlab="''",
+            ylab="'mean'",
+            xaxt="'n'",
+            main="'posterior statistics of rates among branches'",
+            #type='"n"',
+            )
+    print >> out, get_R_tick_cmd(1, sequence_lengths)
+    scripts.append(out.getvalue().rstrip())
+    # get the plot for the mean
+    out = StringIO()
+    print >> out, RUtil.mk_call_str(
+            'plot',
+            'my.table$sequence.length',
+            'my.table$var.mean',
+            xlab="''",
+            ylab="'coeff of variation'",
+            xaxt="'n'",
+            #type='"n"',
+            )
+    print >> out, get_R_tick_cmd(1, sequence_lengths)
+    scripts.append(out.getvalue().rstrip())
+    # get the plot for the mean
+    out = StringIO()
+    print >> out, RUtil.mk_call_str(
+            'plot',
+            'my.table$sequence.length',
+            'my.table$cov.mean',
+            xlab="'sequence length'",
+            ylab="'parent-child correlation'",
+            xaxt="'n'",
+            #type='"n"',
+            )
+    print >> out, get_R_tick_cmd(1, sequence_lengths)
+    scripts.append(out.getvalue().rstrip())
+    return scripts
+
+def get_table_string_and_scripts(stop_positions, nsamples):
+    """
+    Command-line only.
+    """
+    start_position = 1
+    # build the array for the R table
+    data_arr = []
+    for stop_position in stop_positions:
+        sequence_length = stop_position - start_position + 1
+        means, variations, covs = get_value_lists(
+                start_position, stop_position, nsamples)
+        row = [sequence_length]
+        for values in means, variations, covs:
+            corr_info = mcmc.Correlation()
+            corr_info.analyze(values)
+            hpd_low, hpd_high = mcmc.get_hpd_interval(0.95, values)
+            row.extend([hpd_low, corr_info.mean, hpd_high])
+        data_arr.append(row)
+    # build the table string
+    table_string = RUtil.get_table_string(data_arr, g_headers)
+    # get the scripts
+    sequence_lengths = [x - start_position + 1 for x in stop_positions]
+    scripts = get_ggplot2_scripts(sequence_lengths)
+    # return the table string and scripts
+    return table_string, scripts
+
+
+def main(args):
+    # get the end positions,
+    # forcing the first end position to be 5
+    # and the last end position to be 898.
+    incr = (g_nchar - 5) / float(args.nlengths - 1)
+    stop_positions = [5 + int(i * incr) for i in range(args.nlengths)]
+    stop_positions[-1] = g_nchar
+    # run BEAST and create the R stuff
+    table_string, scripts = get_table_string_and_scripts(
+            stop_positions, args.nsamples)
+    # create the comboscript
+    out = StringIO()
+    print >> out, 'library(ggplot2)'
+    print >> out, 'par(mfrow=c(3,1))'
+    for script in scripts:
+        print >> out, script
+    comboscript = out.getvalue()
+    # create the R output image
+    device_name = Form.g_imageformat_to_r_function['pdf']
+    retcode, r_out, r_err, image_data = RUtil.run_plotter( 
+        table_string, comboscript, device_name) 
+    if retcode: 
+        raise RUtil.RError(r_err) 
+    # write the image data
+    with open(args.outfile, 'wb') as fout:
+        fout.write(image_data)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-o', '--outfile',
+            default='beast-analysis.pdf',
+            help='write this pdf file')
+    parser.add_argument('--nsamples',
+            default=8000, type=int,
+            help='let the BEAST MCMC generate this many samples')
+    parser.add_argument('--nlengths',
+            default=5, type=int,
+            help='look at this many different sub-alignment lengths')
+    main(parser.parse_args())
 
