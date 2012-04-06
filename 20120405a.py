@@ -19,6 +19,7 @@ import numpy as np
 import Form
 import FormOut
 import const
+import mcmc
 import Util
 import Fasta
 
@@ -425,7 +426,63 @@ def get_form():
     return form_objects
 
 def get_form_out():
-    return FormOut.Report()
+    return FormOut.Html()
+
+def get_html(values_name_pairs):
+    out = StringIO()
+    #
+    #print >> out, 'statistic:', name
+    #print >> out, 'mean:', corr_info.mean
+    #print >> out, 'standard error of mean:', corr_info.stdErrorOfMean
+    #print >> out, 'auto correlation time (ACT):', corr_info.ACT
+    #print >> out, 'standard deviation of ACT:', corr_info.stdErrOfACT
+    #print >> out, 'effective sample size (ESS):', corr_info.ESS
+    #print >> out, 'posterior density interval (0.95): [%f, %f]' % hpd
+    #print >> out
+    print >> out, '<html>'
+    # write the html head
+    print >> out, '<head>'
+    print >> out, '<script'
+    print >> out, '  type="text/javascript"'
+    print >> out, '  src="https://www.google.com/jsapi">'
+    print >> out, '</script>'
+    print >> out, '<script type="text/javascript">'
+    print >> out, "  google.load('visualization', '1', {packages:['table']});"
+    print >> out, "  google.setOnLoadCallback(drawTable);"
+    print >> out, "  function drawTable() {"
+    print >> out, "    var data = new google.visualization.DataTable();"
+    # add columns
+    print >> out, "    data.addColumn('string', 'description');"
+    print >> out, "    data.addColumn('number', '95% HPD low');"
+    print >> out, "    data.addColumn('number', 'mean');"
+    print >> out, "    data.addColumn('number', '95% HPD high');"
+    print >> out, "    data.addColumn('number', 'ACT');"
+    print >> out, "    data.addColumn('number', 'ESS');"
+    # add rows
+    print >> out, "    data.addRows(3);"
+    # add entries
+    for i, (values, name) in enumerate(values_name_pairs):
+        corr_info = mcmc.Correlation()
+        corr_info.analyze(values)
+        hpd_low, hpd_high = mcmc.get_hpd_interval(0.95, values)
+        print >> out, "    data.setCell(%d, 0, '%s');" % (i, name)
+        print >> out, "    data.setCell(%d, 1, %f);" % (i, hpd_low)
+        print >> out, "    data.setCell(%d, 2, %f);" % (i, corr_info.mean)
+        print >> out, "    data.setCell(%d, 3, %f);" % (i, hpd_high)
+        print >> out, "    data.setCell(%d, 4, %f);" % (i, corr_info.ACT)
+        print >> out, "    data.setCell(%d, 5, %f);" % (i, corr_info.ESS)
+    print >> out, "    var table = new google.visualization.Table("
+    print >> out, "      document.getElementById('table_div'));"
+    print >> out, "    table.draw(data, {showRowNumber: false});"
+    print >> out, "  }"
+    print >> out, "</script>"
+    print >> out, '</head>'
+    # write the html body
+    print >> out, '<body><div id="table_div"></div></body>'
+    # end the html
+    print >> out, '</html>'
+    # return the html string
+    return out.getvalue().rstrip()
 
 def get_response_content(fs):
     # init the response and get the user variables
@@ -436,6 +493,7 @@ def get_response_content(fs):
     out = StringIO()
     # create the xml describing the analysis
     xml_loc, log_loc = make_xml(start_pos, stop_pos)
+    print 'log file location:', log_loc
     # run beast
     run_beast(xml_loc)
     # read the log file
@@ -470,26 +528,21 @@ def get_response_content(fs):
     means = []
     variations = []
     covariances = []
-    for line in lines[3:]:
+    # skip the first three lines
+    # skip the initial state
+    # skip ten percent of the remaining states
+    nburnin = (len(lines) - 3 - 1) / 10
+    for line in lines[3 + 1 + nburnin:]:
         s1, s2, s3, s4 = line.split()
         state = int(s1)
         means.append(float(s2))
         variations.append(float(s3))
         covariances.append(float(s4))
-    print >> out, 'summaries of posterior distributions of rate statistics'
-    print >> out
-    print >> out, 'statistic: mean rate among branches'
-    print >> out, 'posterior mean:', np.mean(means)
-    print >> out, 'posterior stdev:', np.std(means)
-    print >> out
-    print >> out, 'statistic: coefficient of variation of rates among branches'
-    print >> out, 'posterior mean:', np.mean(variations)
-    print >> out, 'posterior stdev:', np.std(variations)
-    print >> out
-    print >> out, 'statistic: correlation of parent and child branch rates'
-    print >> out, 'posterior mean:', np.mean(covariances)
-    print >> out, 'posterior stdev:', np.std(covariances)
-    print >> out
+    values_names_pairs = (
+            (means, 'mean rate among branches'),
+            (variations, 'coefficient of variation of rates among branches'),
+            (covariances, 'correlation of parent and child branch rates'))
+    print >> out, get_html(values_names_pairs)
     # return the response
     return out.getvalue()
 
