@@ -14,7 +14,6 @@ import FormOut
 import tikz
 import interlace
 import color
-import const
 
 def get_form():
     """

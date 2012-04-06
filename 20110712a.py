@@ -21,7 +21,6 @@ import interlace
 import pcurve
 import sympyutils
 import color
-import const
 
 STYLE_X = 0
 STYLE_Y = 1

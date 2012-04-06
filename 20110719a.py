@@ -16,7 +16,6 @@ import tikz
 import interlace
 import iterutils
 import color
-import const
 
 def get_form():
     """
