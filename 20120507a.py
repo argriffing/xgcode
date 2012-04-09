@@ -21,6 +21,7 @@ import mcmc
 import Util
 import Fasta
 import RUtil
+import hpcutil
 
 
 g_fasta_string = const.read('20120405a').strip()
@@ -632,9 +633,7 @@ def get_ggplot2_scripts(nsamples, sequence_lengths, midpoints):
     print >> out, "opts(title='mcmc chain length %d') +" % nsamples
     print >> out, "geom_point() + xlab('midpoint') + ylab('mean of rates') +"
     print >> out, "scale_color_discrete('length') +"
-    #print >> out, "scale_color_discrete('sub-alignment length', breaks=c(57, 57*2, 57*2*2, 57*2*2*2)) +"
     print >> out, get_ggplot2_x_tick_cmd(midpoints)
-    #print >> out, get_ggplot2_legend_cmd()
     scripts.append(out.getvalue().rstrip())
     # get the plot for the coefficient of variation
     out = StringIO()
@@ -680,50 +679,6 @@ def get_ggplot2_scripts(nsamples, sequence_lengths, midpoints):
     scripts.append(out.getvalue().rstrip())
     return scripts
 
-
-def get_plot_scripts(sequence_lengths):
-    scripts = []
-    # get the plot for the mean
-    out = StringIO()
-    print >> out, RUtil.mk_call_str(
-            'plot',
-            'my.table$sequence.length',
-            'my.table$mean.mean',
-            xlab="''",
-            ylab="'mean'",
-            xaxt="'n'",
-            main="'posterior statistics of rates among branches'",
-            #type='"n"',
-            )
-    print >> out, get_R_tick_cmd(1, sequence_lengths)
-    scripts.append(out.getvalue().rstrip())
-    # get the plot for the mean
-    out = StringIO()
-    print >> out, RUtil.mk_call_str(
-            'plot',
-            'my.table$sequence.length',
-            'my.table$var.mean',
-            xlab="''",
-            ylab="'coeff of variation'",
-            xaxt="'n'",
-            #type='"n"',
-            )
-    print >> out, get_R_tick_cmd(1, sequence_lengths)
-    scripts.append(out.getvalue().rstrip())
-    # get the plot for the mean
-    out = StringIO()
-    print >> out, RUtil.mk_call_str(
-            'plot',
-            'my.table$sequence.length',
-            'my.table$cov.mean',
-            xlab="'sequence length'",
-            ylab="'parent-child correlation'",
-            xaxt="'n'",
-            #type='"n"',
-            )
-    print >> out, get_R_tick_cmd(1, sequence_lengths)
-    scripts.append(out.getvalue().rstrip())
-    return scripts
 
 def get_table_string_and_scripts(nsamples):
     """
@@ -784,5 +739,7 @@ if __name__ == '__main__':
     parser.add_argument('--nsamples',
             default=8000, type=int,
             help='let the BEAST MCMC generate this many samples')
+    parser.add_argument('--remote',
+            help='run remotely')
     main(parser.parse_args())
 

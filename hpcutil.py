@@ -106,6 +106,7 @@ class RemoteBase:
             if result:
                 lines = [line.strip() for line in result.splitlines()]
                 lines = [line for line in lines if line]
+                print result
                 if lines[-1] == 'No unfinished job found':
                     print 'umm no jobs are left'
                     break
