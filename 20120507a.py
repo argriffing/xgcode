@@ -405,9 +405,79 @@ def get_log_xml(log_loc):
         """ % log_loc
     return s
 
-def make_xml(start_pos, stop_pos, nsamples):
+class RemoteBeast(hpcutil.RemoteBrc):
+    def __init__(self, start_stop_pairs, nsamples):
+        hpcutil.RemoteBrc.__init__(self)
+        self.start_stop_pairs = start_stop_pairs
+        self.nsamples = nsamples
+        self.remote_beast_sh_path = os.path.join(
+                '/brc_share/brc/argriffi/packages/BEASTv1.7.1',
+                'bin/beast')
+        self.remote_beast_jar_path = os.path.join(
+                '/brc_share/brc/argriffi/packages/BEASTv1.7.1',
+                'lib/beast.jar')
+        self.local_log_paths = None
+    def preprocess(self):
+        # for each (start_pos, stop_pos) pair
+        # define a log filename and
+        # create a beast xml and a bsub script
+        self.local_log_paths = []
+        for i, start_stop_pair in enumerate(self.start_stop_pairs):
+            start_pos, stop_pos = start_stop_pair
+            # define the log file paths
+            log_name = 'primate-tut-%d-%d.log' % start_stop_pair
+            local_log_path = os.path.join(
+                    self.local.get_out(), log_name)
+            remote_log_path = os.path.join(
+                    self.remote.get_out(), log_name)
+            self.local_log_paths.append(local_log_path)
+            # define the xml file paths
+            xml_name = 'primate-tut-%d-%d.xml' % start_stop_pair
+            local_xml_path = os.path.join(
+                    self.local.get_in_contents(), xml_name)
+            remote_xml_path = os.path.join(
+                    self.remote.get_in_contents(), xml_name)
+            # define the local bsub path
+            bsub_name = 'primate-tut-%d-%d.bsub' % start_stop_pair
+            local_bsub_path = os.path.join(
+                    self.local.get_in_bsubs(), bsub_name)
+            # create the xml file
+            with open(local_xml_path, 'w') as fout:
+                print >> fout, get_xml_string(
+                        start_pos, stop_pos, self.nsamples, remote_log_path)
+            # create the bsub file
+            with open(local_bsub_path, 'w') as fout:
+                stdout_path = os.path.join(self.remote.get_out(),
+                        'out.tut-%d-%d' % start_stop_pair)
+                stderr_path = os.path.join(self.remote.get_out(),
+                        'err.tut-%d-%d' % start_stop_pair)
+                # name the job
+                print >> fout, '#BSUB -J tut-%d-%d' % start_stop_pair
+                # suggest the brc queue
+                print >> fout, '#BSUB -q brc'
+                # redirect stdout
+                print >> fout, '#BSUB -o', stdout_path
+                # redirect stderr
+                print >> fout, '#BSUB -e', stderr_path
+                # a command to show the environment maybe
+                print >> fout, 'env'
+                # try to find java
+                print >> fout, 'add java'
+                print >> fout, 'java -version'
+                print >> fout, 'which java'
+                print >> fout, 'ls /usr/bin'
+                # the actual command
+                print >> fout, 'java -jar',
+                print >> fout, self.remote_beast_jar_path, remote_xml_path
+
+def get_xml_string(start_pos, stop_pos, nsamples, log_path):
     """
-    @return: location of xml file, location of log file
+    This is for both hpc and non-hpc.
+    @param start_pos: start position within the hardcoded alignment
+    @param stop_pos: stop position within the hardcoded alignment
+    @param nsamples: run the mcmc chain for this many samples
+    @param log_path: tell beast to put its posterior sample log here
+    @return: multiline xml string
     """
     out = StringIO()
     print >> out, g_xml_pre_alignment
@@ -428,13 +498,23 @@ def make_xml(start_pos, stop_pos, nsamples):
         </patterns>
     """ % (start_pos, stop_pos)
     print >> out, get_xml_post_alignment(nsamples)
+    print >> out, get_log_xml(log_path)
+    return out.getvalue().rstrip()
+
+def make_xml(start_pos, stop_pos, nsamples):
+    """
+    This is for non-hpc only.
+    @return: location of xml file, location of log file
+    """
     log_loc = Util.get_tmp_filename(prefix='beast', suffix='.log')
-    print >> out, get_log_xml(log_loc)
-    xml_loc = Util.create_tmp_file(
-            out.getvalue(), prefix='beast', suffix='.xml')
+    xml_string = get_xml_string(start_pos, stop_pos, nsamples, log_loc)
+    xml_loc = Util.create_tmp_file(xml_string, prefix='beast', suffix='.xml')
     return xml_loc, log_loc
 
 def run_beast(xml_loc):
+    """
+    This is for non-hpc only.
+    """
     args = (
             'java',
             '-jar',
@@ -519,24 +599,17 @@ def get_html(values_name_pairs):
     # return the html string
     return out.getvalue().rstrip()
 
-def get_value_lists(start_pos, stop_pos, nsamples):
+def read_log(log_loc, nsamples_expected):
     """
-    Command-line and also web based.
+    @param log_loc: path to the log file
+    @param nsamples_expected: expected number of mcmc posterior samples
+    @return: means, variations, covariances
     """
-    # input validation
-    if stop_pos < start_pos:
-        raise ValueError('the stop pos must be after the start pos')
-    # create the xml describing the analysis
-    xml_loc, log_loc = make_xml(start_pos, stop_pos, nsamples)
-    print 'log file location:', log_loc
-    # run beast
-    run_beast(xml_loc)
-    # read the log file
     with open(log_loc) as fin:
         lines = [line.strip() for line in fin.readlines()]
         iines = [line for line in line if line]
     # check the number of non-whitespace lines
-    expected = nsamples + 3 + 1
+    expected = nsamples_expected + 3 + 1
     observed = len(lines)
     if expected != observed:
         msg= 'expected %d lines but observed %d' % (expected, observed)
@@ -566,7 +639,7 @@ def get_value_lists(start_pos, stop_pos, nsamples):
     # skip the first three lines
     # skip the initial state
     # skip ten percent of the remaining states
-    nburnin = nsamples / 10
+    nburnin = nsamples_expected / 10
     for line in lines[3 + 1 + nburnin:]:
         s1, s2, s3, s4 = line.split()
         state = int(s1)
@@ -575,6 +648,20 @@ def get_value_lists(start_pos, stop_pos, nsamples):
         covariances.append(float(s4))
     return means, variations, covariances
 
+def get_value_lists(start_pos, stop_pos, nsamples):
+    """
+    Command-line and also web based but not hpc-based.
+    """
+    # input validation
+    if stop_pos < start_pos:
+        raise ValueError('the stop pos must be after the start pos')
+    # create the xml describing the analysis
+    xml_loc, log_loc = make_xml(start_pos, stop_pos, nsamples)
+    print 'log file location:', log_loc
+    # run beast
+    run_beast(xml_loc)
+    # read the log file
+    return read_log(log_loc, nsamples)
 
 def get_response_content(fs):
     # init the response and get the user variables
@@ -709,10 +796,45 @@ def get_table_string_and_scripts(nsamples):
     # return the table string and scripts
     return table_string, scripts
 
+def get_table_string_and_scripts_from_logs(
+        start_stop_pairs, log_paths, nsamples):
+    """
+    This is for analysis of remote execution.
+    """
+    # build the array for the R table
+    data_arr = []
+    sequence_lengths = []
+    midpoints = []
+    for start_stop_pair, log_path in zip(
+            start_stop_pairs, log_paths):
+        start_pos, stop_pos = start_stop_pair
+        sequence_length = stop_pos - start_pos + 1
+        means, variations, covs = read_log(log_path, nsamples)
+        midpoint = (start_pos + stop_pos) / 2.0
+        row = [sequence_length, midpoint]
+        for values in means, variations, covs:
+            corr_info = mcmc.Correlation()
+            corr_info.analyze(values)
+            hpd_low, hpd_high = mcmc.get_hpd_interval(0.95, values)
+            row.extend([hpd_low, corr_info.mean, hpd_high])
+        data_arr.append(row)
+        sequence_lengths.append(sequence_length)
+        midpoints.append(midpoint)
+    # build the table string
+    table_string = RUtil.get_table_string(data_arr, g_headers)
+    # get the scripts
+    scripts = get_ggplot2_scripts(nsamples, sequence_lengths, midpoints)
+    # return the table string and scripts
+    return table_string, scripts
 
 def main(args):
-    # run BEAST and create the R stuff
-    table_string, scripts = get_table_string_and_scripts(args.nsamples)
+    if args.remote:
+        r = RemoteBeast(g_start_stop_pairs, args.nsamples)
+        r.run()
+        table_string, scripts = get_table_string_and_scripts_from_logs(
+                g_start_stop_pairs, r.local_log_paths, args.nsamples)
+    else:
+        table_string, scripts = get_table_string_and_scripts(args.nsamples)
     # create the comboscript
     out = StringIO()
     print >> out, 'library(ggplot2)'
@@ -740,6 +862,7 @@ if __name__ == '__main__':
             default=8000, type=int,
             help='let the BEAST MCMC generate this many samples')
     parser.add_argument('--remote',
+            action='store_true',
             help='run remotely')
     main(parser.parse_args())
 
