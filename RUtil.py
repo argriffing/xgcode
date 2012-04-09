@@ -163,13 +163,14 @@ def _get_device_specific_call(temp_plot_name, device_name,
     return call_string
 
 def run_plotter(table, user_script_content, device_name,
-        width=None, height=None):
+        width=None, height=None, keep_intermediate=False):
     """
     @param table: the table string
     @param user_script_content: script without header or footer
     @param device_name: an R device function name
     @param width: optional width passed to tikz
     @param height: optional height passed to tikz
+    @param keep_intermediate: a flag to keep the intermediate files
     @return: returncode, r_stdout, r_stderr, image_data
     """
     temp_table_name = Util.create_tmp_file(table)
@@ -188,8 +189,9 @@ def run_plotter(table, user_script_content, device_name,
     if retcode:
         image_data = None
     else:
-        os.unlink(temp_table_name)
-        os.unlink(temp_script_name)
+        if not keep_intermediate:
+            os.unlink(temp_table_name)
+            os.unlink(temp_script_name)
         try:
             with open(temp_plot_name, 'rb') as fin:
                 image_data = fin.read()
