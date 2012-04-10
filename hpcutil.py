@@ -9,6 +9,7 @@ from StringIO import StringIO
 import subprocess
 import os
 import time
+import logging
 
 import Util
 
@@ -125,35 +126,44 @@ class RemoteBase:
         args = ('tar', 'xzvf', self.local.get_out_tgz(),
                 '-C', self.local.get_batch_out())
         result = subprocess.check_output(args, stderr=subprocess.STDOUT)
-    def run(self):
+    def run(self, verbose=False):
         """
         This is a long blocking call that runs the batch remotely.
         It expects that ssh keys have been set up.
         """
-        # (local) reserve a unique identifier
+        f = logging.getLogger('my.logger')
+        h = logging.StreamHandler()
+        h.setFormatter(logging.Formatter('%(message)s %(asctime)s'))
+        f.addHandler(h)
+        if verbose:
+            f.setLevel(logging.DEBUG)
+        else:
+            f.setLevel(logging.WARNING)
+        f.info('(local) reserve a unique identifier')
         self._reserve_name()
-        # (local) set up the local directory structure
+        f.info('local) set up the local directory structure')
         self._init_local_structure()
-        # (local) call preprocess callback to populate batch_in
+        f.info('(local) call preprocess callback to populate batch_in')
         self.preprocess()
-        # (local) tgz batch_in
+        f.info('(local) tgz batch_in')
         self._make_local_tgz()
-        # (ssh) set up the remote directory structure
+        f.info('(ssh) set up the remote directory structure')
         self._init_remote_structure()
-        # (scp) scp the tgz to the remote server
+        f.info('(scp) scp the tgz to the remote server')
         self._scp_to_remote()
-        # (ssh) expand the tgz
+        f.info('(ssh) expand the tgz')
         self._remote_expand()
-        # (ssh, lsf) submit all of the bsub files
+        f.info('(ssh, lsf) submit all of the bsub files')
         self._submit()
-        # (ssh, lsf) poll for completion of the jobs
+        f.info('(ssh, lsf) poll for completion of the jobs')
         self._poll()
-        # (ssh) tgz the results
+        f.info('(ssh) tgz the results')
         self._make_remote_tgz()
-        # (scp) scp the tgz to the local computer
+        f.info('(scp) scp the tgz to the local computer')
         self._scp_to_local()
-        # (local) expand the tgz
+        f.info('(local) expand the tgz')
         self._local_expand()
+        f.info('(local) return from the hpc')
 
 
 class RemoteBrc(RemoteBase):

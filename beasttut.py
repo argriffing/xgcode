@@ -7,6 +7,7 @@ from StringIO import StringIO
 import const
 import mcmc
 import Fasta
+import RUtil
 
 g_fasta_string = const.read('20120405a').strip()
 g_ntax = 12

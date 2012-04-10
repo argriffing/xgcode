@@ -6,22 +6,18 @@ Colors are according to interval width (sub-alignment length).
 """
 
 from StringIO import StringIO
-import math
-import random
 import os
 import subprocess
 import argparse
-
-import numpy as np
+import logging
 
 import Form
 import FormOut
 import const
-import mcmc
 import Util
-import Fasta
 import RUtil
 import hpcutil
+import beasttut
 
 
 g_nchar = 898
@@ -111,15 +107,9 @@ class RemoteBeast(hpcutil.RemoteBrc):
                 print >> fout, '#BSUB -o', stdout_path
                 # redirect stderr
                 print >> fout, '#BSUB -e', stderr_path
-                # a command to show the environment maybe
-                print >> fout, 'env'
-                # try to find java
-                print >> fout, 'add java'
-                print >> fout, 'java -version'
-                print >> fout, 'which java'
-                print >> fout, 'ls /usr/bin'
-                # the actual command
-                print >> fout, 'java -jar',
+                # run BEAST using a java path suggested by Gary Howell
+                print >> fout, '/usr/local/apps/java/jre1.6.0_31/bin/java',
+                print >> fout, '-jar',
                 print >> fout, self.remote_beast_jar_path, remote_xml_path
 
 def make_xml(start_pos, stop_pos, nsamples):
@@ -195,30 +185,44 @@ def get_response_content(fs):
     return out.getvalue()
 
 def main(args):
+    # set up the logger
+    f = logging.getLogger('toplevel.logger')
+    h = logging.StreamHandler()
+    h.setFormatter(logging.Formatter('%(message)s %(asctime)s'))
+    f.addHandler(h)
+    if args.verbose:
+        f.setLevel(logging.DEBUG)
+    else:
+        f.setLevel(logging.WARNING)
+    # run BEAST
     if args.remote:
         r = RemoteBeast(g_start_stop_pairs, args.nsamples)
-        r.run()
+        f.info('run BEAST remotely')
+        r.run(verbose=args.verbose)
+        f.info('(local) build the R table string and scripts')
         table_string, scripts = beasttut.get_table_string_and_scripts_from_logs(
                 g_start_stop_pairs, r.local_log_paths, args.nsamples)
     else:
+        f.info('(local) run BEAST locally and build the R table and scripts')
         table_string, scripts = beasttut.get_table_string_and_scripts(
                 args.nsamples)
-    # create the comboscript
+    f.info('(local) create the composite R script')
     out = StringIO()
     print >> out, 'library(ggplot2)'
     print >> out, 'par(mfrow=c(3,1))'
     for script in scripts:
         print >> out, script
     comboscript = out.getvalue()
-    # create the R output image
+    f.info('(local) run R to create the pdf')
     device_name = Form.g_imageformat_to_r_function['pdf']
     retcode, r_out, r_err, image_data = RUtil.run_plotter( 
         table_string, comboscript, device_name, keep_intermediate=True) 
     if retcode: 
         raise RUtil.RError(r_err) 
-    # write the image data
+    f.info('(local) write the .pdf file')
     with open(args.outfile, 'wb') as fout:
         fout.write(image_data)
+    f.info('(local) return from toplevel')
 
 
 if __name__ == '__main__':
@@ -232,5 +236,8 @@ if __name__ == '__main__':
     parser.add_argument('--remote',
             action='store_true',
             help='run remotely')
+    parser.add_argument('-v', '--verbose',
+            action='store_true',
+            help='show more info')
     main(parser.parse_args())
 
