@@ -206,11 +206,11 @@ def main(args):
     elif args.run == 'serial':
         f.info('(local) run BEAST serially locally and build the R stuff')
         table_string, scripts = beasttut.get_table_string_and_scripts(
-                args.nsamples)
+                g_start_stop_pairs, args.nsamples)
     elif args.run == 'parallel':
         f.info('(local) run BEAST locally in parallel and build the R stuff')
         table_string, scripts = beasttut.get_table_string_and_scripts_par(
-                args.nsamples)
+                g_start_stop_pairs, args.nsamples)
     else:
         raise ValueError('invalid execution model')
     f.info('(local) create the composite R script')

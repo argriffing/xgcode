@@ -3,15 +3,21 @@ This module is related to the BEAST primate tutorial.
 """
 
 from StringIO import StringIO
+import os
+import subprocess
+import multiprocessing
+from multiprocessing import Pool
 
 import const
 import mcmc
 import Fasta
 import RUtil
+import Util
 
 g_fasta_string = const.read('20120405a').strip()
 g_ntax = 12
 g_nchar = 898
+g_beast_root = os.path.expanduser('~/svn-repos/beast-mcmc-read-only')
 
 g_headers = (
         'sequence.length',
@@ -501,6 +507,44 @@ def read_log(log_loc, nsamples_expected):
         covariances.append(float(s4))
     return means, variations, covariances
 
+def run_beast(xml_loc):
+    """
+    This is for non-hpc only.
+    """
+    args = (
+            'java',
+            '-jar',
+            os.path.join(g_beast_root, 'build', 'dist', 'beast.jar'),
+            '-beagle', '-beagle_CPU', '-beagle_SSE', '-beagle_double',
+            xml_loc,
+            )
+    subprocess.call(args)
+
+def make_xml(start_pos, stop_pos, nsamples):
+    """
+    This is for non-hpc only.
+    @return: location of xml file, location of log file
+    """
+    log_loc = Util.get_tmp_filename(prefix='beast', suffix='.log')
+    xml_string = get_xml_string(
+            start_pos, stop_pos, nsamples, log_loc)
+    xml_loc = Util.create_tmp_file(xml_string, prefix='beast', suffix='.xml')
+    return xml_loc, log_loc
+
+def get_value_lists(start_pos, stop_pos, nsamples):
+    """
+    Command-line serial and also web based.
+    """
+    # input validation
+    if stop_pos < start_pos:
+        raise ValueError('the stop pos must be after the start pos')
+    # create the xml describing the analysis
+    xml_loc, log_loc = make_xml(start_pos, stop_pos, nsamples)
+    # run beast
+    run_beast(xml_loc)
+    # read the log file
+    return read_log(log_loc, nsamples)
+
 def get_R_tick_cmd(axis, positions):
     """
     @param axis: 1 for x, 2 for y
@@ -586,7 +630,7 @@ def get_ggplot2_scripts(nsamples, sequence_lengths, midpoints):
     scripts.append(out.getvalue().rstrip())
     return scripts
 
-def get_table_string_and_scripts(nsamples):
+def get_table_string_and_scripts(start_stop_pairs, nsamples):
     """
     Command-line only.
     """
@@ -594,7 +638,45 @@ def get_table_string_and_scripts(nsamples):
     data_arr = []
     sequence_lengths = []
     midpoints = []
-    for start_pos, stop_pos in g_start_stop_pairs:
+    for start_pos, stop_pos in start_stop_pairs:
+        sequence_length = stop_pos - start_pos + 1
+        means, variations, covs = get_value_lists(
+                start_pos, stop_pos, nsamples)
+        midpoint = (start_pos + stop_pos) / 2.0
+        row = [sequence_length, midpoint]
+        for values in means, variations, covs:
+            corr_info = mcmc.Correlation()
+            corr_info.analyze(values)
+            hpd_low, hpd_high = mcmc.get_hpd_interval(0.95, values)
+            row.extend([hpd_low, corr_info.mean, hpd_high])
+        data_arr.append(row)
+        sequence_lengths.append(sequence_length)
+        midpoints.append(midpoint)
+    # build the table string
+    table_string = RUtil.get_table_string(data_arr, g_headers)
+    # get the scripts
+    scripts = get_ggplot2_scripts(nsamples, sequence_lengths, midpoints)
+    # return the table string and scripts
+    return table_string, scripts
+
+def foo(x):
+    return x*x
+
+def get_table_string_and_scripts_par(start_stop_pairs, nsamples):
+    """
+    Local command-line multi-process only.
+    """
+    # define the pool of processes corresponding to the number of cores
+    mypool = Pool(processes=4)
+    result = mypool.apply_async(foo, [10])
+    print result.get(timeout=1)
+    print mypool.map(foo, range(10))
+    #
+    # build the array for the R table
+    data_arr = []
+    sequence_lengths = []
+    midpoints = []
+    for start_pos, stop_pos in start_stop_pairs:
         sequence_length = stop_pos - start_pos + 1
         means, variations, covs = get_value_lists(
                 start_pos, stop_pos, nsamples)
