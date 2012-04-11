@@ -10,6 +10,7 @@ import os
 import subprocess
 import argparse
 import logging
+import multiprocessing
 
 import Form
 import FormOut
@@ -194,18 +195,24 @@ def main(args):
         f.setLevel(logging.DEBUG)
     else:
         f.setLevel(logging.WARNING)
-    # run BEAST
-    if args.remote:
+    if args.run == 'hpc':
         r = RemoteBeast(g_start_stop_pairs, args.nsamples)
         f.info('run BEAST remotely')
         r.run(verbose=args.verbose)
         f.info('(local) build the R table string and scripts')
         table_string, scripts = beasttut.get_table_string_and_scripts_from_logs(
                 g_start_stop_pairs, r.local_log_paths, args.nsamples)
-    else:
-        f.info('(local) run BEAST locally and build the R table and scripts')
+
+    elif args.run == 'serial':
+        f.info('(local) run BEAST serially locally and build the R stuff')
         table_string, scripts = beasttut.get_table_string_and_scripts(
                 args.nsamples)
+    elif args.run == 'parallel':
+        f.info('(local) run BEAST locally in parallel and build the R stuff')
+        table_string, scripts = beasttut.get_table_string_and_scripts_par(
+                args.nsamples)
+    else:
+        raise ValueError('invalid execution model')
     f.info('(local) create the composite R script')
     out = StringIO()
     print >> out, 'library(ggplot2)'
@@ -233,9 +240,9 @@ if __name__ == '__main__':
     parser.add_argument('--nsamples',
             default=8000, type=int,
             help='let the BEAST MCMC generate this many samples')
-    parser.add_argument('--remote',
-            action='store_true',
-            help='run remotely')
+    parser.add_argument('--run', choices=('serial', 'parallel', 'hpc'),
+            default='serial',
+            help='execution model')
     parser.add_argument('-v', '--verbose',
             action='store_true',
             help='show more info')
