@@ -62,7 +62,7 @@ def get_bifurcating_trees(N):
     states = set(range(N))
     trees = set()
     for splits in combinations(get_informative_full_splits(N), N-3):
-        if joint_split_compatibility(splits):
+        if pairwise_split_compatibility(splits):
             trees.add(frozenset(splits))
     return trees
 
@@ -78,7 +78,7 @@ def get_multifurcating_trees(N):
     trees = set()
     for nsplits in range(N-2):
         for splits in combinations(all_splits, nsplits):
-            if joint_split_compatibility(splits):
+            if pairwise_split_compatibility(splits):
                 trees.add(frozenset(splits))
     return trees
 
@@ -95,7 +95,7 @@ def get_mc_trees_slow(N):
     trees = set()
     for nsplits in range(N-2):
         for splits in combinations(all_splits, nsplits):
-            if joint_split_consistency(splits):
+            if pairwise_split_consistency(splits):
                 trees.add(frozenset(splits))
     return trees
 
@@ -103,7 +103,7 @@ def get_mc_trees(N):
     """
     A multiconnected tree is a frozenset of jointly compatible partial splits.
     It has at most N-3 such splits.
-    It is also subject to other constraints.
+    It is also subject to other constraints, namely consistency.
     """
     if N < 3:
         raise ValueError('not enough states')
@@ -118,7 +118,7 @@ def get_mc_trees(N):
                 d[i, j] = split_consistency(split_i, split_j)
     accum_trees = set([frozenset([])])
     next_shell = set([frozenset([])])
-    for iteration in range(N-3):
+    while next_shell:
         shell = next_shell
         next_shell = set()
         for index_set in shell:
@@ -127,7 +127,43 @@ def get_mc_trees(N):
                     next_index_set = index_set | frozenset([j])
                     next_shell.add(next_index_set)
         for index_set in next_shell:
-            accum_trees.add(frozenset(all_splits[i] for i in index_set))
+            tree = frozenset(all_splits[i] for i in index_set)
+            accum_trees.add(tree)
+    return accum_trees
+
+def get_nearly_mc_trees(N):
+    """
+    This tree type is also a frozenset of jointly compatible partial splits.
+    It has at most N-3 such splits.
+    Adds the criteria of compatibility and non-redundancy but not consistency.
+    """
+    if N < 3:
+        raise ValueError('not enough states')
+    states = set(range(N))
+    all_splits = list(get_informative_partial_splits(N))
+    nsplits_total = len(all_splits)
+    # precompute the pairwise agreeability
+    d = {}
+    for i, a in enumerate(all_splits):
+        for j, b in enumerate(all_splits):
+            if i < j:
+                d[i, j] = all([
+                    split_compatibility(a, b),
+                    not split_redundancy(a, b)])
+    # --- the following is copypasted from mc-trees ---
+    accum_trees = set([frozenset([])])
+    next_shell = set([frozenset([])])
+    while next_shell:
+        shell = next_shell
+        next_shell = set()
+        for index_set in shell:
+            for j in range(1+max(index_set | frozenset([-1])), nsplits_total):
+                if all(d[i, j] for i in index_set):
+                    next_index_set = index_set | frozenset([j])
+                    next_shell.add(next_index_set)
+        for index_set in next_shell:
+            tree = frozenset(all_splits[i] for i in index_set)
+            accum_trees.add(tree)
     return accum_trees
 
 def split_implication(split_a, split_b):
@@ -200,13 +236,13 @@ def split_consistency(split_a, split_b, verbose=False):
     else:
         return result
 
-def joint_split_compatibility(splits):
+def pairwise_split_compatibility(splits):
     return all(split_compatibility(a,b) for a,b in combinations(splits, 2))
 
-def joint_split_redundancy(splits):
+def pairwise_split_redundancy(splits):
     return any(split_redundancy(a,b) for a,b in combinations(splits, 2))
 
-def joint_split_consistency(splits):
+def pairwise_split_consistency(splits):
     return all(split_consistency(a,b) for a,b in combinations(splits, 2))
 
 def tree_compatibility(tree_a, tree_b):
@@ -265,11 +301,21 @@ class TestSplitAlgebra(unittest.TestCase):
     def test_get_mc_trees(self):
         """
         Sloane sequence does not exist.
-        The extended sequence is [4, 41, 746, 20461, 780886, ...].
+        The extended sequence is [4, 41, 746, 20462, 780886, ...].
         """
         expected = [4, 41, 746]
         Ns = range(4, 4 + len(expected))
         observed = [len(get_mc_trees(N)) for N in Ns]
+        self.assertEqual(observed, expected)
+
+    def test_get_nearly_mc_trees(self):
+        """
+        Sloane sequence does not exist.
+        The extended sequence is [4, 191, 124186, ...].
+        """
+        expected = [4, 1199]
+        Ns = range(4, 4 + len(expected))
+        observed = [len(get_nearly_mc_trees(N)) for N in Ns]
         self.assertEqual(observed, expected)
 
     def test_get_informative_partial_splits(self):
