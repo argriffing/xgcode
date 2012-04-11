@@ -21,8 +21,15 @@ import hpcutil
 import beasttut
 
 
+g_remote_beast_sh_path = os.path.join(
+        '/brc_share/brc/argriffi/packages/BEASTv1.7.1',
+        'bin/beast')
+g_remote_beast_jar_path = os.path.join(
+        '/brc_share/brc/argriffi/packages/BEASTv1.7.1',
+        'lib/beast.jar')
+g_remote_java_path = '/usr/local/apps/java/jre1.6.0_31/bin/java'
+
 g_nchar = 898
-g_beast_root = os.path.expanduser('~/svn-repos/beast-mcmc-read-only')
 
 g_start_stop_pairs = (
         # 8 of length 57
@@ -59,12 +66,6 @@ class RemoteBeast(hpcutil.RemoteBrc):
         hpcutil.RemoteBrc.__init__(self)
         self.start_stop_pairs = start_stop_pairs
         self.nsamples = nsamples
-        self.remote_beast_sh_path = os.path.join(
-                '/brc_share/brc/argriffi/packages/BEASTv1.7.1',
-                'bin/beast')
-        self.remote_beast_jar_path = os.path.join(
-                '/brc_share/brc/argriffi/packages/BEASTv1.7.1',
-                'lib/beast.jar')
         self.local_log_paths = None
     def preprocess(self):
         # for each (start_pos, stop_pos) pair
@@ -109,33 +110,8 @@ class RemoteBeast(hpcutil.RemoteBrc):
                 # redirect stderr
                 print >> fout, '#BSUB -e', stderr_path
                 # run BEAST using a java path suggested by Gary Howell
-                print >> fout, '/usr/local/apps/java/jre1.6.0_31/bin/java',
-                print >> fout, '-jar',
-                print >> fout, self.remote_beast_jar_path, remote_xml_path
-
-def make_xml(start_pos, stop_pos, nsamples):
-    """
-    This is for non-hpc only.
-    @return: location of xml file, location of log file
-    """
-    log_loc = Util.get_tmp_filename(prefix='beast', suffix='.log')
-    xml_string = beasttut.get_xml_string(
-            start_pos, stop_pos, nsamples, log_loc)
-    xml_loc = Util.create_tmp_file(xml_string, prefix='beast', suffix='.xml')
-    return xml_loc, log_loc
-
-def run_beast(xml_loc):
-    """
-    This is for non-hpc only.
-    """
-    args = (
-            'java',
-            '-jar',
-            os.path.join(g_beast_root, 'build', 'dist', 'beast.jar'),
-            xml_loc,
-            )
-    subprocess.call(args)
-    
+                print >> fout, g_remote_java_path, '-jar'
+                print >> fout, g_remote_beast_jar_path, remote_xml_path
 
 def get_form():
     """
@@ -153,21 +129,6 @@ def get_form():
 def get_form_out():
     return FormOut.Html()
 
-def get_value_lists(start_pos, stop_pos, nsamples):
-    """
-    Command-line and also web based but not hpc-based.
-    """
-    # input validation
-    if stop_pos < start_pos:
-        raise ValueError('the stop pos must be after the start pos')
-    # create the xml describing the analysis
-    xml_loc, log_loc = make_xml(start_pos, stop_pos, nsamples)
-    print 'log file location:', log_loc
-    # run beast
-    run_beast(xml_loc)
-    # read the log file
-    return beasttut.read_log(log_loc, nsamples)
-
 def get_response_content(fs):
     # init the response and get the user variables
     start_pos = fs.start
@@ -175,7 +136,7 @@ def get_response_content(fs):
     nsamples = 8000
     out = StringIO()
     # do the analysis
-    means, variations, covariances = get_value_lists(
+    means, variations, covariances = beasttut.get_value_lists(
             start_pos, stop_pos, nsamples)
     values_names_pairs = (
             (means, 'mean rate among branches'),

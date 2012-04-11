@@ -659,8 +659,22 @@ def get_table_string_and_scripts(start_stop_pairs, nsamples):
     # return the table string and scripts
     return table_string, scripts
 
-def foo(x):
-    return x*x
+def forked_function(start_stop_n):
+    """
+    This function should accept and return as little data as possible.
+    In particular do not return a huge multimegabyte nested list.
+    @param start_stop_n: start_pos, stop_pos, nsamples
+    @return: (corr_info, hpd_interval) for mean, variation, covariance
+    """
+    start_pos, stop_pos, nsamples = start_stop_n
+    means, variations, covs = get_value_lists(start_pos, stop_pos, nsamples)
+    post_pairs = []
+    for values in means, variations, covs:
+        corr_info = mcmc.Correlation()
+        corr_info.analyze(values)
+        hpd_interval = mcmc.get_hpd_interval(0.95, values)
+        post_pairs.append((corr_info, hpd_interval))
+    return post_pairs
 
 def get_table_string_and_scripts_par(start_stop_pairs, nsamples):
     """
@@ -668,24 +682,20 @@ def get_table_string_and_scripts_par(start_stop_pairs, nsamples):
     """
     # define the pool of processes corresponding to the number of cores
     mypool = Pool(processes=4)
-    result = mypool.apply_async(foo, [10])
-    print result.get(timeout=1)
-    print mypool.map(foo, range(10))
-    #
+    # do the multiprocessing
+    start_stop_n_triples = [(a, b, nsamples) for a, b in start_stop_pairs]
+    post_pairs_list = mypool.map(forked_function, start_stop_n_triples)
     # build the array for the R table
     data_arr = []
     sequence_lengths = []
     midpoints = []
-    for start_pos, stop_pos in start_stop_pairs:
+    for start_stop_pair, post_pairs in zip(start_stop_pairs, post_pairs_list):
+        start_pos, stop_pos = start_stop_pair
         sequence_length = stop_pos - start_pos + 1
-        means, variations, covs = get_value_lists(
-                start_pos, stop_pos, nsamples)
         midpoint = (start_pos + stop_pos) / 2.0
         row = [sequence_length, midpoint]
-        for values in means, variations, covs:
-            corr_info = mcmc.Correlation()
-            corr_info.analyze(values)
-            hpd_low, hpd_high = mcmc.get_hpd_interval(0.95, values)
+        for corr_info, hpd_interval in post_pairs:
+            hpd_low, hpd_high = hpd_interval
             row.extend([hpd_low, corr_info.mean, hpd_high])
         data_arr.append(row)
         sequence_lengths.append(sequence_length)
