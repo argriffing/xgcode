@@ -13,7 +13,7 @@ import MatrixUtil
 import SchurAlgebra
 import Euclid
 import TreeSampler
-import BranchLengthSampler
+import BranchLenSampler
 import BuildTreeTopology
 import Dendrogram
 import Xtree
@@ -268,7 +268,7 @@ def do_tree_search(tree_search, nseconds, sampling_function):
 
 def get_response_content(fs):
     nseconds = 2
-    sampling_function = BranchLengthSampler.ShortAscii(
+    sampling_function = BranchLenSampler.ShortAscii(
             fs.allow_integers, fs.allow_reciprocals)
     if fs.six_leaves:
         tree_search = SixLeafSearch()
@@ -283,7 +283,7 @@ def get_response_content(fs):
 def main(options):
     #FIXME use argparse and a nonnegative type instead of the assertion
     assert 0 <= options.nseconds
-    sampling_function = BranchLengthSampler.ShortAscii(
+    sampling_function = BranchLenSampler.ShortAscii(
             options.allow_integers, options.allow_reciprocals)
     tree_search = SixLeafSearch()
     tree_search.informative_children = options.informative_children

@@ -47,11 +47,13 @@ class RemoteBase:
             self,
             local_batch_root,
             remote_batch_root,
-            remote_server):
+            remote_server,
+            preprocess):
         self.name = self._reserve_name()
         self.remote_server = remote_server
         self.local = Location(local_batch_root, self.name)
         self.remote = Location(remote_batch_root, self.name)
+        self.preprocess = preprocess
     def _remote_lsf_call(self, args):
         full_args = [
                 'source',
@@ -144,7 +146,7 @@ class RemoteBase:
         f.info('local) set up the local directory structure')
         self._init_local_structure()
         f.info('(local) call preprocess callback to populate batch_in')
-        self.preprocess()
+        self.preprocess(self)
         f.info('(local) tgz batch_in')
         self._make_local_tgz()
         f.info('(ssh) set up the remote directory structure')
@@ -174,29 +176,28 @@ class RemoteBrc(RemoteBase):
                 '/brc_share/brc/argriffi',
                 'login02.hpc.ncsu.edu')
 
-class RemoteBrcSilly(RemoteBrc):
-    def preprocess(self):
-        local_dummy_path = os.path.join(
-                self.local.get_in_contents(), 'hello.world')
-        remote_dummy_path = os.path.join(
-                self.remote.get_in_contents(), 'hello.world')
-        with open(local_dummy_path, 'w') as fout:
-            print >> fout, 'hello world'
-            print >> fout, 'goodbye world'
-        # define the first bsub job
-        bsub_path = os.path.join(self.local.get_in_bsubs(), 'job1.bsub')
-        remote_result_path = os.path.join(self.remote.get_out(), 'foo.txt')
-        with open(bsub_path, 'w') as fout:
-            print >> fout, 'wc %s > %s' % (
-                    remote_dummy_path, remote_result_path)
-        # define the second bsub job
-        bsub_path = os.path.join(self.local.get_in_bsubs(), 'job2.bsub')
-        remote_result_path = os.path.join(self.remote.get_out(), 'bar.txt')
-        with open(bsub_path, 'w') as fout:
-            print >> fout, 'wc -l %s > %s' % (
-                    remote_dummy_path, remote_result_path)
+def preprocess_silly(conn):
+    local_dummy_path = os.path.join(
+            conn.local.get_in_contents(), 'hello.world')
+    remote_dummy_path = os.path.join(
+            conn.remote.get_in_contents(), 'hello.world')
+    with open(local_dummy_path, 'w') as fout:
+        print >> fout, 'hello world'
+        print >> fout, 'goodbye world'
+    # define the first bsub job
+    bsub_path = os.path.join(conn.local.get_in_bsubs(), 'job1.bsub')
+    remote_result_path = os.path.join(conn.remote.get_out(), 'foo.txt')
+    with open(bsub_path, 'w') as fout:
+        print >> fout, 'wc %s > %s' % (
+                remote_dummy_path, remote_result_path)
+    # define the second bsub job
+    bsub_path = os.path.join(conn.local.get_in_bsubs(), 'job2.bsub')
+    remote_result_path = os.path.join(conn.remote.get_out(), 'bar.txt')
+    with open(bsub_path, 'w') as fout:
+        print >> fout, 'wc -l %s > %s' % (
+                remote_dummy_path, remote_result_path)
 
 
 if __name__ == '__main__':
-    RemoteBrcSilly().run()
+    RemoteBrc(preprocess_silly).run()
 

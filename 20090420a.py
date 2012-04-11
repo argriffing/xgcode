@@ -24,7 +24,7 @@ import MatrixUtil
 import JC69
 import TreeSampler
 import BuildTreeTopology
-import BranchLengthSampler
+import BranchLenSampler
 import Form
 import FormOut
 
@@ -44,13 +44,13 @@ def get_form():
                 20, low=4, high=20),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
                 Form.RadioItem('pachter_length',
-                    str(BranchLengthSampler.Pachter()), True),
+                    str(BranchLenSampler.Pachter()), True),
                 Form.RadioItem('exponential_length',
-                    str(BranchLengthSampler.Exponential())),
+                    str(BranchLenSampler.Exponential())),
                 Form.RadioItem('uniform_length_a',
-                    str(BranchLengthSampler.UniformA())),
+                    str(BranchLenSampler.UniformA())),
                 Form.RadioItem('uniform_length_b',
-                    str(BranchLengthSampler.UniformB()))]),
+                    str(BranchLenSampler.UniformB()))]),
             Form.RadioGroup('first_method', 'first estimation method', [
                 Form.RadioItem('first_nj', 'neighbor joining', True),
                 Form.RadioItem('first_modnj', 'modified neighbor joining'),
@@ -209,13 +209,13 @@ def get_response_content(fs):
     ntaxa = fs.ntaxa
     # define the branch length sampler
     if fs.pachter_length:
-        branch_length_sampler = BranchLengthSampler.Pachter()
+        branch_length_sampler = BranchLenSampler.Pachter()
     elif fs.exponential_length:
-        branch_length_sampler = BranchLengthSampler.Exponential()
+        branch_length_sampler = BranchLenSampler.Exponential()
     elif fs.uniform_length_a:
-        branch_length_sampler = BranchLengthSampler.UniformA()
+        branch_length_sampler = BranchLenSampler.UniformA()
     elif fs.uniform_length_b:
-        branch_length_sampler = BranchLengthSampler.UniformB()
+        branch_length_sampler = BranchLenSampler.UniformB()
     # define the first builder
     if fs.first_nj:
         splitter = BuildTreeTopology.split_nj
@@ -254,7 +254,7 @@ def main():
     print ntaxa, 'taxa per tree'
     print length, 'nucleotides per sequence'
     print
-    branch_length_samplers = (BranchLengthSampler.Pachter(), BranchLengthSampler.UniformB())
+    branch_length_samplers = (BranchLenSampler.Pachter(), BranchLenSampler.UniformB())
     for i, branch_length_sampler in enumerate(branch_length_samplers):
         print 'group', i+1
         print branch_length_sampler

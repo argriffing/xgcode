@@ -15,7 +15,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
-import BranchLengthSampler
+import BranchLenSampler
 import TreeSampler
 import BuildTreeTopology
 import Xtree
@@ -62,13 +62,13 @@ def get_form():
                 5, low=1, high=99),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
                 Form.RadioItem('pachter_length',
-                    str(BranchLengthSampler.Pachter()), True),
+                    str(BranchLenSampler.Pachter()), True),
                 Form.RadioItem('exponential_length',
-                    str(BranchLengthSampler.Exponential())),
+                    str(BranchLenSampler.Exponential())),
                 Form.RadioItem('uniform_length_a',
-                    str(BranchLengthSampler.UniformA())),
+                    str(BranchLenSampler.UniformA())),
                 Form.RadioItem('uniform_length_b',
-                    str(BranchLengthSampler.UniformB()))]),
+                    str(BranchLenSampler.UniformB()))]),
             Form.RadioGroup('distance_options',
                 'recursive matrix construction method', [
                 Form.RadioItem('pruning_like',
@@ -120,13 +120,13 @@ def get_response_content(fs):
         raise HandlingError('the number of sequence lengths must be odd')
     # define the branch length sampler
     if fs.pachter_length:
-        branch_length_sampler = BranchLengthSampler.Pachter()
+        branch_length_sampler = BranchLenSampler.Pachter()
     elif fs.exponential_length:
-        branch_length_sampler = BranchLengthSampler.Exponential()
+        branch_length_sampler = BranchLenSampler.Exponential()
     elif fs.uniform_length_a:
-        branch_length_sampler = BranchLengthSampler.UniformA()
+        branch_length_sampler = BranchLenSampler.UniformA()
     elif fs.uniform_length_b:
-        branch_length_sampler = BranchLengthSampler.UniformB()
+        branch_length_sampler = BranchLenSampler.UniformB()
     # get the response
     response_text = process(ntaxa, nseconds, nlengths, nsamples,
             nj_like, branch_length_sampler, False)
@@ -350,8 +350,8 @@ def main(options):
     assert options.nlengths % 2
     assert 3 <= options.nlengths
     assert 1 <= options.nsamples
-    branch_length_sampler = BranchLengthSampler.UniformB()
-    #branch_length_sampler = BranchLengthSampler.Pachter()
+    branch_length_sampler = BranchLenSampler.UniformB()
+    #branch_length_sampler = BranchLenSampler.Pachter()
     use_pbar = True
     try:
         print process(options.ntaxa, options.nseconds, options.nlengths, options.nsamples, options.nj_like, branch_length_sampler, use_pbar)

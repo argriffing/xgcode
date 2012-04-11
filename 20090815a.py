@@ -28,10 +28,10 @@ def get_form():
             Form.Integer('ntaxa', 'number of taxa per tree', 20, low=4, high=20),
             Form.Integer('nsamples', 'number of trees to sample', 100, low=1, high=1000),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
-                Form.RadioItem('pachter_length', str(BranchLengthSampler.Pachter()), True),
-                Form.RadioItem('exponential_length', str(BranchLengthSampler.Exponential())),
-                Form.RadioItem('uniform_length_a', str(BranchLengthSampler.UniformA())),
-                Form.RadioItem('uniform_length_b', str(BranchLengthSampler.UniformB()))])]
+                Form.RadioItem('pachter_length', str(BranchLenSampler.Pachter()), True),
+                Form.RadioItem('exponential_length', str(BranchLenSampler.Exponential())),
+                Form.RadioItem('uniform_length_a', str(BranchLenSampler.UniformA())),
+                Form.RadioItem('uniform_length_b', str(BranchLenSampler.UniformB()))])]
     return form_objects
 
     parser.add_option('--ntaxa', dest='ntaxa', type='int', default=20, help='number of taxa in each sampled tree topology')
@@ -41,7 +41,7 @@ def get_form():
     assert 0 <= options.nseconds
     assert 4 <= options.ntaxa <= 20
     assert 1 <= options.nsamples
-    branch_length_sampler = BranchLengthSampler.UniformB()
+    branch_length_sampler = BranchLenSampler.UniformB()
     use_pbar = True
     print process(options.ntaxa, options.nseconds, options.nsamples, branch_length_sampler, use_pbar)
 """
@@ -89,13 +89,13 @@ def get_response_content(fs):
     nsamples = fs.nsamples
     # define the branch length sampler
     if fs.pachter_length:
-        branch_length_sampler = BranchLengthSampler.Pachter()
+        branch_length_sampler = BranchLenSampler.Pachter()
     elif fs.exponential_length:
-        branch_length_sampler = BranchLengthSampler.Exponential()
+        branch_length_sampler = BranchLenSampler.Exponential()
     elif fs.uniform_length_a:
-        branch_length_sampler = BranchLengthSampler.UniformA()
+        branch_length_sampler = BranchLenSampler.UniformA()
     elif fs.uniform_length_b:
-        branch_length_sampler = BranchLengthSampler.UniformB()
+        branch_length_sampler = BranchLenSampler.UniformB()
     # get the response
     response_text = process(ntaxa, nseconds, nsamples,
             branch_length_sampler, False)
@@ -251,7 +251,7 @@ def main(options):
     assert 0 <= options.nseconds
     assert 4 <= options.ntaxa <= 20
     assert 1 <= options.nsamples
-    branch_length_sampler = BranchLengthSampler.UniformB()
+    branch_length_sampler = BranchLenSampler.UniformB()
     use_pbar = True
     print process(options.ntaxa, options.nseconds, options.nsamples, branch_length_sampler, use_pbar)
 

@@ -369,7 +369,9 @@ def get_log_xml(log_loc):
         """ % log_loc
     return s
 
-def get_xml_string(start_pos, stop_pos, nsamples, log_path):
+def get_xml_string(
+        start_pos, stop_pos, nsamples, log_path,
+        header_sequence_pairs):
     """
     @param start_pos: start position within the hardcoded alignment
     @param stop_pos: stop position within the hardcoded alignment
@@ -383,8 +385,9 @@ def get_xml_string(start_pos, stop_pos, nsamples, log_path):
         <!-- The sequence alignment (each sequence refers to a taxon above). -->
         <alignment id="alignment" dataType="nucleotide">
     """
-    lines = g_fasta_string.splitlines()
-    for header, seq in Fasta.gen_header_sequence_pairs(lines):
+    #lines = g_fasta_string.splitlines()
+    #for header, seq in Fasta.gen_header_sequence_pairs(lines):
+    for header, seq in header_sequence_pairs:
         print >> out, '<sequence>'
         print >> out, '<taxon idref="%s"/>' % header
         print >> out, seq

@@ -26,7 +26,7 @@ from SnippetUtil import HandlingError
 import MatrixUtil
 import TreeSampler
 import BuildTreeTopology
-import BranchLengthSampler
+import BranchLenSampler
 import JC69
 import Euclid
 import Form
@@ -48,13 +48,13 @@ def get_form():
                 20, low=4, high=20),
             Form.RadioGroup('tree_sampling', 'branch length distribution', [
                 Form.RadioItem('pachter_length',
-                    str(BranchLengthSampler.Pachter()), True),
+                    str(BranchLenSampler.Pachter()), True),
                 Form.RadioItem('exponential_length',
-                    str(BranchLengthSampler.Exponential())),
+                    str(BranchLenSampler.Exponential())),
                 Form.RadioItem('uniform_length_a',
-                    str(BranchLengthSampler.UniformA())),
+                    str(BranchLenSampler.UniformA())),
                 Form.RadioItem('uniform_length_b',
-                    str(BranchLengthSampler.UniformB()))])]
+                    str(BranchLenSampler.UniformB()))])]
     return form_objects
 
 def get_form_out():
@@ -256,20 +256,20 @@ def get_response_content(fs):
     ntaxa = fs.ntaxa
     # define the branch length sampler
     if fs.pachter_length:
-        branch_length_sampler = BranchLengthSampler.Pachter()
+        branch_length_sampler = BranchLenSampler.Pachter()
     elif fs.exponential_length:
-        branch_length_sampler = BranchLengthSampler.Exponential()
+        branch_length_sampler = BranchLenSampler.Exponential()
     elif fs.uniform_length_a:
-        branch_length_sampler = BranchLengthSampler.UniformA()
+        branch_length_sampler = BranchLenSampler.UniformA()
     elif fs.uniform_length_b:
-        branch_length_sampler = BranchLengthSampler.UniformB()
+        branch_length_sampler = BranchLenSampler.UniformB()
     return process(ntaxa, length, nseconds, branch_length_sampler) + '\n'
 
 def main(options):
     assert 0 <= options.nseconds
     assert 4 <= options.ntaxa <= 20
     assert 10 <= options.length <= 10000
-    branch_length_sampler = BranchLengthSampler.Pachter()
+    branch_length_sampler = BranchLenSampler.Pachter()
     print process(options.ntaxa, options.length, options.nseconds, branch_length_sampler)
 
 if __name__ == '__main__':

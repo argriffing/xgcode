@@ -11,7 +11,7 @@ import numpy as np
 
 from SnippetUtil import HandlingError
 import MatrixUtil
-import BranchLengthSampler
+import BranchLenSampler
 import TreeSampler
 import Xtree
 import Form
@@ -34,10 +34,10 @@ class BranchLengthComboPack:
 
     def __init__(self):
         self.components = [
-            BranchLengthSampler.Pachter(),
-            BranchLengthSampler.Exponential(),
-            BranchLengthSampler.UniformA(),
-            BranchLengthSampler.UniformB()]
+            BranchLenSampler.Pachter(),
+            BranchLenSampler.Exponential(),
+            BranchLenSampler.UniformA(),
+            BranchLenSampler.UniformB()]
 
     def __call__(self):
         return random.choice(self.components)()
