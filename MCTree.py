@@ -56,7 +56,7 @@ def get_compatible_trees(split, available_trees):
     """
     compatible_subset = set()
     for tree in available_trees:
-        if split_is_compatible_with_tree(split, tree):
+        if splitalg.split_tree_compatibility(split, tree):
             compatible_subset.add(tree)
     return compatible_subset
 
@@ -68,7 +68,7 @@ def get_splits_implied_by_tree(tree, available_splits):
     """
     accum = set()
     for split in available_splits:
-        if any(split_implies_split(full_split, split) for full_split in tree):
+        if any(splitalg.split_implication(full_split, split) for full_split in tree):
             accum.add(split)
     return accum
 
@@ -91,8 +91,8 @@ class MultiHelper:
     """
     def __init__(self, N):
         self.N = N
-        self.all_quartets = list(get_quartets(N))
-        self.all_splits = list(get_all_partial_splits(N))
+        self.all_quartets = list(splitalg.get_quartets(N))
+        self.all_splits = list(splitalg.get_informative_partial_splits(N))
 
 def get_mc_trees_helper(current_split_set, compatible_trees, start_index, mh, mc_trees):
     """
@@ -105,13 +105,13 @@ def get_mc_trees_helper(current_split_set, compatible_trees, start_index, mh, mc
     nsplits = mh.N - 3
     for i in range(len(mh.all_splits) - start_index):
         target_split = mh.all_splits[start_index + i]
-        if no_splits_are_redundant(current_split_set, target_split):
+        if not any(splitalg.split_redundancy(target_split, split) for split in current_split_set):
             next_trees = get_compatible_trees(target_split, compatible_trees)
             if next_trees:
                 next_set = current_split_set | set([target_split])
                 # see if the set of compatible trees implies a quartet not implied by any member of the split set
                 implied_quartets = get_splits_implied_by_trees(next_trees, mh.all_quartets)
-                if all_quartets_are_individually_implied(implied_quartets, next_set):
+                if splitalg.all_quartets_are_individually_implied(implied_quartets, next_set):
                     mc_trees.append(frozenset(next_set))
                 if len(next_set) < nsplits:
                     get_mc_trees_helper(next_set, next_trees, start_index + i+1, mh, mc_trees)
@@ -145,7 +145,7 @@ def get_mc_trees(N):
     # initialize the set of quartets and the set of informative splits given N leaves
     mh = MultiHelper(N)
     # get all possible bifurcating trees with N leaves
-    trees = get_trees(N)
+    trees = splitalg.get_bifurcating_trees(N)
     # try each combination of <= N-3 informative partial splits
     mc_trees = []
     initial_split_set = set()
@@ -164,20 +164,20 @@ def get_mc_trees_ben_helper(current_split_set, start_index, N, available_splits,
     """
 
     # debug
-    assert is_pairwise_rule_consistent(current_split_set)
+    assert splitalg.pairwise_split_consistency(current_split_set)
 
     nsplits = N - 3
     for i in range(len(available_splits) - start_index):
 
         # debug
-        assert is_pairwise_rule_consistent(current_split_set)
+        assert splitalg.pairwise_split_consistency(current_split_set)
 
         target_split = available_splits[start_index + i]
         next_set = current_split_set | set([target_split])
-        if all(is_rule_consistent(s, target_split) for s in current_split_set):
+        if all(splitalg.split_consistency(s, target_split) for s in current_split_set):
 
             # debug
-            if not is_pairwise_rule_consistent(next_set):
+            if not splitalg.pairwise_split_consistency(next_set):
                 print 'FAIL'
                 print 'current split set consistency:'
                 print is_pairwise_rule_consistent(current_split_set)
@@ -186,8 +186,8 @@ def get_mc_trees_ben_helper(current_split_set, start_index, N, available_splits,
                 print 'target split:'
                 print target_split
                 print 'testing commutativity:'
-                print all(is_rule_consistent(s, target_split) for s in current_split_set)
-                print all(is_rule_consistent(target_split, s) for s in current_split_set)
+                print all(splitalg.split_consistency(s, target_split) for s in current_split_set)
+                print all(splitalg.split_consistency(target_split, s) for s in current_split_set)
                 assert False
 
             mc_trees.append(frozenset(next_set))
@@ -195,7 +195,7 @@ def get_mc_trees_ben_helper(current_split_set, start_index, N, available_splits,
             if len(next_set) < nsplits:
 
                 # debug
-                assert is_pairwise_rule_consistent(next_set)
+                assert splitalg.pairwise_split_consistency(next_set)
 
                 get_mc_trees_ben_helper(next_set, start_index + i+1, N, available_splits, mc_trees)
 
@@ -205,7 +205,7 @@ def get_mc_trees_ben(N):
     """
     assert N > 3
     nsplits = N - 3
-    available_splits = list(get_all_partial_splits(N))
+    available_splits = list(splitalg.get_informative_partial_splits(N))
     mc_trees = []
     initial_split_set = set()
     initial_offset = 0
@@ -239,7 +239,7 @@ def mc_tree_to_trees(mc_tree, available_trees):
 
 class TestMCTree(unittest.TestCase):
 
-    def test_rules_trees(self):
+    def foo_test_rules_trees(self):
         """
         Count mc trees computed using the nine rules.
         """
@@ -247,8 +247,8 @@ class TestMCTree(unittest.TestCase):
         k = 5
         for i in range(4, 4+k):
             print 'N:', i
-            trees = splitalg.get_bifurcating_trees(i)
-            print len(trees), 'bifurcating trees'
+            all_bifurcating_trees = splitalg.get_bifurcating_trees(i)
+            print len(all_bifurcating_trees), 'bifurcating trees'
             mc_trees_ben = set(get_mc_trees_ben(i))
             print len(mc_trees_ben), 'multiconnected trees'
             tree_set_sets_ben = set(frozenset(mc_tree_to_trees(tree, all_bifurcating_trees)) for tree in mc_trees_ben)
@@ -306,13 +306,13 @@ class TestMCTree(unittest.TestCase):
             print q
         print
 
-    def foo_test_mc_trees(self):
+    def test_mc_trees(self):
         print 'testing mc trees:'
         k = 4
         for i in range(4, 4+k):
             print 'N:', i
-            all_bifurcating_trees = get_trees(i)
-            all_quartets = get_quartets(i)
+            all_bifurcating_trees = splitalg.get_bifurcating_trees(i)
+            all_quartets = splitalg.get_quartets(i)
             # get multifurcating trees using the nine rules
             mc_trees_ben = set(get_mc_trees_ben(i))
             print 'number of mc trees using the nine rules:', len(mc_trees_ben)

@@ -54,12 +54,8 @@ def get_informative_full_splits(N):
 
 def get_bifurcating_trees(N):
     """
-    A bifurcating tree is a frozenset of jointly compatible full splits.
-    It has exactly N-3 such splits.
+    A bifurcating tree is a frozenset of N-3 pairwise compatible full splits.
     """
-    if N < 3:
-        raise ValueError('not enough states')
-    states = set(range(N))
     trees = set()
     for splits in combinations(get_informative_full_splits(N), N-3):
         if pairwise_split_compatibility(splits):
@@ -68,89 +64,86 @@ def get_bifurcating_trees(N):
 
 def get_multifurcating_trees(N):
     """
-    A bifurcating tree is a frozenset of jointly compatible full splits.
-    It has at most N-3 such splits.
+    A multifurcating tree is a frozenset of pairwise compatible full splits.
     """
-    if N < 3:
-        raise ValueError('not enough states')
-    states = set(range(N))
     all_splits = get_informative_full_splits(N)
     trees = set()
     for nsplits in range(N-2):
+        shell = set()
         for splits in combinations(all_splits, nsplits):
             if pairwise_split_compatibility(splits):
-                trees.add(frozenset(splits))
+                shell.add(frozenset(splits))
+        if not shell:
+            break
+        trees.update(shell)
     return trees
 
 def get_mc_trees_slow(N):
     """
-    A multiconnected tree is a frozenset of jointly compatible partial splits.
-    It has at most N-3 such splits.
-    It is also subject to other constraints.
+    A multiconnected tree is a frozenset of pairwise compatible partial splits.
+    It is also subject to other constraints, namely consistency.
     """
-    if N < 3:
-        raise ValueError('not enough states')
-    states = set(range(N))
     all_splits = get_informative_partial_splits(N)
     trees = set()
-    for nsplits in range(N-2):
+    for nsplits in itertools.count():
+        shell = set()
         for splits in combinations(all_splits, nsplits):
             if pairwise_split_consistency(splits):
-                trees.add(frozenset(splits))
+                shell.add(frozenset(splits))
+        if not shell:
+            break
+        trees.update(shell)
     return trees
 
 def get_mc_trees(N):
     """
-    A multiconnected tree is a frozenset of jointly compatible partial splits.
-    It has at most N-3 such splits.
+    A multiconnected tree is a frozenset of pairwise compatible partial splits.
     It is also subject to other constraints, namely consistency.
     """
-    if N < 3:
-        raise ValueError('not enough states')
-    states = set(range(N))
-    all_splits = list(get_informative_partial_splits(N))
-    nsplits_total = len(all_splits)
-    # precompute the pairwise consistencies
+    partial_splits = list(get_informative_partial_splits(N))
     d = {}
-    for i, split_i in enumerate(all_splits):
-        for j, split_j in enumerate(all_splits):
+    for i, a in enumerate(partial_splits):
+        for j, b in enumerate(partial_splits):
             if i < j:
-                d[i, j] = split_consistency(split_i, split_j)
-    accum_trees = set([frozenset([])])
-    next_shell = set([frozenset([])])
-    while next_shell:
-        shell = next_shell
-        next_shell = set()
-        for index_set in shell:
-            for j in range(1+max(index_set | frozenset([-1])), nsplits_total):
-                if all(d[i, j] for i in index_set):
-                    next_index_set = index_set | frozenset([j])
-                    next_shell.add(next_index_set)
-        for index_set in next_shell:
-            tree = frozenset(all_splits[i] for i in index_set)
-            accum_trees.add(tree)
-    return accum_trees
+                d[i, j] = split_consistency(a, b)
+    return _get_pairwise_admissible_trees(d, partial_splits)
+
+def get_quartet_sets(N):
+    """
+    The quartets within each set are pairwise compatible.
+    This should be a subset of nearly_mc_trees.
+    """
+    quartets = list(get_quartets(N))
+    d = {}
+    for i, a in enumerate(quartets):
+        for j, b in enumerate(quartets):
+            if i < j:
+                d[i, j] = split_compatibility(a, b)
+    return _get_pairwise_admissible_trees(d, quartets)
 
 def get_nearly_mc_trees(N):
     """
-    This tree type is also a frozenset of jointly compatible partial splits.
-    It has at most N-3 such splits.
+    This tree type is also a frozenset of pairwise compatible partial splits.
     Adds the criteria of compatibility and non-redundancy but not consistency.
     """
-    if N < 3:
-        raise ValueError('not enough states')
-    states = set(range(N))
-    all_splits = list(get_informative_partial_splits(N))
-    nsplits_total = len(all_splits)
-    # precompute the pairwise agreeability
+    partial_splits = list(get_informative_partial_splits(N))
     d = {}
-    for i, a in enumerate(all_splits):
-        for j, b in enumerate(all_splits):
+    for i, a in enumerate(partial_splits):
+        for j, b in enumerate(partial_splits):
             if i < j:
                 d[i, j] = all([
                     split_compatibility(a, b),
                     not split_redundancy(a, b)])
-    # --- the following is copypasted from mc-trees ---
+    return _get_pairwise_admissible_trees(d, partial_splits)
+
+def _get_pairwise_admissible_trees(d, partial_splits):
+    """
+    Get all split combinations that meet the pairwise admissibility criterion.
+    @param d: pairwise index admissibility dictionary
+    @param partial_splits: list of all informative partial splits
+    @return: a set of trees where each tree is a frozenset of partial splits
+    """
+    nsplits_total = len(partial_splits)
     accum_trees = set([frozenset([])])
     next_shell = set([frozenset([])])
     while next_shell:
@@ -162,9 +155,32 @@ def get_nearly_mc_trees(N):
                     next_index_set = index_set | frozenset([j])
                     next_shell.add(next_index_set)
         for index_set in next_shell:
-            tree = frozenset(all_splits[i] for i in index_set)
+            tree = frozenset(partial_splits[i] for i in index_set)
             accum_trees.add(tree)
     return accum_trees
+
+def get_representable_treesets(N, pre_trees):
+    """
+    Get a set of representations of p-representable fully resolved tree sets.
+    A p-representable set is a set of fully resolved trees
+    that is representable by a set of partial splits.
+    The pre_trees parameter could for example be the set of
+    pairwise compatible and pairwise-non-redundant partial splits.
+    Or it could be the set of pairwise consistent partial splits.
+    @param N: the number of tips
+    @param pre_trees: a candidate sequence of frozensets of partial splits
+    @return: set of sets of bifurcating trees
+    """
+    treeset_sets = set()
+    for pre_tree in pre_trees:
+        trees = list(get_bifurcating_trees(N))
+        # repeatedly cut down the set of compatible trees
+        for split in pre_tree:
+            trees = [t for t in trees if split_tree_compatibility(split, t)]
+        # if a set of trees is compatible then add it
+        if trees:
+            treeset_sets.add(frozenset(trees))
+    return treeset_sets
 
 def split_implication(split_a, split_b):
     """
@@ -245,13 +261,6 @@ def pairwise_split_redundancy(splits):
 def pairwise_split_consistency(splits):
     return all(split_consistency(a,b) for a,b in combinations(splits, 2))
 
-def tree_compatibility(tree_a, tree_b):
-    """
-    For the purpose of this function, a tree is an iterable of splits.
-    More stringently, a tree should be a frozenset of jointly compatible splits.
-    """
-    return all(split_compatibility(a, b) for a in tree_a for b in tree_b)
-
 def split_tree_compatibility(split, tree):
     return all(split_compatibility(split, s) for s in tree)
 
@@ -298,24 +307,74 @@ class TestSplitAlgebra(unittest.TestCase):
         observed = [len(get_multifurcating_trees(N)) for N in Ns]
         self.assertEqual(observed, expected)
 
+    def test_get_mc_trees_slow(self):
+        """
+        Sloane sequence does not exist.
+        The extended sequence is [4, 41, 746, 20462, 780886, ???].
+        """
+        expected = [4, 41]
+        Ns = range(4, 4 + len(expected))
+        observed = []
+        for N in Ns:
+            trees = get_mc_trees_slow(N)
+            self.assertIn(frozenset([]), trees)
+            observed.append(len(trees))
+        self.assertEqual(observed, expected)
+
     def test_get_mc_trees(self):
         """
         Sloane sequence does not exist.
-        The extended sequence is [4, 41, 746, 20462, 780886, ...].
+        The extended sequence is [4, 41, 746, 20462, 780886, ???].
         """
         expected = [4, 41, 746]
         Ns = range(4, 4 + len(expected))
-        observed = [len(get_mc_trees(N)) for N in Ns]
+        observed = []
+        for N in Ns:
+            trees = get_mc_trees(N)
+            self.assertIn(frozenset([]), trees)
+            observed.append(len(trees))
         self.assertEqual(observed, expected)
 
     def test_get_nearly_mc_trees(self):
         """
-        Sloane sequence does not exist.
-        The extended sequence is [4, 191, 124186, ...].
+        The extended sequence is [4, 1199, ???].
         """
         expected = [4, 1199]
         Ns = range(4, 4 + len(expected))
         observed = [len(get_nearly_mc_trees(N)) for N in Ns]
+        self.assertEqual(observed, expected)
+
+    def test_get_quartet_sets(self):
+        """
+        The extended sequence is [4, 1024, ???].
+        """
+        expected = [4, 1024]
+        Ns = range(4, 4 + len(expected))
+        observed = [len(get_quartet_sets(N)) for N in Ns]
+        self.assertEqual(observed, expected)
+
+    def test_get_representable_treesets_p(self):
+        """
+        The extended sequence is [4, 41, ???].
+        """
+        expected = [4, 41]
+        Ns = range(4, 4 + len(expected))
+        observed = []
+        for N in Ns:
+            pre_trees = list(get_nearly_mc_trees(N))
+            observed.append(len(get_representable_treesets(N, pre_trees)))
+        self.assertEqual(observed, expected)
+
+    def test_get_representable_treesets_q(self):
+        """
+        The extended sequence is [4, 41, ???].
+        """
+        expected = [4, 41]
+        Ns = range(4, 4 + len(expected))
+        observed = []
+        for N in Ns:
+            pre_trees = list(get_quartet_sets(N))
+            observed.append(len(get_representable_treesets(N, pre_trees)))
         self.assertEqual(observed, expected)
 
     def test_get_informative_partial_splits(self):

@@ -3,6 +3,7 @@ This module is related to the BEAST primate tutorial.
 """
 
 from StringIO import StringIO
+import random
 import os
 import subprocess
 import multiprocessing
@@ -369,6 +370,17 @@ def get_log_xml(log_loc):
         """ % log_loc
     return s
 
+def get_col_permuted_header_seq_pairs():
+    permuted = range(g_nchar)
+    random.shuffle(permuted)
+    for header, seq in get_header_seq_pairs():
+        seq = [seq[k] for k in permuted]
+        yield header, seq
+
+def get_header_seq_pairs():
+    lines = g_fasta_string.splitlines()
+    return list(Fasta.gen_header_sequence_pairs(lines))
+
 def get_xml_string(
         start_pos, stop_pos, nsamples, log_path,
         header_sequence_pairs):
@@ -377,6 +389,7 @@ def get_xml_string(
     @param stop_pos: stop position within the hardcoded alignment
     @param nsamples: run the mcmc chain for this many samples
     @param log_path: tell beast to put its posterior sample log here
+    @param header_sequence_pairs: info for the alignment
     @return: multiline xml string
     """
     out = StringIO()
@@ -385,8 +398,6 @@ def get_xml_string(
         <!-- The sequence alignment (each sequence refers to a taxon above). -->
         <alignment id="alignment" dataType="nucleotide">
     """
-    #lines = g_fasta_string.splitlines()
-    #for header, seq in Fasta.gen_header_sequence_pairs(lines):
     for header, seq in header_sequence_pairs:
         print >> out, '<sequence>'
         print >> out, '<taxon idref="%s"/>' % header
