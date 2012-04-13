@@ -13,6 +13,7 @@ import itertools
 from itertools import combinations
 from itertools import permutations
 
+import Util
 import iterutils
 
 def mksplit(a, b):
@@ -64,6 +65,12 @@ def get_bifurcating_trees(N):
             trees.add(frozenset(splits))
     return trees
 
+def count_bifurcating_trees(N):
+    p = 1
+    for i in range(1, N-2):
+        p *= 2*i + 1
+    return p
+
 def get_multifurcating_trees(N):
     """
     A multifurcating tree is a frozenset of pairwise compatible full splits.
@@ -79,6 +86,22 @@ def get_multifurcating_trees(N):
             break
         trees.update(shell)
     return trees
+
+def count_multifurcating_trees(N):
+    a = [0, 1, 1]
+    for n in range(2, N-1):
+        sigma = sum(Util.choose(n, k)*a[k]*a[n-k+1] for k in range(2, n))
+        b = (n+2) * a[n] + 2*sigma
+        a.append(b)
+    return a[-1]
+
+def count_independently_unplugged_trees(N):
+    c = 1
+    for n_known in range(4, N+1):
+        n_at_large = N - n_known
+        coeff = Util.choose(N, n_at_large)
+        c += coeff * (count_multifurcating_trees(n_known) - 1)
+    return c
 
 def get_mc_trees_slow(N):
     """
@@ -199,6 +222,7 @@ def resolved_to_quartets(resolved):
 
 def split_implication(split_a, split_b):
     """
+    Defined by Ben Redelings.
     This split relation is asymmetric.
     For example, 012|34 implies 12|34.
     Also, 12|34 implies 12|34.
@@ -313,6 +337,15 @@ class TestSplitAlgebra(unittest.TestCase):
         observed = [len(get_bifurcating_trees(N)) for N in Ns]
         self.assertEqual(observed, expected)
 
+    def test_count_bifurcating_trees(self):
+        """
+        Sloane sequence A001147.
+        """
+        expected = [3, 15, 105, 945, 10395, 135135, 2027025, 34459425]
+        Ns = range(4, 4 + len(expected))
+        observed = [count_bifurcating_trees(N) for N in Ns]
+        self.assertEqual(observed, expected)
+
     def test_get_multifurcating_trees(self):
         """
         Sloane sequence A000311.
@@ -320,6 +353,24 @@ class TestSplitAlgebra(unittest.TestCase):
         expected = [4, 26, 236, 2752]
         Ns = range(4, 4 + len(expected))
         observed = [len(get_multifurcating_trees(N)) for N in Ns]
+        self.assertEqual(observed, expected)
+
+    def test_count_multifurcating_trees(self):
+        """
+        Sloane sequence A000311.
+        """
+        expected = [4, 26, 236, 2752]
+        Ns = range(4, 4 + len(expected))
+        observed = [count_multifurcating_trees(N) for N in Ns]
+        self.assertEqual(observed, expected)
+
+    def test_count_independently_unplugged_trees(self):
+        """
+        ???
+        """
+        expected = [4, 41, 431, 5027, 69406, 1135199, 21569937]
+        Ns = range(4, 4 + len(expected))
+        observed = [count_independently_unplugged_trees(N) for N in Ns]
         self.assertEqual(observed, expected)
 
     def test_get_mc_trees_slow(self):
