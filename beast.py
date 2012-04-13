@@ -11,6 +11,7 @@ This assumes that BEAST is on the path and that BEAGLE has been installed.
 import subprocess
 import time
 import os
+import tempfile
 
 import Util
 
@@ -25,14 +26,15 @@ def prepare():
     tmp_path = Util.create_tmp_file(data=data, prefix='', suffix='')
     tmp_name = os.path.basename(tmp_path)
     t = time.gmtime()
-    timestr = '%04d%02d%02d' % (t.tm_year, t.tm_mon, t.tm_mday)
-    newdir = '_'.join(('beast', timestr, tmpname))
+    time_str = '%04d%02d%02d' % (t.tm_year, t.tm_mon, t.tm_mday)
+    compound_str = '_'.join(('beast', time_str, tmp_name))
+    new_dir = os.path.join(tempfile.gettempdir(), compound_str)
     # create the input and output directories
-    os.makedirs(newdir)
+    os.makedirs(new_dir)
     # return the base directory
-    return newdir
+    return new_dir
 
-def run_beast(base_path):
+def run_beast(base_path, jar_path):
     """
     The base path will be used as the working directory.
     Whatever miscellaneous intermediate files beast wants to make
@@ -41,15 +43,18 @@ def run_beast(base_path):
     The log file named myjob.log will be created in that directory.
     Also myjob-beast.out and myjob-beast.err.
     @param base_path: base path to run this job
+    @param jar_path: path to the beast jar file
     @return: None
     """
     out_path = os.path.join(base_path, 'myjob-beast.out')
     err_path = os.path.join(base_path, 'myjob-beast.err')
+    xml_path = os.path.join(base_path, 'myjob.xml')
     args = [
-            'beast',
-            '-beagle', '-beagle_CPU', '-beagle_SSH', '-beast_double',
+            #'beast',
+            'java', '-jar', jar_path,
+            '-beagle', '-beagle_CPU', '-beagle_SSE', '-beagle_double',
             '-working',
-            'myjob.xml']
+            xml_path]
     with open(out_path, 'w') as fout:
         with open(err_path, 'w') as ferr:
             p = subprocess.Popen(args, stdout=fout, stderr=ferr)

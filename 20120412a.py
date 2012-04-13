@@ -1,5 +1,5 @@
 """
-Use BEAST to analyze an interval of the primate tutorial alignment. [UNFINISHED]
+Use BEAST to analyze an interval of the primate tutorial alignment.
 
 Web service output is the loganalyser output.
 The extended command line functionality
@@ -11,11 +11,14 @@ using a separate BEAST instance for each interval.
 from StringIO import StringIO
 import argparse
 import multiprocessing
+import os
 
 import Form
 import FormOut
 import beasttut
 import beast
+
+g_beast_jar_path = os.path.expanduser('~/BEASTv1.7.1/lib/beast.jar')
 
 def get_form():
     """
@@ -49,7 +52,7 @@ def get_response_content(fs):
     basepath = beast.prepare()
     with open(os.path.join(basepath, 'myjob.xml'), 'w') as fout:
         fout.write(xml_string + '\n')
-    beast.run_beast(basepath)
+    beast.run_beast(basepath, g_beast_jar_path)
     beast.run_loganalyser(basepath)
     # return the analysis
     with open(os.path.join(basepath, 'myjob-loganalyser.txt')) as fin:
