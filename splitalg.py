@@ -13,6 +13,8 @@ import itertools
 from itertools import combinations
 from itertools import permutations
 
+import iterutils
+
 def mksplit(a, b):
     return frozenset((frozenset(a), frozenset(b)))
 
@@ -182,6 +184,19 @@ def get_representable_treesets(N, pre_trees):
             treeset_sets.add(frozenset(trees))
     return treeset_sets
 
+def resolved_to_quartets(resolved):
+    """
+    @param resolved: a bifurcating tree defined by compatible full splits
+    @return: set of compatible quartets
+    """
+    quartets = set()
+    for split in resolved:
+        a, b = split
+        for qa in combinations(a, 2):
+            for qb in combinations(b, 2):
+                quartets.add(mksplit(qa, qb))
+    return quartets
+
 def split_implication(split_a, split_b):
     """
     This split relation is asymmetric.
@@ -337,6 +352,7 @@ class TestSplitAlgebra(unittest.TestCase):
 
     def test_get_nearly_mc_trees(self):
         """
+        Sloane sequence does not exist.
         The extended sequence is [4, 1199, ???].
         """
         expected = [4, 1199]
@@ -375,6 +391,38 @@ class TestSplitAlgebra(unittest.TestCase):
         for N in Ns:
             pre_trees = list(get_quartet_sets(N))
             observed.append(len(get_representable_treesets(N, pre_trees)))
+        self.assertEqual(observed, expected)
+
+    def test_quartet_set_representable_tree_sets(self):
+        """
+        Sloane sequence does not exist.
+        The extended sequence is [4, 41, 1586, ???].
+        """
+        expected = [4, 41]
+        Ns = range(4, 4 + len(expected))
+        observed = []
+        for N in Ns:
+            # get all quartets
+            qs = list(get_quartets(N))
+            # get all resolved trees
+            ts = list(get_bifurcating_trees(N))
+            # map from quartet to quartet index
+            q_to_i = dict((q, i) for i, q in enumerate(qs))
+            # map tree index to set of indices of compatible quartets
+            ti_to_qi_set = dict((i, set(q_to_i[q] for q in resolved_to_quartets(t))) for i, t in enumerate(ts))
+            # begin the definition of representable tree index sets
+            representable_ti_sets = set()
+            # For each tree look at every subset of compatible quartets.
+            # Record the set of tree indices compatible with each subset.
+            for t in ts:
+                tqis = [q_to_i[q] for q in resolved_to_quartets(t)]
+                for qi_subset_tuple in iterutils.powerset(tqis):
+                    qi_subset = set(qi_subset_tuple)
+                    #ti_pattern = frozenset(i for i, tree in enumerate(ts) if 
+                    ti_pattern = frozenset(i for i, s in ti_to_qi_set.items() if qi_subset <= s)
+                    representable_ti_sets.add(ti_pattern)
+            n = len(representable_ti_sets)
+            observed.append(n)
         self.assertEqual(observed, expected)
 
     def test_get_informative_partial_splits(self):
