@@ -2,10 +2,47 @@
 
 <head>
 <title>test embedded svg</title>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
 </head>
 
 <body>
 
+How exactly does Sella-Hirsh fitness reduction affect the connectedness.
+<br/><br/>
+We consider very restricted mutation models
+whose nonzero rates are all the same,
+and whose sparsity structures are like lattices or
+complete graphs, or hypercubes, or hamming graphs.
+Then we reduce the fitness of a single state towards zero
+using the Sella-Hirsh approximation and look at the effect
+on the mutation-selection balance rate matrix.
+In particular we want to know how the expected rate
+and the relaxation time are affected
+as the stationary probability of the unfit state approaches zero.
+Is the selective removal of this state more like
+vertex deletion, or is it more like removal by Schur complementation?
+The simple selection option is like the
+Knudsen-Miyamoto selection or in other words
+the Goldman and Whelan selection with \( f = \frac{1}{2} \).
+The complicated selection option is the one with the logarithm
+that Jeff Thorne likes to use and which was also
+used by Sella and Hirsh, and by Halpern and Bruno.
+<br/><br/>
+
+<fieldset style="{
+	position: absolute; left: 5pt;
+	padding: 5pt;">
+<legend>selections</legend>
+<br/>
+<!--
+<div style="{position: absolute; left: 5pt; background: lightgray;}">
+<div style="{position: relative; border: 1px solid black;}">
+<div style="{position: absolute; left: 5pt; border: 1px solid black;}">
+onmouseover="evt.target.setAttribute('fill', 'red');"
+#evt.target.setAttribute('fill', 'red');"
+#onclick="alert('what is this');"
+-->
 <svg width="288pt" height="96pt"
 viewBox="0.00 0.00 288.00 95.51"
 xmlns="http://www.w3.org/2000/svg"
@@ -17,18 +54,29 @@ xmlns:xlink="http://www.w3.org/1999/xlink">
 <!-- end style -->
 <g id="graph1" class="graph" transform="scale(0.48731 0.48731) rotate(0) translate(4 192)">
 <title></title>
-<polygon fill="white" stroke="white" points="-4,5 -4,-192 588,-192 588,5 -4,5"/>
+<polygon fill="none" stroke="white" points="-4,5 -4,-192 588,-192 588,5 -4,5"/>
 <!-- omg -->
-<g id="node1" class="node"><title>omg</title>
-<a xlink:href="http://www.google.com" xlink:title="omg">
+<g id="node1" class="node"><title>node1 title</title>
+<!--<a xlink:href="http://www.google.com" xlink:title="omg">-->
 <ellipse fill="white" stroke="black" cx="291" cy="-169" rx="32.0265" ry="18.3848"/>
-<text text-anchor="middle" x="291" y="-165.4" font-family="Times Roman,serif" font-size="14.00">omg</text>
-</a>
+<text text-anchor="middle" x="291" y="-165.4" font-family="Times Roman,serif" font-size="14.00">
+node1 text
+</text>
+<!--</a>-->
 </g>
 <!-- foo0 -->
 <g id="node3" class="node"><title>foo0</title>
-<ellipse fill="none" stroke="black" cx="137" cy="-94" rx="33.234" ry="18.3848"/>
-<text text-anchor="middle" x="137" y="-90.4" font-family="Times Roman,serif" font-size="14.00">foo0</text>
+<ellipse
+onclick="
+if (evt.target.getAttribute('fill') == 'cyan')
+{ evt.target.setAttribute('fill', 'white'); }
+else
+{ evt.target.setAttribute('fill', 'cyan'); }"
+cursor="pointer"
+fill="white" stroke="black" cx="137" cy="-94" rx="33.234" ry="18.3848"/>
+<text
+pointer-events="none"
+text-anchor="middle" x="137" y="-90.4" font-family="Times Roman,serif" font-size="14.00">foo0</text>
 </g>
 <!-- omg&#45;&#45;foo0 -->
 <g id="edge2" class="edge"><title>omg&#45;&#45;foo0</title>
@@ -108,6 +156,74 @@ xmlns:xlink="http://www.w3.org/1999/xlink">
 </g>
 </g>
 </svg>
+</fieldset>
+
+
+
+<fieldset style="{
+	position: absolute; left: 318pt;
+	padding: 5pt;">
+<legend>options</legend>
+<!--
+	background: lightgray;">
+	border: 1px solid blue;}">
+<div style="{position: relative; border: 1px solid black;}">
+-->
+<br/>
+<form action="http://does.not.exist/wat" method="get"
+onsubmit="alert('submitted');"
+>
+<input type="hidden" name="extraselections" value="wat">
+<label for="p_mid">mutation-selection probability for the down-weighted state:</label>
+<br/>
+<input type="text" name="p_mid" id="p_mid" value="0.001" size="10"/>
+<br/><br/>
+mutation graph structure:
+<br/>
+<input type="radio" name="mut_type" id="mut_path_2" value="mut_path_2"/>
+<label for="mut_path_2">path \( P_2 \)</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_path_3_mid" value="mut_path_3_mid"/>
+<label for="mut_path_3_mid">path \( P_3 \) (middle state is down-weighted)</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_path_3_end" value="mut_path_3_end"/>
+<label for="mut_path_3_end">path \( P_3 \) (end state is down-weighted)</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_complete_3" value="mut_complete_3"/>
+<label for="mut_complete_3">complete graph \( K_3 \)</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_complete_4" value="mut_complete_4"/>
+<label for="mut_complete_4">complete graph \( K_4 \)</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_hyper_2_2" value="mut_hyper_2_2" checked="yes"/>
+<label for="mut_hyper_2_2">square \( Q_2 \)</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_weighted_square" value="mut_weighted_square"/>
+<label for="mut_weighted_square">weighted square (a segment is down-weighted)</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_funkily_weighted_square" value="mut_funkily_weighted_square"/>
+<label for="mut_funkily_weighted_square">funkily weighted square</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_hyper_2_3" value="mut_hyper_2_3"/>
+<label for="mut_hyper_2_3">cube \( Q_3 \)</label>
+<br/>
+<input type="radio" name="mut_type" id="mut_hyper_2_3_square" value="mut_hyper_2_3_square"/>
+<label for="mut_hyper_2_3_square">cube \( Q_3 \) (a square is down-weighted)</label>
+<br/><br/>
+selection approximation:
+<br/>
+<input type="radio" name="sel_type" id="sel_sqrt" value="sel_sqrt"/>
+<label for="sel_sqrt">simple</label>
+<br/>
+<input type="radio" name="sel_type" id="sel_log" value="sel_log" checked="yes"/>
+<label for="sel_log">sophisticated</label>
+<br/><br/>
+<input type="submit" name="submit" value="view"/>
+<input
+type="submit" name="submit" value="download"
+/>
+</form>
+</fieldset>
 
 </body>
 </html>
