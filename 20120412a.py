@@ -54,9 +54,12 @@ def get_response_content(fs):
         fout.write(xml_string + '\n')
     beast.run_beast(basepath, g_beast_jar_path)
     beast.run_loganalyser(basepath)
-    # return the analysis
+    # read the analysis
     with open(os.path.join(basepath, 'myjob-loganalyser.txt')) as fin:
         analysis_text = fin.read()
+    # parse the analysis
+    arr = beast.loganalyser_to_array(analysis_text)
+    s = '\n'.join('\t'.join(str(x) for x in row) for row in arr)
     # return the response
-    return analysis_text
+    return s
 

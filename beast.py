@@ -77,3 +77,46 @@ def run_loganalyser(base_path):
             p = subprocess.Popen(args, cwd=base_path, stdout=fout, stderr=ferr)
             p.communicate()
 
+
+
+"""
+burnIn   <= 800,   maxState  = 8000
+statistic   mean    stdErr  median  hpdLower    hpdUpper    ESS 50hpdLower  50hpdUpper
+meanRate    0.01    1.0107E-3   9.8709E-3   8.4519E-3   0.0118  7.3723  8.6733E-3   0.0101  *
+coefficientOfVariation  0.589   0.0989  0.5851  0.4099  0.7753  18.0456 0.5556  0.6628  *
+covariance  -0.2115 0.113   -0.2303 -0.4392 -0.0295 5.1801  -0.3593 -0.1941 *
+
+ * WARNING: The results of this MCMC analysis may be invalid as 
+             one or more statistics had very low effective sample sizes (ESS)
+"""
+
+class LoganalyserParsingError(Exception): pass
+
+def loganalyser_to_array(lstr):
+    """
+    @param lstr: contents of a loganalyser file
+    @return: an array whose first row is headers
+    """
+    arr = []
+    expected_headers = [
+            'statistic', 'mean', 'stdErr', 'median',
+            'hpdLower', 'hpdUpper', 'ESS',
+            '50hpdLower', '50hpdUpper']
+    lines = [line.strip() for line in lstr.splitlines()]
+    if not lines[0].startswith('burnIn'):
+        msg = 'expected the first line to start with burnIn'
+        raise LoganalyserParsingError(msg)
+    if lines[1].split() != expected_headers:
+        msg = 'expected the second line to have the headers'
+        raise LoganalyserParsingError(msg)
+    arr.append(expected_headers)
+    for line in lines[2:]:
+        # stop if we reach a blank line
+        if not line:
+            break
+        # add the row to the array
+        row = line.split()[:len(expected_headers)]
+        row = [row[0]] + [float(x) for x in row[1:]]
+        arr.append(row)
+    return arr
+
