@@ -217,8 +217,7 @@ def get_form():
                 '\n'.join(data_lines)),
             Form.SingleLine('wild', 'wild type amino acids', wild_string),
             Form.SingleLine('mutant', 'mutant amino acids', mutant_string),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

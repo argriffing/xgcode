@@ -39,8 +39,7 @@ def get_form():
             Form.Integer('height', 'physical height', 680, low=10, high=1000),
             Form.Integer('inner_margin', 'inner margin', 10, low=0, high=1000),
             Form.Integer('outer_margin', 'outer margin', 0, low=0, high=1000),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

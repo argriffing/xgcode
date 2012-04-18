@@ -31,8 +31,7 @@ def get_form():
             Form.Matrix('matrix', 'distance matrix',
                 D, MatrixUtil.assert_predistance),
             Form.MultiLine('labels', 'ordered labels', ordered_label_string),
-            Form.Integer('iteration', 'the iteration to visualize', 1),
-            Form.ContentDisposition()]
+            Form.Integer('iteration', 'the iteration to visualize', 1)]
     # return the objects
     return form_objects
 

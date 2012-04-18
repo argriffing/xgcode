@@ -145,10 +145,9 @@ def get_form():
             Form.Integer('nleaves', 'sample this many leaf taxa',
                 10, low=3, high=26),
             Form.Integer('nsites', 'sample this many alignment columns',
-                200, low=1, high=2000),
+                200, low=1, high=2000)]
             #Form.Float('epsrate', 'larger values mean more rate variation',
                 #0.02, low_exclusive=0, high_exclusive=1),
-            Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():

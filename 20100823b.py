@@ -31,8 +31,7 @@ def get_form():
                 Form.CheckItem('remove', 'remove uninformative loci', True)]),
             Form.RadioGroup('out_radio', 'indexing', [
                 Form.RadioItem('from_zero', 'count columns from 0'),
-                Form.RadioItem('from_one', 'count columns from 1', True)]),
-            Form.ContentDisposition()]
+                Form.RadioItem('from_one', 'count columns from 1', True)])]
     return form_objects
 
 def get_form_out():

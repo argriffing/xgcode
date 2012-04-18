@@ -43,8 +43,7 @@ def get_form():
                 Form.RadioItem('rank_squared',
                     'rank by decreasing squared correlation', True),
                 Form.RadioItem('rank_unsquared',
-                    'rank by decreasing correlation')]),
-            Form.ContentDisposition()]
+                    'rank by decreasing correlation')])]
     return form_objects
 
 def get_form_out():

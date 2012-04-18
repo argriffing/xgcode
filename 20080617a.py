@@ -25,8 +25,7 @@ def get_form():
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.MultiLine('selection', 'selected taxa', '\n'.join('ABFG')),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

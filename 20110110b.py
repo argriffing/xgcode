@@ -54,8 +54,7 @@ def get_form():
                 200.0, low_exclusive=0.0),
             Form.Float('progress', 'animation progress between 0.0 and 1.0',
                 0.5, low_inclusive=0.0, high_inclusive=1.0),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

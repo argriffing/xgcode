@@ -38,8 +38,7 @@ def get_form():
             Form.MultiLine('table_a', 'first .hud table',
                 '\n'.join(g_a_lines)),
             Form.MultiLine('table_b', 'second .hud table',
-                '\n'.join(g_b_lines)),
-            Form.ContentDisposition()]
+                '\n'.join(g_b_lines))]
     return form_objects
 
 def get_form_out():

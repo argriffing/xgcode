@@ -46,8 +46,7 @@ def get_form():
             Form.RadioGroup('options', 'processing options', [
                 Form.RadioItem('fast', 'fast', True),
                 Form.RadioItem('slow', 'slow (do not use)')]),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

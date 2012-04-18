@@ -52,8 +52,7 @@ def get_form():
             Form.MultiLine('phylip', 'non-interleaved Phylip alignment',
                 '\n'.join(g_phy_lines)),
             Form.MultiLine('combo', 'locus combination log file',
-                '\n'.join(g_combo_lines)),
-            Form.ContentDisposition()]
+                '\n'.join(g_combo_lines))]
     return form_objects
 
 def get_form_out():

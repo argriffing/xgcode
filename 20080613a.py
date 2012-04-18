@@ -35,8 +35,7 @@ def get_form():
                 Form.CheckItem('axes', 'draw axes', True),
                 Form.CheckItem('connections', 'draw connections', True),
                 Form.CheckItem('vertices', 'draw vertices', True)]),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

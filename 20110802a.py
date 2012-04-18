@@ -25,8 +25,7 @@ def get_form():
     form_objects = [
             Form.Float('min_gridsize', 'intersection resolution',
                 0.1, low_exclusive=0),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

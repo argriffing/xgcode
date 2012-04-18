@@ -65,8 +65,7 @@ def get_form():
             Form.RadioGroup('tree_layout', 'tree layout options', [
                 Form.RadioItem('equal_arc', 'equal arc layout', True),
                 Form.RadioItem('equal_daylight', 'equal daylight layout')]),
-            Form.LatexFormat(),
-            Form.ContentDisposition()]
+            Form.LatexFormat()]
     return form_objects
 
 def get_form_out():

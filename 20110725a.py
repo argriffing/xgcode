@@ -32,8 +32,7 @@ def get_form():
                 10, low=1, high=100),
             Form.Float('morph', 'morph progress in [0,1]',
                 0.5, low_inclusive=0, high_inclusive=1),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

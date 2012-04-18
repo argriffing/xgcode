@@ -50,8 +50,7 @@ def get_form():
     form_objects = [
             Form.MultiLine('ind',
                 'contents of an .ind file',
-                g_default_ind_string),
-            Form.ContentDisposition()]
+                g_default_ind_string)]
     return form_objects
 
 def get_form_out():

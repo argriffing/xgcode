@@ -26,8 +26,7 @@ def get_form():
                     'scale using eigenvalues', True)]),
             Form.Float('scaling_factor',
                 'scaling factor', 10.0, low_exclusive=0),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

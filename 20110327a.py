@@ -34,8 +34,7 @@ def get_form():
                 Form.CheckItem('draw_background', 'draw background', True),
                 Form.CheckItem('draw_vertices', 'draw vertices'),
                 Form.CheckItem('draw_labels', 'draw labels', True)]),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

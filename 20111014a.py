@@ -42,8 +42,7 @@ def get_form():
     form_objects = [
             Form.Float('ts_rate', 'transition rate', '3.0'),
             Form.Float('tv_rate', 'transversion rate', '2.0'),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

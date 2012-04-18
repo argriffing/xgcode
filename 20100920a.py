@@ -33,8 +33,7 @@ def get_form():
             Form.MultiLine('independent', 'names of independent variables',
                 '\n'.join(g_independent_names)),
             Form.SingleLine('dependent', 'name of the dependent variable',
-                g_dependent_name),
-            Form.ContentDisposition()]
+                g_dependent_name)]
     return form_objects
 
 def get_form_out():

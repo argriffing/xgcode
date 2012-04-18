@@ -40,8 +40,7 @@ def get_form():
                     'combine by counting')]),
             Form.CheckGroup('output_options', 'post processing', [
                 Form.CheckItem('remove_invariant',
-                    'remove invariant columns', True)]),
-            Form.ContentDisposition()]
+                    'remove invariant columns', True)])]
     return form_objects
 
 def get_form_out():

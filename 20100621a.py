@@ -28,8 +28,7 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('table', 'R-like table without row labels',
-                '\n'.join(g_default_lines)),
-            Form.ContentDisposition()]
+                '\n'.join(g_default_lines))]
     return form_objects
 
 def get_form_out():

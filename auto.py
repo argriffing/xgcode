@@ -65,7 +65,7 @@ def main():
             if not obj.web_only():
                 obj.process_cmdline_dict(d_in, d_out)
         args = dict_to_args(d_out)
-        args.contentdisposition = 'attachment'
+        args.submit = 'download'
         if hasattr(usermod, 'get_response_content'):
             content = usermod.get_response_content(args)
         else:

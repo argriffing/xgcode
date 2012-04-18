@@ -31,8 +31,7 @@ def get_form():
     form_objects = [
             Form.Float('scaling_factor', 'scaling factor',
                 1.0, low_exclusive=0),
-            Form.LatexFormat(),
-            Form.ContentDisposition()]
+            Form.LatexFormat()]
     return form_objects
 
 def get_form_out():

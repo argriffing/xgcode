@@ -26,8 +26,7 @@ def get_form():
             Form.Float('root_b', 'second root of p(t)', 2.0),
             Form.Float('root_c', 'third root of p(t)', 2.5),
             Form.Float('final_t', 'final t', 3.2),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

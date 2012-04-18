@@ -36,8 +36,7 @@ def get_form():
             Form.MultiLine('test_tree', 'harmonic extension tree', test_s),
             Form.Float('scale', 'scale the image of the tree by this factor',
                 200.0, low_exclusive=0.0),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

@@ -81,8 +81,7 @@ def get_form():
                 g_default_hud_string),
             Form.MultiLine('matpheno',
                 'contents of a MAT_pheno.txt file',
-                g_default_matpheno_string),
-            Form.ContentDisposition()]
+                g_default_matpheno_string)]
     return form_objects
 
 def get_form_out():

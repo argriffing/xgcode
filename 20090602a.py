@@ -66,8 +66,7 @@ def get_form():
                     'spectral with laplacian updates and nj fallback', True),
                 Form.CheckItem('one_spectral',
                     'an initial spectral split followed by neighbor joining',
-                    True)]),
-            Form.ContentDisposition()]
+                    True)])]
     return form_objects
 
 def get_form_out():

@@ -36,8 +36,7 @@ def get_form():
             Form.CheckGroup('visualization_options', 'visualization options', [
                 Form.CheckItem('axes', 'draw axes', True),
                 Form.CheckItem('connections', 'draw connections', True)]),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

@@ -18,8 +18,7 @@ def get_form():
     form_objects = [
             Form.MultiLine('phylip', 'non-interleaved Phylip alignment',
                 g_default_data),
-            Form.SingleLine('name', 'name to remove', 'Carp'),
-            Form.ContentDisposition()]
+            Form.SingleLine('name', 'name to remove', 'Carp')]
     return form_objects
 
 def get_form_out():

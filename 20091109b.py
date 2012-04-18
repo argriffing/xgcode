@@ -34,8 +34,7 @@ def get_form():
                     'x axis is the path distance', True),
                 Form.RadioItem('xaxis_firstvector',
                     'x axis is the first MDS vector')]),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

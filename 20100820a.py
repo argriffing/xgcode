@@ -37,8 +37,7 @@ def get_form():
                 Form.CheckItem('diploid_and_biallelic',
                     'the data source is really diploid and biallelic', True)]),
             Form.Integer('ncoords',
-                'show this many axes', 3),
-            Form.ContentDisposition()]
+                'show this many axes', 3)]
     return form_objects
 
 def get_form_out():

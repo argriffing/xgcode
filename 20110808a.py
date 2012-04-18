@@ -51,8 +51,7 @@ def get_form():
                 Form.RadioItem('advanced_beamer_colors',
                     'use advanced beamer colors'),
                 ]),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

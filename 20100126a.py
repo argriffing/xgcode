@@ -149,8 +149,7 @@ def get_form():
                 640, low=1, high=2000),
             Form.Integer('height', 'image height in pixels',
                 480, low=1, high=2000),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

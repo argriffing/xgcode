@@ -290,8 +290,7 @@ def get_form():
                 RadioItem('full_tree_only', 'full tree only', False),
                 RadioItem('pruned_trees_only', 'pruned trees only', False),
                 RadioItem('all_trees', 'all trees', True)]),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

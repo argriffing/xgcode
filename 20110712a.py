@@ -43,8 +43,7 @@ def get_form():
                     'fancy_intersect', 'doubly occluded intersections')]),
             Form.Float('radius',
                 'curve-plane intersection circle radius', 0.1),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

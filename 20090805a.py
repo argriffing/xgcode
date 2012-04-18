@@ -75,8 +75,7 @@ def get_form():
                     'go through the Laplacian, like Felsenstein pruning',
                     True),
                 Form.RadioItem('nj_like',
-                    'directly use distances, like neighbor joining')]),
-            Form.ContentDisposition()]
+                    'directly use distances, like neighbor joining')])]
     return form_objects
 
 def get_form_out():

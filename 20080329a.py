@@ -44,8 +44,7 @@ def get_form():
                 get_weight(1), low_inclusive=0),
             Form.RadioGroup('fmt', 'output format options', [
                 Form.RadioItem('fasta', 'fasta'),
-                Form.RadioItem('nex', 'nexus', True)]),
-            Form.ContentDisposition()]
+                Form.RadioItem('nex', 'nexus', True)])]
     return form_objects
 
 def get_form_out():
@@ -118,12 +117,8 @@ def get_response(fs):
     elif fs.nex:
         filename_extension = 'nex'
     filename = 'sample.' + fs.fmt
-    # send the response
-    contentdisposition = "%s; filename=%s" % (fs.contentdisposition, filename)
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', contentdisposition)]
-    return response_headers, output_string
+    #TODO use the correct filename extension in the output
+    return output_string
 
 def get_kappa(index):
     return [2, 2][index]

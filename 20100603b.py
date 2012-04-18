@@ -57,8 +57,7 @@ def get_form():
                 g_default_info_string),
             Form.SingleLine('location',
                 'control location',
-                'GA'),
-            Form.ContentDisposition()]
+                'GA')]
     return form_objects
 
 def get_form_out():

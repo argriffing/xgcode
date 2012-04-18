@@ -38,8 +38,7 @@ def get_form():
                 12, low_inclusive=1, high_exclusive=1000),
             Form.Float('height', 'height (centimeters)',
                 8, low_inclusive=1, high_exclusive=1000),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

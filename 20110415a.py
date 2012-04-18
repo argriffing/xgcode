@@ -59,8 +59,7 @@ def get_form():
                 'x axis projection (1 is Fiedler)', 1, low=1),
             Form.Integer('y_axis',
                 'y axis projection (1 is Fiedler)', 2, low=1),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

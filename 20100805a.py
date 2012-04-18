@@ -34,8 +34,7 @@ def get_form():
             Form.Integer('k', 'number of clusters',
                 2, low=2),
             Form.SingleLine('annotation', 'header of added column',
-                'cluster'),
-            Form.ContentDisposition()]
+                'cluster')]
     return form_objects
 
 def get_form_out():

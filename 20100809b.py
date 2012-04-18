@@ -29,8 +29,7 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.MultiLine('table', 'table', '\n'.join(g_a_lines)),
-            Form.ContentDisposition()]
+            Form.MultiLine('table', 'table', '\n'.join(g_a_lines))]
     return form_objects
 
 def get_form_out():

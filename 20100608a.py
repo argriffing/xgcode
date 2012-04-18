@@ -60,8 +60,7 @@ def get_form():
                 Form.CheckItem('add_indices',
                     'add row indices for R table compatibility', True),
                 Form.CheckItem('clean_isolates',
-                    'force first-column elements to be IC-prefixed', True)]),
-            Form.ContentDisposition()]
+                    'force first-column elements to be IC-prefixed', True)])]
     return form_objects
 
 def get_form_out():

@@ -40,8 +40,7 @@ def get_form():
                 4, low=1, high=4),
             Form.MultiLine('input_text',
                 'calls per nt per base call per chromosome per strain',
-                g_sample_data),
-            Form.ContentDisposition()]
+                g_sample_data)]
     return form_objects
 
 def get_form_out():

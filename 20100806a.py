@@ -26,8 +26,7 @@ def get_form():
             Form.Sequence('axes', 'column labels of Euclidean axes',
                 ('pc1', 'pc2', 'pc3')),
             Form.Float('radius',
-                'remove duplicate points in this radius', '1e-8'),
-            Form.ContentDisposition()]
+                'remove duplicate points in this radius', '1e-8')]
     return form_objects
 
 def get_form_out():

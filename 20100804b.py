@@ -45,12 +45,11 @@ def get_form():
             Form.CheckGroup('pixel_options', 'more plotting details', [
                 Form.CheckItem('endpoint_ticks',
                     'add ticks to the endpoints of the colorbar', True)]),
-            Form.ImageFormat(),
+            Form.ImageFormat()]
             #Form.RadioGroup('out_type', 'output type', [
                 #Form.RadioItem('show_image', 'image', True),
                 #Form.RadioItem('show_table', 'R table'),
                 #Form.RadioItem('show_script', 'R script')]),
-            Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():

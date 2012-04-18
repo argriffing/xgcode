@@ -75,8 +75,7 @@ def get_form():
                 Form.RadioItem(BOTTOMLEFT, 'bottom left'),
                 Form.RadioItem(TOPRIGHT, 'top right', True),
                 Form.RadioItem(BOTTOMRIGHT, 'bottom right')]),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

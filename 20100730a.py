@@ -24,8 +24,7 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('data', 'k-ploid microsatellite data',
-                g_default_data),
-            Form.ContentDisposition()]
+                g_default_data)]
     return form_objects
 
 def get_form_out():

@@ -28,8 +28,7 @@ def get_form():
     form_objects = [
             Form.MultiLine('table', 'R table', g_table),
             Form.SingleLine('var_a', 'first variable', g_var_a),
-            Form.SingleLine('var_b', 'second variable', g_var_b),
-            Form.ContentDisposition()]
+            Form.SingleLine('var_b', 'second variable', g_var_b)]
     return form_objects
 
 def get_form_out():

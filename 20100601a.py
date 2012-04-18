@@ -55,8 +55,7 @@ def get_form():
                 g_default_info_string),
             Form.Float('threshold',
                     'precipitation threshold (mm)',
-                    '750.0'),
-            Form.ContentDisposition()]
+                    '750.0')]
     return form_objects
 
 def get_form_out():

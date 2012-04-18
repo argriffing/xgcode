@@ -24,8 +24,7 @@ def get_form():
                 g_default_data),
             Form.RadioGroup('format_out', 'output format', [
                 Form.RadioItem('hud', 'hud', True),
-                Form.RadioItem('phy', 'non-interleaved phylip')]),
-            Form.ContentDisposition()]
+                Form.RadioItem('phy', 'non-interleaved phylip')])]
     return form_objects
 
 def get_form_out():

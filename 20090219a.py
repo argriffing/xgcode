@@ -46,8 +46,7 @@ def get_form():
                 480, low=3, high=2000),
             Form.Integer('border', 'image border size',
                 10, low=0, high=2000),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

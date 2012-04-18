@@ -78,8 +78,7 @@ def get_form():
                 0.1, low_exclusive=0),
             Form.MultiLine('input_text',
                 'calls per nt per base call per chromosome per strain',
-                g_sample_data),
-            Form.ContentDisposition()]
+                g_sample_data)]
     return form_objects
 
 def get_form_out():

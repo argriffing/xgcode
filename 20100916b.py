@@ -51,8 +51,7 @@ def get_form():
     """
     form_objects = [
             Form.MultiLine('table', 'table', '\n'.join(g_lines)),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

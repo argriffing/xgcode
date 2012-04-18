@@ -47,8 +47,7 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

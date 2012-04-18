@@ -63,8 +63,7 @@ def get_form():
                     'equal daylight layout', True),
                 Form.RadioItem('equal_arc_layout',
                     'equal arc layout')]),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

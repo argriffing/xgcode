@@ -46,8 +46,7 @@ def get_form():
     form_objects = [
             Form.MultiLine('data',
                 'a list of OTUs names and binary character vectors',
-                g_default_string),
-            Form.ContentDisposition()]
+                g_default_string)]
     return form_objects
 
 def get_form_out():

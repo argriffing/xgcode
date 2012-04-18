@@ -59,8 +59,7 @@ def get_form():
     """
     # define the form objects
     form_objects = [
-            Form.LatexFormat(),
-            Form.ContentDisposition()]
+            Form.LatexFormat()]
     return form_objects
 
 def get_form_out():

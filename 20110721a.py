@@ -22,8 +22,7 @@ def get_form():
             Form.Float('y1', 'y1', 1.0),
             Form.Float('y2', 'y2', 2.5),
             Form.Float('y3', 'y3', 3.5),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

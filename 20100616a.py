@@ -41,8 +41,7 @@ def get_form():
                 '\n'.join(g_default_info_lines)),
             Form.MultiLine('table_b', 'second R table',
                 '\n'.join(g_default_pca_lines)),
-            Form.SingleLine('join_header', 'combine using this column', 'otu'),
-            Form.ContentDisposition()]
+            Form.SingleLine('join_header', 'combine using this column', 'otu')]
     return form_objects
 
 def get_form_out():

@@ -52,8 +52,7 @@ def get_form():
                 g_default_info_string),
             Form.Float('threshold',
                     'temperature threshold (C)',
-                    '22.0'),
-            Form.ContentDisposition()]
+                    '22.0')]
     return form_objects
 
 def get_form_out():

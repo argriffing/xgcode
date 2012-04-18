@@ -58,8 +58,7 @@ def get_form():
                 Form.RadioItem('uniform_length_a',
                     str(BranchLenSampler.UniformA())),
                 Form.RadioItem('uniform_length_b',
-                    str(BranchLenSampler.UniformB()))]),
-            Form.ContentDisposition()]
+                    str(BranchLenSampler.UniformB()))])]
     return form_objects
 
 def get_form_out():

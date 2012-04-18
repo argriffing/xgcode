@@ -22,8 +22,7 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('ntaxa', 'number of taxa', 20, low=4, high=20),
-            Form.ContentDisposition()]
+            Form.Integer('ntaxa', 'number of taxa', 20, low=4, high=20)]
     return form_objects
 
 def get_form_out():

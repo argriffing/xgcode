@@ -82,8 +82,7 @@ def get_form():
                 g_default_hud_string),
             Form.MultiLine('info',
                 'amdS_PCA_Info.csv lines',
-                g_default_info_string),
-            Form.ContentDisposition()]
+                g_default_info_string)]
     return form_objects
 
 def get_form_out():

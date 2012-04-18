@@ -48,8 +48,7 @@ def get_form():
                 formatted_tree_string),
             Form.MultiLine('column', 'tip data',
                 '\n'.join(default_tip_data_lines)),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

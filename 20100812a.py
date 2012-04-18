@@ -48,8 +48,7 @@ def get_form():
         Form.CheckGroup('options', 'missing data options', [
             Form.CheckItem('use_mode',
                 'replace missing data with the non-missing mode',
-                True)]),
-        Form.ContentDisposition()]
+                True)])]
     return form_objects
 
 def get_form_out():

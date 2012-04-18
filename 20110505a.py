@@ -49,8 +49,7 @@ def get_form():
                 g_default_eigenvector_index, low=1),
             Form.Float('yaw', 'yaw', g_default_yaw),
             Form.Float('pitch', 'pitch', g_default_pitch),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

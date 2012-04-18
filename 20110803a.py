@@ -19,8 +19,7 @@ def get_form():
             Form.Float('picture_radius',
                 'a tikzpicture radius estimate',
                 5, low_exclusive=0),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 """
 
@@ -71,8 +70,7 @@ def get_form():
                 'z+ half-axis radius', 3.0, low_exclusive=0),
             Form.Float('z_rad_neg',
                 'z- half-axis radius', 3.0, low_exclusive=0),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

@@ -37,8 +37,7 @@ def get_form():
                 0.1, low_exclusive=0),
             Form.Float('scaling_factor',
                 'scaling factor', 5.0, low_exclusive=0),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

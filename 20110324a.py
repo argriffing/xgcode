@@ -30,8 +30,7 @@ def get_form():
                 'first eigenfunction index (1 means Fiedler)', 1, low=0),
             Form.Integer('eig_idx2',
                 'second eigenfunction index (1 means Fiedler)', 2, low=0),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

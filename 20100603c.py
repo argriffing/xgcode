@@ -30,8 +30,7 @@ def get_form():
     form_objects = [
             Form.MultiLine('hud',
                 'a list of OTUs names and binary character vectors',
-                g_hud_string),
-            Form.ContentDisposition()]
+                g_hud_string)]
     return form_objects
 
 def get_form_out():

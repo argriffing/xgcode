@@ -38,8 +38,7 @@ def get_form():
                 2, low=2),
             Form.SingleLine('annotation', 'header of added column',
                 'cluster'),
-            kmeans.InitStrategy(),
-            Form.ContentDisposition()]
+            kmeans.InitStrategy()]
     return form_objects
 
 def get_form_out():

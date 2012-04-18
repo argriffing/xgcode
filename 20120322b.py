@@ -45,8 +45,7 @@ def get_form():
                 '1.0', low_exclusive=0, high_exclusive=100),
             Form.Float('tikzlength', 'tikz line length',
                 '6.0', low_exclusive=1, high_exclusive=200),
-            Form.TikzFormat(),
-            Form.ContentDisposition()]
+            Form.TikzFormat()]
     return form_objects
 
 def get_form_out():

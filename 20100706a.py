@@ -74,12 +74,11 @@ def get_form():
             Form.Sequence('color_legend_pos',
                 'position of the color legend',
                 ('0', '0', '0')),
-            Form.ImageFormat(),
+            Form.ImageFormat()]
             #Form.RadioGroup('out_type', 'output type', [
                 #Form.RadioItem('show_image', 'image', True),
                 #Form.RadioItem('show_table', 'R table'),
                 #Form.RadioItem('show_script', 'R script')]),
-            Form.ContentDisposition()]
     return form_objects
 
 def get_form_out():

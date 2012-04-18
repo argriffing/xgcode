@@ -39,8 +39,7 @@ def get_form():
     # define the list of form objects
     form_objects = [
             Form.MultiLine('tree', 'tree', formatted_default_tree_string),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

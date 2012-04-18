@@ -26,18 +26,13 @@ def get_form():
                     'add group label to each row', True)]),
             Form.RadioGroup('format', 'format options', [
                 Form.RadioItem('raw', 'rows of tab separated values', True),
-                Form.RadioItem('table', 'R table format')]),
-            Form.ContentDisposition()]
+                Form.RadioItem('table', 'R table format')])]
     return form_objects
 
 def get_form_out():
-    return FormOut.Report()
+    return FormOut.Report('spiral.table')
 
-def get_response(fs):
-    """
-    @param fs: a FieldStorage object containing the cgi arguments
-    @return: a (response_headers, response_text) pair
-    """
+def get_response_content(fs):
     # unpack some options
     npoints = fs.npoints
     stddev = fs.stddev
@@ -58,9 +53,5 @@ def get_response(fs):
     elif fs.table:
         response_text = RUtil.get_table_string(data_rows, headers)
     # return the response
-    disposition = "%s; filename=%s" % (fs.contentdisposition, 'spiral.table')
-    response_headers = [
-            ('Content-Type', 'text/plain'),
-            ('Content-Disposition', disposition)]
-    return response_headers, response_text
+    return response_text
 

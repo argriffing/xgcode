@@ -26,8 +26,7 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.Matrix('points', 'points', M),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():
