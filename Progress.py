@@ -2,9 +2,7 @@
 Make a progress bar.
 """
 
-import os
 import sys
-import time
 from array import array
 from fcntl import ioctl
 import termios
