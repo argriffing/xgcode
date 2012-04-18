@@ -155,6 +155,25 @@ class Png(FormOut):
         return 'png'
 
 
+class Svg(FormOut):
+
+    def __init__(self, fmt='img', ext='svg', interpolants=None):
+        FormOut.__init__(self, fmt, ext, interpolants)
+
+    def get_contenttype(self, fs):
+        return 'image/svg+xml'
+
+    def get_mobyle_class(self):
+        return 'Picture'
+
+    def get_mobyle_superclass(self):
+        return 'Binary'
+
+    def get_galaxy_format(self):
+        return 'svg'
+
+
+
 class Tikz(FormOut):
 
     def __init__(self, base_format_string='tkz', base_interpolants=[]):
