@@ -187,15 +187,7 @@ def get_const_deps(raw_lines):
     # look for lines like
     # g_foo = const.read('20100101a')
     deps = set()
-    parser = (
-            Word(string.letters + '_') +
-            Literal('=') +
-            Literal('const.read') +
-            Literal('(') +
-            Literal("'") +
-            Word(string.digits + string.lowercase)('dep') +
-            Literal("'") +
-            Literal(')'))
+    parser = _get_const_parser()
     for line in raw_lines:
         try:
             result = parser.parseString(line)

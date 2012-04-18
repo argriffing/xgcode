@@ -1,6 +1,7 @@
 """
 Create a Markov model of English language text.
 This is for testing various Markov model algorithms.
+This module is horribly obsolete.
 """
 
 import unittest
