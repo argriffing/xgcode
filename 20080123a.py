@@ -29,8 +29,7 @@ def get_form():
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
             Form.MultiLine('coloration', 'branch colors',
                 '\n'.join(default_color_lines)),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

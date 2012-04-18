@@ -26,8 +26,7 @@ def get_form():
                 Form.RadioItem('daylight', 'equal daylight layout', True),
                 Form.RadioItem('arc', 'equal arc layout'),
                 Form.RadioItem('curved', 'curved branch layout')]),
-            Form.ImageFormat(),
-            Form.ContentDisposition()]
+            Form.ImageFormat()]
     return form_objects
 
 def get_form_out():

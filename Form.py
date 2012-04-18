@@ -1353,6 +1353,7 @@ class Sequence(MultiLine):
         setattr(fs, self.label, tuple(self._gen_reduced(value.splitlines())))
 
 
+#FIXME this is obsolete because of separate [view] and [download] buttons
 class ContentDisposition(RadioGroup):
     def __init__(self):
         """

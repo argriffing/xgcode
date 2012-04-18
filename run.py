@@ -117,6 +117,11 @@ class GadgetForm(object):
         start_time = time.time()
         self._init_form()
         fs = FieldStorage(param_dict)
+        # determine the content disposition
+        if param_dict['submit'] not in ('view', 'download'):
+            raise ValueError('invalid content disposition request')
+        setattr(fs, 'submit', param_dict['submit'])
+        # add the form-specific items to the fs object
         for form_item in self.form_objects:
             form_item.process_fieldstorage(fs)
         # get the header pairs using the new method
@@ -156,7 +161,8 @@ class GadgetForm(object):
         if form_html:
             arr += [form_html]
             arr += ['<br/><br/>']
-        arr += ['<input type="submit" name="mysubmit" value="Submit"/><br/>']
+        arr += ['<input type="submit" name="submit" value="view"/>']
+        arr += ['<input type="submit" name="submit" value="download"/><br/>']
         arr += ['</form>']
         arr += ['</body>']
         arr += ['</html>']

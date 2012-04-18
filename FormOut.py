@@ -59,10 +59,19 @@ class FormOut(object):
     def get_response_headers(self, fs):
         response_headers = []
         response_headers.append(('Content-Type', self.get_contenttype(fs)))
+        """
         if hasattr(fs, 'contentdisposition'):
             filename = self.get_filename(fs)
             disposition = '%s; filename=%s' % (fs.contentdisposition, filename)
             response_headers.append(('Content-Disposition', disposition))
+        """
+        filename = self.get_filename(fs)
+        if fs.submit == 'view':
+            dispos = 'inline'
+        elif fs.submit == 'download':
+            dispos = 'attachment'
+        disposition = '%s; filename=%s' % (dispos, filename)
+        response_headers.append(('Content-Disposition', disposition))
         return response_headers
 
     def get_galaxy_format(self):
