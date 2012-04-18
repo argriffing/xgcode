@@ -4,6 +4,7 @@ Launch a cherrypy server.
 
 from StringIO import StringIO
 import sys
+import platform
 import os
 import subprocess
 import time
@@ -229,21 +230,23 @@ def gen_extension_paths():
 def build_extensions():
     extension_paths = list(gen_extension_paths())
     for ext in extension_paths:
-        cmd = ('python', 'setup.py', 'build')
+        cmd = ('python', 'setup.py', 'build_ext')
         proc = subprocess.Popen(cmd, cwd=ext, stdout=subprocess.PIPE)
         output = proc.communicate()[0]
         log_filename = os.path.join(g_live_log, os.path.basename(ext) + '.log')
         with open(log_filename, 'wt') as fout:
             fout.write(output)
         build_dir = os.path.join(ext, 'build')
-        for dlib in os.listdir(build_dir):
-            library_dir = os.path.join(build_dir, dlib)
-            if dlib.startswith('lib') and os.path.isdir(library_dir):
-                for sofile in os.listdir(library_dir):
-                    sofile_path = os.path.join(library_dir, sofile)
-                    if sofile.endswith('.so') and os.path.isfile(sofile_path):
-                        sofile_target = os.path.join(g_live_code, sofile)
-                        shutil.copyfile(sofile_path, sofile_target)
+        dlib = '-'.join([
+            '.'.join(['lib', platform.uname()[0].lower()]),
+            platform.processor(),
+            '.'.join(platform.python_version_tuple()[:2])])
+        library_dir = os.path.join(build_dir, dlib)
+        for sofile in os.listdir(library_dir):
+            sofile_path = os.path.join(library_dir, sofile)
+            if sofile.endswith('.so') and os.path.isfile(sofile_path):
+                sofile_target = os.path.join(g_live_code, sofile)
+                shutil.copyfile(sofile_path, sofile_target)
 
 def gen_module_paths(source_dir):
     """
