@@ -1,6 +1,9 @@
 """
-This module uses divisive clustering without outgrouping to define a tree topology.
-This is a naive method to be contrasted with the more advanced outgrouping approach.
+Build a tree by divisive clustering without outgrouping.
+
+The tree is built from a distance matrix.
+This is a naive method to be contrasted with the more advanced
+outgrouping approach.
 """
 
 import unittest
@@ -8,8 +11,6 @@ import random
 
 import numpy as np
 
-import SchurAlgebra
-import Euclid
 import BuildTreeTopology
 import MatrixUtil
 
@@ -33,7 +34,7 @@ def spectral_split(D):
     split = BuildTreeTopology.eigenvector_to_split(v)
     # if one side of the split is empty then there is a failure
     if frozenset() in split:
-        raise RuntimeError('failed split')
+        raise ValueError('failed split')
     return split
 
 def get_hierarchy(D, split_function, labels, nlevel_limit=None):
@@ -45,7 +46,8 @@ def get_hierarchy(D, split_function, labels, nlevel_limit=None):
     @return: a nested frozenset of indices of the original distance matrix
     """
     # sanity check
-    assert len(D) == len(labels)
+    if len(D) != len(labels):
+        raise ValueError
     # if labels cannot be split further then stop
     if len(labels) == 1:
         return labels[0]
@@ -163,5 +165,4 @@ class TestDendrogram(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestDendrogram)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()

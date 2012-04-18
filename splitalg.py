@@ -4,8 +4,6 @@ Split algebra module.
 This defines some split algebra used by Ben Redelings
 to study what he calls multiconnected trees.
 Most things in this module are frozensets of frozensets or integers.
-The things referred to as states are integer indices starting from zero.
-In a phylogenetic setting the states are leaf taxon indices.
 """
 
 import unittest
@@ -25,9 +23,8 @@ def is_informative(split):
 def get_quartets(N):
     if N < 4:
         return set()
-    states = set(range(N))
     accum = set()
-    for i, j, k, l in combinations(states, 4):
+    for i, j, k, l in combinations(range(N), 4):
         accum.add(mksplit((i,j), (k,l)))
         accum.add(mksplit((i,k), (j,l)))
         accum.add(mksplit((i,l), (j,k)))
@@ -48,11 +45,10 @@ def get_informative_partial_splits(N):
 def get_informative_full_splits(N):
     if N < 4:
         return set()
-    states = set(range(N))
     accum = set()
     for a_size in range(2, N - 1):
-        for a in combinations(states, a_size):
-            accum.add(mksplit(a, states - set(a)))
+        for a in combinations(range(N), a_size):
+            accum.add(mksplit(a, set(range(N)) - set(a)))
     return accum
 
 def get_bifurcating_trees(N):

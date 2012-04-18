@@ -1,5 +1,11 @@
 """
-Parse XML files.
+Extra xml formatting.
+
+There is also pretty printing.
+import xml.dom.minidom
+xml = xml.dom.minidom.parse(xml_fname)
+# or xml.dom.minidom.parseString(xml_string)
+pretty_xml_as_string = xml.toprettyxml()
 """
 
 import unittest
@@ -28,20 +34,6 @@ class TestXmlUtil(unittest.TestCase):
         pass
 
 
-def main():
-    pass
-
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', default='-', help='output file')
-    parser.add_option('--test', action='store_true', dest='test', default=False, help='run some unit tests')
-    options, args = parser.parse_args()
-    # run a test or run a demo
-    if options.test:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestXmlUtil)
-        unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        main()
+    unittest.main()
 
