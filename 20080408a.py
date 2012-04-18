@@ -4,13 +4,11 @@ This is a silly model that I am using to experiment with HyPhy.
 """
 
 from StringIO import StringIO
-import random
 
 from xml.etree import ElementTree as ET
 
 from SnippetUtil import HandlingError
 import RateMatrix
-import MatrixUtil
 import XmlUtil
 import SubModel
 import Newick

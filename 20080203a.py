@@ -38,7 +38,7 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response(fs):
+def get_response_content(fs):
     # define the states using the default transition matrix
     default_transition_matrix = EnglishModel.get_transition_matrix()
     states = list(sorted(set(a for a, b in default_transition_matrix)))

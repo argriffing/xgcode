@@ -119,7 +119,8 @@ def chopped(sequence, size):
     Notice that strings are treated differently than other iterables.
     TODO replace this with an itertools recipe
     """
-    assert size > 0
+    if size <= 0:
+        raise ValueError('not enough size')
     if len(sequence) == 1:
         yield sequence[0]
         return
@@ -127,13 +128,13 @@ def chopped(sequence, size):
     for item in sequence:
         chunk.append(item)
         if len(chunk) == size:
-            if type(sequence) is str:
+            if type(sequence) in (str, unicode):
                 yield ''.join(chunk)
             else:
                 yield tuple(chunk)
             chunk = []
     if chunk:
-        if type(sequence) is str:
+        if type(sequence) in (str, unicode):
             yield ''.join(chunk)
         else:
             yield tuple(chunk)

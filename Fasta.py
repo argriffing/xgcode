@@ -230,24 +230,25 @@ class Alignment:
         self.columns = next_columns
         self.sequences = [''.join(sequence) for sequence in zip(*self.columns)]
 
-    def get_fasta_sequence(self, header, columns=60):
+    def get_fasta_sequence(self, header, ncols=60):
         """
-        @param columns: the maximum number of residues per line
+        @param ncols: the maximum number of residues per line
         @return: a string representing the header and sequence in fasta format
         """
         header_to_sequence = dict(zip(self.headers, self.sequences))
         sequence = header_to_sequence[header]
         arr = []
         arr.append('>' + header)
-        arr.append('\n'.join(iterutils.chopped(sequence, columns)))
+        print sequence
+        arr.append('\n'.join(iterutils.chopped(sequence, ncols)))
         return '\n'.join(arr)
 
-    def to_fasta_string(self, columns=60):
+    def to_fasta_string(self, ncols=60):
         """
-        @param columns: the maximum number of residues per line
+        @param ncols: the maximum number of residues per line
         @return: a string representing the whole multiple sequence alignment in fasta format
         """
-        return '\n'.join(self.get_fasta_sequence(header, columns) for header in self.headers)
+        return '\n'.join(self.get_fasta_sequence(header, ncols) for header in self.headers)
 
 
 class CodonAlignment:
@@ -301,7 +302,7 @@ class CodonAlignment:
             column_multiset[col] = column_multiset.get(col, 0) + 1
         return column_multiset
 
-    def get_fasta_sequence(self, header, columns=60):
+    def get_fasta_sequence(self, header, ncols=60):
         """
         @param columns: the maximum number of residues per line
         @return: a string representing the header and sequence in fasta format
@@ -313,12 +314,12 @@ class CodonAlignment:
         arr.append('\n'.join(''.join(codons) for codons in iterutils.chopped(sequence, columns)))
         return '\n'.join(arr)
 
-    def to_fasta_string(self, columns=60):
+    def to_fasta_string(self, ncols=60):
         """
-        @param columns: the maximum number of residues per line
+        @param ncols: the maximum number of residues per line
         @return: a string representing the whole multiple sequence alignment in fasta format
         """
-        return '\n'.join(self.get_fasta_sequence(header, columns) for header in self.headers)
+        return '\n'.join(self.get_fasta_sequence(header, ncols) for header in self.headers)
 
 
 def gen_header_sequence_pairs(lines, max_sequences=None):
