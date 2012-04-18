@@ -221,7 +221,7 @@ class MatrixSampler:
     def __init__(self, n):
         self.n = n
 
-class DistanceMatrixSampler(MatrixSampler):
+class DMSampler(MatrixSampler):
     def __call__(self):
         nrows = self.n
         ncols = self.n-1
@@ -281,7 +281,7 @@ def get_response_content(fs):
     np.set_printoptions(linewidth=200)
     # select the matrix sampler chosen by the user
     if fs.distance:
-        sampler = DistanceMatrixSampler(fs.nbig)
+        sampler = DMSampler(fs.nbig)
     elif fs.predistance:
         sampler = PredistanceMatrixSampler(fs.nbig)
     elif fs.nonnegsym:

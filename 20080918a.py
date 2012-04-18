@@ -16,7 +16,7 @@ from SnippetUtil import HandlingError
 import SnippetUtil
 import NewickIO
 import FelTree
-import DistanceMatrixSampler
+import DMSampler
 import NeighborhoodJoining
 import Clustering
 from Form import RadioItem
@@ -77,10 +77,10 @@ def get_response_content(fs):
         splitter = Clustering.RandomDMS()
     # define the distance matrix sampler
     if fs.infinite_alleles:
-        sampler = DistanceMatrixSampler.InfiniteAllelesSampler(
+        sampler = DMSampler.InfiniteAllelesSampler(
                 tree, ordered_names, sequence_length)
     elif fs.jukes_cantor:
-        sampler = DistanceMatrixSampler.DistanceMatrixSampler(
+        sampler = DMSampler.DMSampler(
                 tree, ordered_names, sequence_length)
     if fs.reject_infinity:
         sampler.set_inf_replacement(None)

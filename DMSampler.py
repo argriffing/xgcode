@@ -105,7 +105,7 @@ def get_infinite_alleles_ML_distance_matrix(sequence_list):
     return MatrixUtil.list_to_matrix(sequence_list, get_infinite_alleles_ML_distance)
 
 
-class DistanceMatrixSampler:
+class DMSampler:
     """
     Sample estimated distance matrices using rejection sampling.
     """
@@ -276,7 +276,7 @@ class DistanceMatrixSampler:
                 return
 
 
-class InfiniteAllelesSampler(DistanceMatrixSampler):
+class InfiniteAllelesSampler(DMSampler):
     """
     This class is for sampling distance matrices using the infinite alleles model.
     """
@@ -290,7 +290,7 @@ class InfiniteAllelesSampler(DistanceMatrixSampler):
         return sequence_list, D
 
 
-class TestDistanceMatrixSampler(unittest.TestCase):
+class TestDMSampler(unittest.TestCase):
 
     def test_finite_sequence_length(self):
         """
@@ -302,7 +302,7 @@ class TestDistanceMatrixSampler(unittest.TestCase):
         ordered_names = list(node.name for node in tree.gen_tips())
         sequence_length = 10
         # initialize the sampler, putting no limit on the number of accepted matrices or on the number of steps
-        sampler = DistanceMatrixSampler(tree, ordered_names, sequence_length)
+        sampler = DMSampler(tree, ordered_names, sequence_length)
         results = list(sampler.gen_samples_or_none(100))
         self.assertEqual(len(results), 100)
 
@@ -316,7 +316,7 @@ class TestDistanceMatrixSampler(unittest.TestCase):
         ordered_names = list(node.name for node in tree.gen_tips())
         sequence_length = 10
         # initialize the sampler, putting no limit on the number of accepted matrices or on the number of steps
-        sampler = DistanceMatrixSampler(tree, ordered_names, sequence_length)
+        sampler = DMSampler(tree, ordered_names, sequence_length)
         # tell the sampler to modify extreme values
         sampler.set_zero_replacement('0.001')
         sampler.set_inf_replacement('20')
@@ -333,7 +333,7 @@ class TestDistanceMatrixSampler(unittest.TestCase):
         ordered_names = list(node.name for node in tree.gen_tips())
         sequence_length = float('inf')
         # initialize the sampler, putting no limit on the number of accepted matrices or on the number of steps
-        sampler = DistanceMatrixSampler(tree, ordered_names, sequence_length)
+        sampler = DMSampler(tree, ordered_names, sequence_length)
         results = list(sampler.gen_samples_or_none(100))
 
     def test_runtime_estimation(self):
@@ -346,7 +346,7 @@ class TestDistanceMatrixSampler(unittest.TestCase):
         ordered_names = list(node.name for node in tree.gen_tips())
         sequence_length = 10
         # initialize the sampler, putting no limit on the number of accepted matrices or on the number of steps
-        sampler = DistanceMatrixSampler(tree, ordered_names, sequence_length)
+        sampler = DMSampler(tree, ordered_names, sequence_length)
         # run the sampler for a bit
         results = list(sampler.gen_samples_or_none(50))
         # get some properties of the run so far
@@ -357,6 +357,6 @@ class TestDistanceMatrixSampler(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestDistanceMatrixSampler)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestDMSampler)
     unittest.TextTestRunner(verbosity=2).run(suite)
 

@@ -15,7 +15,7 @@ import time
 from SnippetUtil import HandlingError
 import NewickIO
 import FelTree
-import DistanceMatrixSampler
+import DMSampler
 import Form
 import FormOut
 import const
@@ -59,10 +59,10 @@ def get_response_content(fs):
     ordered_names = list(node.name for node in tree.gen_tips())
     # define the distance matrix sampler
     if fs.infinite_alleles:
-        sampler = DistanceMatrixSampler.InfiniteAllelesSampler(
+        sampler = DMSampler.InfiniteAllelesSampler(
                 tree, ordered_names, fs.length)
     elif fs.jukes_cantor:
-        sampler = DistanceMatrixSampler.DistanceMatrixSampler(
+        sampler = DMSampler.DMSampler(
                 tree, ordered_names, fs.length)
     if fs.reject_infinity:
         sampler.set_inf_replacement(None)
@@ -102,7 +102,7 @@ def main():
     # get arbitrarily ordered leaf names
     ordered_names = list(node.name for node in tree.gen_tips())
     # create the sampler
-    sampler = DistanceMatrixSampler.InfiniteAllelesSampler(
+    sampler = DMSampler.InfiniteAllelesSampler(
             tree, ordered_names, sequence_length)
     sampler.set_inf_replacement(20)
     sampler.set_zero_replacement(0.0)

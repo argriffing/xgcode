@@ -33,7 +33,7 @@ g_default_string = const.read('20100730q')
 
 #FIXME use distance matrix sampler module
 
-class DistanceMatrixSampler:
+class DMSampler:
     """
     Sample estimated distance matrices,
     rejecting those with infinite branch lengths.
@@ -228,7 +228,7 @@ def get_response_content(fs):
         raise HandlingError(msg_a + msg_b)
     # sample a bunch of sequences
     ordered_names = [node.name for node in tree.gen_tips()]
-    sampler = DistanceMatrixSampler(tree, ordered_names, fs.length)
+    sampler = DMSampler(tree, ordered_names, fs.length)
     # simulate a bunch of distance matrices and reconstruct the trees
     mismatch_count_tree_pairs = []
     error_count_histogram = {}
@@ -371,7 +371,7 @@ class Simulation:
     def run(self):
         # simulate a bunch of distance matrices
         ordered_names = [node.name for node in self.original_tree.gen_tips()]
-        sampler = DistanceMatrixSampler(
+        sampler = DMSampler(
                 self.original_tree, ordered_names, self.sequence_length)
         for sequence_list, distance_matrix in sampler.gen_distance_matrices(
                 self.reconstruction_count, self.step_limit):

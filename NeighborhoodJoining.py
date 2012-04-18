@@ -424,14 +424,14 @@ class ValidatingTreeBuilder(TreeBuilder):
             raise NeighborhoodJoiningError('expected the number of iterations to be at least one, but observed %s' % halving_iterations)
 
 
-class DistanceMatrixSamplerError(Exception):
+class DMSamplerError(Exception):
     """
     This exception is raised when it is apparent that the sampling will take too long, for example.
     """
     pass
 
 
-class DistanceMatrixSampler:
+class DMSampler:
     """
     Sample estimated distance matrices, rejecting degenerate distance matrices.
     Here a distance matrix is degenerate if it has entries that are estimated to
@@ -552,11 +552,11 @@ class DistanceMatrixSampler:
             if self.reject_zero is None:
                 if matrix_has_zero_off_diagonal(distance_matrix):
                     error_message = 'the true distance matrix has a zero off-diagonal entry'
-                    raise DistanceMatrixSamplerError(error_message)
+                    raise DMSamplerError(error_message)
             if self.reject_inf:
                 if matrix_has_inf_off_diagonal(distance_matrix):
                     error_message = 'the true distance matrix has an infinite off-diagonal entry'
-                    raise DistanceMatrixSamplerError(error_message)
+                    raise DMSamplerError(error_message)
             # yield a bunch of copies of the true distance matrix
             for i in range(count):
                 self.accepted_sample_count += 1
@@ -571,7 +571,7 @@ class DistanceMatrixSampler:
                 # if we are taking too many computrons then bail with an error message
                 if max_steps is not None:
                     if self.get_complexity() > max_steps:
-                        raise DistanceMatrixSamplerError(self._get_error_message())
+                        raise DMSamplerError(self._get_error_message())
                 # do the sampling
                 sequence_list = JC69.sample_sequences(self.tree, self.ordered_names, self.sequence_length)
                 # get the estimated distance matrix

@@ -26,7 +26,7 @@ import NewickIO
 import FelTree
 import Clustering
 import NeighborhoodJoining
-import DistanceMatrixSampler
+import DMSampler
 import JC69
 import HtmlTable
 import TreeComparison
@@ -105,7 +105,7 @@ def get_response_content(fs):
     # define an arbitrary but consistent ordering of the taxa
     ordered_names = [node.name for node in tree.gen_tips()]
     # attempt to simulate a bunch of distance matrices
-    sampler = DistanceMatrixSampler.DistanceMatrixSampler(
+    sampler = DMSampler.DMSampler(
             tree, ordered_names, fs.length)
     distance_matrices = []
     for result in sampler.gen_samples_or_none():
@@ -383,7 +383,7 @@ def do_hard_coded_analysis_a(tree, tree_remark):
         # sample distance matrices
         print 'sampling', reconstruction_count, 'distance matrices'
         print 'from alignments of length', sequence_length
-        sampler = DistanceMatrixSampler.DistanceMatrixSampler(
+        sampler = DMSampler.DMSampler(
                 tree, ordered_names, sequence_length)
         distance_matrices = []
         for result in sampler.gen_samples_or_none():
@@ -448,7 +448,7 @@ def do_hard_coded_analysis_b(tree, tree_remark):
     for sim in sims:
         sim.set_original_tree(tree)
     # initialize the distance matrix sampler
-    sampler = DistanceMatrixSampler.InfiniteAllelesSampler(
+    sampler = DMSampler.InfiniteAllelesSampler(
             tree, ordered_names, sequence_length)
     sampler.set_inf_replacement(20.0)
     sampler.set_zero_replacement(0.0)
@@ -577,7 +577,7 @@ def do_command_line_analysis(options):
         if options.verbose:
             print 'sampling', reconstruction_count, 'distance matrices...'
         # initialize the distance matrix sampler
-        sampler = DistanceMatrixSampler.DistanceMatrixSampler(
+        sampler = DMSampler.DMSampler(
                 tree, ordered_names, sequence_length)
         sampler.set_inf_replacement(inf_replacement)
         sampler.set_zero_replacement(zero_replacement)
