@@ -1,0 +1,177 @@
+<html>
+<head>
+<script type="text/javascript">
+// some constants
+var NODE_PLAIN = 'node-plain';
+var NODE_IMPLIED = 'node-implied';
+var NODE_SELECTED = 'node-selected';
+var EDGE_PLAIN = 'edge-plain';
+var EDGE_IMPLIED = 'edge-implied';
+// map the node state to the fill color
+var node_state_to_fill = {};
+node_state_to_fill[NODE_PLAIN] = 'white';
+node_state_to_fill[NODE_IMPLIED] = 'white';
+node_state_to_fill[NODE_SELECTED] = 'cyan';
+// map the node state to the stroke color
+var node_state_to_stroke = {};
+node_state_to_stroke[NODE_PLAIN] = 'black';
+node_state_to_stroke[NODE_IMPLIED] = 'blue';
+node_state_to_stroke[NODE_SELECTED] = 'blue';
+// map the node state to the stroke width
+var node_state_to_stroke_width = {};
+node_state_to_stroke_width[NODE_PLAIN] = '1pt';
+node_state_to_stroke_width[NODE_IMPLIED] = '2pt';
+node_state_to_stroke_width[NODE_SELECTED] = '2pt';
+// list of node ids in topological order
+var topo_sorted_node_ids = [
+	'node2',
+	'node3',
+	'node1',
+	'node5',
+	'node8',
+	'node9',
+	'node10',
+	'node4',
+	'node7',
+	'node6',
+];
+// initialize nodes to plain states
+var node_to_state = {};
+for (var i=0; i<topo_sorted_node_ids.length; i++) {
+	node_to_state[topo_sorted_node_ids[i]] = NODE_PLAIN;
+}
+function dosomethingcool(myevt) {
+	// get the parent node id
+	var pid = myevt.target.parentNode.id;
+	// toggle the node state
+	if (node_to_state[pid] == NODE_PLAIN) {
+		node_to_state[pid] = NODE_SELECTED;
+	} else if (node_to_state[pid] == NODE_IMPLIED) {
+		;
+	} else if (node_to_state[pid] == NODE_SELECTED) {
+		node_to_state[pid] = NODE_PLAIN;
+	} else {
+		alert('unknown node state');
+	}
+	// set the fill and stroke and stroke width
+	var state = node_to_state[pid];
+	//alert(state);
+	//alert(node_state_to_fill[state]);
+	myevt.target.setAttribute(
+			'fill', node_state_to_fill[state]);
+	myevt.target.setAttribute(
+			'stroke', node_state_to_stroke[state]);
+	myevt.target.setAttribute(
+			'stroke-width', node_state_to_stroke_width[state]);
+}
+</script>
+</head>
+<body>
+
+
+hello
+
+<div>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="216pt" height="73pt" viewBox="0.00 0.00 216.00 73.30">
+<g id="graph1" class="graph" transform="scale(0.389892 0.389892) rotate(0) translate(4 184)">
+<title>G</title>
+<polygon fill="white" stroke="white" points="-4,5 -4,-184 551,-184 551,5 -4,5"/>
+<!-- beta1 -->
+<g id="node1" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>beta1</title>
+<polygon fill="white" stroke="black" points="160,-108 104,-108 104,-72 160,-72 160,-108"/>
+<text text-anchor="middle" x="132" y="-86.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">beta1</text>
+</g>
+<!-- gamma1 -->
+<g id="node2" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>gamma1</title>
+<polygon fill="white" stroke="black" points="76,-36 3.55271e-14,-36 0,-1.77636e-14 76,-3.55271e-15 76,-36"/>
+<text text-anchor="middle" x="38" y="-14.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">gamma1</text>
+</g>
+<!-- beta1&#45;&#45;gamma1 -->
+<g id="edge2" class="edge"><title>beta1--gamma1</title>
+<path fill="none" stroke="black" d="M108.28,-71.8314C94.0301,-60.9167 75.9609,-47.0764 61.7126,-36.1628"/>
+</g>
+<!-- gamma2 -->
+<g id="node3" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>gamma2</title>
+<polygon fill="white" stroke="black" points="170,-36 94,-36 94,-1.77636e-14 170,-3.55271e-15 170,-36"/>
+<text text-anchor="middle" x="132" y="-14.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">gamma2</text>
+</g>
+<!-- beta1&#45;&#45;gamma2 -->
+<g id="edge4" class="edge"><title>beta1--gamma2</title>
+<path fill="none" stroke="black" d="M132,-71.8314C132,-61 132,-47.2876 132,-36.4133"/>
+</g>
+<!-- beta2 -->
+<g id="node4" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>beta2</title>
+<polygon fill="white" stroke="black" points="348,-108 292,-108 292,-72 348,-72 348,-108"/>
+<text text-anchor="middle" x="320" y="-86.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">beta2</text>
+</g>
+<!-- gamma3 -->
+<g id="node5" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>gamma3</title>
+<polygon fill="white" stroke="black" points="264,-36 188,-36 188,-1.77636e-14 264,-3.55271e-15 264,-36"/>
+<text text-anchor="middle" x="226" y="-14.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">gamma3</text>
+</g>
+<!-- beta2&#45;&#45;gamma3 -->
+<g id="edge6" class="edge"><title>beta2--gamma3</title>
+<path fill="none" stroke="black" d="M296.28,-71.8314C282.03,-60.9167 263.961,-47.0764 249.713,-36.1628"/>
+</g>
+<!-- gamma4 -->
+<g id="node8" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>gamma4</title>
+<polygon fill="white" stroke="black" points="358,-36 282,-36 282,-1.77636e-14 358,-3.55271e-15 358,-36"/>
+<text text-anchor="middle" x="320" y="-14.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">gamma4</text>
+</g>
+<!-- beta2&#45;&#45;gamma4 -->
+<g id="edge14" class="edge"><title>beta2--gamma4</title>
+<path fill="none" stroke="black" d="M320,-71.8314C320,-61 320,-47.2876 320,-36.4133"/>
+</g>
+<!-- alpha -->
+<g id="node6" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>alpha</title>
+<polygon fill="white" stroke="black" points="394,-180 340,-180 340,-144 394,-144 394,-180"/>
+<text text-anchor="middle" x="367" y="-158.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">alpha</text>
+</g>
+<!-- alpha&#45;&#45;beta1 -->
+<g id="edge8" class="edge"><title>alpha--beta1</title>
+<path fill="none" stroke="black" d="M339.583,-153.6C294.664,-139.837 205.849,-112.626 160.338,-98.6824"/>
+</g>
+<!-- alpha&#45;&#45;beta2 -->
+<g id="edge10" class="edge"><title>alpha--beta2</title>
+<path fill="none" stroke="black" d="M355.14,-143.831C348.069,-133 339.118,-119.288 332.02,-108.413"/>
+</g>
+<!-- beta3 -->
+<g id="node7" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>beta3</title>
+<polygon fill="white" stroke="black" points="442,-108 386,-108 386,-72 442,-72 442,-108"/>
+<text text-anchor="middle" x="414" y="-86.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">beta3</text>
+</g>
+<!-- alpha&#45;&#45;beta3 -->
+<g id="edge12" class="edge"><title>alpha--beta3</title>
+<path fill="none" stroke="black" d="M378.86,-143.831C385.931,-133 394.882,-119.288 401.98,-108.413"/>
+</g>
+<!-- gamma6 -->
+<g id="node10" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>gamma6</title>
+<polygon fill="white" stroke="black" points="546,-36 470,-36 470,-1.77636e-14 546,-3.55271e-15 546,-36"/>
+<text text-anchor="middle" x="508" y="-14.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">gamma6</text>
+</g>
+<!-- alpha&#45;&#45;gamma6 -->
+<g id="edge20" class="edge"><title>alpha--gamma6</title>
+<path fill="none" stroke="black" d="M394.115,-148.555C411.716,-138.923 434.384,-124.729 451,-108 472.375,-86.4796 489.756,-55.5962 499.488,-36.1781"/>
+</g>
+<!-- gamma5 -->
+<g id="node9" class="node" cursor="pointer" onclick="dosomethingcool(evt);"><title>gamma5</title>
+<polygon fill="white" stroke="black" points="452,-36 376,-36 376,-1.77636e-14 452,-3.55271e-15 452,-36"/>
+<text text-anchor="middle" x="414" y="-14.4" font-family="Times Roman,serif" font-size="14.00" pointer-events="none">gamma5</text>
+</g>
+<!-- beta3&#45;&#45;gamma5 -->
+<g id="edge16" class="edge"><title>beta3--gamma5</title>
+<path fill="none" stroke="black" d="M414,-71.8314C414,-61 414,-47.2876 414,-36.4133"/>
+</g>
+<!-- beta3&#45;&#45;gamma6 -->
+<g id="edge18" class="edge"><title>beta3--gamma6</title>
+<path fill="none" stroke="black" d="M437.72,-71.8314C451.97,-60.9167 470.039,-47.0764 484.287,-36.1628"/>
+</g>
+</g>
+</svg>
+</div>
+
+goodbye
+
+</body>
+</html>
+
