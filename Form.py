@@ -1353,24 +1353,6 @@ class Sequence(MultiLine):
         setattr(fs, self.label, tuple(self._gen_reduced(value.splitlines())))
 
 
-#FIXME this is obsolete because of separate [view] and [download] buttons
-class ContentDisposition(RadioGroup):
-    def __init__(self):
-        """
-        The group label is contentdisposition.
-        The description and radio items are hard coded.
-        """
-        label = 'contentdisposition'
-        description = 'delivery options'
-        radio_items = [
-                RadioItem('inline', 'view', True),
-                RadioItem('attachment', 'download')]
-        RadioGroup.__init__(self, label, description, radio_items)
-
-    def web_only(self):
-        return True
-
-
 class ImageFormat(RadioGroup):
     def __init__(self):
         """

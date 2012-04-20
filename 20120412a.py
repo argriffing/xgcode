@@ -59,7 +59,7 @@ def get_response_content(fs):
         analysis_text = fin.read()
     # parse the analysis
     arr = beast.loganalyser_to_array(analysis_text)
-    s = '\n'.join('\t'.join(str(x) for x in row) for row in arr)
+    s = '\n'.join('\t'.join(str(x) for x in row) for row in arr) + '\n'
     # return the response
     return s
 

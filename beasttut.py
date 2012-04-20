@@ -16,7 +16,6 @@ import RUtil
 import Util
 
 g_fasta_string = const.read('20120405a').strip()
-g_ntax = 12
 g_nchar = 898
 g_beast_root = os.path.expanduser('~/svn-repos/beast-mcmc-read-only')
 
@@ -370,12 +369,23 @@ def get_log_xml(log_loc):
         """ % log_loc
     return s
 
+def get_456_col_permuted_header_seq_pairs():
+    pairs = []
+    permuted = range(456)
+    random.shuffle(permuted)
+    for header, seq in get_header_seq_pairs():
+        seq = ''.join(seq[k] for k in permuted)
+        pairs.append((header, seq))
+    return pairs
+
 def get_col_permuted_header_seq_pairs():
+    pairs = []
     permuted = range(g_nchar)
     random.shuffle(permuted)
     for header, seq in get_header_seq_pairs():
-        seq = [seq[k] for k in permuted]
-        yield header, seq
+        seq = ''.join(seq[k] for k in permuted)
+        pairs.append((header, seq))
+    return pairs
 
 def get_header_seq_pairs():
     lines = g_fasta_string.splitlines()
