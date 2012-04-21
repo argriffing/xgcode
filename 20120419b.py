@@ -61,7 +61,7 @@ def get_form():
     form_objects = [
             Form.Integer('ncolumns',
                 'use this many columns (1-%d)' % g_ncols_max,
-                1, low=1, high=g_ncols_max),
+                g_ncols_max, low=1, high=g_ncols_max),
             Form.Integer('nsamples', 'mcmc chain steps',
                 8000, low=80, high=8000)]
     return form_objects
