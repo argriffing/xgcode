@@ -61,21 +61,14 @@ def to_gtr_halpern_bruno(S, v):
 # ASYMPTOTIC VARIANCE STUFF
 
 
-def get_asymptotic_variance(R, t):
-    """
-    Asymptotic variance is the negative reciprocal of an expectation.
-    The expectation is of the second derivative of the log likelihood.
-    Use a fact about the second derivative of logarithm
-    to evaluate this asymptotic variance.
-    Also this is probably a dumb non-spectral way that will be improved later.
-    """
+def get_fisher_information(R, t):
     # get non-spectral summaries
     n = len(R)
     P = scipy.linalg.expm(R*t)
     p = mrate.R_to_distn(R)
     # get spectral summaries
     S = mrate.symmetrized(R)
-    w, U = np.linalg.eigh(S)
+    w, U = scipy.linalg.eigh(S)
     # compute the asymptotic variance
     accum = 0
     for i in range(n):
@@ -94,7 +87,18 @@ def get_asymptotic_variance(R, t):
             f_dtt *= (p[i] * p[j])**.5
             # accumulate the contribution of this entry to the expectation
             accum += f_dtt - (f_dt * f_dt) / f
-    return - 1 / accum
+    return -accum
+
+
+def get_asymptotic_variance(R, t):
+    """
+    Asymptotic variance is the negative reciprocal of an expectation.
+    The expectation is of the second derivative of the log likelihood.
+    Use a fact about the second derivative of logarithm
+    to evaluate this asymptotic variance.
+    Also this is probably a dumb non-spectral way that will be improved later.
+    """
+    return 1 / get_fisher_information(R, t)
 
 def get_asymptotic_variance_b(R, t):
     """
