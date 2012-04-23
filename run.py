@@ -16,6 +16,7 @@ import cherrypy
 
 import SnippetUtil
 import Form
+import FormHeaderJs
 
 g_web_doc = 'doc'
 g_live_doc = 'doc'
@@ -105,12 +106,18 @@ class GadgetForm(object):
         self.module = module
         self.form_objects = None
         self.form_out = None
+        self.form_presets = None
 
     def _init_form(self):
         if self.form_objects is None:
             self.form_objects = self.module.get_form()
         if self.form_out is None:
             self.form_out = self.module.get_form_out()
+        if self.form_presets is None:
+            if hasattr(self.module, 'get_presets'):
+                self.form_presets = self.module.get_presets()
+            else:
+                self.form_presets = ()
 
     @cherrypy.expose
     def process(self, **param_dict):
@@ -138,35 +145,34 @@ class GadgetForm(object):
 
     @cherrypy.expose
     def index(self):
+        out = StringIO()
         self._init_form()
         form_html = Form.get_html_string(self.form_objects)
-        arr = []
-        arr += ['<html>']
+        print >> out, '<html>'
+        print >> out, '<head>'
         title = SnippetUtil.docstring_to_title(self.module.__doc__)
-        arr += ['<head>']
         if title:
-            arr += ['<title>']
-            arr += [title]
-            arr += ['</title>']
-        mathjax_js = 'cdn.mathjax.org/mathjax/latest/MathJax.js'
-        mathjax_params = 'config=TeX-AMS-MML_HTMLorMML'
-        mathjax_url = 'http://' + mathjax_js + '?' + mathjax_params
-        arr += ['<script type="text/javascript" src="%s">' % mathjax_url]
-        arr += ['</script>']
-        arr += ['</head>']
-        arr += ['<body>']
-        arr += [SnippetUtil.docstring_to_html(self.module.__doc__)]
-        arr += ['<br/><br/>']
-        arr += ['<form action="process" method="post">']
+            print >> out, '<title>'
+            print >> out, title
+            print >> out, '</title>'
+        print >> out, FormHeaderJs.get_header_script_text(
+                self.form_objects,
+                self.form_presets)
+        print >> out, '</head>'
+        print >> out, '<body>'
+        print >> out, SnippetUtil.docstring_to_html(self.module.__doc__)
+        print >> out, '<br/><br/>'
+        print >> out, '<form id="mainform" action="process" method="post">'
         if form_html:
-            arr += [form_html]
-            arr += ['<br/><br/>']
-        arr += ['<input type="submit" name="submit" value="view"/>']
-        arr += ['<input type="submit" name="submit" value="download"/><br/>']
-        arr += ['</form>']
-        arr += ['</body>']
-        arr += ['</html>']
-        return '\n'.join(arr)
+            print >> out, form_html
+            print >> out, '<br/><br/>'
+        print >> out, '<input type="submit" name="submit" value="view"/>'
+        print >> out, '<input type="submit" name="submit" value="download"/>'
+        print >> out, '<br/>'
+        print >> out, '</form>'
+        print >> out, '</body>'
+        print >> out, '</html>'
+        return out.getvalue().rstrip()
 
 
 class MainForm(object):

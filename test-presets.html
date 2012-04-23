@@ -3,7 +3,41 @@
 <title>
 Compare time information with and without selection.
 </title>
+<!-- this is for mathjax -->
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- these are javascript functions from the internet -->
+<script type="text/javascript">
+// this next function is from the internet
+// set the radio button with the given value as being checked
+// do nothing if there are no radio buttons
+// if the given value does not exist, all the radio buttons
+// are reset to unchecked
+function setCheckedValue(radioObj, newValue) {
+	if(!radioObj)
+		return;
+	var radioLength = radioObj.length;
+	if(radioLength == undefined) {
+		radioObj.checked = (radioObj.value == newValue.toString());
+		return;
+	}
+	for(var i = 0; i < radioLength; i++) {
+		radioObj[i].checked = false;
+		if(radioObj[i].value == newValue.toString()) {
+			radioObj[i].checked = true;
+		}
+	}
+};
+</script>
+<!-- these are custom javascript functions -->
+<!-- these javascript functions are specific to this web script -->
+<script type="text/javascript">
+function on_preset1()
+{
+document.getElementById('lowtri').innerHTML = 'hello world';
+document.getElementById('mutweights').innerHTML = 'hello\nworld';
+setCheckedValue(document.forms['mainform'].elements['infotype'], 'info_fis');
+};
 </script>
 </head>
 <body>
@@ -21,7 +55,9 @@ is used to construct the mutation-selection balance rate matrix
 given the GTR mutation matrix is taken from
 the paper by Sang-Chul Choi et al.
 <br/><br/>
-<form action="process" method="post">
+
+<div style="float: left;">
+<form name="mainform" action="process" method="post">
 <label for="lowtri">strictly lower triangular mut exch:</label>
 <br/>
 <textarea name="lowtri" id="lowtri" rows="4" cols="70" wrap="off">
@@ -63,5 +99,30 @@ information variant:
 <input type="submit" name="submit" value="view"/>
 <input type="submit" name="submit" value="download"/><br/>
 </form>
+</div>
+
+<div style="float: left;">
+<fieldset>
+<legend>configuration presets</legend>
+<button id="preset1" onclick="on_preset1();">preset1</button> <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+presets <br/>
+</fieldset>
+</div>
+
 </body>
 </html>

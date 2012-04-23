@@ -67,6 +67,11 @@ g_latexformat_to_ext = {
         'pdf' : 'pdf',
         'png' : 'png'}
 
+class Preset(object):
+    def __init__(self, description, d):
+        self.description = description
+        self.d = d
+
 class HelpItem(object):
     def __init__(self, command, description):
         self.command = command
