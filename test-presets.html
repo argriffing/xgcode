@@ -1,0 +1,67 @@
+<html>
+<head>
+<title>
+Compare time information with and without selection.
+</title>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+<body>
+Compare time information with and without selection.
+<br/><br/>
+The way that the GTR mutation matrix is broken into the
+strict lower diagonal exchangeability component and the
+stationary distribution vector
+(here unnormalized for the convenience of not having to manually
+re-normalize the distribution every time you want to change it)
+is taken from the wikipedia article on models of DNA evolution.
+In particular, \( \mu_{xy} = S_{xy} \pi_y \).
+The way that the mutation-selection balance stationary distribution
+is used to construct the mutation-selection balance rate matrix
+given the GTR mutation matrix is taken from
+the paper by Sang-Chul Choi et al.
+<br/><br/>
+<form action="process" method="post">
+<label for="lowtri">strictly lower triangular mut exch:</label>
+<br/>
+<textarea name="lowtri" id="lowtri" rows="4" cols="70" wrap="off">
+1
+1 1
+1 1 1
+</textarea>
+<br/><br/>
+<label for="mutweights">unnormalized mut stationary distn:</label>
+<br/>
+<textarea name="mutweights" id="mutweights" rows="5" cols="70" wrap="off">
+1
+1
+1
+1
+</textarea>
+<br/><br/>
+<label for="mutselweights">unnormalized mut-sel stationary distn:</label>
+<br/>
+<textarea name="mutselweights" id="mutselweights" rows="5" cols="70" wrap="off">
+1
+1
+0.01
+0.01
+</textarea>
+<br/><br/>
+<label for="t">time:</label>
+<br/>
+<input type="text" name="t" id="t" value="0.1" size="10"/>
+<br/><br/>
+information variant:
+<br/>
+<input type="radio" name="infotype" id="info_fis" value="info_fis" checked="yes"/>
+<label for="info_fis">Fisher information</label>
+<br/>
+<input type="radio" name="infotype" id="info_mut" value="info_mut"/>
+<label for="info_mut">mutual information</label>
+<br/><br/>
+<input type="submit" name="submit" value="view"/>
+<input type="submit" name="submit" value="download"/><br/>
+</form>
+</body>
+</html>
