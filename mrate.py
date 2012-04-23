@@ -177,6 +177,7 @@ def R_to_relaxation_time_obsolete(R):
     r_recip, fiedler = _R_to_eigenpair(R)
     return 1 / r_recip
 
+#TODO use scipy.linalg which guarantees sorted eigenvalues
 def R_to_relaxation_time(R):
     """
     This assumes a reversible irreducible rate matrix.

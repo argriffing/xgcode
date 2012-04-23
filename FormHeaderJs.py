@@ -19,10 +19,11 @@ for the individual web scripts.
 
 from StringIO import StringIO
 
+import Form
+
 g_cat_2_default = """
 <!-- these are javascript functions from the internet -->
 <script type="text/javascript">
-// this next function is from the internet
 // set the radio button with the given value as being checked
 // do nothing if there are no radio buttons
 // if the given value does not exist, all the radio buttons
@@ -41,6 +42,28 @@ function setCheckedValue(radioObj, newValue) {
 			radioObj[i].checked = true;
 		}
 	}
+}
+</script>
+""".strip()
+
+g_cat_3_default = """
+<!-- these are custom javascript functions with hardcoded references -->
+<script type="text/javascript">
+function wsfSetInner(id, value) {
+    document.getElementById(id).innerHTML = value;
+}
+function wsfSetRadio(name, value) {
+    var myobj = document.forms["mainform"].elements[name];
+    setCheckedValue(myobj, value);
+}
+function wsfSetChecks(name, value_to_checked) {
+    var myobj = document.forms["mainform"].elements[name];
+    for (var k in myobj) {
+        myobj[k].checked = false;
+    }
+    for (var k in value_to_checked) {
+        myobj[k].checked = value_to_checked[k];
+    }
 }
 </script>
 """.strip()
@@ -74,22 +97,38 @@ def _get_cat_2_text():
     return g_cat_2_default
 
 def _get_cat_3_text():
+    return g_cat_3_default
+
+def _collection_to_javascript_literal(coll):
     out = StringIO()
-    print >> out, '<script type="text/javascript">'
-    #
-    print >> out, 'function wsfSetInner(id, value) {',
-    print >> out, 'document.getElementById(id).innerHTML = value;',
+    print >> out, '{',
+    for elem in coll:
+        print >> out, elem, ': true,',
     print >> out, '}'
-    #
-    print >> out, 'function wsfSetRadio(name, value) {',
-    print >> out, 'setCheckedValue(',
-    print >> out, 'document.forms["mainform"].elements[name], value);',
-    print >> out, ')',
-    print >> out, '}'
-    #
-    print >> out, '</script>'
-    return out.getvalue().rstrip()
+    return out.getvalue().strip()
 
 def _get_cat_4_text(form_objects, presets):
-    return ''
+    label_to_form_object = dict((o.label, o) for o in form_objects)
+    out = StringIO()
+    print >> out, '<!-- these are hardcoded presets -->'
+    print >> out, '<script type="text/javascript">'
+    for i, preset in enumerate(presets):
+        print >> out, 'function on_wsf_preset%d() {' % i
+        for k, v in preset.d.items():
+            # check the form object corresponding to this item
+            # FIXME this is horrible typechecking that is not pythonic
+            form_object = label_to_form_object[k]
+            if isinstance(form_object, Form.RadioGroup):
+                print >> out, 'wsfSetRadio("%s", "%s");' % (k, v)
+            elif isinstance(form_object, Form.CheckGroup):
+                js_literal = _collection_to_javascript_literal(v)
+                print >> out, 'wsfSetChecks("%s", %s);' % (k, js_literal)
+            elif isinstance(form_object, Form.Sequence):
+                print >> out, 'wsfSetInner("%s", "%s");' % (k, '\\n'.join(v))
+            else:
+                # assume we want to set the inner html
+                print >> out, 'wsfSetInner("%s", "%s");' % (k, v)
+        print >> out, '}'
+    print >> out, '</script>'
+    return out.getvalue().rstrip()
 

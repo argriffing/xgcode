@@ -25,6 +25,9 @@ try:
 except ImportError as e:
     pass
 
+# reduced from 70
+g_default_textarea_ncols = 50
+
 g_safe_letters = string.letters + string.digits + '_.-'
 
 g_imageformat_to_contenttype = {
@@ -221,7 +224,9 @@ def _get_textarea_header(esc_label, nrows):
     lines = (
             '<textarea name="%s"' % esc_label,
             'id="%s"' % esc_label,
-            'rows="%d" cols="70" wrap="off">' % nrows)
+            'rows="%d"' % nrows,
+            'cols="%d"' % g_default_textarea_ncols,
+            'wrap="off">')
     return ' '.join(lines)
 
 def _set_unique(d_out, label, value):

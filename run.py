@@ -10,6 +10,7 @@ import subprocess
 import time
 import shutil
 import re
+import cgi
 
 import argparse
 import cherrypy
@@ -99,6 +100,10 @@ class FieldStorage(object):
         else:
             return []
 
+def get_preset_button_tag(preset_index, preset_description):
+    return '<button onclick="on_wsf_preset%d();">%s</button>' % (
+            preset_index,
+            cgi.escape(preset_description))
 
 class GadgetForm(object):
 
@@ -162,6 +167,9 @@ class GadgetForm(object):
         print >> out, '<body>'
         print >> out, SnippetUtil.docstring_to_html(self.module.__doc__)
         print >> out, '<br/><br/>'
+        print >> out
+        print >> out, '<!-- main form -->'
+        print >> out, '<div style="float: left;">'
         print >> out, '<form id="mainform" action="process" method="post">'
         if form_html:
             print >> out, form_html
@@ -170,6 +178,21 @@ class GadgetForm(object):
         print >> out, '<input type="submit" name="submit" value="download"/>'
         print >> out, '<br/>'
         print >> out, '</form>'
+        print >> out, '</div>'
+        print >> out
+        if self.form_presets:
+            print >> out, '<!-- preset configurations -->'
+            print >> out, '<div style="float: left;">'
+            print >> out, '<fieldset>'
+            print >> out, '<legend>preset configurations</legend>'
+            button_tags = []
+            for i, preset in enumerate(self.form_presets):
+                tag = get_preset_button_tag(i, preset.description)
+                button_tags.append(tag)
+            print >> out, '<br/>\n'.join(button_tags)
+            print >> out, '</fieldset>'
+            print >> out, '</div>'
+            print >> out
         print >> out, '</body>'
         print >> out, '</html>'
         return out.getvalue().rstrip()

@@ -16,6 +16,7 @@ the paper by Sang-Chul Choi et al.
 
 from StringIO import StringIO
 import argparse
+import math
 
 import numpy as np
 import scipy
@@ -27,6 +28,7 @@ import iterutils
 import ctmcmi
 import mrate
 import divtime
+import graph
 
 def get_form():
     """
@@ -51,17 +53,101 @@ def get_form():
 def get_presets():
     presets = [
             Form.Preset(
-                'test preset',
+                'four state bottleneck',
                 {
                     'lowtri' : ('1', '0 1', '1 0 1'),
                     'mutweights' : ('1', '1', '1', '1'),
                     'mutselweights' : ('1', '0.01', '1', '0.01'),
+                    't' : '0.1',
+                    'infotype' : 'info_fis'}),
+            Form.Preset(
+                'two state, mut has greater entropy',
+                {
+                    'lowtri' : ('1',),
+                    'mutweights' : ('0.5', '0.5'),
+                    'mutselweights' : ('0.25', '0.75'),
+                    't' : '0.1',
+                    'infotype' : 'info_fis'}),
+            Form.Preset(
+                'two state, mut-sel has greater entropy',
+                {
+                    'lowtri' : ('1',),
+                    'mutweights' : ('0.25', '0.75'),
+                    'mutselweights' : ('0.5', '0.5'),
                     't' : '0.1',
                     'infotype' : 'info_fis'})]
     return presets
 
 def get_form_out():
     return FormOut.Report('summary')
+
+def _heuristic_helper(m_sign):
+    """
+    Return a message about which selection is predicted to be more informative.
+    That is, whether pure mutation or mutation-selection balance
+    is predicted by the heuristic to be more informative for divergence time.
+    @param m_sign: 1 when the heuristic suggests pure mutation
+    @return: a single line message
+    """
+    suffix = 'is predicted to be more informative'
+    if m_sign == 1:
+        s = '* pure mutation ' + suffix
+    elif m_sign == -1:
+        s = '* the balance of mutation and selection ' + suffix
+    else:
+        s = '  this heuristic is uninformative'
+    return s
+
+def get_heuristics(M, R):
+    """
+    Return a multiline string with some heuristics.
+    The heuristics are independendent of time and of the information variant.
+    Greater stationary distribution shannon entropy suggests less saturation.
+    Greater stationary distribution logical entropy suggests less saturation.
+    Greater expected rate suggests more saturation.
+    Greater spectral rate suggests more saturation.
+    @param M: mutation rate matrix
+    @param R: mutation-selection balance rate matrix
+    @return: multiline string
+    """
+    M_v = mrate.R_to_distn(M)
+    R_v = mrate.R_to_distn(R)
+    # compute the shannon entropy of the matrices
+    M_shannon_entropy = -sum(p * math.log(p) for p in M_v)
+    R_shannon_entropy = -sum(p * math.log(p) for p in R_v)
+    shannon_entropy_sign = np.sign(M_shannon_entropy - R_shannon_entropy)
+    # compute the logical entropy of the matrices
+    M_logical_entropy = 1 - sum(p * p for p in M_v)
+    R_logical_entropy = 1 - sum(p * p for p in R_v)
+    logical_entropy_sign = np.sign(M_logical_entropy - R_logical_entropy)
+    # compute the expected rate
+    M_expected_rate = mrate.Q_to_expected_rate(M)
+    R_expected_rate = mrate.Q_to_expected_rate(R)
+    expected_rate_sign = np.sign(R_expected_rate - M_expected_rate)
+    # compute the spectral rate
+    M_spectral_rate = 1 / mrate.R_to_relaxation_time(M)
+    R_spectral_rate = 1 / mrate.R_to_relaxation_time(R)
+    spectral_rate_sign = np.sign(R_spectral_rate - M_spectral_rate)
+    # report the heuristics
+    out = StringIO()
+    print >> out, 'Greater Shannon entropy of the stationary distribution',
+    print >> out, 'suggests more information about divergence time.'
+    print >> out, _heuristic_helper(shannon_entropy_sign)
+    print >> out
+    print >> out, 'Greater logical entropy of the stationary distribution',
+    print >> out, 'suggests more information about divergence time.'
+    print >> out, _heuristic_helper(logical_entropy_sign)
+    print >> out
+    print >> out, 'Smaller expected rate',
+    print >> out, 'suggests more information about divergence time.'
+    print >> out, _heuristic_helper(expected_rate_sign)
+    print >> out
+    print >> out, 'Smaller spectral rate',
+    print >> out, 'suggests more information about divergence time.'
+    print >> out, _heuristic_helper(spectral_rate_sign)
+    print >> out
+    return out.getvalue().strip()
+
 
 def get_response_content(fs):
     M, R = get_input_matrices(fs)
@@ -100,12 +186,51 @@ def get_response_content(fs):
     print >> out, 'mutation-selection balance information (t = %s):' % t
     print >> out, mutsel_information
     print >> out
-    print >> out, 'zone:'
-    if mut_information > mutsel_information:
-        print >> out, 'pure mutation gives more information'
+    print >> out
+    print >> out, 'Heuristics without regard to time or to the selected',
+    print >> out, 'information variant (Fisher vs. mutual information):'
+    print >> out
+    print >> out, get_heuristics(M, R)
+    print >> out
+    print >> out
+    print >> out, 'Explicitly computed answer',
+    print >> out, '(not a heuristic but may be numerically imprecise):'
+    information_sign = np.sign(mut_information - mutsel_information)
+    if information_sign == 1:
+        print >> out, '* pure mutation',
+        print >> out, 'is more informative'
+    elif information_sign == -1:
+        print >> out, '* the balance of mutation and selection',
+        print >> out, 'is more informative'
     else:
-        print >> out, 'mutation-selection balance gives more information'
+        print >> out, '  the information contents of the two processes',
+        print >> out, 'are numerically indistinguishable'
     return out.getvalue()
+
+def square_matrix_is_sign_symmetric(S):
+    n = len(S)
+    G = np.sign(S)
+    for i in range(n):
+        for j in range(n):
+            if G[i,j] != G[j,i]:
+                return False
+    return True
+
+def square_matrix_is_connected(S):
+    """
+    This assumes that the matrix is sign symmetric.
+    """
+    n = len(S)
+    V = set(range(n))
+    E = set()
+    for i in range(n):
+        for j in range(n):
+            if i < j and S[i,j]:
+                edge = frozenset((i,j))
+                E.add(edge)
+    nd = graph.g_to_nd(V, E)
+    V_component, D_component =  graph.nd_to_dag_component(nd, 0)
+    return V_component == V
 
 def get_input_matrices(fs):
     """
@@ -148,14 +273,32 @@ def get_input_matrices(fs):
     if nstates < 2:
         msg = 'at least two states are required'
         raise ValueError(msg)
+    # check reducibility of the exchangeability
+    if not square_matrix_is_connected(S):
+        msg = 'the exchangeability is reducible (its graph is disconnected)'
+        raise ValueError(msg)
     # get the mutation rate matrix
     M = np.zeros((nstates, nstates))
     for i in range(nstates):
         for j in range(nstates):
             M[i, j] = S[i, j] * mut_distn[j]
     M -= np.diag(np.sum(M, axis=1))
+    # check sign symmetry and irreducibility
+    if not square_matrix_is_sign_symmetric(M):
+        msg = 'the mut rate matrix is not sign symmetric'
+        raise ValueError(msg)
+    if not square_matrix_is_connected(M):
+        msg = 'the mut rate matrix is reducible (its graph is disconnected)'
+        raise ValueError(msg)
     # get the mutation selection balance rate matrix
     R = mrate.to_gtr_halpern_bruno(M, mutsel_distn)
+    # check sign symmetry and irreducibility
+    if not square_matrix_is_sign_symmetric(R):
+        msg = 'the mut-sel rate matrix is not sign symmetric'
+        raise ValueError(msg)
+    if not square_matrix_is_connected(R):
+        msg = 'the mut-sel rate matrix is reducible (its graph is disconnected)'
+        raise ValueError(msg)
     # check the stationary distributions
     mut_distn_observed = mrate.R_to_distn(M)
     if not np.allclose(mut_distn_observed, mut_distn):
