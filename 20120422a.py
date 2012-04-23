@@ -41,6 +41,9 @@ def get_form():
             Form.Sequence('mutweights',
                 'unnormalized mut stationary distn',
                 ('1', '1', '1', '1')),
+            Form.Float('mutscale',
+                'extra mutation process scaling factor',
+                '1', low_exclusive=0),
             Form.Sequence('mutselweights',
                 'unnormalized mut-sel stationary distn',
                 ('1', '1', '0.01', '0.01')),
@@ -53,10 +56,29 @@ def get_form():
 def get_presets():
     presets = [
             Form.Preset(
+                'approximation of Goldstein\'s example with t = 0.5',
+                {
+                    'lowtri' : ('1', '1 1', '1 1 1'),
+                    'mutweights' : ('1', '1', '1', '1'),
+                    'mutscale' : '1.333333333333',
+                    'mutselweights' : ('1', '1', '0.0001', '0.0001'),
+                    't' : '0.5',
+                    'infotype' : 'info_mut'}),
+            Form.Preset(
+                'approximation of Goldstein\'s example with t = 1.5',
+                {
+                    'lowtri' : ('1', '1 1', '1 1 1'),
+                    'mutweights' : ('1', '1', '1', '1'),
+                    'mutscale' : '1.333333333333',
+                    'mutselweights' : ('1', '1', '0.0001', '0.0001'),
+                    't' : '1.5',
+                    'infotype' : 'info_mut'}),
+            Form.Preset(
                 'four state bottleneck',
                 {
                     'lowtri' : ('1', '0 1', '1 0 1'),
                     'mutweights' : ('1', '1', '1', '1'),
+                    'mutscale' : '1',
                     'mutselweights' : ('1', '0.01', '1', '0.01'),
                     't' : '0.1',
                     'infotype' : 'info_fis'}),
@@ -65,6 +87,7 @@ def get_presets():
                 {
                     'lowtri' : ('1',),
                     'mutweights' : ('0.5', '0.5'),
+                    'mutscale' : '1',
                     'mutselweights' : ('0.25', '0.75'),
                     't' : '0.1',
                     'infotype' : 'info_fis'}),
@@ -73,6 +96,7 @@ def get_presets():
                 {
                     'lowtri' : ('1',),
                     'mutweights' : ('0.25', '0.75'),
+                    'mutscale' : '1',
                     'mutselweights' : ('0.5', '0.5'),
                     't' : '0.1',
                     'infotype' : 'info_fis'})]
@@ -148,7 +172,6 @@ def get_heuristics(M, R):
     print >> out
     return out.getvalue().strip()
 
-
 def get_response_content(fs):
     M, R = get_input_matrices(fs)
     M_v = mrate.R_to_distn(M)
@@ -160,8 +183,29 @@ def get_response_content(fs):
     elif fs.info_fis:
         mut_information = divtime.get_fisher_information(M, t)
         mutsel_information = divtime.get_fisher_information(R, t)
-    # print a summary
     out = StringIO()
+    print >> out, 'Explicitly computed answer',
+    print >> out, '(not a heuristic but may be numerically imprecise):'
+    information_sign = np.sign(mut_information - mutsel_information)
+    if information_sign == 1:
+        print >> out, '* pure mutation',
+        print >> out, 'is more informative'
+    elif information_sign == -1:
+        print >> out, '* the balance of mutation and selection',
+        print >> out, 'is more informative'
+    else:
+        print >> out, '  the information contents of the two processes',
+        print >> out, 'are numerically indistinguishable'
+    print >> out
+    print >> out
+    print >> out, 'Heuristics without regard to time or to the selected',
+    print >> out, 'information variant (Fisher vs. mutual information):'
+    print >> out
+    print >> out, get_heuristics(M, R)
+    print >> out
+    print >> out
+    print >> out, 'Input summary:'
+    print >> out
     print >> out, 'mutation rate matrix:'
     print >> out, M
     print >> out
@@ -180,31 +224,17 @@ def get_response_content(fs):
     print >> out, 'mutation-selection balance expected rate:'
     print >> out, mrate.Q_to_expected_rate(R)
     print >> out
+    print >> out, 'wrong mutation mutual information (t = %s):' % t
+    print >> out, ctmcmi.get_ll_ratio_wrong(M, t)
+    print >> out
+    print >> out, 'wrong mutation-selection mutual information (t = %s):' % t
+    print >> out, ctmcmi.get_ll_ratio_wrong(R, t)
+    print >> out
     print >> out, 'mutation process information (t = %s):' % t
     print >> out, mut_information
     print >> out
     print >> out, 'mutation-selection balance information (t = %s):' % t
     print >> out, mutsel_information
-    print >> out
-    print >> out
-    print >> out, 'Heuristics without regard to time or to the selected',
-    print >> out, 'information variant (Fisher vs. mutual information):'
-    print >> out
-    print >> out, get_heuristics(M, R)
-    print >> out
-    print >> out
-    print >> out, 'Explicitly computed answer',
-    print >> out, '(not a heuristic but may be numerically imprecise):'
-    information_sign = np.sign(mut_information - mutsel_information)
-    if information_sign == 1:
-        print >> out, '* pure mutation',
-        print >> out, 'is more informative'
-    elif information_sign == -1:
-        print >> out, '* the balance of mutation and selection',
-        print >> out, 'is more informative'
-    else:
-        print >> out, '  the information contents of the two processes',
-        print >> out, 'are numerically indistinguishable'
     return out.getvalue()
 
 def square_matrix_is_sign_symmetric(S):
@@ -283,6 +313,7 @@ def get_input_matrices(fs):
         for j in range(nstates):
             M[i, j] = S[i, j] * mut_distn[j]
     M -= np.diag(np.sum(M, axis=1))
+    M *= fs.mutscale
     # check sign symmetry and irreducibility
     if not square_matrix_is_sign_symmetric(M):
         msg = 'the mut rate matrix is not sign symmetric'

@@ -588,6 +588,34 @@ def get_expected_ll_ratio(R, t):
                 accum += np.real(value)
     return accum
 
+def get_ll_ratio_wrong(R, t):
+    """
+    In this function I try to reconstruct a buggy result in an email I got.
+    I think that the person who sent the email was trying to
+    compute the mutual information but they did something wrong,
+    so I want to see if I can figure out exactly what they were doing.
+    """
+    # define the number of states
+    n = len(R)
+    # define the transition matrix
+    P = scipy.linalg.expm(R*t)
+    # define the stationary distribution
+    p = mrate.R_to_distn(R)
+    #
+    expected_likelihood_inf = 0
+    expected_likelihood_t = 0
+    for i in range(n):
+        for j in range(n):
+            if p[i] and P[i, j]:
+                coeff = p[i] * P[i, j]
+                expected_likelihood_inf += coeff * p[i] * p[j]
+                expected_likelihood_t += coeff * P[i, j]
+    #
+    lel_inf = math.log(expected_likelihood_inf)
+    lel_t = math.log(expected_likelihood_t)
+    #
+    return lel_t - lel_inf
+
 def get_mi_decomposed(U, W, t):
     """
     Get the mutual information at a given time using the decomposition.

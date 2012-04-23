@@ -52,6 +52,9 @@ g_cat_3_default = """
 function wsfSetInner(id, value) {
     document.getElementById(id).innerHTML = value;
 }
+function wsfSetValue(id, value) {
+    document.getElementById(id).value = value;
+}
 function wsfSetRadio(name, value) {
     var myobj = document.forms["mainform"].elements[name];
     setCheckedValue(myobj, value);
@@ -125,6 +128,11 @@ def _get_cat_4_text(form_objects, presets):
                 print >> out, 'wsfSetChecks("%s", %s);' % (k, js_literal)
             elif isinstance(form_object, Form.Sequence):
                 print >> out, 'wsfSetInner("%s", "%s");' % (k, '\\n'.join(v))
+            elif any([
+                isinstance(form_object, Form.Integer),
+                isinstance(form_object, Form.Float),
+                isinstance(form_object, Form.SingleLine)]):
+                print >> out, 'wsfSetValue("%s", "%s");' % (k, v)
             else:
                 # assume we want to set the inner html
                 print >> out, 'wsfSetInner("%s", "%s");' % (k, v)
