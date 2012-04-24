@@ -87,11 +87,11 @@ def get_response_content(fs):
     out = StringIO()
     print >> out, 't:', t
     print >> out
-    print >> out, 'observed results:'
+    print >> out, 'observed results (wrong):'
     print >> out, 'N=4:', result_neutral
     print >> out, 'N=4, M=2:', result_selection
     print >> out
-    print >> out, 'tweaked results:'
+    print >> out, 'tweaked results (extra wrong):'
     print >> out, 'N=4:', result_neutral_tweaked
     print >> out, 'N=4, M=2:', result_selection_tweaked
     return out.getvalue()

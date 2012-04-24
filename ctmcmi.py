@@ -602,17 +602,23 @@ def get_ll_ratio_wrong(R, t):
     # define the stationary distribution
     p = mrate.R_to_distn(R)
     #
-    expected_likelihood_inf = 0
     expected_likelihood_t = 0
     for i in range(n):
         for j in range(n):
             if p[i] and P[i, j]:
                 coeff = p[i] * P[i, j]
-                expected_likelihood_inf += coeff * p[i] * p[j]
-                expected_likelihood_t += coeff * P[i, j]
+                expected_likelihood_t += coeff * p[i] * P[i, j]
     #
-    lel_inf = math.log(expected_likelihood_inf)
+    expected_likelihood_inf = 0
+    for i in range(n):
+        for j in range(n):
+            if p[i] and P[i, j]:
+                coeff = p[i] * P[i, j]
+                #coeff = p[i] * p[j]
+                expected_likelihood_inf += coeff * p[i] * p[j]
+    #
     lel_t = math.log(expected_likelihood_t)
+    lel_inf = math.log(expected_likelihood_inf)
     #
     return lel_t - lel_inf
 
