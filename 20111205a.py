@@ -15,6 +15,7 @@ import Form
 import FormOut
 from MatrixUtil import ndot
 import mrate
+import ctmcmi
 import RUtil
 
 
@@ -34,73 +35,6 @@ def get_form():
 
 def get_form_out():
     return FormOut.Report()
-
-def to_gtr_balanced(S, v):
-    """
-    @param S: symmetric rate matrix
-    @param v: target stationary distribution
-    @return: a rate matrix with the target stationary distribution
-    """
-    # get the number of states
-    n = len(v)
-    # copy the symmetric rate matrix
-    R = S.copy()
-    # adjust the entries of the rate matrix
-    for i in range(n):
-        for j in range(n):
-            R[i, j] *= math.sqrt(v[j] / v[i])
-    # reset the diagonal entries of the rate matrix
-    R -= np.diag(np.sum(R, axis=1))
-    return R
-
-def to_gtr_halpern_bruno(S, v):
-    """
-    @param S: symmetric rate matrix
-    @param v: target stationary distribution
-    @return: a rate matrix with the target stationary distribution
-    """
-    p = mrate.R_to_distn(S)
-    # get the number of states
-    n = len(v)
-    # copy the symmetric rate matrix
-    R = S.copy()
-    # adjust the entries of the rate matrix
-    for a in range(n):
-        for b in range(n):
-            if a != b:
-                # This equation is unnecessarily verbose
-                # due to symmetry of S.
-                # It should also work for asymmetric input rate matrices.
-                tau = (v[b] / p[b]) / (v[a] / p[a])
-                if not np.allclose(tau, 1):
-                    R[a, b] *= math.log(tau) / (1 - 1/tau)
-    # reset the diagonal entries of the rate matrix
-    R -= np.diag(np.sum(R, axis=1))
-    return R
-
-def get_expected_ll_ratio(R, t):
-    # define the number of states
-    n = len(R)
-    # define the transition matrix
-    P = scipy.linalg.expm(R*t)
-    # define the stationary distribution
-    p = mrate.R_to_distn(R)
-    # get the expected log likelihood ratio
-    accum = 0
-    for i in range(n):
-        for j in range(n):
-            if p[i] and P[i, j]:
-                coeff = p[i] * P[i, j]
-                # cancel the p[i] in the numerator and denominator
-                #numerator = p[i] * P[i, j]
-                #denominator = p[i] * p[j]
-                numerator = P[i, j]
-                denominator = p[j]
-                value = coeff * math.log(numerator / denominator)
-                if not np.allclose(np.imag(value), 0):
-                    raise ValueError('rogue imaginary number')
-                accum += np.real(value)
-    return accum
 
 def get_jc_rate_matrix():
     n = 4
@@ -404,18 +338,17 @@ def get_response_content(fs):
     x = 1.6
     w = 0.5 * log(x)
     v = x_to_distn(x)
-    R_hb_easy = to_gtr_halpern_bruno(R_jc, v)
-    #R_hb_easy = to_gtr_balanced(R_jc, v)
-    y, z, = x_to_halpern_bruno_yz(x)
+    R_hb_easy = mrate.to_gtr_halpern_bruno(R_jc, v)
+    y, z, = mrate.x_to_halpern_bruno_yz(x)
     yz_ratio = y / z
     R_hb_tedious = get_mut_sel_rate_matrix(y, z)
     P_hb_easy = get_trans_mat_expm(R_hb_easy, t)
     P_hb_tedious = get_trans_mat_tediously(y, z, t)
     P_hb_tedious_c = get_trans_mat_tediously_c(y, z, t)
     P_hb_from_x = get_trans_mat_from_x(x, t)
-    e_ll_jc = get_expected_ll_ratio(R_jc, t)
+    e_ll_jc = ctmcmi.get_expected_ll_ratio(R_jc, t)
     e_ll_jc_tedious = get_jc_e_ll(t)
-    e_ll_hb = get_expected_ll_ratio(R_hb_easy, t)
+    e_ll_hb = ctmcmi.get_expected_ll_ratio(R_hb_easy, t)
     e_ll_hb_from_x = get_e_ll_from_x(x, t)
     e_ll_hb_from_x_b = get_e_ll_from_x_b(x, t)
     e_ll_hb_from_x_htrig = get_e_ll_from_x_htrig(x, t)

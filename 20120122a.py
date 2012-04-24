@@ -439,8 +439,8 @@ def OBSOLETE_make_table(args, distn_modes):
             ONE_DEC : get_distn_one_dec,
             TWO_DEC : get_distn_two_dec}
     selection_mode_to_f = {
-            BALANCED : to_gtr_balanced,
-            HALPERN_BRUNO : to_gtr_halpern_bruno}
+            BALANCED : mrate.to_gtr_balanced,
+            HALPERN_BRUNO : mrate.to_gtr_halpern_bruno}
     # define the selection modes and calculators
     selection_f = selection_mode_to_f[args.selection]
     distn_fs = [distn_mode_to_f[m] for m in distn_modes]

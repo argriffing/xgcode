@@ -31,31 +31,6 @@ def sample_symmetric_rate_matrix(n):
     R = S - np.diag(np.sum(S, axis=1))
     return R
 
-def to_gtr_halpern_bruno(S, v):
-    """
-    @param S: symmetric rate matrix
-    @param v: target stationary distribution
-    @return: a rate matrix with the target stationary distribution
-    """
-    p = mrate.R_to_distn(S)
-    # get the number of states
-    n = len(v)
-    # copy the symmetric rate matrix
-    R = S.copy()
-    # adjust the entries of the rate matrix
-    for a in range(n):
-        for b in range(n):
-            if a != b:
-                # This equation is unnecessarily verbose
-                # due to symmetry of S.
-                # It should also work for asymmetric input rate matrices.
-                tau = (v[b] / p[b]) / (v[a] / p[a])
-                if not np.allclose(tau, 1):
-                    R[a, b] *= math.log(tau) / (1 - 1/tau)
-    # reset the diagonal entries of the rate matrix
-    R -= np.diag(np.sum(R, axis=1))
-    return R
-
 
 ############################################################################
 # ASYMPTOTIC VARIANCE STUFF
@@ -326,7 +301,7 @@ class TestDivtime(unittest.TestCase):
         n = 4
         v = sample_distribution(n)
         S = sample_symmetric_rate_matrix(n)
-        R = to_gtr_halpern_bruno(S, v)
+        R = mrate.to_gtr_halpern_bruno(S, v)
         t = 0.0000001
         total_rate = mrate.Q_to_expected_rate(R)
         var = get_ml_variance(R, t)
@@ -343,7 +318,7 @@ class TestDivtime(unittest.TestCase):
         n = 4
         v = sample_distribution(n)
         S = sample_symmetric_rate_matrix(n)
-        R = to_gtr_halpern_bruno(S, v)
+        R = mrate.to_gtr_halpern_bruno(S, v)
         """
         a = .1
         b = .2

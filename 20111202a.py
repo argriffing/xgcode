@@ -3,8 +3,6 @@ Plot expected log likelihood ratios over time.
 """
 
 from StringIO import StringIO
-import argparse
-import math
 
 import numpy as np
 import scipy
@@ -14,6 +12,7 @@ import Form
 import FormOut
 from MatrixUtil import ndot
 import mrate
+import ctmcmi
 import RUtil
 
 UNIFORM = 'uniform'
@@ -130,8 +129,8 @@ def make_table(args, distn_modes):
             ONE_DEC : get_distn_one_dec,
             TWO_DEC : get_distn_two_dec}
     selection_mode_to_f = {
-            BALANCED : to_gtr_balanced,
-            HALPERN_BRUNO : to_gtr_halpern_bruno}
+            BALANCED : mrate.to_gtr_balanced,
+            HALPERN_BRUNO : mrate.to_gtr_halpern_bruno}
     # define the selection modes and calculators
     selection_f = selection_mode_to_f[args.selection]
     distn_fs = [distn_mode_to_f[m] for m in distn_modes]
@@ -147,77 +146,10 @@ def make_table(args, distn_modes):
         for distn_f in distn_fs:
             v = distn_f(n, args.sel_surr)
             R = selection_f(S, v)
-            expected_log_ll_ratio = get_expected_ll_ratio(R, t)
+            expected_log_ll_ratio = ctmcmi.get_expected_ll_ratio(R, t)
             row.append(expected_log_ll_ratio)
         arr.append(row)
     return np.array(arr), headers
-
-def to_gtr_balanced(S, v):
-    """
-    @param S: symmetric rate matrix
-    @param v: target stationary distribution
-    @return: a rate matrix with the target stationary distribution
-    """
-    # get the number of states
-    n = len(v)
-    # copy the symmetric rate matrix
-    R = S.copy()
-    # adjust the entries of the rate matrix
-    for i in range(n):
-        for j in range(n):
-            R[i, j] *= math.sqrt(v[j] / v[i])
-    # reset the diagonal entries of the rate matrix
-    R -= np.diag(np.sum(R, axis=1))
-    return R
-
-def to_gtr_halpern_bruno(S, v):
-    """
-    @param S: symmetric rate matrix
-    @param v: target stationary distribution
-    @return: a rate matrix with the target stationary distribution
-    """
-    p = mrate.R_to_distn(S)
-    # get the number of states
-    n = len(v)
-    # copy the symmetric rate matrix
-    R = S.copy()
-    # adjust the entries of the rate matrix
-    for a in range(n):
-        for b in range(n):
-            if a != b:
-                # This equation is unnecessarily verbose
-                # due to symmetry of S.
-                # It should also work for asymmetric input rate matrices.
-                tau = (v[b] / p[b]) / (v[a] / p[a])
-                if not np.allclose(tau, 1):
-                    R[a, b] *= math.log(tau) / (1 - 1/tau)
-    # reset the diagonal entries of the rate matrix
-    R -= np.diag(np.sum(R, axis=1))
-    return R
-
-def get_expected_ll_ratio(R, t):
-    # define the number of states
-    n = len(R)
-    # define the transition matrix
-    P = scipy.linalg.expm(R*t)
-    # define the stationary distribution
-    p = mrate.R_to_distn(R)
-    # get the expected log likelihood ratio
-    accum = 0
-    for i in range(n):
-        for j in range(n):
-            if p[i] and P[i, j]:
-                coeff = p[i] * P[i, j]
-                # cancel the p[i] in the numerator and denominator
-                #numerator = p[i] * P[i, j]
-                #denominator = p[i] * p[j]
-                numerator = P[i, j]
-                denominator = p[j]
-                value = coeff * math.log(numerator / denominator)
-                if not np.allclose(np.imag(value), 0):
-                    raise ValueError('rogue imaginary number')
-                accum += np.real(value)
-    return accum
 
 def get_response_content(fs):
     distn_modes = [x for x in g_ordered_modes if x in fs.distribution]
