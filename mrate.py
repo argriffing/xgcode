@@ -177,13 +177,33 @@ def R_to_relaxation_time_obsolete(R):
     r_recip, fiedler = _R_to_eigenpair(R)
     return 1 / r_recip
 
-#TODO use scipy.linalg which guarantees sorted eigenvalues
 def R_to_relaxation_time(R):
     """
     This assumes a reversible irreducible rate matrix.
     """
     # get the abs eigenvalue directly
     W = np.linalg.eigvals(R)
+    abs_eigenvalue = sorted(abs(w) for w in W)[1]
+    # get the abs eigenvalue using symmetrization
+    W_h = np.linalg.eigvalsh(symmetrized(R))
+    abs_eigenvalue_h = sorted(abs(w) for w in W_h)[1]
+    # check that the absolute values of the eigenvalues is the same
+    if not np.allclose(abs_eigenvalue, abs_eigenvalue_h):
+        msg_a = 'relaxation time computation error: %f != %f' % (
+                abs_eigenvalue, abs_eigenvalue_h)
+        msg_b = 'plain spectrum: %s \n symmetrized spectrum: %s' % (
+                W, W_h)
+        raise ValueError(msg_a + '\n' + msg_b)
+    # return the relaxation time
+    return 1 / abs_eigenvalue
+
+def R_to_relaxation_time_experimental(R):
+    """
+    This assumes a reversible irreducible rate matrix.
+    """
+    # get the abs eigenvalue directly
+    W = scipy.linalg.eigvals(R)
+    #TODO just use the second entry of W
     abs_eigenvalue = sorted(abs(w) for w in W)[1]
     # get the abs eigenvalue using symmetrization
     W_h = np.linalg.eigvalsh(symmetrized(R))
