@@ -68,6 +68,9 @@ function wsfSetChecks(name, value_to_checked) {
         myobj[k].checked = value_to_checked[k];
     }
 }
+function wsfReset(name) {
+    document.forms["mainform"].reset();
+}
 </script>
 """.strip()
 
