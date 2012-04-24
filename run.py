@@ -185,9 +185,9 @@ class GadgetForm(object):
             print >> out, '<div style="float: left;">'
             print >> out, '<fieldset>'
             print >> out, '<legend>preset configurations</legend>'
-            print >> out, '<button onclick="wsfReset();">default</button><br/>'
             button_tags = []
-            for i, preset in enumerate(self.form_presets):
+            default_preset = Form.get_default_preset(self.form_objects)
+            for i, preset in enumerate([default_preset] + self.form_presets):
                 tag = get_preset_button_tag(i, preset.description)
                 button_tags.append(tag)
             print >> out, '<br/>\n'.join(button_tags)

@@ -118,7 +118,8 @@ def _get_cat_4_text(form_objects, presets):
     out = StringIO()
     print >> out, '<!-- these are hardcoded presets -->'
     print >> out, '<script type="text/javascript">'
-    for i, preset in enumerate(presets):
+    default_preset = Form.get_default_preset(form_objects)
+    for i, preset in enumerate([default_preset] + presets):
         print >> out, 'function on_wsf_preset%d() {' % i
         for k, v in preset.d.items():
             # check the form object corresponding to this item

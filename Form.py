@@ -75,6 +75,10 @@ class Preset(object):
         self.description = description
         self.d = d
 
+def get_default_preset(form_objects):
+    d = dict(o.get_preset_pair() for o in form_objects)
+    return Preset('default', d)
+
 class HelpItem(object):
     def __init__(self, command, description):
         self.command = command
@@ -155,13 +159,15 @@ class FormError(Exception):
     pass
 
 
+#TODO include group label
 def _get_checkbox_line(esc_label, checked):
     """
     @param esc_label: escaped label
     @param checked: boolean to specify whether item is checked or not
     """
     lines = (
-            'input type="checkbox" name="%s"' % esc_label,
+            'input type="checkbox"',
+            'name="%s"' % esc_label,
             'id="%s"' % esc_label,
             'value="%s"' % esc_label)
     base = ' '.join(lines)
@@ -254,6 +260,9 @@ class RadioGroup:
 
     def web_only(self):
         return False
+
+    def get_preset_pair(self):
+        return self.label, self._get_checked_list()[0].label
 
     def _get_checked_list(self):
         checked_list = [item for item in self.radio_items if item.default]
@@ -425,6 +434,10 @@ class CheckGroup:
 
     def web_only(self):
         return False
+
+    def get_preset_pair(self):
+        values = tuple(item.label for item in self.check_items if item.default)
+        return self.label, values
 
     def get_galaxy_cmd(self):
         return '--%s="$%s"' % (self.label, self.label)
@@ -660,6 +673,9 @@ class SingleLine:
     def web_only(self):
         return False
 
+    def get_preset_pair(self):
+        return self.label, self.default_line
+
     def get_galaxy_cmd(self):
         return '--%s="$%s"' % (self.label, self.label)
 
@@ -780,6 +796,9 @@ class Float:
 
     def web_only(self):
         return False
+
+    def get_preset_pair(self):
+        return self.label, self.default_float
 
     def get_galaxy_cmd(self):
         return '--%s=$%s' % (self.label, self.label)
@@ -939,6 +958,9 @@ class Integer:
     def web_only(self):
         return False
 
+    def get_preset_pair(self):
+        return self.label, self.default_integer
+
     def get_galaxy_cmd(self):
         return '--%s=$%s' % (self.label, self.label)
 
@@ -1079,6 +1101,9 @@ class Matrix:
     def web_only(self):
         return False
 
+    def get_preset_pair(self):
+        return self.label, self.default_matrix
+
     def get_galaxy_cmd(self):
         return '--%s=$%s' % (self.label, self.label)
 
@@ -1211,6 +1236,9 @@ class MultiLine:
     def web_only(self):
         return False
 
+    def get_preset_pair(self):
+        return self.label, self.get_default_string()
+
     def get_galaxy_cmd(self):
         return '--%s=$%s' % (self.label, self.label)
 
@@ -1323,6 +1351,9 @@ class Sequence(MultiLine):
         self.label = label
         self.description = description
         self.default_list = tuple(self._gen_reduced(default_list))
+
+    def get_preset_pair(self):
+        return self.label, self.default_list
 
     def _gen_reduced(self, arr):
         for s in arr:
