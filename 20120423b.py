@@ -1,8 +1,9 @@
 """
-Plot log(E(ratio(L))) and E(log(ratio(L))) for non-uniform stationary process.
+Plot log(ratio(E(L))) and E(log(ratio(L))) for non-uniform stationary process.
 """
 
 from StringIO import StringIO
+import math
 
 import numpy as np
 
@@ -37,6 +38,7 @@ def get_response_content(fs):
     t_incr = (t_high - t_low) / (npoints - 1)
     t_values = [t_low + t_incr*i for i in range(npoints)]
     # get the mutation rate matrix
+    """
     M = (1.0 / 2.0) * np.array([
         [0, 1, 0, 1],
         [1, 0, 1, 0],
@@ -48,14 +50,16 @@ def get_response_content(fs):
         [1, 0, 1, 1],
         [1, 1, 0, 1],
         [1, 1, 1, 0]], dtype=float)
-    """
     M -= np.diag(np.sum(M, axis=1))
     # adjust the mutation process to give it new stationary probabilities
-    mut_weights = np.array([1, 0.5, 0.5, 0.1], dtype=float)
+    #mut_weights = np.array([1, 1, 0.001, 0.001], dtype=float)
+    mut_weights = np.array([1, 0.001, 1, 0.001], dtype=float)
     mut_distn = [x / np.sum(mut_weights) for x in mut_weights]
     M = mrate.to_gtr_halpern_bruno(M, mut_distn)
     # define the target stationary distribution
-    mutsel_weights = np.array([1, 0.001, 0.5, 0.01], dtype=float)
+    p = math.log(2)
+    q = 1 - p
+    mutsel_weights = np.array([p, q/3, q/3, q/3], dtype=float)
     mutsel_distn = [x / np.sum(mutsel_weights) for x in mutsel_weights]
     # get the mutation selection balance rate matrix
     R = mrate.to_gtr_halpern_bruno(M, mutsel_distn)
@@ -75,10 +79,11 @@ def get_response_content(fs):
     print >> out, RUtil.mk_call_str(
             'plot',
             'my.table$t',
-            'my.table$mutual.info.mut',
+            'my.table$mutual.info.mutsel',
             type='"n"',
             xlab='"time"',
             ylab='""',
+            ylim=RUtil.mk_call_str('c', '0', '1.0'),
             main='"MI (black) and MI analog (red) over time"')
     print >> out, RUtil.mk_call_str(
             'lines',
