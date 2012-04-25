@@ -56,7 +56,7 @@ def get_form():
 def get_presets():
     presets = [
             Form.Preset(
-                'approximation of Goldstein\'s example with t = 0.5',
+                'a 4-state-to-2-state example with t = 0.5',
                 {
                     'lowtri' : ('1', '1 1', '1 1 1'),
                     'mutweights' : ('1', '1', '1', '1'),
@@ -65,7 +65,7 @@ def get_presets():
                     't' : '0.5',
                     'infotype' : 'info_mut'}),
             Form.Preset(
-                'approximation of Goldstein\'s example with t = 1.5',
+                'a 4-state-to-2-state example with t = 1.5',
                 {
                     'lowtri' : ('1', '1 1', '1 1 1'),
                     'mutweights' : ('1', '1', '1', '1'),
@@ -177,16 +177,17 @@ def get_response_content(fs):
     M_v = mrate.R_to_distn(M)
     R_v = mrate.R_to_distn(R)
     t = fs.t
+    mi_mut = ctmcmi.get_mutual_information(M, t)
+    mi_bal = ctmcmi.get_mutual_information(R, t)
+    fi_mut = divtime.get_fisher_information(M, t)
+    fi_bal = divtime.get_fisher_information(R, t)
     if fs.info_mut:
-        mut_information = ctmcmi.get_mutual_information(M, t)
-        mutsel_information = ctmcmi.get_mutual_information(R, t)
+        information_sign = np.sign(mi_mut - mi_bal)
     elif fs.info_fis:
-        mut_information = divtime.get_fisher_information(M, t)
-        mutsel_information = divtime.get_fisher_information(R, t)
+        information_sign = np.sign(fi_mut - fi_bal)
     out = StringIO()
     print >> out, 'Explicitly computed answer',
     print >> out, '(not a heuristic but may be numerically imprecise):'
-    information_sign = np.sign(mut_information - mutsel_information)
     if information_sign == 1:
         print >> out, '* pure mutation',
         print >> out, 'is more informative'
@@ -224,17 +225,28 @@ def get_response_content(fs):
     print >> out, 'mutation-selection balance expected rate:'
     print >> out, mrate.Q_to_expected_rate(R)
     print >> out
-    print >> out, 'wrong mutation mutual information (t = %s):' % t
+    print >> out
+    print >> out, 'The following information calculations',
+    print >> out, 'depend on t = %s:' % t
+    print >> out
+    print >> out, 'log(ratio(E(L))) for pure mutation:'
     print >> out, ctmcmi.get_ll_ratio_wrong(M, t)
     print >> out
-    print >> out, 'wrong mutation-selection mutual information (t = %s):' % t
+    print >> out, 'log(ratio(E(L))) for mut-sel balance:'
     print >> out, ctmcmi.get_ll_ratio_wrong(R, t)
     print >> out
-    print >> out, 'mutation process information (t = %s):' % t
-    print >> out, mut_information
+    print >> out, 'mutual information for pure mutation:'
+    print >> out, mi_mut
     print >> out
-    print >> out, 'mutation-selection balance information (t = %s):' % t
-    print >> out, mutsel_information
+    print >> out, 'mutual information for mut-sel balance:'
+    print >> out, mi_bal
+    print >> out
+    print >> out, 'Fisher information for pure mutation:'
+    print >> out, fi_mut
+    print >> out
+    print >> out, 'Fisher information for mut-sel balance:'
+    print >> out, fi_bal
+    print >> out
     return out.getvalue()
 
 def square_matrix_is_sign_symmetric(S):
