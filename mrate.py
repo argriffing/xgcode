@@ -15,6 +15,7 @@ import numpy as np
 import scipy
 from scipy import linalg
 
+import graph
 from MatrixUtil import ndot
 
 def get_path_rate_matrix(nstates):
@@ -215,6 +216,40 @@ def R_to_relaxation_time_experimental(R):
         raise ValueError(msg)
     # return the relaxation time
     return 1 / abs_eigenvalue
+
+def R_to_distn_nonspectral(R):
+    """
+    The rate matrix must be irreducible and reversible.
+    It is not necessarily symmetric.
+    If the rate matrix is symmetric then this function is overkill
+    because the stationary distribution would be uniform.
+    """
+    nstates = len(R)
+    V = set(range(nstates))
+    E = set()
+    for i in range(nstates):
+        for j in range(i):
+            if R[i, j]:
+                if not R[j, i]:
+                    raise MatrixUtil.MatrixError('the matrix is not reversible')
+                edge = frozenset((i,j))
+                E.add(edge)
+    nd = graph.g_to_nd(V, E)
+    # construct an arbitrary rooted spanning tree of the states
+    V_component, D_component = graph.nd_to_dag_component(nd, 0)
+    if V_component != V:
+        raise MatrixUtil.MatrixError('the matrix is not irreducible')
+    # compute the stationary probabilities relative to the first state
+    weights = [None] * nstates
+    v_to_children = graph.dag_to_cd(V_component, D_component)
+    preorder_states = graph.topo_sort(V_component, D_component)
+    weights[preorder_states[0]] = 1.0
+    for parent in preorder_states:
+        for child in v_to_children[parent]:
+            ratio = R[parent, child] / R[child, parent]
+            weights[child] = weights[parent] * ratio
+    total = sum(weights)
+    return np.array(weights) / total
 
 def R_to_distn(R):
     """

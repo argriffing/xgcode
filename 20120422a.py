@@ -133,8 +133,16 @@ def get_heuristics(M, R):
     @param R: mutation-selection balance rate matrix
     @return: multiline string
     """
+    # get the stationary distributions
     M_v = mrate.R_to_distn(M)
     R_v = mrate.R_to_distn(R)
+    # check a different way to get the stationary distribution just for fun
+    M_v_nonspectral = mrate.R_to_distn_nonspectral(M)
+    R_v_nonspectral = mrate.R_to_distn_nonspectral(R)
+    if not np.allclose(M_v, M_v_nonspectral):
+        raise ValueError('internal stationary distribution calculation error')
+    if not np.allclose(R_v, R_v_nonspectral):
+        raise ValueError('internal stationary distribution calculation error')
     # compute the shannon entropy of the matrices
     M_shannon_entropy = -sum(p * math.log(p) for p in M_v)
     R_shannon_entropy = -sum(p * math.log(p) for p in R_v)
