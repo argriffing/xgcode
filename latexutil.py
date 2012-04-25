@@ -28,6 +28,23 @@ def assert_latexformat(latexformat):
         msg = 'invalid requested format: ' + latexformat
         raise ValueError(msg)
 
+def m_to_latex_string(matrix):
+    """
+    @param matrix: a list of lists
+    @return: a multi-line string for LaTeX papers
+    """
+    # define lines of the matrix, without line terminations or newlines
+    lines = []
+    for row in matrix:
+        line = ' & '.join(str(x) for x in row)
+        lines.append(line)
+    # define the multi-line text of the matrix
+    text = ' \\\\\n'.join(lines)
+    # return the text wrapped in an AMS matrix environment
+    header = '\\begin{pmatrix}'
+    footer = '\\end{pmatrix}'
+    return '\n'.join((header, text, footer))
+
 def options_to_string(*args, **kwargs):
     """
     Everything is stringified.

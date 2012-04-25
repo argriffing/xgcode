@@ -8,6 +8,8 @@ import tempfile
 import os
 
 import iterutils
+import smallutil
+from smallutil import get_stripped_lines
 
 class CoordinatePairError(Exception): pass
 
@@ -116,12 +118,6 @@ def get_paragraphs(raw_lines):
     @return: a list of stripped line lists
     """
     return list(gen_paragraphs(raw_lines))
-
-def get_stripped_lines(raw_lines):
-    """
-    @return: a list of nonempty stripped lines
-    """
-    return list(iterutils.stripped_lines(raw_lines))
 
 def choose(n, k):
     """

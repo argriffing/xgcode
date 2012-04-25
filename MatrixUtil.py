@@ -1,5 +1,7 @@
 """
 Matrix formatting tools.
+
+This module uses numpy arrays and not numpy matrices.
 """
 
 import unittest
@@ -7,6 +9,11 @@ from StringIO import StringIO
 
 import numpy as np
 
+import matrixio
+import graph
+
+
+#TODO put these global arrays into const data files
 
 # this is a rotation of a contrast matrix of the example tree in "Why neighbor joining works"
 g_example_loading_matrix = np.array([
@@ -30,8 +37,7 @@ g_example_rotated_matrix = np.array([
     [0.0786945522922, 0.0117297739385, -0.00988669475083, 1.17928263783, -1.18987848662, 0.0, 0.0],
     [0.0371881700454, 0.50209037107, 0.612105936374, -0.109497793077, 0.0506611360203, 0.0, 0.0]])
 
-class MatrixError(ValueError):
-    pass
+class MatrixError(ValueError): pass
 
 def ndot(*args):
     M = args[0]
@@ -40,63 +46,63 @@ def ndot(*args):
     return M
 
 def assert_1d(M):
-    """
-    @param M: a numpy array
-    """
     if len(M.shape) != 1:
         raise MatrixError('the array is not 1d')
 
 def assert_2d(M):
-    """
-    @param M: a numpy array
-    """
     if len(M.shape) != 2:
         raise MatrixError('the array is not 2d')
 
 def assert_square(M):
-    """
-    @param M: a numpy array
-    """
     assert_2d(M)
     nrows, ncols = M.shape
     if nrows != ncols:
         raise MatrixError('the matrix is not square')
 
+def assert_sign_symmetric(M):
+    assert_square(M)
+    S = np.sign(M).astype(int)
+    if not np.array_equal(S, S.T):
+        raise MatrixError('the matrix is not sign symmetric')
+
 def assert_symmetric(M):
-    """
-    @param M: a numpy array
-    """
     assert_square(M)
     if not np.allclose(M, M.T):
-        print M - M.T
         raise MatrixError('the matrix is not symmetric')
 
 def assert_nonnegative(M):
-    """
-    @param M: a numpy array
-    """
     if (M < 0).any():
         raise MatrixError('the matrix has a negative element')
 
+def assert_hollow(M):
+    assert_square(M)
+    if np.diag(M).any():
+        raise MatrixError('the matrix is not hollow')
+
 def assert_predistance(M):
-    """
-    @param M: a numpy array
-    """
     assert_symmetric(M)
     assert_nonnegative(M)
-    D = np.diag(M)
-    if not np.allclose(D, np.zeros_like(D)):
-        raise MatrixError('diagonal elements of the matrix should be near zero')
 
 def assert_weighted_adjacency(M):
-    """
-    @param M: a numpy array
-    """
     assert_symmetric(M)
     assert_nonnegative(M)
-    D = np.diag(M)
-    if not np.allclose(D, np.zeros_like(D)):
-        raise MatrixError('diagonal elements of the matrix should be near zero')
+
+def assert_symmetric_irreducible(M):
+    assert_symmetric(M)
+    V = set(range(len(M)))
+    E = set()
+    for i in range(len(M)):
+        for j in range(i):
+            if M[i, j]:
+                edge = frozenset((i,j))
+                E.add(edge)
+    nd = graph.g_to_nd(V, E)
+    V_component, D_component = graph.nd_to_dag_component(nd, 0)
+    if V_component != V:
+        raise MatrixError('the matrix is not irreducible')
+
+def assert_detailed_balance(M):
+    pass
 
 def assert_rate_matrix(M):
     """
@@ -121,59 +127,6 @@ def assert_transition_matrix(M):
         raise MatrixError('each element of a transition matrix should be nonnegative')
     if not np.allclose(np.sum(M, 1), np.ones(n)):
         raise MatrixError('rows of a transition matrix should each sum to 1.0')
-
-def read_matrix(lines):
-    """
-    This can be used to extract a matrix from a cgi field or a text file.
-    @param lines: lines representing rows of the matrix
-    @return: a row major list of lists of floating point elements
-    """
-    matrix = []
-    if not lines:
-        raise MatrixError('no matrix was specified')
-    for i, line in enumerate(lines):
-        line = line.strip()
-        if line:
-            row = []
-            for element_string in line.split():
-                try:
-                    element = float(element_string)
-                except ValueError as e:
-                    error_lines = [
-                            'error on line ' + str(i),
-                            line,
-                            'this element could not be interpreted as a number: ' + str(element_string)
-                            ]
-                    raise MatrixError('\n'.join(error_lines))
-                row.append(element)
-            matrix.append(row)
-    if not matrix:
-        raise MatrixError('the matrix is empty')
-    row_length_set = set(len(row) for row in matrix)
-    if len(row_length_set) != 1:
-        raise MatrixError('all rows should have the same number of elements')
-    return matrix
-
-def read_contrast_matrix(lines, eps=1e-10):
-    """
-    This can be used to extract a contrast matrix from a cgi field or a text file.
-    @param lines: lines representing rows of the matrix
-    @param eps: numerical error allowed when checking contraints
-    @return: a row major list of lists of floating point elements
-    """
-    #TODO deprecated in favor of generic matrix reading followed by constraint assertion
-    C = read_matrix(lines)
-    if len(C) <= len(C[0]):
-        raise MatrixError('the contrast matrix should have more rows than columns')
-    contrasts = zip(*C)
-    for contrast in contrasts:
-        if not any(x < 0 for x in contrast):
-            raise MatrixError('each column of the contrast matrix should have at least one element less than zero')
-        if not any(x > 0 for x in contrast):
-            raise MatrixError('each column of the contrast matrix should have at least one element greater than zero')
-        if abs(sum(contrast)) > eps:
-            raise MatrixError('each column of the contrast matrix should sum to zero')
-    return C
 
 def row_major_to_dict(matrix, ordered_row_labels, ordered_column_labels):
     """
@@ -218,82 +171,12 @@ def dict_to_row_major(matrix, ordered_row_labels, ordered_column_labels):
         row_major_matrix.append(row)
     return row_major_matrix
 
-def m_to_string(matrix, precision=None):
-    """
-    @param matrix: a numpy array or row major list of lists
-    @param precision: None or the precision for the format conversion
-    @return: a multi-line string
-    """
-    if precision is None:
-        return '\n'.join('\t'.join(str(element) for element in row) for row in matrix)
-    else:
-        format_string = '%%.%df' % precision
-        return '\n'.join('\t'.join((format_string % v) for v in row) for row in matrix)
-
-def m_to_latex_string(matrix):
-    """
-    @param matrix: a list of lists
-    @return: a multi-line string for LaTeX papers
-    """
-    # define lines of the matrix, without line terminations or newlines
-    lines = []
-    for row in matrix:
-        line = ' & '.join(str(x) for x in row)
-        lines.append(line)
-    # define the multi-line text of the matrix
-    text = ' \\\\\n'.join(lines)
-    # return the text wrapped in an AMS matrix environment
-    header = '\\begin{pmatrix}'
-    footer = '\\end{pmatrix}'
-    return '\n'.join((header, text, footer))
-
 def m_to_matlab_string(matrix):
     """
     @param matrix: a list of lists
     @return: a single line string suitable for copying and pasting into matlab
     """
     return '[' + '; '.join(' '.join(str(x) for x in row) for row in matrix) + ']'
-
-def m_to_R_string(M):
-    """
-    @param M: a list of lists
-    @return: a single line string suitable for copying and pasting into R
-    """
-    arr = []
-    for row in M:
-        for element in row:
-            arr.append(str(element))
-    s = ', '.join(arr)
-    return 'matrix(c(%s), %d, %d, byrow=TRUE)' % (s, len(M), len(M[0]))
-
-def has_off_diagonal_element(M, query_value):
-    """
-    @param M: a row major matrix (numpy or list of lists)
-    @param query_value: the off diagonal value to query
-    @return: True if the query value was found
-    """
-    for i, row in enumerate(M):
-        for j, element in enumerate(row):
-            if i != j:
-                if element == query_value:
-                    return True
-    return False
-
-def replace_off_diagonal_element(M, query_value, replacement_value):
-    """
-    @param M: a row major matrix (numpy or list of lists)
-    @param query_value: the off diagonal value to query
-    @param replacement_value: the value to replace the query value
-    @return: the number of replaced elements
-    """
-    count = 0
-    for i, row in enumerate(M):
-        for j, element in enumerate(row):
-            if i != j:
-                if element == query_value:
-                    count += 1
-                    M[i][j] = replacement_value
-    return count
 
 def list_to_matrix(arr, f):
     """
@@ -302,6 +185,7 @@ def list_to_matrix(arr, f):
     @param f: a function that takes two arguments
     @return: a symmetric row major matrix
     """
+    #FIXME this function is used but is stupidly named
     M = []
     for a in arr:
         row = [f(a, b) for b in arr]
@@ -388,35 +272,45 @@ def get_best_reflection(A, B):
 
 class TestMatrixUtil(unittest.TestCase):
 
+    def test_symmetric_irreducible_true(self):
+        M = np.array([
+                [1, 1, 0],
+                [1, 1, 1],
+                [0, 1, 1]])
+        assert_symmetric_irreducible(M)
+
+    def test_symmetric_irreducible_false_reducible(self):
+        M = np.array([
+                [1, 0, 0],
+                [0, 1, 1],
+                [0, 1, 1]])
+        self.assertRaises(MatrixError, assert_symmetric_irreducible, M)
+
+    def test_symmetric_irreducible_false_asymmetric(self):
+        M = np.array([
+                [0, 1],
+                [0, 0]])
+        self.assertRaises(MatrixError, assert_symmetric_irreducible, M)
+
     def test_dict_to_row_major(self):
         d = {
                 (0, 0) : 1, (0, 1) : 2, (0, 2) : 3,
                 (1, 0) : 4, (1, 1) : 5, (1, 2) : 6
                 }
-        row_major = [[1, 2, 3], [4, 5, 6]]
+        expected = [[1, 2, 3], [4, 5, 6]]
         row_labels = [0, 1]
         column_labels = [0, 1, 2]
-        self.assertEquals(
-                dict_to_row_major(d, row_labels, column_labels), row_major)
-
-    def test_read_matrix_good(self):
-        s = '1 2 3 \n 4 5 6'
-        row_major_observed = read_matrix(StringIO(s))
-        row_major_expected = [[1, 2, 3], [4, 5, 6]]
-        self.assertEquals(row_major_observed, row_major_expected)
-
-    def test_read_matrix_bad(self):
-        sio = StringIO('1 2 3 \n 4 5')
-        self.assertRaises(MatrixError, read_matrix, sio)
+        observed = dict_to_row_major(d, row_labels, column_labels)
+        self.assertEquals(expected, observed)
 
     def test_read_square_matrix_bad(self):
         s = '1 2 3 \n 4 5 6'
-        M = np.array(read_matrix(StringIO(s)))
+        M = np.array(matrixio.read_matrix(StringIO(s)))
         self.assertRaises(MatrixError, assert_square, M)
 
     def test_read_square_matrix_good(self):
         s = '1 2 3 \n 4 5 6 \n 7 8 9'
-        row_major_observed = read_matrix(StringIO(s))
+        row_major_observed = matrixio.read_matrix(StringIO(s))
         row_major_expected = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         self.assertEquals(row_major_observed, row_major_expected)
 
@@ -424,35 +318,12 @@ class TestMatrixUtil(unittest.TestCase):
         arr = [[-3, 1, 1, 1], [1, -3, 1, 1], [1, 1, -3, 1], [1, 1, 1, -3]]
         s = '\n'.join('\t'.join(str(x) for x in row) for row in arr)
         sio = StringIO(s)
-        M = np.array(read_matrix(sio))
+        M = np.array(matrixio.read_matrix(sio))
         assert_rate_matrix(M)
-
-    def test_replace_off_diagonal_element(self):
-        M = [[1, 1, 1], [1, 2, 1], [2, 2, 1]]
-        M_expected = [[1, 1, 1], [1, 2, 1], [3, 3, 1]]
-        expected_count = 2
-        observed_count = replace_off_diagonal_element(M, 2, 3)
-        self.assertEquals(M, M_expected)
-        self.assertEquals(observed_count, expected_count)
-
-    def test_has_off_diagonal_element_false(self):
-        M = [[2, 1, 1], [1, 2, 1], [1, 1, 2]]
-        observed = has_off_diagonal_element(M, 2)
-        self.assertFalse(observed)
-
-    def test_has_off_diagonal_element_true(self):
-        M = [[1, 1, 1], [1, 1, 2], [1, 1, 1]]
-        observed = has_off_diagonal_element(M, 2)
-        self.assertTrue(observed)
 
     def test_m_to_matlab_string(self):
         observed = m_to_matlab_string([[1, 2, 3], [4, 5, 6]])
         expected = '[1 2 3; 4 5 6]'
-        self.assertEquals(expected, observed)
-
-    def test_m_to_R_string(self):
-        observed = m_to_R_string([[1, 2, 3], [4, 5, 6]])
-        expected = 'matrix(c(1, 2, 3, 4, 5, 6), 2, 3, byrow=TRUE)'
         self.assertEquals(expected, observed)
 
     def test_varimax(self):
@@ -474,6 +345,5 @@ class TestMatrixUtil(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestMatrixUtil)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()
 

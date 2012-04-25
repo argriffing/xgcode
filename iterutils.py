@@ -12,6 +12,9 @@ Some are miscellaneous custom functions.
 import itertools
 import unittest
 
+import smallutil
+from smallutil import stripped_lines
+from smallutil import pairwise
 
 def get_only(collection):
     """
@@ -55,15 +58,6 @@ def read_backwards(fin, blocksize=4096):
         else:
             # start of file
             return
-
-def stripped_lines(lines):
-    """
-    This function yields nonempty stripped lines.
-    """
-    for line in lines:
-        line = line.strip()
-        if line:
-            yield line
 
 def rle(sequence):
     """
@@ -168,17 +162,6 @@ def ragged_grouper(seq, size):
     if short_arr:
         long_arr.append(tuple(short_arr))
     return long_arr
-
-def pairwise(iterable):
-    """
-    Yield pairs of neighbors.
-    This is directly from the python itertools documentation.
-    For example,
-    s -> (s0,s1), (s1,s2), (s2, s3), ...
-    """
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return itertools.izip(a, b)
 
 def chopped_nonbreaking(sequence, size):
     """

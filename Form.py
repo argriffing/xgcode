@@ -16,9 +16,9 @@ import string
 
 import numpy as np
 
-import MatrixUtil
-import iterutils
-import Util
+import smallutil
+import matrixio
+from matrixio import MatrixIOError
 
 try:
     from lxml import etree
@@ -131,9 +131,9 @@ def get_help_string(form_objects):
     # Get the length of the longest partial line.
     pline_lists = [x.get_partial_lines() for x in help_objects]
     plines = list(itertools.chain.from_iterable(pline_lists))
-    max_len = Util.max_length(plines)
+    max_len = max(len(x) for x in plines)
     # True if a blank line should be added after the corresponding help object.
-    bsep = [any_isolated(p) for p in iterutils.pairwise(help_objects)] + [0]
+    bsep = [any_isolated(p) for p in smallutil.pairwise(help_objects)] + [0]
     # Add these lines after the corresponding help object.
     lsep = [[''] if x else [] for x in bsep]
     # Build the list of output lines.
@@ -1087,7 +1087,7 @@ class Matrix:
             matrix_assertion=None):
         """
         The matrix_assertion may be a function or None.
-        If it is a function then it may raise MatrixUtil.MatrixError.
+        If it is a function then it may raise matrixio.MatrixIOError.
         @param label: something like a variable name
         @param description: a single line description of the item
         @param default_matrix: the default numpy array
@@ -1124,7 +1124,7 @@ class Matrix:
         @return: the number of args added on the command line
         """
         mobyle_class = 'Text'
-        matrix_string = MatrixUtil.m_to_string(self.default_matrix)
+        matrix_string = matrixio.m_to_string(self.default_matrix)
         example_text = cgi.escape(matrix_string)
         meta_code = '" --%s=" + str(value)' % self.label
         parameter = etree.SubElement(
@@ -1152,11 +1152,11 @@ class Matrix:
         @return: the list of lines of html text
         """
         # get the number of rows to use for the textarea
-        sio = StringIO(MatrixUtil.m_to_string(self.default_matrix))
+        sio = StringIO(matrixio.m_to_string(self.default_matrix))
         nrows = len(list(sio.readlines())) + 1
         nrows = min(nrows, 12)
         # get the matrix as an unescaped string
-        default_string = MatrixUtil.m_to_string(self.default_matrix)
+        default_string = matrixio.m_to_string(self.default_matrix)
         # get escaped values
         esc_label = cgi.escape(self.label)
         esc_description = cgi.escape(self.description)
@@ -1179,10 +1179,10 @@ class Matrix:
         else:
             with open(filename) as fin:
                 try:
-                    value = np.array(MatrixUtil.read_matrix(fin))
+                    value = np.array(matrixio.read_matrix(fin))
                     if self.matrix_assertion:
                         self.matrix_assertion(value)
-                except MatrixUtil.MatrixError as e:
+                except MatrixIOError as e:
                     raise FormError(e)
         _set_unique(d_out, self.label, value)
 
@@ -1201,10 +1201,10 @@ class Matrix:
             raise FormError(msg)
         elif len(values) == 1:
             try:
-                value = np.array(MatrixUtil.read_matrix(StringIO(values[0])))
+                value = np.array(matrixio.read_matrix(StringIO(values[0])))
                 if self.matrix_assertion:
                     self.matrix_assertion(value)
-            except MatrixUtil.MatrixError as e:
+            except MatrixIOError as e:
                 raise FormError(e)
         elif len(values) > 2:
             msg = 'the value for the field "%s" is ambiguous' % self.label

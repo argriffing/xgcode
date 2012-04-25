@@ -14,6 +14,7 @@ import FelTree
 import Euclid
 import BuildTreeTopology
 import SchurAlgebra
+import latexutil
 
 def get_form():
     """
@@ -151,7 +152,7 @@ def get_response_content(fs):
     if fs.plain_matrix:
         m_to_string = MatrixUtil.m_to_string
     elif fs.latex_matrix:
-        m_to_string = MatrixUtil.m_to_latex_string
+        m_to_string = latexutil.m_to_latex_string
     # print the results for the split of the full tree
     print >> out, get_full_tree_message(tree, m_to_string)
     print >> out

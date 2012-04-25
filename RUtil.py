@@ -309,6 +309,19 @@ def float_to_R(value):
     else:
         return str(value)
 
+def matrix_to_R_string(M):
+    """
+    @param M: a list of lists
+    @return: a single line string suitable for copying and pasting into R
+    """
+    arr = []
+    for row in M:
+        for element in row:
+            arr.append(str(element))
+    return mk_call_str('matrix',
+            mk_call_str('c', ', '.join(arr)),
+            len(M), len(M[0]), byrow='TRUE')
+
 
 class RTable:
     """
@@ -397,6 +410,11 @@ class TestRUtil(unittest.TestCase):
         observed = mk_call_str('wat', 'x', 'y', z='foo', w='bar')
         expected = 'wat(x, y, z=foo, w=bar)'
         self.assertEqual(observed, expected)
+
+    def test_matrix_to_R_string(self):
+        observed = matrix_to_R_string([[1, 2, 3], [4, 5, 6]])
+        expected = 'matrix(c(1, 2, 3, 4, 5, 6), 2, 3, byrow=TRUE)'
+        self.assertEquals(expected, observed)
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,8 +4,8 @@ Web interface stuff.
 
 from StringIO import StringIO
 
-import Util
-import iterutils
+import smallutil
+
 
 class HandlingError(Exception): pass
 
@@ -60,7 +60,7 @@ def get_dictionary(dictionary_string, state_name, value_name, required_states):
     @return: a dictionary mapping each state to a value
     """
     # convert the multi-line string to a list of non-empty lines
-    lines = Util.get_stripped_lines(StringIO(dictionary_string))
+    lines = smallutil.get_stripped_lines(StringIO(dictionary_string))
     # make sure that at least one line is non-empty
     if not lines:
         raise HandlingError('no %s to %s mapping was specified' % (key_name, value_name))
@@ -92,7 +92,7 @@ def get_distribution(distribution_string, state_name, valid_states):
     if not distribution_string:
         raise HandlingError('no %s distribution was specified' % state_name)
     state_to_weight = {}
-    for line in iterutils.stripped_lines(StringIO(distribution_string)):
+    for line in smallutil.stripped_lines(StringIO(distribution_string)):
         state, weight = get_weight_pair(line, state_name, valid_states)
         if state in state_to_weight:
             raise HandlingError('duplicate %s: %s' % (state_name, state))
@@ -146,7 +146,7 @@ def docstring_to_title(docstring):
     @return: the first line of the docstring as a title, or None
     """
     # get lines of text without whitespace between lines
-    lines = Util.get_stripped_lines(StringIO(docstring))
+    lines = smallutil.get_stripped_lines(StringIO(docstring))
     if lines:
         return lines[0]
     else:
@@ -158,7 +158,7 @@ def docstring_to_html(docstring):
     @param docstring: something like __doc__
     """
     # get lines of text without whitespace between lines
-    lines = Util.get_stripped_lines(StringIO(docstring))
+    lines = smallutil.get_stripped_lines(StringIO(docstring))
     # no docstring
     if not lines:
         return ''
