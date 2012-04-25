@@ -288,16 +288,21 @@ def get_input_matrices(fs):
         msg = 'at least two states are required'
         raise ValueError(msg)
     # check reducibility of the exchangeability
-    MatrixUtil.assert_symmetric_irreducible(S)
+    if not MatrixUtil.is_symmetric_irreducible(S):
+        raise ValueError('exchangeability is not irreducible')
     # get the mutation rate matrix
     M = S * mut_distn * fs.mutscale
     M -= np.diag(np.sum(M, axis=1))
     # check sign symmetry and irreducibility
-    MatrixUtil.assert_symmetric_irreducible(np.sign(M))
+    if not MatrixUtil.is_symmetric_irreducible(np.sign(M)):
+        msg = 'mutation rate matrix is not sign symmetric irreducible'
+        raise ValueError(msg)
     # get the mutation selection balance rate matrix
     R = mrate.to_gtr_halpern_bruno(M, mutsel_distn)
     # check sign symmetry and irreducibility
-    MatrixUtil.assert_symmetric_irreducible(np.sign(R))
+    if not MatrixUtil.is_symmetric_irreducible(np.sign(R)):
+        msg = 'mut-sel balance rate matrix is not sign symmetric irreducible'
+        raise ValueError(msg)
     # check the stationary distributions
     mut_distn_observed = mrate.R_to_distn(M)
     if not np.allclose(mut_distn_observed, mut_distn):

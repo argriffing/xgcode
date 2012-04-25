@@ -101,6 +101,14 @@ def assert_symmetric_irreducible(M):
     if V_component != V:
         raise MatrixError('the matrix is not irreducible')
 
+def is_symmetric_irreducible(M):
+    try:
+        assert_symmetric_irreducible(M)
+        return True
+    except MatrixError as e:
+        return False
+
+
 #FIXME do something about this
 def assert_detailed_balance(M):
     pass
