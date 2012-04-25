@@ -101,6 +101,7 @@ def assert_symmetric_irreducible(M):
     if V_component != V:
         raise MatrixError('the matrix is not irreducible')
 
+#FIXME do something about this
 def assert_detailed_balance(M):
     pass
 
@@ -271,6 +272,18 @@ def get_best_reflection(A, B):
     return best_signs
 
 class TestMatrixUtil(unittest.TestCase):
+
+    def test_sign_symmetric_true(self):
+        M = np.array([
+                [0.0, -0.5],
+                [-0.5, 0.0]])
+        assert_sign_symmetric(M)
+
+    def test_sign_symmetric_false(self):
+        M = np.array([
+                [0.0, 0.5],
+                [-0.5, 0.0]])
+        self.assertRaises(MatrixError, assert_sign_symmetric, M)
 
     def test_symmetric_irreducible_true(self):
         M = np.array([

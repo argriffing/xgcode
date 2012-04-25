@@ -11,7 +11,7 @@ import Form
 import FormOut
 import mrate
 import ctmcmi
-import graph
+import MatrixUtil
 import RUtil
 from RUtil import mk_call_str
 
@@ -145,32 +145,6 @@ def get_ggplot():
             mk_call_str('max', 'my.table.long$value'))
     return out.getvalue()
 
-def square_matrix_is_sign_symmetric(S):
-    n = len(S)
-    G = np.sign(S)
-    for i in range(n):
-        for j in range(n):
-            if G[i,j] != G[j,i]:
-                return False
-    return True
-
-def square_matrix_is_connected(S):
-    """
-    This assumes that the matrix is sign symmetric.
-    """
-    n = len(S)
-    V = set(range(n))
-    E = set()
-    for i in range(n):
-        for j in range(n):
-            if i < j and S[i,j]:
-                edge = frozenset((i,j))
-                E.add(edge)
-    nd = graph.g_to_nd(V, E)
-    V_component, D_component =  graph.nd_to_dag_component(nd, 0)
-    return V_component == V
-
-
 def get_input_matrices(fs):
     """
     @return: M, R
@@ -211,32 +185,16 @@ def get_input_matrices(fs):
         msg = 'at least two states are required'
         raise ValueError(msg)
     # check reducibility of the exchangeability
-    if not square_matrix_is_connected(S):
-        msg = 'the exchangeability is reducible (its graph is disconnected)'
-        raise ValueError(msg)
+    MatrixUtil.assert_symmetric_irreducible(S)
     # get the mutation rate matrix
-    M = np.zeros((nstates, nstates))
-    for i in range(nstates):
-        for j in range(nstates):
-            M[i, j] = S[i, j] * mut_distn[j]
+    M = S * mut_distn * fs.mutscale
     M -= np.diag(np.sum(M, axis=1))
-    M *= fs.mutscale
     # check sign symmetry and irreducibility
-    if not square_matrix_is_sign_symmetric(M):
-        msg = 'the mut rate matrix is not sign symmetric'
-        raise ValueError(msg)
-    if not square_matrix_is_connected(M):
-        msg = 'the mut rate matrix is reducible (its graph is disconnected)'
-        raise ValueError(msg)
+    MatrixUtil.assert_symmetric_irreducible(np.sign(M))
     # get the mutation selection balance rate matrix
     R = mrate.to_gtr_halpern_bruno(M, mutsel_distn)
     # check sign symmetry and irreducibility
-    if not square_matrix_is_sign_symmetric(R):
-        msg = 'the mut-sel rate matrix is not sign symmetric'
-        raise ValueError(msg)
-    if not square_matrix_is_connected(R):
-        msg = 'the mut-sel rate matrix is reducible (its graph is disconnected)'
-        raise ValueError(msg)
+    MatrixUtil.assert_symmetric_irreducible(np.sign(R))
     # check the stationary distributions
     mut_distn_observed = mrate.R_to_distn(M)
     if not np.allclose(mut_distn_observed, mut_distn):
