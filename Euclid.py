@@ -11,6 +11,8 @@ import unittest
 import random
 
 import numpy as np
+import scipy
+from scipy import linalg
 
 import MatrixUtil
 import SchurAlgebra
@@ -38,6 +40,8 @@ g_D_c = np.array([
     [9, 10, 9,  0, 8, 5],
     [1,  2, 7,  8, 0, 3],
     [4,  5, 4,  5, 3, 0]], dtype=float)
+
+# TODO change the eigendecompositions to use scipy
 
 def edm_to_adjacency(D):
     """
