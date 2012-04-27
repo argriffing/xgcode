@@ -23,7 +23,9 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('nsamples', 'max iterations', 1, low=1),
+            Form.Integer('ntaxa', 'vertices in the completely connected graph',
+                5, low=2, high=10),
+            Form.Integer('nsamples', 'max iterations', 10000, low=1),
             Form.RadioGroup('split_criterion', 'split criterion', [
                 Form.RadioItem('split_fiedler', 'Fiedler', True),
                 Form.RadioItem('split_random', 'random')]),
@@ -51,27 +53,28 @@ def foo():
     pass
 
 class Accumulator:
-    def __init__(self, fsplit):
+    def __init__(self, ntaxa, fsplit):
+        self.ntaxa = ntaxa
         self.fsplit = fsplit
         self.rows = ['hello world']
         self.counterexample = 'no counterexample'
     def __call__(self):
-        nstates = 10
+        n = self.ntaxa
         # sample a laplacian matrix
-        L = sample_laplacian_matrix(nstates)
+        L = sample_laplacian_matrix(n)
         # get the new vertex and the two new replacement supervertices
-        v_gen = itertools.count(nstates)
+        v_gen = itertools.count(n)
         sv_gen = itertools.count(1)
         v_new = next(v_gen)
         sv_new_a = next(sv_gen)
         sv_new_b = next(sv_gen)
         # define the initial structures
-        v_to_svs = dict((v, set([0])) for v in range(nstates))
-        sv_to_vs = {0 : set(range(nstates))}
+        v_to_svs = dict((v, set([0])) for v in range(n))
+        sv_to_vs = {0 : set(range(n))}
         edge_to_weight = {}
-        for pair in itertools.combinations(range(nstates), 2):
+        for pair in itertools.combinations(range(n), 2):
             edge_to_weight[frozenset(pair)] = random.expovariate(1)
-        sv_heap = [(-nstates, 0)]
+        sv_heap = [(-n, 0)]
         # do the split
         nhj.split(
                 v_to_svs, sv_to_vs, edge_to_weight, sv_heap,
@@ -86,12 +89,13 @@ class Accumulator:
 
 def get_response_content(fs):
     niterations = fs.nsamples
+    ntaxa = fs.ntaxa
     nseconds = 4
     if fs.split_fiedler:
         fsplit = nhj.fsplit_fiedler
     elif fs.split_random:
         fsplit = nhj.fsplit_random
-    accum = Accumulator(fsplit)
+    accum = Accumulator(ntaxa, fsplit)
     info = combobreaker.run_callable(
             accum, nseconds=nseconds, niterations=niterations)
     out = StringIO()
