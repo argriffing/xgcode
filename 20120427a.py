@@ -5,6 +5,7 @@ Visualize steps of an exact spectral reconstruction of a tree.
 from StringIO import StringIO
 import itertools
 import math
+import random
 
 import numpy as np
 import scipy
@@ -15,8 +16,15 @@ import Form
 import FormOut
 import nhj
 import Util
+import Ftree
+import FtreeIO
+import NewickIO
 from MatrixUtil import ndot
 
+g_default_newick = '((1:1, 2:0.5):1, (3:0.333333333333, 4:0.5):1, 5:1);'
+g_felsenstein_tree_string = '(((a:0.3, b:0.1):0.25, c:0.65):0.2, (d:0.1, e:0.1):0.7);'
+
+"""
 g_upper_adjacency = np.array([
     [0, 0, 0, 0, 0, 1, 0, 0],
     [0, 0, 0, 0, 0, 2, 0, 0],
@@ -26,12 +34,20 @@ g_upper_adjacency = np.array([
     [0, 0, 0, 0, 0, 0, 0, 1],
     [0, 0, 0, 0, 0, 0, 0, 1],
     [0, 0, 0, 0, 0, 0, 0, 0]])
+"""
 
 def get_form():
     """
     @return: the body of a form
     """
     form_objects = [
+            Form.MultiLine('newick', 'newick tree with branch lengths',
+                #g_default_newick),
+                #g_felsenstein_tree_string),
+                NewickIO.rooted_example_tree),
+            Form.CheckGroup('options', 'pre-processing options', [
+                Form.CheckItem('jitter', 'jitter branch lengths')]),
+
             ]
     return form_objects
 
@@ -295,23 +311,40 @@ def harmonic_split_transform(
 
 
 def get_response_content(fs):
-    A = g_upper_adjacency + g_upper_adjacency.T
-    L = (np.diag(np.sum(A, axis=1)) - A).astype(np.float64)
-    # define the number of pendant vertices (leaves)
-    p = 5
+    # read the user input
+    T, B, N = FtreeIO.newick_to_TBN(fs.newick)
+    # jitter branch lengths if requested
+    if fs.jitter:
+        mu = 0
+        sigma = 1e-5
+        for edge in B:
+            B[edge] *= math.exp(random.gauss(0, sigma))
+    # summarize the tree
+    leaves = Ftree.T_to_leaves(T)
+    internal = Ftree.T_to_internal_vertices(T)
+    vertices = leaves + internal
+    nleaves = len(leaves)
+    # define the schur complement laplacian matrix
+    G = Ftree.TB_to_L_schur(T, B, leaves)
     # define the fully connected schur complement graph as a Laplacian matrix
-    G = L[:p,:p] - ndot(L[:p,p:], np.linalg.pinv(L[p:,p:]), L[p:,:p])
     # init the tree reconstruction state
-    v_to_name = dict((v, 'P' + chr(ord('a') + v)) for v in range(p))
-    v_to_svs = dict((v, set([0])) for v in range(p))
-    sv_to_vs = {0 : set(range(p))}
+    v_to_name = {}
+    for v in leaves:
+        name = N.get(v, None)
+        if name is None:
+            name = 'P' + chr(ord('a') + v)
+        v_to_name[v] = name
+    v_to_svs = dict((v, set([0])) for v in leaves)
+    sv_to_vs = {0 : set(leaves)}
     edge_to_weight = {}
-    for pair in itertools.combinations(range(p), 2):
-        edge_to_weight[frozenset(pair)] = -G[pair]
+    for index_pair in itertools.combinations(range(nleaves), 2):
+        i, j = index_pair
+        leaf_pair = (leaves[i], leaves[j])
+        edge_to_weight[frozenset(leaf_pair)] = -G[index_pair]
     # pairs like (-(number of vertices in supervertex sv), supervertex sv)
     active_svs = set([0])
     # initialize the sources of unique vertex and supervertex identifiers
-    v_gen = itertools.count(5)
+    v_gen = itertools.count(max(leaves)+1)
     sv_gen = itertools.count(1)
     # write the output
     out = StringIO()
