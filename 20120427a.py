@@ -1,5 +1,5 @@
 """
-Visualize steps of an exact spectral reconstruction of a tree. [UNFINISHED]
+Visualize steps of an exact spectral reconstruction of a tree.
 """
 
 from StringIO import StringIO
@@ -151,6 +151,34 @@ def delta_wye_transform(
     sv_to_vs[sv_new_b] = set([vb, v_new])
     sv_to_vs[sv_new_c] = set([vc, v_new])
 
+def get_xy(sigma, u, v, f, g):
+    """
+    The returned x and y are scaled u and v.
+    @param sigma: singular value
+    @param u: singular unit vector
+    @param v: singular unit vector
+    @param f: fiedler subvector conformant to u
+    @param g: fiedler subvector conformant to v
+    @return: x, y
+    """
+    if not np.all(u > 0):
+        raise ValueError('input u vector must be positive')
+    if not np.all(v > 0):
+        raise ValueError('input u vector must be positive')
+    if not np.all(f < 0):
+        raise ValueError('input f vector must be negative')
+    if not np.all(g > 0):
+        raise ValueError('input g vector must be positive')
+    fu = np.dot(u, f)
+    gv = np.dot(v, g)
+    sum_u = np.sum(u)
+    sum_v = np.sum(v)
+    a = sigma * (sum_v - (gv / fu) * sum_u)
+    b = sigma * (sum_u - (fu / gv) * sum_v)
+    x = a * u
+    y = b * v
+    return x, y
+
 def harmonic_split_transform(
         sv_big, v_to_svs, sv_to_vs, edge_to_weight,
         v_new, sv_new_a, sv_new_b):
@@ -213,26 +241,22 @@ def harmonic_split_transform(
         raise ValueError('sign problem with u and v')
     # Decide how to partition the singular value between the two vectors.
     # This is where the harmonicity comes into play.
-    alpha = math.sqrt(-s[0] * np.dot(u, fa) / np.dot(v, fb))
-    beta = s[0] / alpha
-    x = u * alpha
-    y = u * beta
+    sigma = s[0]
+    x, y = get_xy(sigma, u, v, fa, fb)
     z = np.sum(x) + np.sum(y)
-    print 's[0]:', s[0]
-    print 'z:', z
     a_block_fail = False
     b_block_fail = False
     for i, j in itertools.combinations(range(na), 2):
         vi = vs_a[i]
         vj = vs_a[j]
         edge = frozenset((vi, vj))
-        if edge_to_weight[edge] < x[i] * x[j]:
+        if edge_to_weight[edge] < x[i] * x[j] / z:
             a_block_fail = True
     for i, j in itertools.combinations(range(nb), 2):
         vi = vs_b[i]
         vj = vs_b[j]
         edge = frozenset((vi, vj))
-        if edge_to_weight[edge] < y[i] * y[j]:
+        if edge_to_weight[edge] < y[i] * y[j] / z:
             b_block_fail = True
     if a_block_fail and b_block_fail:
         report_summary(L, neg_B)
@@ -255,17 +279,17 @@ def harmonic_split_transform(
         vi = vs_a[i]
         vj = vs_a[j]
         edge = frozenset((vi, vj))
-        edge_to_weight[edge] -= x[i] * x[j]
+        edge_to_weight[edge] -= x[i] * x[j] / z
     for i, j in itertools.combinations(range(nb), 2):
         vi = vs_b[i]
         vj = vs_b[j]
         edge = frozenset((vi, vj))
-        edge_to_weight[edge] -= y[i] * y[j]
+        edge_to_weight[edge] -= y[i] * y[j] / z
     # Set the edge weights to the new vertex.
     for xi, vi in zip(x, vs_a):
         edge = frozenset((vi, v_new))
         edge_to_weight[edge] = xi
-    for yi, vi in zip(x, vs_b):
+    for yi, vi in zip(y, vs_b):
         edge = frozenset((vi, v_new))
         edge_to_weight[edge] = yi
 
