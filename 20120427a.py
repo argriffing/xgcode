@@ -97,7 +97,8 @@ def get_svg(active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight):
             pnb = v_to_pydot_node[vb]
             if nvertices == 2:
                 # annotate the edge with the branch length
-                pydot_edge = pydot.Edge(pna, pnb, str(distance))
+                label = '%.3f' % distance
+                pydot_edge = pydot.Edge(pna, pnb, label=label)
             else:
                 # do not annotate the edge with the branch length
                 pydot_edge = pydot.Edge(pna, pnb)
@@ -116,11 +117,39 @@ def get_svg(active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight):
     svg_str = '\n'.join(svg_str.splitlines()[6:])
     return svg_str
 
-def delta_wye_transform():
+def delta_wye_transform(
+        sv_big, v_to_svs, sv_to_vs, edge_to_weight,
+        v_new, sv_new_a, sv_new_b, sv_new_c):
     """
     Transform a three-vertex supervertex to three two-vertex supervertices.
     """
-    raise NotImplementedError
+    # do some error checking
+    for v in sv_to_vs[sv_big]:
+        if sv_big not in v_to_svs[v]:
+            raise ValueError('vertex inclusion error')
+    # get the set of vertices
+    ord_vs = sorted(sv_to_vs[sv_big])
+    # update the weights
+    va, vb, vc = ord_vs
+    rc = 1 / edge_to_weight[frozenset((va, vb))]
+    ra = 1 / edge_to_weight[frozenset((vb, vc))]
+    rb = 1 / edge_to_weight[frozenset((vc, va))]
+    r1 = (rb*rc) / (ra + rb + rc)
+    r2 = (rc*ra) / (ra + rb + rc)
+    r3 = (ra*rb) / (ra + rb + rc)
+    edge_to_weight[frozenset((va, v_new))] = 1 / r1
+    edge_to_weight[frozenset((vb, v_new))] = 1 / r2
+    edge_to_weight[frozenset((vc, v_new))] = 1 / r3
+    # update the set of supervertices associated with each vertex
+    for v in ord_vs:
+        v_to_svs[v].remove(sv_big)
+    v_to_svs[va].add(sv_new_a)
+    v_to_svs[vb].add(sv_new_b)
+    v_to_svs[vc].add(sv_new_c)
+    v_to_svs[v_new] = set([sv_new_a, sv_new_b, sv_new_c])
+    sv_to_vs[sv_new_a] = set([va, v_new])
+    sv_to_vs[sv_new_b] = set([vb, v_new])
+    sv_to_vs[sv_new_c] = set([vc, v_new])
 
 def harmonic_split_transform(
         sv_big, v_to_svs, sv_to_vs, edge_to_weight,
@@ -188,6 +217,9 @@ def harmonic_split_transform(
     beta = s[0] / alpha
     x = u * alpha
     y = u * beta
+    z = np.sum(x) + np.sum(y)
+    print 's[0]:', s[0]
+    print 'z:', z
     a_block_fail = False
     b_block_fail = False
     for i, j in itertools.combinations(range(na), 2):
@@ -272,20 +304,25 @@ def get_response_content(fs):
         # svs can be decomposed independently in arbitrary order
         alpha_index_gen = itertools.count()
         for sv in active_svs:
-            if len(sv_to_vs[sv]) > 3:
-                # decompose the large supervertex
+            if len(sv_to_vs[sv]) > 2:
                 v_new = next(v_gen)
                 sv_new_a = next(sv_gen)
                 sv_new_b = next(sv_gen)
                 alpha_index = next(alpha_index_gen)
                 alpha = chr(ord('a') + alpha_index)
                 v_to_name[v_new] = 'R%s%s' % (count_pos, alpha)
-                #v_to_svs[v_new] = set([sv_new_a, sv_new_b])
-                harmonic_split_transform(
-                        sv, v_to_svs, sv_to_vs, edge_to_weight,
-                        v_new, sv_new_a, sv_new_b)
                 next_active_svs.add(sv_new_a)
                 next_active_svs.add(sv_new_b)
+                if len(sv_to_vs[sv]) == 3:
+                    sv_new_c = next(sv_gen)
+                    delta_wye_transform(
+                            sv, v_to_svs, sv_to_vs, edge_to_weight,
+                            v_new, sv_new_a, sv_new_b, sv_new_c)
+                    next_active_svs.add(sv_new_c)
+                else:
+                    harmonic_split_transform(
+                            sv, v_to_svs, sv_to_vs, edge_to_weight,
+                            v_new, sv_new_a, sv_new_b)
             else:
                 next_active_svs.add(sv)
         # if the set of active svs has not changed then we are done
