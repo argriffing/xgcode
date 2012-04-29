@@ -1,5 +1,9 @@
 """
-Visualize steps of a spectral reconstruction of a graph approximating a tree. [UNFINISHED]
+Visualize steps of a spectral reconstruction of a graph approximating a tree.
+
+Independent random exponentially distributed errors are added
+to each edge weight of the Schur complement Laplacian matrix
+before tree reconstruction is attempted.
 """
 
 from StringIO import StringIO
@@ -29,9 +33,9 @@ def get_form():
                 #g_default_newick),
                 #g_felsenstein_tree_string),
                 NewickIO.rooted_example_tree),
-            Form.CheckGroup('options', 'pre-processing options', [
-                Form.CheckItem('jitter', 'jitter branch lengths')]),
-
+            Form.Float('weight_delta_mu',
+                'add random weight errors with this mean',
+                '0.01', low_exclusive=0),
             ]
     return form_objects
 
@@ -86,13 +90,8 @@ def get_svg(active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight):
 
 def get_response_content(fs):
     # read the user input
+    weight_delta_mu = fs.weight_delta_mu
     T, B, N = FtreeIO.newick_to_TBN(fs.newick)
-    # jitter branch lengths if requested
-    if fs.jitter:
-        mu = 0
-        sigma = 1e-5
-        for edge in B:
-            B[edge] *= math.exp(random.gauss(0, sigma))
     # summarize the tree
     leaves = Ftree.T_to_leaves(T)
     internal = Ftree.T_to_internal_vertices(T)
@@ -100,6 +99,15 @@ def get_response_content(fs):
     nleaves = len(leaves)
     # define the schur complement laplacian matrix
     G = Ftree.TB_to_L_schur(T, B, leaves)
+    # add some random amount to each edge weight
+    for i in range(nleaves):
+        for j in range(i):
+            rate = 1 / fs.weight_delta_mu
+            x = random.expovariate(rate)
+            G[i, j] -= x
+            G[j, i] -= x
+            G[i, i] += x
+            G[j, j] += x
     # define the fully connected schur complement graph as a Laplacian matrix
     # init the tree reconstruction state
     v_to_name = {}

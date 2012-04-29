@@ -113,6 +113,8 @@ def harmonic_split_transform(
         edge = frozenset((vi, vj))
         if edge_to_weight[edge] < y[i] * y[j] / z:
             b_block_fail = True
+    if a_block_fail or b_block_fail:
+        raise ValueError('negative edge weight')
     if a_block_fail and b_block_fail:
         report_summary(L, neg_B)
         raise ValueError('inducing unavoidable negative edge weight')
