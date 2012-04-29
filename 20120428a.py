@@ -1,5 +1,5 @@
 """
-Visualize steps of an exact spectral reconstruction of a tree.
+Visualize steps of a spectral reconstruction of a graph approximating a tree. [UNFINISHED]
 """
 
 from StringIO import StringIO
@@ -19,18 +19,6 @@ import NewickIO
 
 g_default_newick = '((1:1, 2:0.5):1, (3:0.333333333333, 4:0.5):1, 5:1);'
 g_felsenstein_tree_string = '(((a:0.3, b:0.1):0.25, c:0.65):0.2, (d:0.1, e:0.1):0.7);'
-
-"""
-g_upper_adjacency = np.array([
-    [0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 0, 0, 0, 0, 2, 0, 0],
-    [0, 0, 0, 0, 0, 0, 3, 0],
-    [0, 0, 0, 0, 0, 0, 2, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 0, 0, 0, 0]])
-"""
 
 def get_form():
     """

@@ -9,9 +9,7 @@ import random
 
 import numpy as np
 import scipy
-
-from SnippetUtil import HandlingError
-import SnippetUtil
+from scipy import optimize
 
 
 # Table 3 in Cavalli-Sforza and Edwards (1967),
