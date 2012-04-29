@@ -31,7 +31,9 @@ import math
 import numpy as np
 import scipy
 from scipy import linalg
+import pydot
 
+import Util
 from MatrixUtil import ndot
 
 def harmonic_split_transform(
@@ -181,6 +183,107 @@ def delta_wye_transform(
     sv_to_vs[sv_new_a] = set([va, v_new])
     sv_to_vs[sv_new_b] = set([vb, v_new])
     sv_to_vs[sv_new_c] = set([vc, v_new])
+
+def get_svg_star_components(
+        active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight):
+    """
+    Components are actually fully connected graphs.
+    But they can be represented more abstractly as star graphs,
+    to reduce the complexity of the visualization.
+    """
+    # get the set of active vertices
+    vs = set()
+    for sv in active_svs:
+        vs.update(sv_to_vs[sv])
+    # initialize the graph
+    pydot_graph = pydot.Dot(
+            graph_type='graph',
+            overlap='0',
+            sep='0.01',
+            size='8, 8',
+            )
+    # define the pydot node objects with the right names
+    v_to_pydot_node = dict((v, pydot.Node(v_to_name[v])) for v in vs)
+    # define the supervertex pydot node objects
+    sv_to_pydot_node = {}
+    for sv in active_svs:
+        sv_to_pydot_node[sv] = pydot.Node('S' + str(sv))
+    # define and add the edges
+    edge_to_pydot_edge = {}
+    for sv, sv_node in sv_to_pydot_node.items():
+        nvertices = len(sv_to_vs[sv])
+        if nvertices > 2:
+            pydot_graph.add_node(sv_node)
+            for v in sv_to_vs[sv]:
+                pydot_edge = pydot.Edge(sv_node, v_to_pydot_node[v])
+                pydot_graph.add_edge(pydot_edge)
+        elif nvertices == 2:
+            pair = sv_to_vs[sv]
+            edge = frozenset(pair)
+            va, vb = pair
+            distance = 1 / edge_to_weight[edge]
+            pna = v_to_pydot_node[va]
+            pnb = v_to_pydot_node[vb]
+            label = '%.3f' % distance
+            pydot_edge = pydot.Edge(pna, pnb, label=label)
+            pydot_graph.add_edge(pydot_edge)
+    # add the nodes
+    for pydot_node in v_to_pydot_node.values():
+        pydot_graph.add_node(pydot_node)
+    # do the physical layout and create the svg string
+    tmp_path = Util.create_tmp_file(data=None, prefix='tmp', suffix='.svg')
+    pydot_graph.write_svg(tmp_path, prog='neato')
+    with open(tmp_path) as fin:
+        svg_str = fin.read()
+    # return the svg except for the first few lines
+    svg_str = '\n'.join(svg_str.splitlines()[6:])
+    return svg_str
+
+def get_svg(active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight):
+    # get the set of active vertices
+    vs = set()
+    for sv in active_svs:
+        vs.update(sv_to_vs[sv])
+    # initialize the graph
+    pydot_graph = pydot.Dot(
+            graph_type='graph',
+            overlap='0',
+            sep='0.01',
+            size='8, 8',
+            )
+    # define the pydot node objects with the right names
+    v_to_pydot_node = dict((v, pydot.Node(v_to_name[v])) for v in vs)
+    # define the edges
+    edge_to_pydot_edge = {}
+    for sv in active_svs:
+        nvertices = len(sv_to_vs[sv])
+        for pair in itertools.combinations(sv_to_vs[sv], 2):
+            edge = frozenset(pair)
+            distance = 1 / edge_to_weight[edge]
+            va, vb = pair
+            pna = v_to_pydot_node[va]
+            pnb = v_to_pydot_node[vb]
+            if nvertices == 2:
+                # annotate the edge with the branch length
+                label = '%.3f' % distance
+                pydot_edge = pydot.Edge(pna, pnb, label=label)
+            else:
+                # do not annotate the edge with the branch length
+                pydot_edge = pydot.Edge(pna, pnb)
+            edge_to_pydot_edge[edge] = pydot_edge
+    # add the nodes and edges
+    for pydot_node in v_to_pydot_node.values():
+        pydot_graph.add_node(pydot_node)
+    for pydot_edge in edge_to_pydot_edge.values():
+        pydot_graph.add_edge(pydot_edge)
+    # do the physical layout and create the svg string
+    tmp_path = Util.create_tmp_file(data=None, prefix='tmp', suffix='.svg')
+    pydot_graph.write_svg(tmp_path, prog='neato')
+    with open(tmp_path) as fin:
+        svg_str = fin.read()
+    # return the svg except for the first few lines
+    svg_str = '\n'.join(svg_str.splitlines()[6:])
+    return svg_str
 
 def _get_xy(sigma, u, v, f, g):
     """
