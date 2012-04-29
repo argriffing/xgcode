@@ -43,58 +43,18 @@ def get_form():
                 NewickIO.rooted_example_tree),
             Form.CheckGroup('options', 'pre-processing options', [
                 Form.CheckItem('jitter', 'jitter branch lengths')]),
+            Form.RadioGroup('component_vis',
+                'connected component visualization', [
+                    Form.RadioItem('vis_star',
+                        'an abstract star graph visualization', True),
+                    Form.RadioItem('vis_complete',
+                        'a less abstract complete graph visualization')]),
 
             ]
     return form_objects
 
 def get_form_out():
     return FormOut.Html('reconstruction')
-
-def get_svg(active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight):
-    # get the set of active vertices
-    vs = set()
-    for sv in active_svs:
-        vs.update(sv_to_vs[sv])
-    # initialize the graph
-    pydot_graph = pydot.Dot(
-            graph_type='graph',
-            overlap='0',
-            sep='0.01',
-            size='8, 8',
-            )
-    # define the pydot node objects with the right names
-    v_to_pydot_node = dict((v, pydot.Node(v_to_name[v])) for v in vs)
-    # define the edges
-    edge_to_pydot_edge = {}
-    for sv in active_svs:
-        nvertices = len(sv_to_vs[sv])
-        for pair in itertools.combinations(sv_to_vs[sv], 2):
-            edge = frozenset(pair)
-            distance = 1 / edge_to_weight[edge]
-            va, vb = pair
-            pna = v_to_pydot_node[va]
-            pnb = v_to_pydot_node[vb]
-            if nvertices == 2:
-                # annotate the edge with the branch length
-                label = '%.3f' % distance
-                pydot_edge = pydot.Edge(pna, pnb, label=label)
-            else:
-                # do not annotate the edge with the branch length
-                pydot_edge = pydot.Edge(pna, pnb)
-            edge_to_pydot_edge[edge] = pydot_edge
-    # add the nodes and edges
-    for pydot_node in v_to_pydot_node.values():
-        pydot_graph.add_node(pydot_node)
-    for pydot_edge in edge_to_pydot_edge.values():
-        pydot_graph.add_edge(pydot_edge)
-    # do the physical layout and create the svg string
-    tmp_path = Util.create_tmp_file(data=None, prefix='tmp', suffix='.svg')
-    pydot_graph.write_svg(tmp_path, prog='neato')
-    with open(tmp_path) as fin:
-        svg_str = fin.read()
-    # return the svg except for the first few lines
-    svg_str = '\n'.join(svg_str.splitlines()[6:])
-    return svg_str
 
 def get_response_content(fs):
     # read the user input
@@ -139,8 +99,12 @@ def get_response_content(fs):
     for count_pos in itertools.count(1):
         # add the graph rendering before the decomposition at this stage
         print >> out, '<div>'
-        print >> out, get_svg(
-                active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight)
+        if fs.vis_star:
+            print >> out, nhj.get_svg_star_components(
+                    active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight)
+        elif fs.vis_complete:
+            print >> out, nhj.get_svg(
+                    active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight)
         print >> out, '</div>'
         # update the splits
         next_active_svs = set()
