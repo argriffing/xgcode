@@ -1172,7 +1172,8 @@ class Matrix:
         # return the list of lines
         return lines
 
-    def process_cmdline_dict(self, d_in, args_out):
+    def process_cmdline_dict(self, d_in, d_out):
+        #FIXME this had a typo and has apparently never been used successfully
         filename = d_in.get(self.label, None)
         if filename is None:
             value = self.default_matrix
