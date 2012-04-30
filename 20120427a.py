@@ -43,6 +43,9 @@ def get_form():
                 NewickIO.rooted_example_tree),
             Form.CheckGroup('options', 'pre-processing options', [
                 Form.CheckItem('jitter', 'jitter branch lengths')]),
+            Form.RadioGroup('split_style', 'split strategy', [
+                Form.RadioItem('spectral_split', 'spectral', True),
+                Form.RadioItem('nj_split', 'neighbor joining')]),
             Form.RadioGroup('component_vis',
                 'connected component visualization', [
                     Form.RadioItem('vis_star',
@@ -70,9 +73,6 @@ def get_response_content(fs):
     internal = Ftree.T_to_internal_vertices(T)
     vertices = leaves + internal
     nleaves = len(leaves)
-    # define the schur complement laplacian matrix
-    G = Ftree.TB_to_L_schur(T, B, leaves)
-    # define the fully connected schur complement graph as a Laplacian matrix
     # init the tree reconstruction state
     v_to_name = {}
     for v in leaves:
@@ -82,11 +82,20 @@ def get_response_content(fs):
         v_to_name[v] = name
     v_to_svs = dict((v, set([0])) for v in leaves)
     sv_to_vs = {0 : set(leaves)}
+    # define edge weights (used only for spectral split strategy)
+    G = Ftree.TB_to_L_schur(T, B, leaves)
     edge_to_weight = {}
     for index_pair in itertools.combinations(range(nleaves), 2):
         i, j = index_pair
         leaf_pair = (leaves[i], leaves[j])
         edge_to_weight[frozenset(leaf_pair)] = -G[index_pair]
+    # define pairwise distances (used only for nj split strategy)
+    D = Ftree.TB_to_D(T, B, leaves)
+    edge_to_distance = {}
+    for index_pair in itertools.combinations(range(nleaves), 2):
+        i, j = index_pair
+        leaf_pair = (leaves[i], leaves[j])
+        edge_to_distance[frozenset(leaf_pair)] = D[index_pair]
     # pairs like (-(number of vertices in supervertex sv), supervertex sv)
     active_svs = set([0])
     # initialize the sources of unique vertex and supervertex identifiers
@@ -98,13 +107,21 @@ def get_response_content(fs):
     print >> out, '<body>'
     for count_pos in itertools.count(1):
         # add the graph rendering before the decomposition at this stage
+        if fs.nj_split:
+            edge_to_branch_weight = {}
+            for k, v in edge_to_distance.items():
+                edge_to_branch_weight[k] = 1 / v
+        elif fs.spectral_split:
+            edge_to_branch_weight = edge_to_weight
         print >> out, '<div>'
         if fs.vis_star:
             print >> out, nhj.get_svg_star_components(
-                    active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight)
+                    active_svs, sv_to_vs, v_to_name, v_to_svs,
+                    edge_to_branch_weight)
         elif fs.vis_complete:
             print >> out, nhj.get_svg(
-                    active_svs, sv_to_vs, v_to_name, v_to_svs, edge_to_weight)
+                    active_svs, sv_to_vs, v_to_name, v_to_svs,
+                    edge_to_branch_weight)
         print >> out, '</div>'
         # update the splits
         next_active_svs = set()
@@ -120,16 +137,23 @@ def get_response_content(fs):
                 v_to_name[v_new] = 'R%s%s' % (count_pos, alpha)
                 next_active_svs.add(sv_new_a)
                 next_active_svs.add(sv_new_b)
-                if len(sv_to_vs[sv]) == 3:
-                    sv_new_c = next(sv_gen)
-                    nhj.delta_wye_transform(
-                            sv, v_to_svs, sv_to_vs, edge_to_weight,
-                            v_new, sv_new_a, sv_new_b, sv_new_c)
-                    next_active_svs.add(sv_new_c)
-                else:
-                    nhj.harmonic_split_transform(
-                            sv, v_to_svs, sv_to_vs, edge_to_weight,
-                            v_new, sv_new_a, sv_new_b)
+                if fs.spectral_split:
+                    if len(sv_to_vs[sv]) == 3:
+                        sv_new_c = next(sv_gen)
+                        nhj.delta_wye_transform(
+                                sv, v_to_svs, sv_to_vs, edge_to_weight,
+                                v_new, sv_new_a, sv_new_b, sv_new_c)
+                        next_active_svs.add(sv_new_c)
+                    else:
+                        nhj.harmonic_split_transform(
+                                sv, v_to_svs, sv_to_vs, edge_to_weight,
+                                v_new, sv_new_a, sv_new_b)
+                elif fs.nj_split:
+                    sv_new_big = next(sv_gen)
+                    nhj.nj_split_transform(
+                            sv, v_to_svs, sv_to_vs, edge_to_distance,
+                            v_new, sv_new_big, sv_new_a, sv_new_b)
+                    next_active_svs.add(sv_new_big)
             else:
                 next_active_svs.add(sv)
         # if the set of active svs has not changed then we are done

@@ -36,6 +36,40 @@ import pydot
 import Util
 from MatrixUtil import ndot
 
+def mkdub(a, b):
+    return frozenset((a, b))
+
+def nj_split_transform(
+        sv_big, v_to_svs, sv_to_vs, edge_to_distance,
+        v_new, sv_new_big, sv_new_a, sv_new_b):
+    """
+    Use neighbor joining.
+    @param sv_big: the supervertex to split
+    @param v_to_svs: vertex to set of containing supervertices
+    @param sv_to_vs: supervertex to set of contained vertices
+    @param edge_to_distance: vertex doubleton to positive distance
+    @param v_new: new vertex to be added
+    @param sv_new_big: new supervertex
+    @param sv_new_a: new supervertex
+    @param sv_new_b: new supervertex
+    """
+    vs = sv_to_vs[sv_big]
+    va, vb, d_new = _nj(vs, edge_to_distance, v_new)
+    for v, distance in d_new.items():
+        edge_to_distance[mkdub(v, v_new)] = d_new[v]
+    # update the vertex-to-supervertex associations
+    for v in vs:
+        v_to_svs[v].remove(sv_big)
+        if v not in (va, vb):
+            v_to_svs[v].add(sv_new_big)
+    v_to_svs[va].add(sv_new_a)
+    v_to_svs[vb].add(sv_new_b)
+    v_to_svs[v_new] = set([sv_new_big, sv_new_a, sv_new_b])
+    # update the supervertex-to-vertex associations
+    sv_to_vs[sv_new_big] = set(list(vs) + [v_new]) - set((va, vb))
+    sv_to_vs[sv_new_a] = set((v_new, va))
+    sv_to_vs[sv_new_b] = set((v_new, vb))
+
 def harmonic_split_transform(
         sv_big, v_to_svs, sv_to_vs, edge_to_weight,
         v_new, sv_new_a, sv_new_b):
@@ -50,7 +84,7 @@ def harmonic_split_transform(
     @param v_to_svs: vertex to set of containing supervertices
     @param sv_to_vs: supervertex to set of contained vertices
     @param edge_to_weight: vertex doubleton to positive edge weight
-    @param v_new: new vertex to be
+    @param v_new: new vertex to be added
     @param sv_new_a: new supervertex
     @param sv_new_b: new supervertex
     """
@@ -338,6 +372,40 @@ def _delta_to_wye_conductor(ca, cb, cc):
     c2 = numerator / cb
     c3 = numerator / cc
     return c1, c2, c3
+
+def _nj(vs, edge_to_d, v_new):
+    """
+    Do an iteration of neighbor joining.
+    Does not modify inputs.
+    @param vs: a collection of vertices
+    @param edge_to_d: map from unordered vertex pair to distance
+    @param v_new: the new vertex to be added
+    @return: va, vb, map from vertex to distance-to-v_new
+    """
+    # get the best pair of neighbors
+    v_to_dsum = {}
+    for a in vs:
+        v_to_dsum[a] = sum(edge_to_d[mkdub(a, b)] for b in vs if b != a)
+    n = len(vs)
+    q_min = None
+    best_pair = None
+    for a, b in itertools.combinations(vs, 2):
+        q = (n - 2) * edge_to_d[mkdub(a, b)] - v_to_dsum[a] - v_to_dsum[b]
+        if q_min is None or q < q_min:
+            q_min = q
+            best_pair = (a, b)
+    f, g = best_pair
+    # get distances to the new vertex
+    d_new = {}
+    d_fg = edge_to_d[mkdub(f, g)]
+    d_new[f] = d_fg / 2.0 + (1.0 / (2*(n-2))) * (v_to_dsum[f] - v_to_dsum[g])
+    d_new[g] = d_fg / 2.0 + (1.0 / (2*(n-2))) * (v_to_dsum[g] - v_to_dsum[f])
+    for v in vs:
+        if v not in (f, g):
+            d_new[v] = 0
+            d_new[v] += (edge_to_d[mkdub(v, f)] - d_new[f]) / 2.0
+            d_new[v] += (edge_to_d[mkdub(v, g)] - d_new[g]) / 2.0
+    return f, g, d_new
 
 
 
