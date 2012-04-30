@@ -13,6 +13,8 @@ and because they use the symmetry constraint to guarantee
 eigenvalues with no imaginary component.
 """
 
+import unittest
+
 import numpy as np
 import scipy
 from scipy import linalg

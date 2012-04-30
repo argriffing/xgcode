@@ -13,9 +13,11 @@ import splitalg
 from splitalg import mksplit
 
 
+# TODO move the content of the "tests" into the command line of web scripts
+# because they are not actually tests and they are slowing
+# down the automated testing
 
-# TODO
-# this is unused but maybe do not delete it
+# TODO this is unused but maybe do not delete it
 def split_to_full_splits(split, N):
     """
     Get all informative full splits compatible with the given partial split.
@@ -306,7 +308,7 @@ class TestMCTree(unittest.TestCase):
             print q
         print
 
-    def test_mc_trees(self):
+    def foo_test_mc_trees(self):
         print 'testing mc trees:'
         k = 4
         for i in range(4, 4+k):
