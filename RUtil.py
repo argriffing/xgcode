@@ -12,6 +12,7 @@ import os
 import tempfile
 import unittest
 import subprocess
+from collections import defaultdict
 
 import Util
 

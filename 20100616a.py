@@ -1,14 +1,12 @@
-"""Combine R tables.
+"""
+Combine R tables.
 """
 
 from StringIO import StringIO
-import os
 
-from SnippetUtil import HandlingError
 import Form
 import FormOut
-import Util
-import Carbone
+import RUtil
 import iterutils
 
 g_tags = ['pca:misc']
