@@ -14,7 +14,6 @@ import Form
 import FormOut
 from MatrixUtil import ndot
 import mrate
-import divtime
 import combobreaker
 
 
@@ -78,7 +77,7 @@ class MyOpt:
         """
         v_target = X_to_distn(X)
         v_new = (1 - self.t) * self.v + self.t * v_target
-        R = divtime.to_gtr_halpern_bruno(self.M, v_new)
+        R = mrate.to_gtr_halpern_bruno(self.M, v_new)
         if not np.allclose(v_new, mrate.R_to_distn(R)):
             print v_new
             print mrate.R_to_distn(R)
@@ -95,7 +94,7 @@ def get_response_content(fs):
     # sample the initial mutation rate matrix
     S = sample_symmetric_rate_matrix(n)
     v = sample_distribution(n)
-    M = divtime.to_gtr_halpern_bruno(S, v)
+    M = mrate.to_gtr_halpern_bruno(S, v)
     if not np.allclose(v, mrate.R_to_distn(M)):
         raise ValueError('stationary distribution error')
     print >> out, 't:', t
@@ -127,7 +126,7 @@ def get_response_content(fs):
         print >> out, v_new - v_old
         print >> out
         # compute the next rate matrix and update its stationary distribution
-        R = divtime.to_gtr_halpern_bruno(R, v_new)
+        R = mrate.to_gtr_halpern_bruno(R, v_new)
         if not np.allclose(v_new, mrate.R_to_distn(R)):
             raise ValueError('stationary distribution error')
         v_old = v_new

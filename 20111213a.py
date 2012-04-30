@@ -14,7 +14,6 @@ import Form
 import FormOut
 from MatrixUtil import ndot
 import mrate
-import divtime
 import combobreaker
 
 
@@ -78,7 +77,7 @@ class MyOpt:
         """
         v_target = X_to_distn(X)
         v_new = (1 - self.t) * self.v + self.t * v_target
-        R = divtime.to_gtr_halpern_bruno(self.M, v_new)
+        R = mrate.to_gtr_halpern_bruno(self.M, v_new)
         if not np.allclose(v_new, mrate.R_to_distn(R)):
             raise ValueError('stationary distribution error')
         r_sel = mrate.R_to_relaxation_time(R)
@@ -117,7 +116,7 @@ class Checker:
         # sample a fairly generic GTR mutation rate matrix
         S = sample_symmetric_rate_matrix(n)
         v = sample_distribution(n)
-        M = divtime.to_gtr_halpern_bruno(S, v)
+        M = mrate.to_gtr_halpern_bruno(S, v)
         # look at the fiedler-like eigenvector of the mutation rate matrix
         r_recip, fiedler = mrate._R_to_eigenpair(M)
         r_mut = 1 / r_recip
@@ -128,7 +127,7 @@ class Checker:
         v_target[state_min] = 0.5
         v_target[state_max] = 0.5
         v_new = (1 - self.t) * v + self.t * v_target
-        R = divtime.to_gtr_halpern_bruno(M, v_new)
+        R = mrate.to_gtr_halpern_bruno(M, v_new)
         r_sel = mrate.R_to_relaxation_time(R)
         # the mutation-selection balance should have longer relaxation time
         #if r_sel < r_mut:

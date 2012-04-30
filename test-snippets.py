@@ -4,6 +4,7 @@ This script is supposed to test the python snippets
 using the default html parameters.
 """
 
+import argparse
 import os
 import re
 import sys
@@ -31,9 +32,10 @@ with warnings.catch_warnings():
     warnings.simplefilter('error')
 """
 
-def process_module_name(module_name):
+def process_module_name(module_name, bad_modules):
     """
     @param module_name: name of the snippet module to try to run
+    @param bad_modules: a collection of disallowed module names
     @return: module, success
     """
     module = None
@@ -48,6 +50,9 @@ def process_module_name(module_name):
     except:
         error_message = str(sys.exc_info()[1])
         msg = 'error importing the snippet: ' + error_message
+        raise SnippetTestError(msg)
+    if any(hasattr(module, x) for x in bad_modules):
+        msg = 'snippet imports a disallowed module'
         raise SnippetTestError(msg)
     try:
         response = module.get_form()
@@ -94,7 +99,8 @@ def process_module_name(module_name):
             return module, True
     return module, False
 
-def main():
+def main(args):
+    bad_modules = args.bad_modules.split()
     # first load the module names
     snippet_module_names = []
     for filename in sorted(os.listdir('.')):
@@ -111,7 +117,7 @@ def main():
         module = None
         success = False
         try:
-            module, success = process_module_name(module_name)
+            module, success = process_module_name(module_name, bad_modules)
         except SnippetTestError as e:
             print module_name, ':', e
         if success:
@@ -121,7 +127,6 @@ def main():
         if module is not None:
             del module
     print success_count, 'snippets passed without an error'
-
 
 
 class MockFieldStorage:
@@ -153,5 +158,8 @@ class MockFieldStorage:
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--bad_modules', type=str, default='',
+            help='do not test snippets that import these modules')
+    main(parser.parse_args())
 

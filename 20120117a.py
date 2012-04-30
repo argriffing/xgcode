@@ -57,7 +57,7 @@ def get_response_content(fs):
     # sample a random rate matrix
     v = divtime.sample_distribution(n)
     S = divtime.sample_symmetric_rate_matrix(n)
-    R = divtime.to_gtr_halpern_bruno(S, v)
+    R = mrate.to_gtr_halpern_bruno(S, v)
     # get some properties of the rate matrix
     distn = mrate.R_to_distn(R)
     spectrum = np.linalg.eigvalsh(mrate.symmetrized(R))

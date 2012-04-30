@@ -54,7 +54,7 @@ def get_response_content(fs):
     # sample a random reversible CTMC rate matrix
     v = divtime.sample_distribution(n)
     S = divtime.sample_symmetric_rate_matrix(n)
-    R = divtime.to_gtr_halpern_bruno(S, v)
+    R = mrate.to_gtr_halpern_bruno(S, v)
     distn = mrate.R_to_distn(R)
     spectrum = scipy.linalg.eigvalsh(mrate.symmetrized(R))
     print >> out, 'random reversible CTMC rate matrix:'

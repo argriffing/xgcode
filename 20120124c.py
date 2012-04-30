@@ -13,7 +13,6 @@ import Form
 import FormOut
 from MatrixUtil import ndot
 import mrate
-import divtime
 import ctmcmi
 
 def get_form():
@@ -74,7 +73,7 @@ def get_response_content(fs):
     print >> out, 'target stationary distribution:'
     print >> out, p_target
     print >> out
-    Q = divtime.to_gtr_halpern_bruno(M, p_target)
+    Q = mrate.to_gtr_halpern_bruno(M, p_target)
     print >> out, 'mutation-selection balance rate matrix:'
     print >> out, Q
     print >> out

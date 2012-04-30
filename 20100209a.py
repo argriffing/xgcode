@@ -1,4 +1,5 @@
-"""Convert multiple filtered pileup files to observation files for HMM.
+"""
+Convert multiple filtered pileup files to observation files for HMM.
 
 Each output file has information from a single chromosome.
 Input columns are
@@ -25,7 +26,6 @@ from StringIO import StringIO
 from contextlib import nested
 from multiprocessing import Pool
 import os
-
 import argparse
 
 from SnippetUtil import HandlingError

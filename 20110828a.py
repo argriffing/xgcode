@@ -8,6 +8,8 @@ and it is meant to help look for a certain linear algebra proof.
 import textwrap
 from StringIO import StringIO
 
+import numpy as np
+
 import Form
 import FormOut
 
