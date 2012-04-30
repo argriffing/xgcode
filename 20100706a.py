@@ -1,4 +1,5 @@
-"""Scatter plot 3D given an R table with two categorical variables.
+"""
+Scatter plot 3D given an R table with two categorical variables.
 
 Possibly allow multiple output types when run from the command line.
 For example it could write the R script to a user named file
@@ -7,7 +8,6 @@ without running it.
 
 from StringIO import StringIO
 import os
-import tempfile
 import colorsys
 
 import argparse
@@ -325,34 +325,27 @@ def process(args, table_lines):
     rtable = RUtil.RTable(table_lines)
     header_row = rtable.headers
     data_rows = rtable.data
-    # Do a more stringent check of the column headers.
-    for h in header_row:
-        if not Carbone.is_valid_header(h):
-            msg = 'invalid column header: %s' % h
-            raise ValueError(msg)
+    Carbone.validate_headers(header_row)
     # Read the relevant columns and their labels.
     plot_info = PlotInfo(args, header_row, data_rows)
     # Get info for the temporary data
     augmented_lines = plot_info.get_augmented_table_lines()
     # Create a temporary data table file for R.
-    f_temp_table = tempfile.NamedTemporaryFile(delete=False)
-    print >> f_temp_table, '\n'.join(augmented_lines)
-    f_temp_table.close()
+    table_string = '\n'.join(augmented_lines)
+    temp_table_name = Util.create_tmp_file(table_string, suffix='.table')
     # Create a temporary pathname for the plot created by R.
     temp_plot_name = Util.get_tmp_filename()
     # Create a temporary R script file.
-    f_temp_script = tempfile.NamedTemporaryFile(delete=False)
-    script = plot_info.get_script(args, temp_plot_name, f_temp_table.name)
-    print >> f_temp_script, script
-    f_temp_script.close()
+    script = plot_info.get_script(args, temp_plot_name, temp_table_name)
+    temp_script_name = Util.create_tmp_file(script, suffix='.R')
     # Call R.
-    retcode, r_out, r_err = RUtil.run(f_temp_script.name)
+    retcode, r_out, r_err = RUtil.run(temp_script_name)
     if retcode:
         raise ValueError('R error:\n' + r_err)
     # Delete the temporary data table file.
-    os.unlink(f_temp_table.name)
+    os.unlink(temp_table_name)
     # Delete the temporary script file.
-    os.unlink(f_temp_script.name)
+    os.unlink(temp_script_name)
     # Read the image file.
     try:
         with open(temp_plot_name, 'rb') as fin:
@@ -363,3 +356,4 @@ def process(args, table_lines):
     os.unlink(temp_plot_name)
     # Return the image data as a string.
     return image_data
+

@@ -4,7 +4,6 @@ Visualize an internal state of a distance based tree reconstruction algorithm.
 """
 
 from StringIO import StringIO
-import tempfile
 
 import numpy as np
 
@@ -62,7 +61,7 @@ def get_image_string(D, ordered_labels, iteration):
         else:
             ValueError('no decomposible node was found')
     # define the temporary filename to be used by pygraphviz
-    filename = tempfile.mktemp() + '.png'
+    filename = Util.get_tmp_filename(suffix='.png')
     # get the pygraphviz graph that we want to draw
     G = treegraph.get_pygraphviz_graph(ordered_labels)
     # try to prevent the nodes from overlapping when they are drawn

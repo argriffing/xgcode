@@ -47,11 +47,7 @@ def get_response_content(fs):
     rtable = RUtil.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
-    # Do a more stringent check of the column headers.
-    for h in header_row:
-        if not Carbone.is_valid_header(h):
-            msg = 'invalid column header: %s' % h
-            raise ValueError(msg)
+    Carbone.validate_headers(header_row)
     # check requested variable names as column headers
     bad_indep_names = set(indep) - set(header_row)
     if bad_indep_names:

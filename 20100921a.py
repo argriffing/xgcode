@@ -1,4 +1,5 @@
-"""Compute the Fisher exact test using R.
+"""
+Compute the Fisher exact test using R.
 """
 
 from StringIO import StringIO
@@ -39,11 +40,7 @@ def get_response_content(fs):
     rtable = RUtil.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
-    # Do a more stringent check of the column headers.
-    for h in header_row:
-        if not Carbone.is_valid_header(h):
-            msg = 'invalid column header: %s' % h
-            raise ValueError(msg)
+    Carbone.validate_headers(header_row)
     # check requested variable names as column headers
     if fs.var_a not in header_row:
         msg = 'the first variable name is not column header'

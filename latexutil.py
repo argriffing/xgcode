@@ -7,10 +7,10 @@ It seems like the png files made by ghostscript are not so great.
 """
 
 import unittest
-import tempfile
 import subprocess
 import os
 
+import Util
 
 LATEXFORMAT_TEX = 'tex'
 LATEXFORMAT_PDF = 'pdf'
@@ -137,10 +137,7 @@ def _create_temp_pdf_file(latex_text, output_format='pdf'):
     @return: the base of the path name of a temporary pdf file
     """
     # write a named temporary latex file
-    fd, pathname = tempfile.mkstemp(prefix='webtex', dir='/tmp', text=True)
-    fout = os.fdopen(fd, 'w+b')
-    fout.write(latex_text)
-    fout.close()
+    pathname = Util.create_tmp_file(latex_text, prefix='webtex')
     # convert the file to a pdf
     args = [
             '/usr/bin/pdflatex',
@@ -363,3 +360,4 @@ class TestLatexUtil(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

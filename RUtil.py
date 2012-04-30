@@ -9,7 +9,6 @@ every time you want to make a tikz.
 
 from StringIO import StringIO
 import os
-import tempfile
 import unittest
 import subprocess
 from collections import defaultdict
@@ -131,22 +130,18 @@ def run_with_table_verbose(table, user_data, callback):
     @return: returncode, r_stdout, r_stderr
     """
     # Create a temporary data table file for R.
-    f_temp_table = tempfile.NamedTemporaryFile(delete=False)
-    f_temp_table.write(table)
-    f_temp_table.close()
+    f_temp_table = Util.create_tmp_file(table)
     # Create a temporary R script file.
-    script_content = callback(user_data, f_temp_table.name)
-    f_temp_script = tempfile.NamedTemporaryFile(delete=False)
-    f_temp_script.write(script_content)
-    f_temp_script.close()
+    script_content = callback(user_data, f_temp_table)
+    f_temp_script = Util.create_tmp_file(script_content)
     # Call R.
-    retcode, r_out, r_err = run(f_temp_script.name)
+    retcode, r_out, r_err = run(f_temp_script)
     # To facilitate debugging, only delete temporary files if R was successful.
     if not retcode:
         # Delete the temporary data table file.
-        os.unlink(f_temp_table.name)
+        os.unlink(f_temp_table)
         # Delete the temporary script file.
-        os.unlink(f_temp_script.name)
+        os.unlink(f_temp_script)
     # Return the R results.
     return retcode, r_out, r_err
 
@@ -166,6 +161,10 @@ def _get_device_specific_call(temp_plot_name, device_name,
 def run_plotter(table, user_script_content, device_name,
         width=None, height=None, keep_intermediate=False):
     """
+    The header and footer of the script are automatically included.
+    The header reads the table and loads device-specific libraries
+    (e.g. for tikz) and turns on the device.
+    The footer turns off the device.
     @param table: the table string
     @param user_script_content: script without header or footer
     @param device_name: an R device function name
@@ -187,9 +186,8 @@ def run_plotter(table, user_script_content, device_name,
     script_content = s.getvalue()
     temp_script_name = Util.create_tmp_file(script_content)
     retcode, r_out, r_err = run(temp_script_name)
-    if retcode:
-        image_data = None
-    else:
+    image_data = None
+    if not retcode:
         if not keep_intermediate:
             os.unlink(temp_table_name)
             os.unlink(temp_script_name)
@@ -200,7 +198,8 @@ def run_plotter(table, user_script_content, device_name,
             msg_a = 'could not open the plot image file'
             msg_b = ' that R was supposed to write'
             raise RError(msg_a + msg_b)
-        os.unlink(temp_plot_name)
+        if not keep_intermediate:
+            os.unlink(temp_plot_name)
     return retcode, r_out, r_err, image_data
 
 def run_plotter_multiple_scripts(table, scripts, device_name,
@@ -261,9 +260,8 @@ def run_plotter_no_table(user_script_content, device_name,
     script_content = s.getvalue()
     temp_script_name = Util.create_tmp_file(script_content)
     retcode, r_out, r_err = run(temp_script_name)
-    if retcode:
-        image_data = None
-    else:
+    image_data = None
+    if not retcode:
         os.unlink(temp_script_name)
         try:
             with open(temp_plot_name, 'rb') as fin:

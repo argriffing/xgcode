@@ -1,4 +1,5 @@
-"""Plot a clustering of columns of an R table using squared correlation.
+"""
+Plot a clustering of columns of an R table using squared correlation.
 
 This uses the R software.
 Correlation is rounded to two decimal places,
@@ -8,7 +9,6 @@ Clustering is done using the hclust function in R and
 with distances equal to one minus the squared correlation.
 """
 
-import tempfile
 import os
 
 from SnippetUtil import HandlingError
@@ -62,34 +62,25 @@ def get_response_content(fs):
     rtable = RUtil.RTable(fs.table.splitlines())
     header_row = rtable.headers
     data_rows = rtable.data
-    # Do a more stringent check of the column headers.
-    for h in header_row:
-        if not Carbone.is_valid_header(h):
-            msg = 'invalid column header: %s' % h
-            raise ValueError(msg)
+    Carbone.validate_headers(header_row)
     # define the temp table content and the R image format function
     temp_table_content = fs.table
     image_function_name = Form.g_imageformat_to_r_function[fs.imageformat]
     # Create a temporary data table file for R.
-    f_temp_table = tempfile.NamedTemporaryFile(delete=False)
-    f_temp_table.write(temp_table_content)
-    f_temp_table.close()
-    # Create a temporary pathname for the plot created by R.
+    temp_table_name = Util.create_tmp_file(temp_table_content, suffix='.table')
     temp_plot_name = Util.get_tmp_filename()
-    # Create a temporary R script file.
-    f_temp_script = tempfile.NamedTemporaryFile(delete=False)
+    script = plot_info.get_script(args, temp_plot_name, temp_table_name)
     script_content = get_script_content(
-            temp_plot_name, f_temp_table.name, image_function_name)
-    f_temp_script.write(script_content)
-    f_temp_script.close()
+            temp_plot_name, temp_table_name, image_function_name)
+    temp_script_name = Util.create_tmp_file(script, suffix='.R')
     # Call R.
-    retcode, r_out, r_err = RUtil.run(f_temp_script.name)
+    retcode, r_out, r_err = RUtil.run(temp_script_name)
     if retcode:
         raise ValueError('R error:\n' + r_err)
     # Delete the temporary data table file.
-    os.unlink(f_temp_table.name)
+    os.unlink(temp_table_name)
     # Delete the temporary script file.
-    os.unlink(f_temp_script.name)
+    os.unlink(temp_script_name)
     # Read the image file.
     try:
         with open(temp_plot_name, 'rb') as fin:

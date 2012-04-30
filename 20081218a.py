@@ -1,11 +1,11 @@
-"""Get an amino acid Fasta alignment from some comma separated data.
+"""
+Get an amino acid Fasta alignment from some comma separated data.
 
 The default tree is from the mm9_multiple_alignment page at UCSC.
 """
 
 from StringIO import StringIO
 import csv
-import tempfile
 import subprocess
 import os
 
@@ -14,6 +14,7 @@ import FelTree
 import NewickIO
 import Codon
 import Fasta
+import Util
 import iterutils
 import Form
 import FormOut
@@ -36,11 +37,6 @@ def get_form():
                 g_default_csv_data),
             Form.MultiLine('tree', 'a tree with branch lengths',
                 g_default_tree_string)]
-    """
-            Form.RadioGroup('delivery', 'delivery', [
-                Form.RadioItem('inline', 'view as text', True),
-                Form.RadioItem('attachment', 'download as a tab separated data file')])]
-    """
     return form_objects
 
 def get_form_out():
@@ -132,18 +128,10 @@ def get_mapp_output(data_string, tree_string):
     """
     # get the amino acid alignment
     alignment = get_alignment(data_string, tree_string)
-    # Get some temporary filenames for the alignment,
-    # the tree, and the MAPP output.
-    temp_fasta_filename = tempfile.mktemp(suffix='.fa')
-    temp_newick_filename = tempfile.mktemp(suffix='.tree')
-    # write the temporary fasta file
-    temp_fasta_file = open(temp_fasta_filename, 'w')
-    print >> temp_fasta_file, alignment.to_fasta_string()
-    temp_fasta_file.close()
-    # write the temporary newick tree file
-    temp_newick_file = open(temp_newick_filename, 'w')
-    print >> temp_newick_file, tree_string
-    temp_newick_file.close()
+    fasta_string = alignment.to_fasta_string()
+    # make temporary files
+    temp_fasta_filename = Util.create_tmp_file(fasta_string, suffix='.fa')
+    temp_newick_filename = Util.create_tmp_file(tree_string, suffix='.tree')
     # call the mapp program
     cmd = [
             'gij',
@@ -153,6 +141,7 @@ def get_mapp_output(data_string, tree_string):
             temp_fasta_filename,
             '-t',
             temp_newick_filename]
+    # TODO use call or use communicate instead of wait?
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
     process_output = p.stdout.read()

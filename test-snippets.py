@@ -159,7 +159,7 @@ class MockFieldStorage:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bad_modules', type=str, default='',
+    parser.add_argument('--bad_modules', type=str, default='cairo',
             help='do not test snippets that import these modules')
     main(parser.parse_args())
 

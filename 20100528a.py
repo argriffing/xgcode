@@ -1,9 +1,9 @@
-"""Do a MAPP analysis using MAPP.jar.
+"""
+Do a MAPP analysis using MAPP.jar.
 """
 
 from StringIO import StringIO
 import string
-import tempfile
 import subprocess
 import os
 
@@ -229,11 +229,8 @@ def get_response_content(fs):
     # get the list of annotated snps
     snps = list(lines_to_annotated_snps(StringIO(fs.annotation)))
     # define the names of the temporary files
-    temp_tree_filename = tempfile.mktemp(suffix='.tree')
-    temp_fasta_filename = tempfile.mktemp(suffix='.fa')
-    # write the temporary tree file
-    with open(temp_tree_filename, 'w') as fout:
-        print >> fout, fs.tree
+    temp_tree_filename = Util.create_tmp_file(fs.tree, suffix='.tree')
+    temp_fasta_filename = Util.get_tmp_filename(suffix='.fa')
     # write the temporary fasta file
     columns = [snp.get_simple_column() for snp in snps]
     sequences = [''.join(row) for row in zip(*columns)]
