@@ -11,6 +11,8 @@ import numpy as np
 
 import matrixio
 import graph
+from matrixio import m_to_string
+from matrixio import read_matrix
 
 
 #TODO put these global arrays into const data files

@@ -1,4 +1,5 @@
-"""Check boundaries of eigenvectors of a simple tree with studded edges.
+"""
+Check boundaries of eigenvectors of a simple tree with studded edges.
 
 If the integer branch lengths are positive,
 the tree graph has degree sequence 3,2,....,2,1,1,1.
@@ -9,6 +10,8 @@ the branch must have length at least one or two respectively.
 Apparently the scipy sparse eigendecomposition is buggy.
 So if you use a sparse matrix representation
 then take the result with a grain of salt.
+Edited to not use an obsolete scipy function name
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=621056
 """
 
 import math
@@ -170,7 +173,7 @@ def get_response_content(fs):
         L_csr = create_laplacian_csr_matrix(fs.lena, fs.lenb, fs.lenc)
         arpack_k = fs.eigk+1
         ncv = 3*arpack_k + 3
-        ws, vs = scipy.sparse.linalg.eigen_symmetric(
+        ws, vs = scipy.sparse.linalg.eigsh(
                 L_csr, arpack_k, which='SM',
                 v0=v0,
                 ncv=ncv, return_eigenvectors=True)
