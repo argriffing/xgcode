@@ -1,13 +1,15 @@
 """
 Test python snippets.
+
 This script is supposed to test the python snippets
-using the default html parameters.
+using the default parameters.
 """
 
 import argparse
 import os
 import re
 import sys
+import time
 
 import numpy as np
 import lxml.html as ht
@@ -112,21 +114,32 @@ def main(args):
     # Try to test each module
     # to assert that no error occurs when the default cgi parameters are used.
     success_count = 0
+    name_to_nseconds = {}
     for module_name in snippet_module_names:
         print module_name
         module = None
         success = False
+        t = time.time()
         try:
             module, success = process_module_name(module_name, bad_modules)
         except SnippetTestError as e:
             print module_name, ':', e
         if success:
+            nseconds = time.time() - t
+            name_to_nseconds[module_name] = nseconds
             success_count += 1
         # we are done with the imported snippet
         # so remove it from memory if it was loaded
         if module is not None:
             del module
     print success_count, 'snippets passed without an error'
+    print
+    # show the slowest snippets
+    pairs = [(t, name) for name, t in name_to_nseconds.items()]
+    slow_pairs = list(reversed(sorted(pairs)))[:10]
+    print len(slow_pairs), 'slowest snippets with elapsed seconds:'
+    for t, name in slow_pairs:
+        print name, t
 
 
 class MockFieldStorage:

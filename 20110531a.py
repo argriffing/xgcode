@@ -6,11 +6,12 @@ All vertices must have integer labels.
 
 from StringIO import StringIO
 import math
+import time
 
 import numpy as np
 import scipy
-import scipy.linalg
-import scipy.optimize
+from scipy import linalg
+from scipy import optimize
 
 import Form
 import FormOut
@@ -115,6 +116,7 @@ class Functor:
 
 
 def get_response_content(fs):
+    nseconds_limit = 5.0
     R_true, B_true = FtreeIO.newick_to_RB(fs.true_tree, int)
     R_test = FtreeIO.newick_to_R(fs.test_tree, int)
     # get the unrooted tree topology
@@ -138,13 +140,18 @@ def get_response_content(fs):
     # make the constant matrix for Frobenius norm comparison
     C = np.zeros((len(vertices), 2))
     C[:len(leaves)] = w*Vp
-    # make the functor
-    f = Functor(T_test, Vp, C, w)
-    initial_guess = np.ones(len(T_test) + 2*len(internal))
-    results = scipy.optimize.fmin(
-            f, initial_guess, ftol=1e-8, xtol=1e-8, full_output=True,
-            maxfun=20000, maxiter=20000)
-    xopt, fopt, itr, funcalls, warnflag = results
+    # keep doing iterations until we run out of time
+    mymax = 256
+    t_initial = time.time()
+    while time.time() - t_initial < nseconds_limit / 2:
+        mymax *= 2
+        f = Functor(T_test.copy(), Vp.copy(), C.copy(), w.copy())
+        initial_guess = np.ones(len(T_test) + 2*len(internal))
+        results = scipy.optimize.fmin(
+                f, initial_guess, ftol=1e-8, xtol=1e-8, full_output=True,
+                maxfun=mymax, maxiter=mymax)
+        xopt, fopt, itr, funcalls, warnflag = results
+    # look at the values from the longest running iteration
     B, Vr = f.X_to_B_Vr(xopt)
     L, V = f.X_to_L_V(xopt)
     Lrr = Ftree.TB_to_L_block(T_test, B, internal, internal)

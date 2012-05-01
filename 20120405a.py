@@ -559,7 +559,7 @@ def get_response_content(fs):
     # init the response and get the user variables
     start_pos = fs.start
     stop_pos = fs.stop
-    nsamples = 8000
+    nsamples = 2500
     out = StringIO()
     # do the analysis
     means, variations, covariances = get_value_lists(
