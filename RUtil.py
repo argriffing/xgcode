@@ -3,6 +3,8 @@ Utility functions for interfacing with R.
 
 Note that to use tikz with R,
 you should put a tikzMetricsDictionary path into your .Rprofile dotfile.
+For example
+options( tikzMetricsDictionary='/home/username/.tikzMetricsDictionary' )
 Otherwise it takes a few seconds to generate a temporary dictionary
 every time you want to make a tikz.
 """
@@ -70,6 +72,12 @@ class RError(Exception):
     """
     pass
 
+class RExecError(Exception):
+    """
+    This is an error finding an R to run.
+    """
+    pass
+
 class RTableError(Exception):
     """
     This is an R table parsing error.
@@ -93,16 +101,18 @@ def mk_call_str(name, *args, **kwargs):
     arr = args_v + kwargs_v
     return '%s(%s)' % (name, ', '.join(arr))
 
-def run(pathname):
+def run(pathname, rlocations=g_rlocations):
     """
     Run the R script.
     Redirect .Rout to stderr.
     The return code is 0 for success and 1 for failure.
     The returned stdout and stderr are strings not files.
     @param pathname: name of the R script
+    @param rlocations: place to look for R
     @return: (returncode, r_stdout, r_stderr)
     """
-    for rlocation in g_rlocations:
+    proc = None
+    for rlocation in rlocations:
         # Note that we do not use --vanilla because we need ~/.Rprofile
         # to have the path to the tikz metrics dictionary
         # so that the tikz device does rebuild the dictionary each time.
@@ -118,9 +128,8 @@ def run(pathname):
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError as e:
             continue
-        break
-    else:
-        raise ValueError('could not find R')
+    if proc is None:
+        raise RExecError('could not find R')
     proc_stdout, proc_stderr = proc.communicate()
     return proc.returncode, proc_stdout, proc_stderr
 
@@ -444,6 +453,10 @@ class TestRUtil(unittest.TestCase):
         observed = matrix_to_R_string([[1, 2, 3], [4, 5, 6]])
         expected = 'matrix(c(1, 2, 3, 4, 5, 6), 2, 3, byrow=TRUE)'
         self.assertEquals(expected, observed)
+
+    def test_exec_error(self):
+        self.assertRaises(RExecError, run, 'whatever.R', 'bad_r_location')
+
 
 if __name__ == '__main__':
     unittest.main()

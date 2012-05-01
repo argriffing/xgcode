@@ -2,9 +2,9 @@
 Draw a tikz illustration of harmonic interpolation.
 """
 
-import numpy as np
-
 import math
+
+import numpy as np
 
 import Form
 import FormOut
