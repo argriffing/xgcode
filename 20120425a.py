@@ -49,9 +49,6 @@ def sample_laplacian_matrix(n):
     L -= np.diag(np.sum(L, axis=1))
     return L
 
-def foo():
-    pass
-
 class Accumulator:
     def __init__(self, ntaxa, fsplit):
         self.ntaxa = ntaxa

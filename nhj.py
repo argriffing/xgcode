@@ -128,7 +128,7 @@ def harmonic_split_transform(
         u *= -1
         v *= -1
     if not (np.all(u > 0) and np.all(v > 0)):
-        report_summary(L, neg_B)
+        #report_summary(L, neg_B)
         raise ValueError('sign problem with u and v')
     # Decide how to partition the singular value between the two vectors.
     # This is where the harmonicity comes into play.
@@ -152,7 +152,7 @@ def harmonic_split_transform(
     if a_block_fail or b_block_fail:
         raise ValueError('negative edge weight')
     if a_block_fail and b_block_fail:
-        report_summary(L, neg_B)
+        #report_summary(L, neg_B)
         raise ValueError('inducing unavoidable negative edge weight')
     # Define the set of vertices associated with each new supervertex.
     # Do not add the new vertex yet.
@@ -503,7 +503,7 @@ def split(
         X *= -1
         Y *= -1
     if not (np.all(X > 0) and np.all(Y > 0)):
-        report_summary(L, neg_B)
+        #report_summary(L, neg_B)
         raise ValueError('sign problem with X and Y')
     a_block_fail = False
     b_block_fail = False
@@ -520,7 +520,7 @@ def split(
         if edge_to_weight[edge] < Y[i] * Y[j]:
             b_block_fail = True
     if a_block_fail and b_block_fail:
-        report_summary(L, neg_B)
+        #report_summary(L, neg_B)
         raise ValueError('inducing unavoidable negative edge weight')
     """
     #approx = s[0] * np.outer(x, y)
@@ -595,7 +595,7 @@ def harmonic_split(
         u *= -1
         v *= -1
     if not (np.all(u > 0) and np.all(v > 0)):
-        report_summary(L, neg_B)
+        #report_summary(L, neg_B)
         raise ValueError('sign problem with u and v')
     # Decide how to partition the singular value between the two vectors.
     # This is where the harmonicity comes into play.
@@ -618,7 +618,7 @@ def harmonic_split(
         if edge_to_weight[edge] < y[i] * y[j]:
             b_block_fail = True
     if a_block_fail and b_block_fail:
-        report_summary(L, neg_B)
+        #report_summary(L, neg_B)
         raise ValueError('inducing unavoidable negative edge weight')
 
 

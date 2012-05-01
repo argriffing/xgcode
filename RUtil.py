@@ -8,12 +8,16 @@ every time you want to make a tikz.
 """
 
 from StringIO import StringIO
+from collections import defaultdict
 import os
+import re
 import unittest
 import subprocess
-from collections import defaultdict
 
 import Util
+
+# pillaged from Carbone.py but more liberal
+g_header_pattern = r'^[\.a-zA-Z][\.a-zA-Z0-9]*$'
 
 #TODO allow RTable flexibility to not have row headers
 
@@ -71,6 +75,17 @@ class RTableError(Exception):
     This is an R table parsing error.
     """
     pass
+
+# pillaged from Carbone.py
+def is_valid_header(h):
+    return re.match(g_header_pattern, h)
+
+# pillaged from Carbone.py
+def validate_headers(headers):
+    for h in headers:
+        if not is_valid_header(h):
+            raise RTableError('invalid column header: %s' % h)
+
 
 def mk_call_str(name, *args, **kwargs):
     args_v = [str(v) for v in args]
@@ -157,6 +172,20 @@ def _get_device_specific_call(temp_plot_name, device_name,
     else:
         call_string = '%s("%s")' % (device_name, temp_plot_name)
     return call_string
+
+def run_plotter_concise(table, user_script_content, device_name,
+        width=None, height=None, keep_intermediate=False):
+    """
+    Raise an error instead of returning retcode and stderr and stdout.
+    This should probably be the usual invocation and run_plotter
+    should be changed to run_plotter_verbose, but this is a transitional form.
+    """
+    retcode, r_out, r_err, image_data = run_plotter(
+            table, user_script_content, device_name,
+            width, height, keep_intermediate)
+    if retcode:
+        raise RError(r_err)
+    return image_data
 
 def run_plotter(table, user_script_content, device_name,
         width=None, height=None, keep_intermediate=False):
@@ -370,6 +399,7 @@ class RTable:
                 msg_c = 'all data rows should have one more element '
                 msg_d = 'than the header row'
                 raise RTableError(msg_a + msg_b + msg_c + msg_d)
+        validate_headers(self.headers)
     
     def header_to_column_index(self, header):
         if header not in self.h_to_i:
