@@ -1,18 +1,20 @@
-"""Check the speed of singular value decomposition.
+"""
+Check the speed of singular value decomposition.
 """
 
 from StringIO import StringIO
-import random
-import math
 import time
 
 import numpy as np
 
-from SnippetUtil import HandlingError
-import MatrixUtil
 import Form
 import FormOut
-import NewickIO
+
+g_shapes = (
+        (50, 10000),
+        (50, 20000),
+        (50, 40000),
+        (450, 10000))
 
 def get_form():
     """
@@ -30,11 +32,8 @@ def get_matrix(n, p):
     @param p: another dimension of the matrix
     @return: a sampled matrix of the given dimensions
     """
-    M = np.zeros((p, n))
-    for i in range(p):
-        for j in range(n):
-            M[i,j] = random.expovariate(1.0)
-    return M
+    mu = 1.0
+    return np.random.exponential(mu, (p, n))
 
 def do_analysis(n, p):
     """
@@ -47,29 +46,34 @@ def do_analysis(n, p):
     start_time = time.time()
     M = get_matrix(n, p)
     nseconds = time.time() - start_time
-    print >> out, nseconds, 'seconds to create a', n, 'x', p, 'matrix'
+    print >> out, nseconds, 'seconds',
+    print >> out, 'to create a', n, 'x', p, 'matrix'
     # get the singular value decomposition
     start_time = time.time()
     np.linalg.svd(M, full_matrices=0)
     nseconds = time.time() - start_time
-    print >> out, nseconds, 'seconds to get the singular value decomposition'
+    print >> out, nseconds, 'seconds',
+    print >> out, 'to get the singular value decomposition'
     # get the singular value decomposition of the transpose
     start_time = time.time()
     np.linalg.svd(M.T, full_matrices=0)
     nseconds = time.time() - start_time
-    print >> out, nseconds, 'seconds to get the singular value decomposition of the transpose'
+    print >> out, nseconds, 'seconds',
+    print >> out, 'to get the singular value decomposition of the transpose'
     return out.getvalue().strip()
 
 def get_response_content(fs):
     out = StringIO()
-    # get the response
-    n = 50
-    for p in (10000, 20000, 40000):
-        report = do_analysis(n, p)
-        print >> out, report
+    for n, p in g_shapes[:3]:
+        print >> out, do_analysis(n, p)
         print >> out
-    n = 30*15
-    report = do_analysis(n, 10000)
-    print >> out, report
-    # write the response
     return out.getvalue()
+
+def main():
+    for n, p in g_shapes:
+        print do_analysis(n, p)
+        print
+
+if __name__ == '__main__':
+    main()
+
