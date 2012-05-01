@@ -9,7 +9,7 @@ and their connection to eigenfunctions of Sturm-Liouville systems.
 from StringIO import StringIO
 import numpy as np
 import scipy
-import scipy.linalg
+from scipy import linalg
 import sympy
 
 import Form

@@ -3,7 +3,6 @@ Scatter plot 3D given an R table with one categorical and one numerical var.
 """
 
 from StringIO import StringIO
-import os
 
 import argparse
 
@@ -174,11 +173,10 @@ class PlotInfo:
         data_lines = ['\t'.join(str(x) for x in row) for row in data_rows]
         return [header_line] + data_lines
 
-    def get_script(self, args, temp_plot_filename, temp_table_filename):
+
+    def get_script(self, args):
         """
         @param args: from cmdline or web
-        @param temp_plot_name: a pathname
-        @param temp_table_name: a pathname
         """
         # get the symbol legend location
         try:
@@ -191,21 +189,18 @@ class PlotInfo:
         color_legend_string = self.color_header
         # add color legend endpoint axis
         if args.endpoint_ticks:
-            s = 'mytable$color'
+            s = 'my.table$color'
             color_axis = 'axis(1, c(axTicks(1), min(%s), max(%s)))' % (s, s)
         else:
             color_axis = 'axis(1)'
         # get the image function
-        image_function = Form.g_imageformat_to_r_function[args.imageformat]
         rcodes = [
             "require('scatterplot3d')",
-            "mytable <- read.table('%s')" % temp_table_filename,
-            "%s('%s')" % (image_function, temp_plot_filename),
             # rename some variables for compatibility with the template
-            "Year <- mytable$x",
-            "Latitude <- mytable$y",
-            "Risk <- mytable$z",
-            "Prec <- mytable$color",
+            "Year <- my.table$x",
+            "Latitude <- my.table$y",
+            "Risk <- my.table$z",
+            "Prec <- my.table$color",
             # stack two plots vertically
             "layout(cbind(1:2, 1:2), heights = c(7, 1.5))",
             # create the color gradient
@@ -218,7 +213,7 @@ class PlotInfo:
             "type = 'p', pch = ' ')",
             # define symbols colors and sizes
             "s3d$points(Year, Latitude, Risk,",
-            "pch=mytable$symbol, bg=prc, col=prc, cex=%s)" % args.size,
+            "pch=my.table$symbol, bg=prc, col=prc, cex=%s)" % args.size,
             # define x y and z as Year, Latitude and Risk
             "s3d.coords <- s3d$xyz.convert(Year, Latitude, Risk)",
             # symbol legend
@@ -236,8 +231,7 @@ class PlotInfo:
             "ylab = '', col = hsv(seq(0.3, 1, length = 100)))",
             # draw the axis onto the color legend
             color_axis,
-            # write the plot
-            "dev.off()"]
+            ]
         return '\n'.join(rcodes)
 
 
@@ -247,39 +241,17 @@ def process(args, table_lines):
     @param table_lines: input lines
     @return: the image data as a string
     """
+    # get the table string
     rtable = RUtil.RTable(table_lines)
-    header_row = rtable.headers
-    data_rows = rtable.data
-    Carbone.validate_headers(header_row)
-    #TODO maybe there is a more specific RUtil function for this now
-    # Read the relevant columns and their labels.
-    plot_info = PlotInfo(args, header_row, data_rows)
-    # Get info for the temporary data
+    plot_info = PlotInfo(args, rtable.headers, rtable.data)
     augmented_lines = plot_info.get_augmented_table_lines()
-    # Create a temporary data table file for R.
     table_string = '\n'.join(augmented_lines)
-    temp_table_name = Util.create_tmp_file(table_string, suffix='.table')
-    # Create a temporary pathname for the plot created by R.
-    temp_plot_name = Util.get_tmp_filename()
-    # Create a temporary R script file.
-    script = plot_info.get_script(args, temp_plot_name, temp_table_name)
-    temp_script_name = Util.create_tmp_file(script, suffix='.R')
-    # Call R.
-    retcode, r_out, r_err = RUtil.run(temp_script_name)
-    if retcode:
-        raise ValueError('R error:\n' + r_err)
-    # Delete the temporary data table file.
-    os.unlink(temp_table_name)
-    # Delete the temporary script file.
-    os.unlink(temp_script_name)
-    # Read the image file.
-    try:
-        with open(temp_plot_name, 'rb') as fin:
-            image_data = fin.read()
-    except IOError as e:
-        raise HandlingError('the R call seems to not have created the plot')
-    # Delete the temporary image file.
-    os.unlink(temp_plot_name)
-    # Return the image data as a string.
+    # get the script string
+    script_string = plot_info.get_script(args)
+    # get the device
+    device = Form.g_imageformat_to_r_function[args.imageformat]
+    # run R and get the image data
+    image_data = RUtil.run_plotter_concise(table_string, script_string, device)
+    # return the image data
     return image_data
 
