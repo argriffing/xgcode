@@ -126,6 +126,7 @@ class GadgetForm(object):
 
     @cherrypy.expose
     def process(self, **param_dict):
+        print param_dict
         start_time = time.time()
         self._init_form()
         fs = FieldStorage(param_dict)

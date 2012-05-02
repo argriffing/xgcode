@@ -1,9 +1,9 @@
-"""Use HyPhy to estimate HKY85 parameters given nexus data.
+"""
+Use HyPhy to estimate HKY85 parameters given nexus data.
 
 The nexus data should have a tree and an alignment.
 """
 
-import math
 from StringIO import StringIO
 import os
 import subprocess
@@ -12,6 +12,7 @@ from SnippetUtil import HandlingError
 import Config
 import Hyphy
 import Nexus
+import Util
 import Form
 import FormOut
 
@@ -90,23 +91,19 @@ def get_response_content(fs):
         nexus.load(StringIO(fs.nexus))
     except Nexus.NexusError as e:
         raise HandlingError(e)
-    # move to the data directory
-    original_directory = os.getcwd()
-    os.chdir(Config.data_path)
-    # create the batch file
-    fout = open(hyphy_bf, 'wt')
-    print >> fout, hky_hyphy_model
-    fout.close()
-    # create the nexus file
-    fout = open(hyphy_nexus, 'wt')
-    print >> fout, nexus
-    fout.close()
-    # run hyphy
-    cmd = [Config.hyphy_exe_path, hyphy_bf]
-    p = subprocess.Popen(cmd, close_fds=True, stdout=subprocess.PIPE)
-    hyphy_output = p.stdout.read()
-    # move back to the original directory
-    os.chdir(original_directory)
+    # do things in the working directory
+    with Util.remember_cwd():
+        os.chdir(Config.data_path)
+        # create the batch file
+        with open(hyphy_bf, 'wt') as fout:
+            print >> fout, hky_hyphy_model
+        # create the nexus file
+        with open(hyphy_nexus, 'wt') as fout:
+            print >> fout, nexus
+        # run hyphy
+        cmd = [Config.hyphy_exe_path, hyphy_bf]
+        p = subprocess.Popen(cmd, close_fds=True, stdout=subprocess.PIPE)
+        hyphy_output = p.stdout.read()
     # read the hyphy output
     ns = Hyphy.get_hyphy_namespace(StringIO(hyphy_output))
     out = StringIO()

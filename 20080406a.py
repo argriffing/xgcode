@@ -1,9 +1,9 @@
-"""Use PAML to estimate HKY85 parameters given nexus data.
+"""
+Use PAML to estimate HKY85 parameters given nexus data.
 
 The nexus data should have a tree and an alignment.
 """
 
-import math
 from StringIO import StringIO
 import os
 import popen2
@@ -15,6 +15,11 @@ import Config
 import Phylip
 import Form
 import FormOut
+import Util
+
+# TODO use subprocess instead of popen2 to run paml
+# and use the subprocess option to run in different working directory
+# This whole module is kind of ancient and bad.
 
 def get_form():
     """
@@ -31,6 +36,33 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
+def run_in_tmp(fs, nexus):
+    """
+    @param fs: fieldstorage-like user options
+    @param nexus: the nexus object that defines the tree and alignment
+    @return: from_paml
+    """
+    # create the control object
+    config = Paml.PamlConfig()
+    config.set_hky()
+    # create the baseml.ctl control file
+    ctl_string = config.to_ctl_string()
+    with open(Paml.baseml_ctl, 'wt') as fout:
+        print >> fout, ctl_string
+    # create the nexus object that defines the tree and alignment
+    nexus = Nexus.get_sample_nexus_object()
+    # create the baseml.newick tree file
+    with open(Paml.baseml_newick, 'wt') as fout:
+        print >> fout, nexus.tree.get_newick_string()
+    # create the baseml.phylip alignment file
+    s_phylip = Phylip.get_alignment_string_non_interleaved(nexus.alignment)
+    with open(Paml.baseml_phylip, 'wt') as fout:
+        print >> fout, s_phylip
+    # run PAML
+    args = [Config.baseml_exe_path, Paml.baseml_ctl]
+    from_paml, to_paml = popen2.popen4(args)
+    return from_paml
+
 def get_response_content(fs):
     # read the nexus data
     nexus = Nexus.Nexus()
@@ -38,43 +70,15 @@ def get_response_content(fs):
         nexus.load(StringIO(fs.nexus))
     except Nexus.NexusError as e:
         raise HandlingError(e)
-    # define some paths
-    baseml_ctl = os.path.join(Config.data_path, 'baseml.ctl')
-    baseml_phylip = os.path.join(Config.data_path, 'baseml.phylip')
-    baseml_newick = os.path.join(Config.data_path, 'baseml.newick')
-    baseml_out = os.path.join(Config.data_path, 'baseml.out')
-    # change to the target directory
-    original_directory = os.getcwd()
-    os.chdir(Config.data_path)
-    # create the baseml.ctl control file
-    config = Paml.PamlConfig()
-    config.set_hky()
-    fout = open(baseml_ctl, 'wt')
-    ctl_string = config.to_ctl_string()
-    print >> fout, ctl_string
-    fout.close()
-    # create the nexus object that defines the tree and alignment
-    nexus = Nexus.get_sample_nexus_object()
-    # create the baseml.newick tree file
-    fout = open(baseml_newick, 'wt')
-    print >> fout, nexus.tree.get_newick_string()
-    fout.close()
-    # create the baseml.phylip alignment file
-    fout = open(baseml_phylip, 'wt')
-    s_phylip = Phylip.get_alignment_string_non_interleaved(nexus.alignment)
-    print >> fout, s_phylip
-    fout.close()
-    # run PAML
-    ctl_path = baseml_ctl
-    from_paml, to_paml = popen2.popen4([Config.baseml_exe_path, ctl_path])
-    # change back to the original directory
-    os.chdir(original_directory)
+    # run paml in a temp directory
+    with Util.remember_cwd():
+        os.chdir(Config.data_path)
+        from_paml = run_in_tmp(fs, nexus)
     # get the paml output
     paml_debug_output = from_paml.read()
     # get the paml output file
-    fin = open(Paml.baseml_out)
-    d = Paml.parse_hky_output(fin)
-    fin.close()
+    with open(Paml.baseml_out) as fin:
+        d = Paml.parse_hky_output(fin)
     out = StringIO()
     if fs.outdebug:
         print >> out, 'baseml stdout:'

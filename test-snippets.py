@@ -3,6 +3,10 @@ Test python snippets.
 
 This script is supposed to test the python snippets
 using the default parameters.
+As of spring 2012 the snippets that use cairo
+are having sporadic crashes and hangs when testing using this framework.
+These symptoms have not appeared by running the snippets directly on the
+command line or through auto.py or through the usual web interface.
 """
 
 import argparse
@@ -115,15 +119,25 @@ def main(args):
     # to assert that no error occurs when the default cgi parameters are used.
     success_count = 0
     name_to_nseconds = {}
+    name_to_linemax = {}
+    names_with_unrestored_cwd = []
     for module_name in snippet_module_names:
-        print module_name
+        print os.getcwd(), module_name
+        with open(module_name + '.py') as fin:
+            linemax = max(len(line) for line in fin.readlines())
+            name_to_linemax[module_name] = linemax
         module = None
         success = False
         t = time.time()
+        curdir = os.getcwd()
         try:
             module, success = process_module_name(module_name, bad_modules)
         except SnippetTestError as e:
             print module_name, ':', e
+        finally:
+            if os.getcwd() != curdir:
+                names_with_unrestored_cwd.append(module_name)
+            os.chdir(curdir)
         if success:
             nseconds = time.time() - t
             name_to_nseconds[module_name] = nseconds
@@ -134,12 +148,28 @@ def main(args):
             del module
     print success_count, 'snippets passed without an error'
     print
+    # show the snippets with the longest lines
+    pairs = [(t, name) for name, t in name_to_linemax.items()]
+    bad_pairs = list(reversed(sorted(pairs)))[:5]
+    print len(bad_pairs), 'snippets with longest lines:'
+    for value, name in bad_pairs:
+        print name, value
+    print
     # show the slowest snippets
     pairs = [(t, name) for name, t in name_to_nseconds.items()]
-    slow_pairs = list(reversed(sorted(pairs)))[:10]
-    print len(slow_pairs), 'slowest snippets with elapsed seconds:'
-    for t, name in slow_pairs:
-        print name, t
+    bad_pairs = list(reversed(sorted(pairs)))[:5]
+    print len(bad_pairs), 'slowest snippets with elapsed seconds:'
+    for value, name in bad_pairs:
+        print name, value
+    print
+    # show the snippets with unrestored working directory
+    if names_with_unrestored_cwd:
+        print 'snippets with unrestored working directory:'
+        for name in names_with_unrestored_cwd:
+            print name
+    else:
+        print 'all snippets politely restored the working directory'
+    print
 
 
 class MockFieldStorage:

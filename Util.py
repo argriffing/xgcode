@@ -6,6 +6,7 @@ import random
 import unittest
 import tempfile
 import os
+import contextlib
 
 import iterutils
 import smallutil
@@ -33,6 +34,21 @@ def get_coordinate_triple(string_triple):
         raise CoordinateTripleError('a coordinate was not a valid number')
     return coord_triple
 
+@contextlib.contextmanager
+def remember_cwd():
+    """
+    This is from the internet.
+    Use as follows.
+    print "getcwd before:", os.getcwd()
+    with remember_cwd():
+        walk_around_the_filesystem()
+    print "getcwd after:", os.getcwd()
+    """
+    curdir = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(curdir)
 
 def list_starts_with(mylist, prefix):
     return mylist[:len(prefix)] == prefix
