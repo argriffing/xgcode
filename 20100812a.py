@@ -1,4 +1,5 @@
-"""Convert diploid SNP data from AWclust format to .hud format.
+"""
+Convert diploid SNP data from AWclust format to .hud format.
 
 The value -1 is used for missing data.
 """
@@ -6,7 +7,6 @@ The value -1 is used for missing data.
 from StringIO import StringIO
 import os
 import itertools
-
 import argparse
 
 from SnippetUtil import HandlingError

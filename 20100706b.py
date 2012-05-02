@@ -1,4 +1,5 @@
-"""Cluster using k-means.
+"""
+Cluster using k-means.
 
 Input is an R table.
 Output is an R table with an extra column.
@@ -7,8 +8,8 @@ Output is an R table with an extra column.
 from StringIO import StringIO
 import os
 import time
-
 import argparse
+
 import numpy as np
 
 from SnippetUtil import HandlingError

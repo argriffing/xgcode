@@ -1,13 +1,13 @@
-"""Compute Fiedler embeddings with various mass vectors on a tree.
+"""
+Compute Fiedler embeddings with various mass vectors on a tree.
 """
 
 
 from StringIO import StringIO
-import random
 import time
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -99,3 +99,4 @@ def get_response_content(fs):
 
 if __name__ == '__main__': 
     print process(g_tree_string)
+

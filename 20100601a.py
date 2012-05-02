@@ -1,4 +1,5 @@
-"""Create a fungus .ind file for precipitation.
+"""
+Create a fungus .ind file for precipitation.
 
 Create an .ind precipitation file from a .hud and a amdS_PCA_Info.csv file.
 The .hud file provides the names of the OTUs.
@@ -9,7 +10,6 @@ The output file is in eigenstrat format.
 
 from StringIO import StringIO
 import csv
-
 import argparse
 
 from SnippetUtil import HandlingError

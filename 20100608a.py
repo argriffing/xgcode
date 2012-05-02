@@ -11,9 +11,9 @@ Using this for multi-allelic high-ploidy data is probably a hack.
 from StringIO import StringIO
 import math
 import os
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import Carbone

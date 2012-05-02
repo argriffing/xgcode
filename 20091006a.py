@@ -1,4 +1,5 @@
-"""Compare two Euclidean embeddings of tree vertices.
+"""
+Compare two Euclidean embeddings of tree vertices.
 
 The first embedding is the limit of the MDS coordinates
 for all vertices in the tree as
@@ -14,9 +15,9 @@ Are these two embeddings the same?
 from StringIO import StringIO
 import random
 import time
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil

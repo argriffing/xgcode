@@ -1,4 +1,5 @@
-"""Look at perturbed Laplacians with null mass vectors.
+"""
+Look at perturbed Laplacians with null mass vectors.
 
 The idea is that you can perturb a Laplacian matrix
 by changing the diagonal such that the eigenvector
@@ -16,9 +17,9 @@ Anyway this was an effort to solve a problem that I have since solved.
 from StringIO import StringIO
 import random
 import time
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil

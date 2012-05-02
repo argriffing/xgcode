@@ -1,4 +1,5 @@
-"""Convert a .hud file to a .snp file.
+"""
+Convert a .hud file to a .snp file.
 
 The input file gives a binary character vector for each OTU.
 The output file is in Eigenstrat format.
@@ -7,7 +8,6 @@ Note that only the first line of the input file is used.
 
 from StringIO import StringIO
 import sys
-
 import argparse
 
 from SnippetUtil import HandlingError

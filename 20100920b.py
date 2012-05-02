@@ -1,11 +1,11 @@
-"""Do some analysis of variance.
+"""
+Do some analysis of variance.
 
 This uses the R software.
 Also google for a pdf called Using R for an Analysis of Variance.
 """
 
 from StringIO import StringIO
-
 import argparse
 
 from SnippetUtil import HandlingError

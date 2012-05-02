@@ -7,6 +7,7 @@ and their connection to eigenfunctions of Sturm-Liouville systems.
 """
 
 from StringIO import StringIO
+
 import numpy as np
 import scipy
 from scipy import linalg

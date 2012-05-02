@@ -5,7 +5,6 @@ Scatter plot 2D given an R table with two categorical variables.
 from StringIO import StringIO
 import os
 import colorsys
-
 import argparse
 
 from SnippetUtil import HandlingError

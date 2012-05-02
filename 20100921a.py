@@ -3,7 +3,6 @@ Compute the Fisher exact test using R.
 """
 
 from StringIO import StringIO
-
 import argparse
 
 from SnippetUtil import HandlingError

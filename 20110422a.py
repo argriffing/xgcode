@@ -1,4 +1,5 @@
-"""Animate a 2D MDS tree as a branch length changes, plus eigenvalues.
+"""
+Animate a 2D MDS tree as a branch length changes, plus eigenvalues.
 
 Create a tree MDS animation
 showing a progressive branch length change.
@@ -21,11 +22,11 @@ Resolutions preferred by YouTube are 640x360 and 480x360.
 from StringIO import StringIO
 import os
 import math
+import argparse
 
 import numpy as np
 import scipy.stats
 import cairo
-import argparse
 
 import Form
 import FormOut

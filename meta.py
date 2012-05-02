@@ -34,17 +34,17 @@ g_custom_extension_modules = set([
 
 g_common_t1 = set([
         'sys', 'os', 'unittest',
-        'collections', 'optparse',
+        'collections', 'optparse', 'argparse',
         'unittest', 'math', 'random',
         'itertools', 'csv', 'StringIO'])
 
 g_common_t2 = set([
-        'argparse',
-        'lxml',
+        'lxml', 'sympy',
         'pygraphviz', 'cairo',
         'numpy', 'scipy', 'matplotlib'])
 
 g_common_t3 = set([
+        'smallutil', 'matrixio', 'latexutil',
         'ambignt', 'Progress',
         'EqualArcLayout', 'MatrixUtil', 'iterutils', 'Form', 'Util',
         'Newick', 'FelTree', 'NewickIO', 'SnippetUtil'])
@@ -122,7 +122,7 @@ def _get_import_paragraphs(raw_lines):
             s = line.lstrip()
             if not s:
                 continue
-            if s.startswith('"""'):
+            if s.startswith('"""') or s.startswith('r"""'):
                 doc_start = True
             else:
                 msg = 'the file should start with a """ quoted docstring'

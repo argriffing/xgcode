@@ -1,10 +1,10 @@
-"""Compute the variation explained by a linear model.
+"""
+Compute the variation explained by a linear model.
 
 This uses the R software.
 """
 
 from StringIO import StringIO
-
 import argparse
 
 from SnippetUtil import HandlingError

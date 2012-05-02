@@ -12,8 +12,8 @@ import itertools
 import random
 import time
 import sys
-
 import argparse
+
 import numpy as np
 
 from SnippetUtil import HandlingError

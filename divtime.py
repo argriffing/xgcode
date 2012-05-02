@@ -1,3 +1,7 @@
+"""
+Divergence time stuff.
+"""
+
 import unittest
 import math
 

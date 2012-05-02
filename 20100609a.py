@@ -6,7 +6,6 @@ The amdS_PCA_Info.csv file provides miscellaneous fungus info.
 from StringIO import StringIO
 import os
 import csv
-
 import argparse
 
 from SnippetUtil import HandlingError

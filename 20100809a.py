@@ -1,10 +1,10 @@
-"""Create the transpose of a .hud table.
+"""
+Create the transpose of a .hud table.
 """
 
 from StringIO import StringIO
 import os
 import itertools
-
 import argparse
 
 from SnippetUtil import HandlingError

@@ -1,4 +1,5 @@
-"""Create a tree MDS animation in 3D. [NOWEB]
+"""
+Create a tree MDS animation in 3D. [NOWEB]
 
 Create a tree MDS animation
 showing progressive downweighting of internal nodes.
@@ -21,9 +22,9 @@ Resolutions preferred by YouTube are 640x360 and 480x360.
 from StringIO import StringIO
 import os
 import math
+import argparse
 
 import numpy as np
-import argparse
 from enthought.mayavi import mlab
 
 from SnippetUtil import HandlingError

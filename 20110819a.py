@@ -3,6 +3,7 @@ Check an identity involving Schur complements, submatrices, and pseudoinverse.
 """
 
 from StringIO import StringIO
+
 import numpy as np
 import scipy
 import scipy.linalg

@@ -1,4 +1,5 @@
-"""Seek a counterexample to the eigenvector sign sufficiency conjecture.
+"""
+Seek a counterexample to the eigenvector sign sufficiency conjecture.
 
 Are the signs of eigenvector loadings of -(1/2)HDH sufficient
 to get the topology of a bifurcating tree?
@@ -7,9 +8,9 @@ to get the topology of a bifurcating tree?
 from StringIO import StringIO
 import random
 import time
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil
@@ -21,6 +22,8 @@ import Euclid
 import TreeSampler
 
 g_epsilon = 1e-10
+
+#TODO use the combobreaker module
 
 class CounterexampleError(Exception): pass
 

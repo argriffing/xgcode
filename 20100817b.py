@@ -4,13 +4,13 @@
 import random
 import math
 import itertools
+import argparse
 
 import numpy as np
 import cairo
 from matplotlib.delaunay.triangulate import Triangulation
 import matplotlib.pyplot as plt
 import matplotlib
-import argparse
 
 from SnippetUtil import HandlingError
 import Form

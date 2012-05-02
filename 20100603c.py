@@ -1,4 +1,5 @@
-"""Convert a .hud genotype file to a .geno genotype file.
+"""
+Convert a .hud genotype file to a .geno genotype file.
 
 The output file is in eigenstrat format;
 it has one line per SNP
@@ -7,7 +8,6 @@ and each line has one character per individual.
 
 import sys
 import os
-
 import argparse
 
 from SnippetUtil import HandlingError

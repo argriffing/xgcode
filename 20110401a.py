@@ -3,8 +3,9 @@
 
 from StringIO import StringIO
 from collections import defaultdict
-import numpy as np
 import time
+
+import numpy as np
 
 import Newick
 import Form

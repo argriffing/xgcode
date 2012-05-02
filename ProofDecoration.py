@@ -24,6 +24,7 @@ matrix sub-block abbreviation:
 """
 
 import unittest
+
 import numpy as np
 
 import NewickIO

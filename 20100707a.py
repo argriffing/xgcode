@@ -1,11 +1,12 @@
-"""Find the number of clusters for k-means using the Calinski-Harabasz index.
+"""
+Find the number of clusters for k-means using the Calinski-Harabasz index.
 """
 
 from StringIO import StringIO
 import os
 import time
-
 import argparse
+
 import numpy as np
 
 from SnippetUtil import HandlingError

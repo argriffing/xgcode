@@ -1,4 +1,5 @@
-"""Cluster using the scipy k-means implementation.
+"""
+Cluster using the scipy k-means implementation.
 
 Input is an R table.
 Output is verbose commentary and debugging information.
@@ -7,8 +8,8 @@ Output is verbose commentary and debugging information.
 from StringIO import StringIO
 import os
 import time
-
 import argparse
+
 import numpy as np
 from scipy import cluster
 

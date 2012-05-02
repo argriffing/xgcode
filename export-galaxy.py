@@ -13,8 +13,6 @@ import argparse
 from lxml import etree
 
 import meta
-import mobyle
-import mobenv
 import Util
 
 def get_split_title(description, prefix_length=20):

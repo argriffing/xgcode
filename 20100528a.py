@@ -6,7 +6,6 @@ from StringIO import StringIO
 import string
 import subprocess
 import os
-
 import argparse
 
 from SnippetUtil import HandlingError

@@ -1,4 +1,5 @@
-"""Create an R table with fungus isolate info and with population PCA vectors.
+"""
+Create an R table with fungus isolate info and with population PCA vectors.
 
 The .hud file provides the names of the OTUs.
 The amdS_PCA_Info.csv file provides other info.
@@ -9,9 +10,9 @@ from StringIO import StringIO
 import sys
 import os
 import csv
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import Form

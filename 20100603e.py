@@ -8,7 +8,6 @@ The output file is in eigenstrat format.
 from StringIO import StringIO
 import sys
 import os
-
 import argparse
 
 from SnippetUtil import HandlingError

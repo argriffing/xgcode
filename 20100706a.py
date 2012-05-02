@@ -9,7 +9,6 @@ without running it.
 from StringIO import StringIO
 import os
 import colorsys
-
 import argparse
 
 from SnippetUtil import HandlingError

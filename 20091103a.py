@@ -1,4 +1,5 @@
-"""Create a tree MDS animation showing downweighting of internal nodes.
+"""
+Create a tree MDS animation showing downweighting of internal nodes.
 
 Create a tree MDS animation
 showing progressive downweighting of internal nodes.
@@ -23,10 +24,10 @@ import random
 import os
 import math
 from itertools import product
+import argparse
 
 import numpy as np
 import cairo
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil

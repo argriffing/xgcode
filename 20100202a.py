@@ -1,4 +1,5 @@
-"""Convert a filtered pileup file to files with a minimal observation per line.
+"""
+Convert a filtered pileup file to files with a minimal observation per line.
 
 Each output file has information from a single chromosome.
 Input columns are
@@ -23,7 +24,6 @@ No header line is provided.
 
 from StringIO import StringIO
 import os
-
 import argparse
 
 from SnippetUtil import HandlingError

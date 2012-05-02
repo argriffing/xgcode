@@ -12,6 +12,7 @@ Felsenstein ancestral state estimate.
 """
 
 from StringIO import StringIO
+
 import numpy as np
 import scipy
 import scipy.linalg

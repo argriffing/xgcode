@@ -6,7 +6,6 @@ A .hud table is an alignment of binary (haploid) or ternary (diploid) traits.
 from StringIO import StringIO
 import os
 import itertools
-
 import argparse
 
 from SnippetUtil import HandlingError

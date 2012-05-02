@@ -1,9 +1,9 @@
-"""Do a MAPP analysis using reimplemented python MAPP.
+"""
+Do a MAPP analysis using reimplemented python MAPP.
 """
 
 from StringIO import StringIO
 import string
-
 import argparse
 
 from SnippetUtil import HandlingError

@@ -1,8 +1,8 @@
-"""Create a demo GFF track.
+"""
+Create a demo GFF track.
 """
 
 from StringIO import StringIO
-
 import argparse
 
 from SnippetUtil import HandlingError

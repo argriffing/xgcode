@@ -1,4 +1,5 @@
-"""Create position-specific annotations of resequenced data.
+"""
+Create position-specific annotations of resequenced data.
 
 Use a HMM with 3 hidden states.
 A subset of genomic positions are annotated
@@ -32,8 +33,8 @@ that the position is bad
 from StringIO import StringIO
 import time
 import sys
-
 import argparse
+
 import numpy as np
 
 from SnippetUtil import HandlingError

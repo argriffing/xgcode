@@ -1,16 +1,13 @@
-"""Rank loci by their correlation with a given principal component.
+"""
+Rank loci by their correlation with a given principal component.
 """
 
 from StringIO import StringIO
-import math
-import os
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import hud
-import EigUtil
 import Form
 import FormOut
 import eigenpop
@@ -95,3 +92,4 @@ def process(args, raw_hud_lines):
     rows = [(nom_i, corrs[i]) for i, nom_i in zip(indices, nominal_indices)]
     lines = ['\t'.join(str(x) for x in row) for row in rows]
     return '\n'.join(lines) + '\n'
+

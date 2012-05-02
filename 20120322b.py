@@ -3,9 +3,9 @@ Use tikz to draw a sample path from a continuous time Markov chain.
 """
 
 from StringIO import StringIO
-
 import random
 import string
+
 import numpy as np
 import scipy
 from scipy import linalg

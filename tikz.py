@@ -16,7 +16,6 @@ http://www.tlhiv.org/ltxpreview/ .
 """
 
 import iterutils
-
 import latexutil
 import color
 

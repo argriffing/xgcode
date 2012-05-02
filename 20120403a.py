@@ -20,6 +20,7 @@ import string
 import math
 import random
 from collections import defaultdict
+
 import scipy
 from scipy import optimize
 

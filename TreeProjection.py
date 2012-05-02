@@ -5,9 +5,10 @@ The output should be cairo and tikz.
 """
 
 from StringIO import StringIO
-import numpy as np
 import math
 import unittest
+
+import numpy as np
 
 import SpatialTree
 import Newick

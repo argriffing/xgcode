@@ -1,4 +1,5 @@
-"""Compute the Tracy-Widom statistic given a .hud file.
+"""
+Compute the Tracy-Widom statistic given a .hud file.
 
 Following Patterson et al. each row of the input .hud file
 gives an OTU name followed by presence or absence of each SNP.
@@ -7,9 +8,9 @@ gives an OTU name followed by presence or absence of each SNP.
 from StringIO import StringIO
 import math
 import os
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import Form

@@ -2,11 +2,11 @@
 Draw a tree and its harmonically extended Fiedler cut using TikZ.
 """
 
+import math
+
+import numpy as np
 import scipy
 from scipy import linalg
-import numpy as np
-
-import math
 
 from SnippetUtil import HandlingError
 import Newick

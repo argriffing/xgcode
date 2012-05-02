@@ -1,4 +1,5 @@
-"""Analyze multiple sequential nucleotide sites of a pileup.
+"""
+Analyze multiple sequential nucleotide sites of a pileup.
 
 Parameters x, y, and z are branch lengths which define the two three-taxon
 trees whose Jukes-Cantor nucleotide distribution at the tips
@@ -17,8 +18,8 @@ nominal coverage multiples which might result from duplications.
 from StringIO import StringIO
 import itertools
 import math
-
 import argparse
+
 import scipy
 
 from SnippetUtil import HandlingError

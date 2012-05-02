@@ -3,7 +3,6 @@
 
 from StringIO import StringIO
 import os
-
 import argparse
 
 from SnippetUtil import HandlingError

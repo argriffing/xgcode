@@ -3,6 +3,7 @@ Look at a few matrices associated with a path graph.
 """
 
 from StringIO import StringIO
+
 import numpy as np
 import scipy
 import scipy.linalg

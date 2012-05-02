@@ -1,4 +1,5 @@
-"""Look at the effect of added leaflets on the MDS embedding of a tree.
+"""
+Look at the effect of added leaflets on the MDS embedding of a tree.
 
 By a leaflet I mean a new leaf that is a negligible distance
 from an existing vertex.
@@ -20,9 +21,9 @@ so now I will try to find the correct way to use the mass vector.
 from StringIO import StringIO
 import random
 import time
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil

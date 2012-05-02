@@ -1,4 +1,5 @@
-"""Seek a counterexample to an eigenvector sign sufficiency conjecture.
+"""
+Seek a counterexample to an eigenvector sign sufficiency conjecture.
 
 Look for a specific counterexample
 to the eigenvector sign sufficiency conjecture.
@@ -7,9 +8,9 @@ to the eigenvector sign sufficiency conjecture.
 from StringIO import StringIO
 import random
 import time
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil

@@ -6,6 +6,7 @@ Updated 20111111.
 
 from StringIO import StringIO
 import math
+
 import numpy as np
 import scipy
 

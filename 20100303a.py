@@ -1,4 +1,5 @@
-"""Analyze nucleotide sites of a pileup using hmmus. [UNFINISHED]
+"""
+Analyze nucleotide sites of a pileup using hmmus. [UNFINISHED]
 
 Parameters x, y, and z are branch lengths which define the two three-taxon
 trees whose Jukes-Cantor nucleotide distribution at the tips
@@ -17,8 +18,8 @@ nominal coverage multiples which might result from duplications.
 from StringIO import StringIO
 import itertools
 import math
-
 import argparse
+
 import hmmus
 import scipy
 

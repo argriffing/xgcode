@@ -1,4 +1,5 @@
-"""Convert a filtered pileup file to a set of files.
+"""
+Convert a filtered pileup file to a set of files.
 
 Each output file has information from a single chromosome.
 Input columns are
@@ -15,7 +16,6 @@ The output filenames include the chromosome name.
 
 from StringIO import StringIO
 import os
-
 import argparse
 
 from SnippetUtil import HandlingError

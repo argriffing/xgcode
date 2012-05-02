@@ -11,7 +11,6 @@ from StringIO import StringIO
 import sys
 import os
 import csv
-
 import argparse
 
 from SnippetUtil import HandlingError

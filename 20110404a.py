@@ -1,10 +1,12 @@
-""" Look for tree topology rejection power differences.
+"""
+Look for tree topology rejection power differences.
 """
 
 from StringIO import StringIO
 from collections import defaultdict
-import numpy as np
 import time
+
+import numpy as np
 
 import Newick
 import Form

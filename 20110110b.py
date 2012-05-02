@@ -1,4 +1,5 @@
-"""Create a tree MDS animation in 2D with nodes for crossings in the xy plane.
+"""
+Create a tree MDS animation in 2D with nodes for crossings in the xy plane.
 
 Red dots show intersections of the tree with the xy plane.
 Create a tree MDS animation
@@ -22,10 +23,10 @@ Resolutions preferred by YouTube are 640x360 and 480x360.
 from StringIO import StringIO
 import os
 import math
+import argparse
 
 import numpy as np
 import cairo
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil

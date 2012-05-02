@@ -1,4 +1,5 @@
-"""Plot an MDS spectrogram showing eigenvalues as tree tips are upweighted.
+"""
+Plot an MDS spectrogram showing eigenvalues as tree tips are upweighted.
 
 Consider three eigenvalue scalings.
 First, scale by the max over all eigenvalues
@@ -12,10 +13,10 @@ for each duplication count individually.
 from StringIO import StringIO
 import os
 import math
+import argparse
 
 import numpy as np
 import cairo
-import argparse
 import scipy
 
 from SnippetUtil import HandlingError

@@ -1,4 +1,5 @@
-"""This module is related to the Direct Protein model.
+"""
+This module is related to the Direct Protein model.
 
 For more information about this model see:
 "Population genetics without intraspecific data" by Thorne et al.
@@ -12,7 +13,6 @@ import math
 import numpy as np
 
 import Util
-import Codon
 import RateMatrix
 import SubModel
 import MatrixUtil
@@ -20,7 +20,7 @@ import XmlUtil
 import PhyLikelihood
 import Newick
 import Fasta
-
+import Codon
 from Codon import g_sorted_nt_letters as nt_ordered
 from Codon import g_sorted_aa_letters as aa_ordered
 from Codon import g_sorted_non_stop_codons as codons_ordered

@@ -1,4 +1,5 @@
-"""Examine iterative projection onto axes of the leaf Steiner ellipsoid.
+"""
+Examine iterative projection onto axes of the leaf Steiner ellipsoid.
 
 Examine steps of a projection onto axes
 of the Steiner ellipsoid of the leaves.
@@ -11,8 +12,8 @@ but I haven't worked this out yet.
 from StringIO import StringIO
 import random
 import time
-
 import argparse
+
 import numpy as np
 
 from SnippetUtil import HandlingError

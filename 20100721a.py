@@ -1,11 +1,12 @@
-"""Use scipy to find the number of k-means clusters using the Calinski index.
+"""
+Use scipy to find the number of k-means clusters using the Calinski index.
 """
 
 from StringIO import StringIO
 import os
 import time
-
 import argparse
+
 import numpy as np
 from scipy import cluster
 

@@ -8,9 +8,9 @@ This Laplacian-like matrix is the cross-product matrix S from the Abdi paper.
 from StringIO import StringIO
 import random
 import time
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import SnippetUtil

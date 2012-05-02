@@ -3,7 +3,6 @@ Scatter plot 3D given an R table with one categorical and one numerical var.
 """
 
 from StringIO import StringIO
-
 import argparse
 
 from SnippetUtil import HandlingError

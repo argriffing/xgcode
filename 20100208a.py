@@ -1,4 +1,5 @@
-"""Split a file by the first whitespace separated element on each line. [NOWEB]
+"""
+Split a file by the first whitespace separated element on each line. [NOWEB]
 
 This is not so useful as a web app.
 The file is split by lines into multiple files.
@@ -7,7 +8,6 @@ The file is split by lines into multiple files.
 
 from StringIO import StringIO
 import os
-
 import argparse
 
 from SnippetUtil import HandlingError

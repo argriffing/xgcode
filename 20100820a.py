@@ -1,12 +1,13 @@
-"""Compute SNP correlations with principal components given a .hud file.
+"""
+Compute SNP correlations with principal components given a .hud file.
 """
 
 from StringIO import StringIO
 import math
 import os
+import argparse
 
 import numpy as np
-import argparse
 
 from SnippetUtil import HandlingError
 import Carbone
