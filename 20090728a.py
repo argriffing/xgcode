@@ -1,4 +1,5 @@
-"""Do some SNP analysis. [UNFINISHED]
+"""
+Do some SNP analysis. [UNFINISHED]
 """
 
 from StringIO import StringIO
@@ -12,14 +13,6 @@ import Util
 import Form
 import FormOut
 import Progress
-
-def get_hamming_distance(a, b):
-    """
-    @param a: a sequence of ones and zeros
-    @param b: a sequence of ones and zeros
-    @return: the hamming distance
-    """
-    return Util.hamming_distance(a, b)
 
 def get_folded_distance(a, b):
     """
@@ -103,9 +96,8 @@ def main():
     filename = '/home/argriffi/phenotype-challenge/testphen.txt'
     print 'parsing the data'
     # read the input file
-    fin = open(filename)
-    lines = fin.readlines()
-    fin.close()
+    with open(filename) as fin:
+        lines = fin.readlines()
     # parse the input file
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
@@ -148,9 +140,8 @@ def do_data_translation():
     filename_in = '/home/argriffi/phenotype-challenge/testphen.txt'
     filename_out = '/home/argriffi/phenotype-challenge/testphen-simple.txt'
     # read the input file
-    fin = open(filename_in)
-    lines = fin.readlines()
-    fin.close()
+    with open(filename_in) as fin:
+        lines = fin.readlines()
     # parse the input file
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
@@ -169,9 +160,8 @@ def do_data_translation():
     output_lines.extend(str(x) for x in phenotypes)
     output_lines.extend(''.join(str(x) for x in snp) for snp in snps)
     # write the output data
-    fout = open(filename_out, 'w')
-    fout.write('\n'.join(output_lines) + '\n')
-    fout.close()
+    with open(filename_out, 'w') as fout:
+        fout.write('\n'.join(output_lines) + '\n')
 
 def do_r_translation():
     """
@@ -181,9 +171,8 @@ def do_r_translation():
     matrix_filename_out = 'matrix.dat'
     vector_filename_out = 'vector.dat'
     # read the input file
-    fin = open(filename_in)
-    lines = fin.readlines()
-    fin.close()
+    with open(filename_in) as fin:
+        lines = fin.readlines()
     # parse the input file
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
@@ -201,13 +190,11 @@ def do_r_translation():
     flattened_matrix = []
     for row in snps:
         flattened_matrix.extend(row)
-    fout = open(matrix_filename_out, 'w')
-    print >> fout, ' '.join(str(x) for x in flattened_matrix)
-    fout.close()
+    with open(matrix_filename_out, 'w') as fout:
+        print >> fout, ' '.join(str(x) for x in flattened_matrix)
     # write the vector
-    fout = open(vector_filename_out, 'w')
-    print >> fout, ' '.join(str(x) for x in phenotypes)
-    fout.close()
+    with open(vector_filename_out, 'w') as fout:
+        print >> fout, ' '.join(str(x) for x in phenotypes)
 
 if __name__ == '__main__':
     do_r_translation()

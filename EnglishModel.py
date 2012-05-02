@@ -46,9 +46,8 @@ def _get_count_matrix():
     file_path = os.path.join(data_directory, 'tale_of_two_cities_counts.dat')
     if os.path.isfile(file_path):
         logger.debug('found the cached count matrix file')
-        fin = open(file_path, 'r')
-        count_matrix = _read_count_matrix(fin)
-        fin.close()
+        with open(file_path, 'r') as fin:
+            count_matrix = _read_count_matrix(fin)
     else:
         logger.debug('failed to find the cached count matrix file')
         raw_text = _get_raw_text()
@@ -59,9 +58,8 @@ def _get_count_matrix():
         for a, b in zip(simple_text[:-1], simple_text[1:]):
             count_matrix[(a, b)] += 1
         logger.debug('created the count matrix')
-        fout = open(file_path, 'w')
-        _write_count_matrix(fout, count_matrix)
-        fout.close()
+        with open(file_path, 'w') as fout:
+            _write_count_matrix(fout, count_matrix)
         logger.debug('cached the count matrix')
     return count_matrix
 
@@ -118,17 +116,15 @@ def _get_raw_text():
     file_path = os.path.join(data_directory, 'tale_of_two_cities.txt')
     if os.path.isfile(file_path):
         logger.debug('found the cached raw text file')
-        fin = open(file_path, 'r')
-        text_string = fin.read()
-        fin.close()
+        with open(file_path, 'r') as fin:
+            text_string = fin.read()
         logger.debug('read %d characters from the cached file' % len(text_string))
     else:
         logger.debug('failed to find the cached raw text file')
         text_string = _download_raw_text()
         logger.debug('read %d characters from project gutenberg' % len(text_string))
-        fout = open(file_path, 'w')
-        fout.write(text_string)
-        fout.close()
+        with open(file_path, 'w') as fout:
+            fout.write(text_string)
         logger.debug('cached the raw text file')
     return text_string
 

@@ -413,16 +413,14 @@ def do_hard_coded_analysis_a(tree, tree_remark):
         script_contents = R_helper(nj_sim.get_normalized_error_counts(),
                 ss_sim.get_normalized_error_counts())
         filename = 'uniform_%d.R' % sequence_length
-        fout = open(filename, 'w')
-        print >> fout, script_contents
-        fout.close()
+        with open(filename, 'w') as fout:
+            print >> fout, script_contents
         # write the weighted loss function comparison R script
         script_contents = R_helper(nj_sim.get_normalized_loss_values(),
                 ss_sim.get_normalized_loss_values())
         filename = 'weighted_%d.R' % sequence_length
-        fout = open(filename, 'w')
-        print >> fout, script_contents
-        fout.close()
+        with open(filename, 'w') as fout:
+            print >> fout, script_contents
 
 def do_hard_coded_analysis_b(tree, tree_remark):
     """
@@ -499,18 +497,17 @@ def do_hard_coded_analysis_b(tree, tree_remark):
     table_string = RUtil.get_table_string(table, labels)
     # write the table
     filename = 'out3.table'
-    fout = open(filename, 'w')
-    print >> fout, '# tree source:', tree_remark
-    print >> fout, '# number of taxa:', len(ordered_names)
-    print >> fout, '# sampled distance matrices:', len(distance_matrices)
-    print >> fout, '# seconds elapsed for sampling:', distance_matrix_seconds
-    print >> fout, '# sites per sequence:', sequence_length
-    for sim, seconds in zip(sims, reconstruction_seconds):
-        msg_a = '# seconds elapsed for tree reconstruction using '
-        msg_b = sim.description + ': ' + str(seconds)
-        print >> fout, msg_a  + msg_b
-    print >> fout, table_string
-    fout.close()
+    with open(filename, 'w') as fout:
+        print >> fout, '# tree source:', tree_remark
+        print >> fout, '# number of taxa:', len(ordered_names)
+        print >> fout, '# sampled distance matrices:', len(distance_matrices)
+        print >> fout, '# sampling seconds elapsed:', distance_matrix_seconds
+        print >> fout, '# sites per sequence:', sequence_length
+        for sim, seconds in zip(sims, reconstruction_seconds):
+            msg_a = '# seconds elapsed for tree reconstruction using '
+            msg_b = sim.description + ': ' + str(seconds)
+            print >> fout, msg_a  + msg_b
+        print >> fout, table_string
     print 'wrote', filename
 
 def do_command_line_analysis(options):

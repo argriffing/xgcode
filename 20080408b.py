@@ -69,15 +69,13 @@ def get_response(fs):
     original_directory = os.getcwd()
     os.chdir(Config.data_path)
     # create the batch file
-    fout = open(hyphy_bf, 'wt')
     category_suffixes = [str(category+1) for category in range(fs.ncategories)]
     hky_hyphy_model = get_hyphy_model_string(hyphy_nexus, fs.ncategories)
-    print >> fout, hky_hyphy_model 
-    fout.close()
+    with open(hyphy_bf, 'wt') as fout:
+        print >> fout, hky_hyphy_model 
     # create the nexus file
-    fout = open(hyphy_nexus, 'wt')
-    print >> fout, nexus
-    fout.close()
+    with open(hyphy_nexus, 'wt') as fout:
+        print >> fout, nexus
     # run hyphy
     p = subprocess.Popen([Config.hyphy_exe_path, hyphy_bf],
             close_fds=True, stdout=subprocess.PIPE)

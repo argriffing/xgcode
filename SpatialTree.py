@@ -240,9 +240,9 @@ def demo():
     image_format = 'png'
     image_string = DrawTreeImage.get_tree_image(tree, max_size, image_format)
     # write the image file
-    fout = open('test.%s' % image_format, 'wb')
-    fout.write(image_string)
-    fout.close()
+    with open('test.%s' % image_format, 'wb') as fout:
+        fout.write(image_string)
 
 if __name__ == '__main__':
     unittest.main()
+

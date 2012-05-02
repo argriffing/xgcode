@@ -100,15 +100,14 @@ def gen_elements(piece_pathname):
     @param piece_pathname: the path to a piece of an original huge fasta file
     """
     # read a bunch of alignments from the piece of the original huge fasta file
-    fin = open(piece_pathname)
-    for line_list in Util.gen_paragraphs(fin):
-        # We only care about the first line in each list,
-        # and each one looks something like this:
-        # >uc009xhd.1_hg18_1_1 342 0 0 chr1:247178160-247179185+
-        header_line = line_list[0]
-        p = LocationParser(header_line)
-        yield (p.chromosome, p.first_index, p.last_index)
-    fin.close()
+    with open(piece_pathname) as fin:
+        for line_list in Util.gen_paragraphs(fin):
+            # We only care about the first line in each list,
+            # and each one looks something like this:
+            # >uc009xhd.1_hg18_1_1 342 0 0 chr1:247178160-247179185+
+            header_line = line_list[0]
+            p = LocationParser(header_line)
+            yield (p.chromosome, p.first_index, p.last_index)
 
 
 class LocationParser:
@@ -201,24 +200,22 @@ class Splitter:
             pbar = Progress.Bar(nbytes_total)
             nbytes_current_approx = 0
         # process the file, possibly updating the progress bar
-        fin = open(self.filename)
-        piece_index = 0
-        for line_lists in gen_line_list_lists(Util.gen_paragraphs(fin),
-                self.approx_lines_per_piece):
-            piece_filename = piece_index_to_filename(piece_index,
-                    self.filename)
-            piece_path = os.path.join(self.target_directory, piece_filename)
-            fout = open(piece_path, 'w')
-            for line_list in line_lists:
-                print >> fout, '\n'.join(line_list)
-                print >> fout
-            fout.close()
-            piece_index += 1
-            if verbose:
-                nbytes = sum(len(''.join(x)) for x in line_lists)
-                nbytes_current_approx += nbytes
-                pbar.update(nbytes_current_approx)
-        fin.close()
+        with open(self.filename) as fin:
+            piece_index = 0
+            for line_lists in gen_line_list_lists(Util.gen_paragraphs(fin),
+                    self.approx_lines_per_piece):
+                piece_filename = piece_index_to_filename(piece_index,
+                        self.filename)
+                piece_path = os.path.join(self.target_directory, piece_filename)
+                with open(piece_path, 'w') as fout:
+                    for line_list in line_lists:
+                        print >> fout, '\n'.join(line_list)
+                        print >> fout
+                piece_index += 1
+                if verbose:
+                    nbytes = sum(len(''.join(x)) for x in line_lists)
+                    nbytes_current_approx += nbytes
+                    pbar.update(nbytes_current_approx)
         # possibly stop the progress bar
         if verbose:
             pbar.finish()
@@ -229,18 +226,17 @@ class Splitter:
         """
         nchunks = 0
         nlines = 0
-        fin = open(self.filename)
-        for lines in Util.gen_paragraphs(fin):
-            self.process_header_line(lines[0])
-            nlines += len(lines)
-            nchunks += 1
-            if not nchunks % 10000:
-                print 'nlines:', nlines
-                print 'nchunks:', nchunks
-                print
-        print 'total nlines:', nlines
-        print 'total nchunks:', nchunks
-        fin.close()
+        with open(self.filename) as fin:
+            for lines in Util.gen_paragraphs(fin):
+                self.process_header_line(lines[0])
+                nlines += len(lines)
+                nchunks += 1
+                if not nchunks % 10000:
+                    print 'nlines:', nlines
+                    print 'nchunks:', nchunks
+                    print
+            print 'total nlines:', nlines
+            print 'total nchunks:', nchunks
 
     def process_header_line(self, header_line):
         coordinate_string = header_line.split()[-1].strip()
@@ -329,9 +325,8 @@ class Indexer:
         chromosome_strings = list(sorted(chromosome_string_to_rows))
         assert len(chromosome_strings) < 1000
         # write the list of valid chromosome strings
-        fout = open(self.chromosome_list_filename, 'w')
-        fout.write('\n'.join(chromosome_strings))
-        fout.close()
+        with open(self.chromosome_list_filename, 'w') as fout:
+            fout.write('\n'.join(chromosome_strings))
         if verbose:
             print >> sys.stderr, 'wrote', self.chromosome_list_filename
             print >> sys.stderr, 'writing the index files:'
@@ -342,10 +337,9 @@ class Indexer:
             rows = chromosome_string_to_rows[chromosome_string]
             index_filename = chromosome_string + '.index'
             index_pathname = os.path.join(self.index_directory, index_filename)
-            fout = open(index_pathname, 'w')
-            for row in sorted(rows):
-                print >> fout, '%d\t%d\t%d' % row
-            fout.close()
+            with open(index_pathname, 'w') as fout:
+                for row in sorted(rows):
+                    print >> fout, '%d\t%d\t%d' % row
             if verbose:
                 nwritten += 1
                 pbar.update(nwritten)
@@ -402,9 +396,8 @@ class Finder:
         # read the index file to find a piece index
         if verbose:
             print 'searching the index file', index_pathname
-        fin = open(index_pathname)
-        piece_index = get_piece_index(fin, chrom_position)
-        fin.close()
+        with open(index_pathname) as fin:
+            piece_index = get_piece_index(fin, chrom_position)
         if not piece_index:
             return []
         # read the fasta piece corresponding to the index
@@ -412,9 +405,8 @@ class Finder:
                 self.fasta_directory, 'knownGene.exonAA.%04d.fa' % piece_index)
         if verbose:
             print 'searching the fasta file', piece_pathname
-        fin = open(piece_pathname)
-        line_list = get_line_list(fin, chrom_string, chrom_position)
-        fin.close()
+        with open(piece_pathname) as fin:
+            line_list = get_line_list(fin, chrom_string, chrom_position)
         if line_list is None:
             msg_a = 'the index pointed to a fasta file '
             msg_b = 'that does not have the requested position'

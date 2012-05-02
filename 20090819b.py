@@ -1,4 +1,5 @@
-"""Break a resequencing file into files for individual strains. [NOWEB]
+"""
+Break a resequencing file into files for individual strains. [NOWEB]
 
 This is not so useful as a internet accessible script.
 Columns of each output file are defined as follows.

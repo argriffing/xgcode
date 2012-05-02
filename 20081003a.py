@@ -1,4 +1,5 @@
-"""Demonstrate kernel PCA.
+"""
+Demonstrate kernel PCA.
 
 This is not so useful.
 """
@@ -261,9 +262,8 @@ def main():
         # get the filename
         filename = 'frame-%04d.png' % i
         # write the image
-        fout = open(filename, 'wb')
-        fout.write(image_string)
-        fout.close()
+        with open(filename, 'wb') as fout:
+            fout.write(image_string)
 
 
 if __name__ == '__main__':

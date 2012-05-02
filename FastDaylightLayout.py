@@ -215,9 +215,8 @@ def make_file(newick_string, filename_prefix, iterations, min_segments):
     image_string = DrawTreeImage.get_tree_image(tree, (640, 480), image_format)
     print 'created the image string'
     # write the image file
-    fout = open('%s.%s' % (filename_prefix, image_format), 'wb')
-    fout.write(image_string)
-    fout.close()
+    with open('%s.%s' % (filename_prefix, image_format), 'wb') as fout:
+        fout.write(image_string)
 
 def make_file_progressive(newick_string, filename_prefix, min_segment_count):
     import DrawTreeImage
@@ -241,9 +240,8 @@ def make_file_progressive(newick_string, filename_prefix, min_segment_count):
     image_string = DrawTreeImage.get_tree_image(tree, (640, 480), image_format)
     print 'created the image string'
     # write the image file
-    fout = open('%s.%s' % (filename_prefix, image_format), 'wb')
-    fout.write(image_string)
-    fout.close()
+    with open('%s.%s' % (filename_prefix, image_format), 'wb') as fout:
+        fout.write(image_string)
 
 def make_hiv_images():
     import urllib

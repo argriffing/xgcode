@@ -1,4 +1,5 @@
-"""A wrapper for the PAML tools of Ziheng Yang.
+"""
+A wrapper for the PAML tools of Ziheng Yang.
 """
 
 import unittest
@@ -130,40 +131,35 @@ def run_hky(tree, alignment):
     config = PamlConfig()
     config.set_hky()
     config.to_ctl_string()
-    fout = open(baseml_ctl, 'wt')
-    print >> fout, config.to_ctl_string()
-    fout.close()
+    with open(baseml_ctl, 'wt') as fout:
+        print >> fout, config.to_ctl_string()
     # create the nexus object that defines the tree and alignment
     nexus = Nexus.get_sample_nexus_object()
     # create the baseml.newick tree file
-    fout = open(baseml_newick, 'wt')
-    print >> fout, nexus.tree.get_newick_string()
-    fout.close()
+    with open(baseml_newick, 'wt') as fout:
+        print >> fout, nexus.tree.get_newick_string()
     # create the baseml.phylip alignment file
-    fout = open(baseml_phylip, 'wt')
     phylip_string = Phylip.get_alignment_string_non_interleaved(nexus.alignment)
-    print >> fout, phylip_string
-    fout.close()
+    with open(baseml_phylip, 'wt') as fout:
+        print >> fout, phylip_string
     # change the current directory to the data directory
-    old_directory = os.getcwd()
-    os.chdir(Config.data_path)
-    # run PAML
-    exe_path = Config.baseml_exe_path
-    ctl_path = baseml_ctl
-    #cmd = '%s %s > /dev/null' % (exe_path, ctl_path)
-    #os.system(cmd)
-    from_paml, to_paml = popen2.popen4([exe_path, ctl_path])
-    #p = subprocess.Popen([cmd, arg], stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
-    # change back to the old directory
-    os.chdir(old_directory)
+    with Util.remember_cwd():
+        os.chdir(Config.data_path)
+        # run PAML
+        exe_path = Config.baseml_exe_path
+        ctl_path = baseml_ctl
+        #cmd = '%s %s > /dev/null' % (exe_path, ctl_path)
+        #os.system(cmd)
+        from_paml, to_paml = popen2.popen4([exe_path, ctl_path])
+        #p = subprocess.Popen([cmd, arg], stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+        # change back to the old directory
     return from_paml.read()
 
 def main():
     nexus = Nexus.get_sample_nexus_object()
     run_hky(nexus.tree, nexus.alignment)
-    fin = open(baseml_out)
-    d = parse_hky_output(fin)
-    fin.close()
+    with open(baseml_out) as fin:
+        d = parse_hky_output(fin)
     print d
 
 if __name__ == '__main__':

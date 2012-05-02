@@ -1,4 +1,5 @@
-"""Look for an invalid spectral split when pairwise leaf distances are squared.
+"""
+Look for an invalid spectral split when pairwise leaf distances are squared.
 
 Look for a principal coordinate invalid split
 when pairwise leaf distances are squared.
@@ -28,6 +29,8 @@ import TreeSampler
 import iterutils
 import Form
 import FormOut
+
+# TODO use combobreaker module for searching
 
 def get_form():
     """
@@ -79,18 +82,6 @@ def get_principal_coordinate(D):
     L_pinv = -0.5 * MatrixUtil.double_centered(D)
     return get_principal_eigenvector(L_pinv)
 
-def get_elementwise_squared_matrix(M):
-    """
-    @param M: a 2d numpy array representing a matrix
-    @return: a tranformation of the input matrix where each element is squared
-    """
-    Q = M.copy()
-    nrows, ncols = Q.shape
-    for i in range(nrows):
-        for j in range(ncols):
-            Q[i][j] *= Q[i][j]
-    return Q
-
 def get_response_content(fs):
     # get the newick trees.
     trees = []
@@ -127,7 +118,7 @@ def get_response_content(fs):
             print >> out, 'invalid partition:', partition_to_string(part)
             print >> out
         # check the validity of the partition implied by the incorrect formula
-        Q = get_elementwise_squared_matrix(D)
+        Q = D * D
         loadings = get_principal_coordinate(Q)
         nonneg_leaf_set = frozenset(tip for tip, v in zip(ordered_tip_names, loadings) if v >= 0)
         neg_leaf_set = frozenset(tip for tip, v in zip(ordered_tip_names, loadings) if v < 0)
@@ -178,7 +169,7 @@ def main():
                 print >> fout, 'invalid partition:', partition_to_string(part)
                 print >> fout
             # check the validity of the partition implied by the incorrect formula
-            Q = get_elementwise_squared_matrix(D)
+            Q = D * D
             loadings = get_principal_coordinate(Q)
             nonneg_leaf_set = frozenset(tip for tip, v in zip(ordered_tip_names, loadings) if v >= 0)
             neg_leaf_set = frozenset(tip for tip, v in zip(ordered_tip_names, loadings) if v < 0)
@@ -197,3 +188,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

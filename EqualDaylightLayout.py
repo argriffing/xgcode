@@ -157,9 +157,8 @@ def main_demo():
     # write the image file
     print 'writing', filename
     filename = 'test.%s' % test_format
-    fout = open(filename, 'wb')
-    fout.write(test_string)
-    fout.close()
+    with open(filename, 'wb') as fout:
+        fout.write(test_string)
 
 if __name__ == '__main__':
     unittest.main()

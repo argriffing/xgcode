@@ -1,11 +1,9 @@
 """
 This module draws a SpatialTree using the cairo API.
-This module should only be accessed through its draw() function.
 """
 
 import math
 from StringIO import StringIO
-from optparse import OptionParser
 
 import cairo
 
@@ -200,25 +198,21 @@ def main():
         image_string = get_tree_image(tree, max_size, image_format)
         # write the image file
         image_filename = 'test.%s' % image_format
-        fout = open(image_filename, 'wb')
-        fout.write(image_string)
-        fout.close()
+        with open(image_filename, 'wb') as fout:
+            fout.write(image_string)
         print 'created', image_filename
     # write an html file
     html_filename = 'test.html'
-    fout = open(html_filename, 'w')
-    print >> fout, '<html><body>'
-    for image_format in image_formats:
-        image_filename = 'test.%s' % image_format
-        print >> fout, '<a href="%s">%s</a><br/>' % (image_filename, image_filename)
-    print >> fout, '</body></html>'
-    fout.close()
+    with open(html_filename, 'w') as fout:
+        print >> fout, '<html><body>'
+        for image_format in image_formats:
+            image_filename = 'test.%s' % image_format
+            print >> fout, '<a href="%s">%s</a><br/>' % (
+                    image_filename, image_filename)
+        print >> fout, '</body></html>'
     print 'created', html_filename
 
 
 if __name__ == '__main__':
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', help='output file')
-    options, args = parser.parse_args()
     main()
+
