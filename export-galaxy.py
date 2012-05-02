@@ -274,11 +274,11 @@ def main_archive(args):
         os.remove(archive_name)
     except OSError as e:
         pass
-    # create the empty suite directory
-    os.makedirs(args.suite_archive)
     # get the module names
     module_names = meta.get_module_names(
             args.manifest, args.create_all, args.create_tagged)
+    # create the empty suite directory
+    os.makedirs(args.suite_archive)
     # add the python files
     meta.add_python_files(module_names, args.suite_archive)
     shutil.copyfile('galaxy_format_tweak.py',

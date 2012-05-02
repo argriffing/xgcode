@@ -362,11 +362,13 @@ def get_usermod_info(module_names, short_name_length):
     # The modules need to be imported to get the unique short names.
     usermods = []
     for name in module_names:
+        usermod = None
         try:
             usermod = __import__(name, globals(), locals(), [], -1)
         except ImportError as e:
             import_errors.append(e)
-        usermods.append(usermod)
+        if usermod is not None:
+            usermods.append(usermod)
     # Get all long titles.
     titles = [get_title(usermod) for usermod in usermods]
     # Get corresponding unique short names.
