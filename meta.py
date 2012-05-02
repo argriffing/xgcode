@@ -8,7 +8,7 @@ The first paragraph should have imports from the python standard library.
 Imports in the second paragraph should be from
 external modules, such as are available on pypi.
 The third paragraph consists of imports internal to the package;
-these are modules from the primordial ooze that do not have
+these are modules from the primordial soup that do not have
 an upstream source.
 """
 
@@ -297,6 +297,10 @@ def get_title(usermod):
 def get_module_names(manifest, create_all, create_tagged, srcdir='.'):
     """
     This function is for selecting modules.
+    Modules from a manifest are in the order they appear in the manifest file.
+    Otherwise the modules are sorted by descending lexicographical order
+    which should happen to correspond to reverse chronological order
+    because of the naming convention.
     @param manifest: None or filename listing modules
     @param create_all: flag
     @param create_tagged: None or a tag
@@ -306,16 +310,19 @@ def get_module_names(manifest, create_all, create_tagged, srcdir='.'):
     if sum(bool(x) for x in (manifest, create_all, create_tagged)) != 1:
         msg = 'expected exactly one of {manifest, create_all, create_tagged}'
         raise ValueError(msg)
-    module_names = []
+    module_names = None
     if manifest:
         with open(manifest) as fin:
             module_names = [x.strip() for x in fin]
     elif create_all:
+        module_names = []
         for name in os.listdir(srcdir):
             if re.match(pattern, name):
                 module_name = name[:-3]
                 module_names.append(module_name)
+        module_names.sort(reverse=True)
     elif create_tagged:
+        module_names = []
         for name in os.listdir(srcdir):
             if re.match(pattern, name):
                 module_name = name[:-3]
@@ -326,10 +333,10 @@ def get_module_names(manifest, create_all, create_tagged, srcdir='.'):
                 except ImportError as e:
                     pass
                 if usermod:
-                    #FIXME do all modules have g_tags yet?
                     if hasattr(usermod, 'g_tags'):
                         if is_tag_prefix(usermod.g_tags, create_tagged):
                             module_names.append(module_name)
+        module_names.sort(reverse=True)
     return module_names
 
 class ImportedModuleInfo:
