@@ -7,29 +7,14 @@ import os
 import sys
 import shutil
 import subprocess
-import tarfile
 
 import argparse
 from lxml import etree
 
 import meta
 import Util
+import galaxyutil
 
-def get_split_title(description, prefix_length=20):
-    """
-    Galaxy wants the description to be split up.
-    The name should be the first part of the input description.
-    The description should be the last part of the input description.
-    @param description: the long description of the mini app
-    @prefix_length: choose roughly this many letters of the prefix as a name
-    """
-    elements = description.split()
-    k = 0
-    for i, x in enumerate(elements):
-        if k + len(x) > prefix_length:
-            break
-        k += len(x)
-    return ' '.join(elements[:i]), ' '.join(elements[i:])
 
 def make_command(module_name, form_objects):
     """
@@ -69,7 +54,7 @@ def get_xml(usermod, module_name, short_name):
     # create the python command string with wildcards
     cmd = make_command(module_name, form_objects)
     # build the xml
-    desc_prefix, desc_suffix = get_split_title(doc_lines[0])
+    desc_prefix, desc_suffix = galaxyutil.get_split_title(doc_lines[0])
     tool = etree.Element('tool',
             id=short_name, name=desc_prefix, version='1.0.0')
     if desc_suffix:
@@ -217,7 +202,7 @@ def get_suite_config_xml(added_infos, suite_name):
     etree.SubElement(suite, 'description').text = suite_description
     for info in added_infos:
         module_id = info.get_identifier()
-        module_name = get_split_title(info.get_title())[0]
+        module_name = galaxyutil.get_split_title(info.get_title())[0]
         module_description = info.get_title()
         tool = etree.SubElement(suite, 'tool',
                 id=module_id, name=module_name, version='1.0.0')

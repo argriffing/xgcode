@@ -72,7 +72,7 @@ def split_args(argv):
     # look for arg indices that look like module names
     modname_indices = []
     for i, arg in enumerate(argv):
-        re.match(g_module_name_pattern, arg):
+        if re.match(g_module_name_pattern, arg):
             modname_indices.append(i)
     # define the other groups
     if len(modname_indices) == 0:

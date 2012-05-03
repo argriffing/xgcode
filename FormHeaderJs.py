@@ -132,6 +132,9 @@ def _get_cat_4_text(form_objects, presets):
                 print >> out, 'wsfSetChecks("%s", %s);' % (k, js_literal)
             elif isinstance(form_object, Form.Sequence):
                 print >> out, 'wsfSetInner("%s", "%s");' % (k, '\\n'.join(v))
+            elif isinstance(form_object, Form.MultiLine):
+                contents = '\\n'.join(v.splitlines())
+                print >> out, 'wsfSetInner("%s", "%s");' % (k, contents)
             elif any([
                 isinstance(form_object, Form.Integer),
                 isinstance(form_object, Form.Float),
