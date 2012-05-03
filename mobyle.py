@@ -173,7 +173,11 @@ def add_xml_files(cat_info, env_info,
     print >> sys.stderr, nsuccesses, 'successfully created xmls'
     return [x.get_identifier() for x in mod_infos], import_errors
 
+
 class TestMobyle(unittest.TestCase):
     pass
+
+
 if __name__ == '__main__':
     unittest.main()
+

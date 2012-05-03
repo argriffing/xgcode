@@ -113,11 +113,9 @@ def main(args):
         if re.match(r'^\d{8}[a-zA-Z]\.py$', filename):
             prefix = filename.split('.')[0]
             snippet_module_names.append(prefix)
-    # report the number of module names detected
-    print len(snippet_module_names), 'snippets detected'
     # Try to test each module
     # to assert that no error occurs when the default cgi parameters are used.
-    success_count = 0
+    names_successful = []
     name_to_nseconds = {}
     name_to_linemax = {}
     names_with_unrestored_cwd = []
@@ -141,12 +139,13 @@ def main(args):
         if success:
             nseconds = time.time() - t
             name_to_nseconds[module_name] = nseconds
-            success_count += 1
+            names_successful.append(module_name)
         # we are done with the imported snippet
         # so remove it from memory if it was loaded
         if module is not None:
             del module
-    print success_count, 'snippets passed without an error'
+    print len(snippet_module_names), 'snippets detected'
+    print len(names_successful), 'snippets passed without an error'
     print
     # show the snippets with the longest lines
     pairs = [(t, name) for name, t in name_to_linemax.items()]
