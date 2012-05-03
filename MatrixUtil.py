@@ -9,8 +9,8 @@ from StringIO import StringIO
 
 import numpy as np
 
-import matrixio
 import graph
+import matrixio
 from matrixio import m_to_string
 from matrixio import read_matrix
 
@@ -217,8 +217,24 @@ def get_principal_submatrix(M, indices):
             R[i_small][j_small] = M[i_big][j_big]
     return R
 
+def double_centered_slow(M):
+    """
+    This is a very explicit implementation.
+    The form of.
+    @param M: a numpy array
+    @return: a doubly centered numpy array
+    """
+    assert_square(M)
+    n = len(M)
+    e = np.ones(n)
+    I = np.eye(n)
+    P = np.outer(e, e) / np.inner(e, e)
+    H = I - P
+    return ndot(H, M, H)
+
 def double_centered(M):
     """
+    This is a somewhat less explicit but more efficient implementation.
     @param M: a numpy array
     @return: a doubly centered numpy array
     """
@@ -356,15 +372,19 @@ class TestMatrixUtil(unittest.TestCase):
 
     def test_double_centered_a(self):
         M = np.array([[1.0, 2.0], [3.0, 4.0]])
-        observed = double_centered(M)
         expected = np.array([[0, 0], [0, 0]])
+        observed = double_centered(M)
+        observed_slow = double_centered_slow(M)
         self.assertTrue(np.allclose(observed, expected))
+        self.assertTrue(np.allclose(observed_slow, expected))
 
     def test_double_centered_b(self):
         M = np.array([[1.0, 2.0], [1.0, 1.0]])
-        observed = double_centered(M)
         expected = np.array([[-0.25, 0.25], [0.25, -0.25]])
+        observed = double_centered(M)
+        observed_slow = double_centered_slow(M)
         self.assertTrue(np.allclose(observed, expected))
+        self.assertTrue(np.allclose(observed_slow, expected))
 
 
 if __name__ == '__main__':

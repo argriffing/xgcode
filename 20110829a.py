@@ -11,6 +11,7 @@ import numpy as np
 
 import Form
 import FormOut
+from MatrixUtil import ndot
 
 def get_form():
     """
@@ -22,20 +23,6 @@ def get_form():
 
 def get_form_out():
     return FormOut.Report()
-
-def ndot(*args):
-    M = args[0]
-    for B in args[1:]:
-        M = np.dot(M, B)
-    return M
-
-def double_centered(M):
-    n = len(M)
-    e = np.ones(n)
-    I = np.eye(n)
-    P = np.outer(e, e) / np.inner(e, e)
-    H = I - P
-    return ndot(H, M, H)
 
 def mean_removed(M):
     return M - np.mean(M)

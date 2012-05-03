@@ -81,23 +81,30 @@ def main():
         tests.append(unittest.TestLoader().loadTestsFromTestCase(test_class))
     suite = unittest.TestSuite(tests)
     unittest.TextTestRunner(verbosity=2).run(suite)
+    print
     # show a summary of the loaded tests
     n_imported = len(finder.imported_module_names)
     n_with_tests = len(finder.imports_with_tests)
-    print len(finder.all_module_names), 'potentially testable modules'
-    print '  ', n_imported, 'successfully imported'
-    print '    ', n_with_tests, 'of these had tests'
+    print len(finder.all_module_names),
+    print 'potentially testable modules were found'
+    print n_imported,
+    print 'potentially testable modules were successfully imported'
+    print n_with_tests,
+    print 'successfully imported modules actually had tests'
+    print
     # show the imports without tests
     if n_imported != n_with_tests:
         print 'imported modules that did not have tests:'
         ms = set(finder.imported_module_names) - set(finder.imports_with_tests)
         for name in ms:
             print name
+        print
     # show the import errors
     if finder.module_import_errors:
         print 'import errors:'
         for error in finder.module_import_errors:
             print error
+        print
 
 if __name__ == '__main__':
     main()

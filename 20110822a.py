@@ -12,6 +12,9 @@ import scipy.linalg
 
 import Form
 import FormOut
+import MatrixUtil
+from MatrixUtil import double_centered_slow
+from MatrixUtil import ndot
 
 class Counterexample(Exception): pass
 
@@ -38,7 +41,7 @@ def bott_duffin(M):
     I = np.eye(nrows)
     P = np.outer(e, e) / np.inner(e, e)
     H = I - P
-    return np.dot(H, np.linalg.inv(np.dot(M, H) + P))
+    return ndot(H, np.linalg.inv(np.dot(M, H) + P))
 
 def pinvproj(M):
     """
@@ -51,13 +54,13 @@ def pinvproj(M):
     I = np.eye(nrows)
     P = np.outer(e, e) / np.inner(e, e)
     H = I - P
-    HMH = np.dot(H, np.dot(M, H))
+    HMH = ndot(H, M, H)
     return np.linalg.inv(HMH + P) - P
 
 def schur(M, nsmall):
     B = M[:nsmall, nsmall:]
     C = np.linalg.inv(M[nsmall:, nsmall:])
-    return M[:nsmall, :nsmall] - np.dot(B, np.dot(C, B.T))
+    return M[:nsmall, :nsmall] - ndot(B, C, B.T)
 
 def assert_named_equation(a_name_pair, b_name_pair):
     """
@@ -91,19 +94,6 @@ def assert_pinvproj(fs, M):
             (schur_of_pinvproj, 'schur of pinvproj'),
             (schur_of_bottduff, 'schur of bottduff'))
 
-def double_centered(M):
-    """
-    This is slow.
-    """
-    nrows, ncols = M.shape
-    if nrows != ncols:
-        raise ValueError('expected a square matrix')
-    e = np.ones(nrows)
-    I = np.eye(nrows)
-    P = np.outer(e, e) / np.inner(e, e)
-    H = I - P
-    return np.dot(H, np.dot(M, H))
-
 def inverse_in_H(M):
     nrows, ncols = M.shape
     if nrows != ncols:
@@ -118,11 +108,11 @@ def assert_double_centering_identities(fs, M):
     Raise a Counterexample if one is found.
     """
     A = M[:fs.nsmall, :fs.nsmall]
-    HMH = double_centered(M)
+    HMH = double_centered_slow(M)
     HMH_A = HMH[:fs.nsmall, :fs.nsmall]
     # check an identity between two ways to compute a centered submatrix
-    HAH_direct = double_centered(A)
-    HAH_indirect = double_centered(HMH_A)
+    HAH_direct = double_centered_slow(A)
+    HAH_indirect = double_centered_slow(HMH_A)
     assert_named_equation(
             (HAH_direct, 'double centered submatrix'),
             (HAH_indirect, 're-centered submatrix of doubly centered matrix'))
@@ -130,7 +120,7 @@ def assert_double_centering_identities(fs, M):
     # This is not true:
     # check that HAH <==inverse_in_H==> H A^-1 H
     HAH_pinv = inverse_in_H(HAH)
-    H_Ainv_H = double_centered(np.linalg.inv(A))
+    H_Ainv_H = double_centered_slow(np.linalg.inv(A))
     assert_named_equation(
             (HAH_pinv, 'inverse-in-H of HAH'),
             (H_Ainv_H, 'double centered inverse of A'))
@@ -168,7 +158,7 @@ def get_response_content(fs):
     Q = np.outer(e, e) / np.inner(e, e)
     H = I - Q
     M = sample_sym(nbig)
-    W = double_centered(M)
+    W = double_centered_slow(M)
     WpQ = W + Q
     # get eigendecomposition of schur complement
     W_SC = schur(W, nsmall)

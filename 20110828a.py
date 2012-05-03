@@ -12,6 +12,7 @@ import numpy as np
 
 import Form
 import FormOut
+from MatrixUtil import ndot
 
 g_default_rules = textwrap.dedent("""
         # r: reduce
@@ -51,12 +52,6 @@ def get_form():
 
 def get_form_out():
     return FormOut.Report()
-
-def ndot(*args):
-    M = args[0]
-    for B in args[1:]:
-        M = np.dot(M, B)
-    return M
 
 def get_p_del(nkeep, ndelete):
     """

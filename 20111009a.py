@@ -26,20 +26,8 @@ from scipy import optimize
 
 import Form
 import FormOut
-
-def ndot(*args):
-    M = args[0]
-    for B in args[1:]:
-        M = np.dot(M, B)
-    return M
-
-def double_centered(M):
-    n = len(M)
-    e = np.ones(n)
-    I = np.eye(n)
-    P = np.outer(e, e) / np.inner(e, e)
-    H = I - P
-    return ndot(H, M, H)
+from MatrixUtil import ndot
+from MatrixUtil import double_centered_slow
 
 def get_random_points(npoints, ndim):
     """
@@ -75,7 +63,7 @@ def edm_to_gower_matrix(D):
     @param D: an EDM
     @return: Gower's double centered matrix
     """
-    G = -0.5*double_centered(D)
+    G = -0.5 * double_centered_slow(D)
     return G
 
 def gower_matrices_to_strain(Ga, Gb):

@@ -15,18 +15,13 @@ import day
 import Ftree
 import FtreeIO
 import LeafWeights
+from MatrixUtil import ndot
 
 NEG_EDGE = -1
 NUL_EDGE = 0
 POS_EDGE = 1
 ALT_EDGE = 2
 
-
-def ndot(*args):
-    M = args[0]
-    for B in args[1:]:
-        M = np.dot(M, B)
-    return M
 
 #####################################################
 # This section is for EqualDaylight layout.
