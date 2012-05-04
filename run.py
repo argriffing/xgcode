@@ -18,6 +18,7 @@ import cherrypy
 import SnippetUtil
 import Form
 import FormHeaderJs
+import smallutil
 
 g_web_doc = 'doc'
 g_live_doc = 'doc'
@@ -107,8 +108,9 @@ def get_preset_button_tag(preset_index, preset_description):
 
 class GadgetForm(object):
 
-    def __init__(self, module):
-        self.module = module
+    def __init__(self, gadget):
+        self.module = gadget.module
+        self.source_link = gadget.source_link
         self.form_objects = None
         self.form_out = None
         self.form_presets = None
@@ -166,7 +168,24 @@ class GadgetForm(object):
                 self.form_presets)
         print >> out, '</head>'
         print >> out, '<body>'
-        print >> out, SnippetUtil.docstring_to_html(self.module.__doc__)
+        lines = smallutil.get_stripped_lines(StringIO(self.module.__doc__))
+        if lines:
+            print >> out, lines[0]
+        else:
+            print >> out, 'untitled'
+        print >> out, '<br/>'
+        print >> out, '<code>',
+        if self.source_link:
+            relative_link = '../' + self.source_link
+            print >> out, '<a href="%s">source code</a>' % relative_link
+        else:
+            print >> out, '<span style="color:gray;">source code</span>'
+        print >> out, '</code>'
+        print >> out, '<br/><br/>'
+        print >> out
+        if len(lines) > 1:
+            for line in lines[1:]:
+                print >> out, line
         print >> out, '<br/><br/>'
         print >> out
         print >> out, '<!-- main form -->'
@@ -343,7 +362,7 @@ if __name__ == '__main__':
     main_form = MainForm(gadgets)
     for g in gadgets:
         if g.module:
-            form = GadgetForm(g.module)
+            form = GadgetForm(g)
             setattr(main_form, g.module_name, form)
     cherrypy.quickstart(main_form, '/', config=get_static_conf())
 

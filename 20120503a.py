@@ -54,8 +54,7 @@ g_grid_min_1 = """
 
 def get_form():
     form_objects = [
-            Form.MultiLine('sudoku',
-                'incomplete sudoku grid', g_grid_wikipedia)]
+            Form.MultiLine('sudoku', 'puzzle', g_grid_wikipedia)]
     return form_objects
 
 def get_form_out():
@@ -64,10 +63,10 @@ def get_form_out():
 def get_presets():
     presets = [
             Form.Preset(
-                'arbitrary puzzle labeled hard found using google',
+                'a puzzle from the internet',
                 {'sudoku' : g_grid_hard}),
             Form.Preset(
-                'the first 17 clue puzzle from a collection',
+                'a 17 clue puzzle',
                 {'sudoku' : g_grid_min_1})
             ]
     return presets
@@ -77,26 +76,20 @@ def get_response_content(fs):
     values = [0 if c == '.' else int(c) for c in longline]
     if len(values) != 81:
         raise ValueError('expected a 9x9 grid')
-    # define the groups of variables associated with the constraints
-    blocks_per_index = create_blocks_per_index()
-    # define the set of initial choices for each entry
-    sets = [set() if v else set(range(1, 10)) for v in values]
-    for s, blocks in zip(sets, blocks_per_index):
-        s -= set(values[i] for b in blocks for i in b)
-    # search for the solution
-    solution = solve(values, sets, blocks_per_index)
+    covers = precompute_covers()
+    full = set(range(1, 10))
+    sets = [full - set(values[i] for i in cover) for cover in covers]
+    solution = solve(values, sets, covers)
     if solution is None:
         return 'no solution was found'
     else:
         return values_to_string(solution)
 
-def create_blocks_per_index():
+def precompute_covers():
     blocks = []
-    # define 1x9 and 9x1 blocks
     for i in range(9):
         blocks.append([i*9 + j for j in range(9)])
         blocks.append([j*9 + i for j in range(9)])
-    # define 3x3 blocks
     for i in range(3):
         for j in range(3):
             block = []
@@ -104,28 +97,29 @@ def create_blocks_per_index():
                 for l in range(3):
                     block.append((i*3+k)*9 + (j*3+l))
             blocks.append(block)
-    # define the blocks for each index
-    blocks_per_index = [[] for i in range(81)]
+    covers = [set() for i in range(81)]
     for b in blocks:
         for i in b:
-            blocks_per_index[i].append(b)
-    return blocks_per_index
+            covers[i].update(b)
+    return covers
 
-def solve(values, sets, blocks_per_index):
+def solve(values, sets, covers):
+    """
+    @param values: the partial solution
+    @param sets: the set of available numbers at each position
+    @param covers: the sphere of influence of each position
+    """
     if all(values):
         return values
-    # find the variable with the smallest branching factor
     n, branch = min((len(sets[i]), i) for i, v in enumerate(values) if not v)
     if not n:
         return None
-    # recursively solve the puzzle
     for value in sets[branch]:
         values[branch] = value
         next_sets = [set(x) for x in sets]
-        for b in blocks_per_index[branch]:
-            for i in b:
-                next_sets[i].discard(value)
-        result = solve(values[:], next_sets, blocks_per_index)
+        for i in covers[branch]:
+            next_sets[i].discard(value)
+        result = solve(values[:], next_sets, covers)
         if result:
             return result
     return None
