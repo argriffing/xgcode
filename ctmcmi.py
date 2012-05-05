@@ -563,6 +563,51 @@ def get_expected_ll_ratio(R, t):
                 accum += np.real(value)
     return accum
 
+def get_pinsker_lower_bound_mi(R, t):
+    # define the number of states
+    n = len(R)
+    # define the transition matrix
+    P = scipy.linalg.expm(R*t)
+    # define the stationary distribution
+    p = mrate.R_to_distn(R)
+    # define the joint probability matrix at times t and infinity
+    J_t = np.dot(np.diag(p), P)
+    J_inf = np.outer(p, p)
+    #
+    return 0.5 * np.sum(abs(J_t - J_inf))**2
+
+def get_row_based_plb_mi(R, t):
+    """
+    Row based pinsker lower bound of mutual information.
+    """
+    # define the number of states
+    n = len(R)
+    # define the transition matrix
+    P = scipy.linalg.expm(R*t)
+    # define the stationary distribution
+    p = mrate.R_to_distn(R)
+    # define the joint probability matrix at times t and infinity
+    J_t = np.dot(np.diag(p), P)
+    J_inf = np.outer(p, p)
+    #
+    return sum(x * 0.5 * np.sum(abs(row - p))**2 for x, row in zip(p, P))
+
+def get_row_based_hellinger_lb_mi(R, t):
+    """
+    Row based hellinger lower bound of mutual information.
+    """
+    # define the number of states
+    n = len(R)
+    # define the transition matrix
+    P = scipy.linalg.expm(R*t)
+    # define the stationary distribution
+    p = mrate.R_to_distn(R)
+    # define the joint probability matrix at times t and infinity
+    J_t = np.dot(np.diag(p), P)
+    J_inf = np.outer(p, p)
+    #
+    return sum(x*np.sum((np.sqrt(row)-np.sqrt(p))**2) for x, row in zip(p, P))
+
 def get_ll_ratio_wrong(R, t):
     """
     In this function I try to reconstruct a buggy result in an email I got.
@@ -605,3 +650,4 @@ def get_mi_decomposed(U, W, t):
     Also sqrt(p) is the column of U corresponding to eigenvalue 0.
     """
     pass
+

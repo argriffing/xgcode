@@ -232,3 +232,12 @@ A primate newick tree from UCSC.
 
 20120405a.dat
 A primate fasta alignment from the BEAST tutorial.
+
+20120505a.dat
+The file TW1.csv that gives some points on the cumulative density function
+of the Tracy-Widom variant that is relevant to the Patterson et al.
+population genetics paper.
+This is from
+30983-cdf-for-tracy-widom-tw1-distribution
+on the matlab file exchange and is tagged tracywidom.
+

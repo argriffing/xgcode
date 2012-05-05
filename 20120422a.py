@@ -248,6 +248,24 @@ def get_response_content(fs):
     print >> out, 'mutual information for mut-sel balance:'
     print >> out, mi_bal
     print >> out
+    print >> out, 'pinsker lower bound mi for pure mutation:'
+    print >> out, ctmcmi.get_pinsker_lower_bound_mi(M, t)
+    print >> out
+    print >> out, 'pinsker lower bound mi for mut-sel balance:'
+    print >> out, ctmcmi.get_pinsker_lower_bound_mi(R, t)
+    print >> out
+    print >> out, 'row based pinsker lower bound mi for pure mutation:'
+    print >> out, ctmcmi.get_row_based_plb_mi(M, t)
+    print >> out
+    print >> out, 'row based pinsker lower bound mi for mut-sel balance:'
+    print >> out, ctmcmi.get_row_based_plb_mi(R, t)
+    print >> out
+    print >> out, 'row based hellinger lower bound mi for pure mutation:'
+    print >> out, ctmcmi.get_row_based_hellinger_lb_mi(M, t)
+    print >> out
+    print >> out, 'row based hellinger lower bound mi for mut-sel balance:'
+    print >> out, ctmcmi.get_row_based_hellinger_lb_mi(R, t)
+    print >> out
     print >> out, 'Fisher information for pure mutation:'
     print >> out, fi_mut
     print >> out
