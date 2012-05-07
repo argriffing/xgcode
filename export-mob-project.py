@@ -45,8 +45,6 @@ import os
 import sys
 import shutil
 import subprocess
-import tarfile
-
 import argparse
 
 import meta
@@ -171,3 +169,4 @@ if __name__ == '__main__':
     parser.add_argument('--deploy', action='store_true',
             help='deploy the xml files via mobdeploy')
     main(parser.parse_args())
+
