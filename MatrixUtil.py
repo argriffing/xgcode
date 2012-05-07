@@ -6,6 +6,7 @@ This module uses numpy arrays and not numpy matrices.
 
 import unittest
 from StringIO import StringIO
+import random
 
 import numpy as np
 
@@ -75,6 +76,10 @@ def assert_symmetric(M):
 def assert_nonnegative(M):
     if (M < 0).any():
         raise MatrixError('the matrix has a negative element')
+
+def assert_positive(M):
+    if (M <= 0).any():
+        raise MatrixError('the matrix has a non-positive element')
 
 def assert_hollow(M):
     assert_square(M)
@@ -297,6 +302,19 @@ def get_best_reflection(A, B):
             best_signs[i] = -1
     return best_signs
 
+def sample_pos_sym_matrix(n):
+    """
+    Note that this matrix is symmetric and is entrywise positive.
+    Its definiteness is not specified.
+    If you care much about the particular distribution of the entries,
+    then you should probably use your own function instead of this one.
+    @param n: number of rows and of columns
+    @return: a numpy array
+    """
+    M = np.random.exponential(1, (n, n))
+    return M + M.T
+
+
 class TestMatrixUtil(unittest.TestCase):
 
     def test_sign_symmetric_true(self):
@@ -385,6 +403,12 @@ class TestMatrixUtil(unittest.TestCase):
         observed_slow = double_centered_slow(M)
         self.assertTrue(np.allclose(observed, expected))
         self.assertTrue(np.allclose(observed_slow, expected))
+
+    def test_sample_pos_sym_matrix(self):
+        n = 5
+        M = sample_pos_sym_matrix(n)
+        assert_symmetric(M)
+        assert_positive(M)
 
 
 if __name__ == '__main__':

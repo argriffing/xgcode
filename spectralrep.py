@@ -19,6 +19,7 @@ import numpy as np
 import scipy
 from scipy import linalg
 
+import mrate
 
 
 class TestSpectralRep(unittest.TestCase):

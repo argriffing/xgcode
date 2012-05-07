@@ -18,6 +18,10 @@ from scipy import linalg
 import graph
 from MatrixUtil import ndot
 
+def sample_distn(n):
+    v = np.random.exponential(1, n)
+    return v / np.sum(v)
+
 def get_path_rate_matrix(nstates):
     """
     This is a 3-state path rate matrix.
@@ -293,6 +297,8 @@ def symmetrized(R):
     Get the symmetrized matrix of a reversible markov process.
     This returns a symmetric matrix that is not a rate matrix
     because rows do not sum to zero.
+    The returned matrix should be similar to R
+    in the sense of linear algebra matrix similarity.
     """
     v = R_to_distn(R)
     lam = np.diag(np.sqrt(v))
@@ -311,6 +317,14 @@ class TestMrate(unittest.TestCase):
         observed = scipy.linalg.expm(M * t)
         expected = expm_spectral(M, t)
         self.assertTrue(np.allclose(observed, expected))
+
+    def test_sample_distn(self):
+        n = 5
+        v = sample_distn(n)
+        self.assertEqual(v.shape, (n,))
+        self.assertTrue(np.allclose(np.sum(v), 1))
+        self.assertTrue(np.all(v > 0))
+
 
 if __name__ == '__main__':
     unittest.main()
