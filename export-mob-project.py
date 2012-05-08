@@ -12,13 +12,16 @@ This new target platform is guaranteed to have lxml installed
 because it is required by Mobyle 0.98,
 but on the other hand the scripts need to be modified
 so that they use a custom written script which in turn calls bsub.
-
-Example usage:
+Example usages:
 python export-mob-project.py
 --make_installer=ztools --universal_category=ztools
 --mobyle_core=/home/mobyleuser/Mobyle96
 --python_path=/home/mobyleuser/install/bin/python
 --manifest=manifests/carbone.manifest --target=/home/mobyleuser/ztools
+python export-mob-project.py
+--deploy --create_all --mobyle_version=0.98
+--mobyle_core=/home/username/mymobyle/core
+--target=/home/username/mymobyle/ztools
 """
 
 

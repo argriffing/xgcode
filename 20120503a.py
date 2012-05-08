@@ -73,9 +73,9 @@ def get_presets():
 
 def get_response_content(fs):
     longline = ''.join(fs.sudoku.split())
-    values = [0 if c == '.' else int(c) for c in longline]
-    if len(values) != 81:
+    if len(longline) != 81:
         raise ValueError('expected a 9x9 grid')
+    values = [int(c) if c.isdigit() else 0 for c in longline]
     covers = precompute_covers()
     full = set(range(1, 10))
     sets = [full - set(values[i] for i in cover) for cover in covers]
