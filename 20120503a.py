@@ -1,5 +1,5 @@
 """
-A sudoku solver for testing presets and timeouts.
+Sudoku solver to test textarea presets.
 
 Solve some sudokus using a plain depth first search
 that branches on the grid square with the smallest number
