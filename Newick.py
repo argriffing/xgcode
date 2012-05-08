@@ -1,33 +1,23 @@
 """
 Represent newick trees.
+
+This is getting obsolete.
 """
 
 from optparse import OptionParser
 import unittest
 
 import Util
-
-# base class for NewickTree
 import Tree
-
-# example trees
 from NewickIO import rooted_example_tree
 from NewickIO import daylight_example_tree
 from NewickIO import brown_example_tree
 from NewickIO import ben_example_tree
-
-# tree writers
 from NewickIO import get_newick_string
 from NewickIO import get_multiline_newick_string
 from NewickIO import get_narrow_newick_string
-
-# tree readers
 from NewickIO import parse
-
-# tree reader exceptions
 from NewickIO import NewickSyntaxError
-
-# a generic test case
 from NewickIO import TestNewick
 
 
