@@ -136,6 +136,12 @@ def main(args):
                 args.runbsub)
         for e in import_errors:
             print e
+    if args.clean:
+        cmd = env_info.get_clean_command()
+        subprocess.call(cmd)
+    if args.index:
+        cmd = env_info.get_index_command()
+        subprocess.call(cmd)
     if args.deploy:
         cmd = env_info.get_deploy_command()
         subprocess.call(cmd)
@@ -171,5 +177,9 @@ if __name__ == '__main__':
             help='create a local directory to be used for a remote install')
     parser.add_argument('--deploy', action='store_true',
             help='deploy the xml files via mobdeploy')
+    parser.add_argument('--clean', action='store_true',
+            help='clean the xml files via mobdeploy')
+    parser.add_argument('--index', action='store_true',
+            help='index the xml files via mobdeploy')
     main(parser.parse_args())
 

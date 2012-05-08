@@ -30,6 +30,18 @@ class EnvironmentInfo:
         self.python_path = python_path
         self.mob_core = mob_core
 
+    def get_index_command(self):
+        """
+        @return: a list to be passed to subprocess.Popen
+        """
+        return [os.path.join(self.mob_core, 'Tools', 'mobdeploy'), 'index']
+
+    def get_clean_command(self):
+        """
+        @return: a list to be passed to subprocess.Popen
+        """
+        return [os.path.join(self.mob_core, 'Tools', 'mobdeploy'), 'clean']
+
     def get_deploy_command(self):
         """
         @return: a list to be passed to subprocess.Popen
