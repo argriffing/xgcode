@@ -26,8 +26,6 @@ from pyparsing import Word, Literal
 import iterutils
 import Util
 
-class MetaError(Exception): pass
-
 g_custom_extension_modules = set([
         'Config',
         'day'])
@@ -51,6 +49,8 @@ g_common_t3 = set([
 
 g_default_modules = [
         'auto']
+
+class MetaError(Exception): pass
 
 def get_tier(names):
     """
@@ -169,7 +169,7 @@ def get_tiered_names(raw_lines):
 
 def _get_const_parser():
     parser = (
-            Word(string.letters + '_') +
+            Word(pyparsing.alphas+'_', pyparsing.alphanums+'_') +
             Literal('=') +
             Literal('const.read') +
             Literal('(') +
@@ -251,7 +251,8 @@ def get_module_and_const_deps(module_names):
     for name in set(module_names) | transitive_deps[2]:
         filename = name + '.py'
         with open(filename) as fin:
-            const_deps.update(get_const_deps(fin))
+            d = get_const_deps(fin)
+            const_deps.update(d)
     # return module and const data deps
     return transitive_deps, const_deps
 
