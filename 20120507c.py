@@ -5,6 +5,9 @@ Check the eigendecomposition of a parent independent Markov process.
 from StringIO import StringIO
 import random
 import math
+import itertools
+from itertools import combinations
+from itertools import product
 
 import numpy as np
 import scipy
@@ -14,7 +17,7 @@ import Form
 import FormOut
 import mrate
 import ctmcmi
-import combobreaker
+import iterutils
 import MatrixUtil
 from MatrixUtil import ndot
 
@@ -26,6 +29,59 @@ def get_form():
 
 def get_form_out():
     return FormOut.Report()
+
+def get_randomization_rate(Q, v):
+    """
+    @param Q: reversible rate matrix
+    @param v: stationary distribution
+    @return: randomization rate
+    """
+    nstates = len(v)
+    return max(get_randomization_candidate(Q, v, i) for i in range(nstates))
+
+def get_randomization_candidate(Q, v, i):
+    """
+    @param Q: reversible rate matrix
+    @param v: stationary distribution
+    @param i: a state
+    @return: the randomization rate for the current state
+    """
+    return -Q[i,i] / (1 - v[i])
+
+def get_cheeger_constant(R, v):
+    """
+    This is also known as the second isoperimetric constant.
+    @param R: a reversible rate matrix
+    @param v: stationary distribution
+    @return: the second isoperimetric constant
+    """
+    n = len(v)
+    I2 = None
+    for A_tuple in iterutils.powerset(range(n)):
+        # define the vertex set and its complement
+        A = set(A_tuple)
+        B = set(range(n)) - A
+        A_measure = sum(v[i] for i in A)
+        B_measure = sum(v[i] for i in B)
+        if A_measure and B_measure:
+            boundary_measure = sum(v[i]*R[i,j] for i, j in product(A, B))
+            A_connectivity = boundary_measure / A_measure
+            B_connectivity = boundary_measure / B_measure
+            connectivity = max(A_connectivity, B_connectivity)
+            if I2 is None or connectivity < I2:
+                I2 = connectivity
+    return I2
+
+def get_cheeger_bounds(R, v):
+    """
+    @param R: a reversible rate matrix
+    @param v: stationary distribution
+    @return: low, cheeger, high
+    """
+    cheeger = get_cheeger_constant(R, v)
+    low = 0.5 * (cheeger**2) / -min(np.diag(R))
+    high = 2 * cheeger
+    return low, cheeger, high
 
 def get_mi(Q, v, t):
     """
@@ -104,14 +160,44 @@ def process(nstates):
     print >> out, 'implied rate matrix R:'
     print >> out, R
     print >> out
+    print >> out, 'eigenvalues of R:', scipy.linalg.eigvals(R)
+    print >> out
+    print >> out, 'expected rate of R:', mrate.Q_to_expected_rate(R)
+    print >> out
+    print >> out, 'cheeger bounds of R:', get_cheeger_bounds(R, v)
+    print >> out
+    print >> out, 'randomization rate of R:', get_randomization_rate(R, v)
+    print >> out
+    candidates = [get_randomization_candidate(R, v, i) for i in range(nstates)]
+    if np.allclose(get_randomization_rate(R, v), candidates):
+        print >> out, 'all candidates are equal to this rate'
+    else:
+        print >> out, 'not all candidates are equal to this rate'
+    print >> out
     print >> out, 'related parent-independent rate matrix Q:'
     print >> out, Q
     print >> out
     print >> out, 'rescaling factor:'
     print >> out, rescaling_factor
     print >> out
-    print >> out, 'eigenvalues of Q:'
-    print >> out, scipy.linalg.eigvals(Q)
+    print >> out, 'eigenvalues of Q:', scipy.linalg.eigvals(Q)
+    print >> out
+    print >> out, 'expected rate of Q:', mrate.Q_to_expected_rate(Q)
+    print >> out
+    print >> out, 'cheeger bounds of Q:', get_cheeger_bounds(Q, v)
+    print >> out
+    print >> out, 'randomization rate of Q:', get_randomization_rate(Q, v)
+    print >> out
+    candidates = [get_randomization_candidate(Q, v, i) for i in range(nstates)]
+    if np.allclose(get_randomization_rate(Q, v), candidates):
+        print >> out, 'all candidates are equal to this rate'
+    else:
+        print >> out, 'warning: not all candidates are equal to this rate'
+    print >> out
+    print >> out, 'randomization rate of Q:', get_randomization_rate(Q, v)
+    print >> out
+    print >> out, 'E(rate) of Q divided by logical entropy:',
+    print >> out, mrate.Q_to_expected_rate(Q) / ndot(v, 1-v)
     print >> out
     print >> out, 'symmetric matrix similar to Q:'
     S = ndot(np.diag(np.sqrt(v)), Q, np.diag(1/np.sqrt(v)))
@@ -126,7 +212,7 @@ def process(nstates):
     #
     print >> out, 'time:', t
     print >> out
-    print >> out, 'stationary distribution entropy:', -ndot(v, np.log(v))
+    print >> out, 'stationary distn logical entropy:', ndot(v, 1-v)
     print >> out
     # 
     P_by_hand = get_transition_matrix(Q, v, t)
@@ -146,6 +232,10 @@ def process(nstates):
     #
     print >> out, 'original process m.i. by expm:'
     print >> out, ctmcmi.get_expected_ll_ratio(R, t)
+    print >> out
+    #
+    print >> out, 'stationary distn Shannon entropy:'
+    print >> out, -ndot(v, np.log(v))
     print >> out
     #
     return out.getvalue().rstrip()
