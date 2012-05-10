@@ -1,5 +1,21 @@
 """
 Put a project onto a galaxy server.
+
+After exporting to the galaxy root,
+some steps still currently must be done manually.
+One step is to copy some of the lines from
+the generate file tool_conf.xml.local
+to the file tool_conf.xml which is used by the galaxy server.
+Another thing is that the file integrated_tool_panel.xml
+should be deleted because it saves old elements of the user interface
+which should be recomputed for the new exported project.
+One tip for running the server is to use --daemon and --stop-daemon
+as options to run.sh because the server cannot be killed by ctrl-c
+at least in the current galaxy version.
+Another tip is to change the host in universe_wsgi.ini to 0.0.0.0
+so that it serves on all public interfaces
+instead of only the default loopback interface 127.0.0.1
+which can only be seen from the server itself.
 """
 
 import re
