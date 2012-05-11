@@ -31,6 +31,9 @@ g_script_directory = os.path.dirname(g_script_path)
 g_current_directory = os.path.abspath(os.curdir)
 
 
+def gray_span(s):
+    return '<span style="color:gray;">' + s + '</span>'
+
 def get_first_line(multi_line_string):
     """
     @return: a single line string or None
@@ -172,21 +175,24 @@ class GadgetForm(object):
         if lines:
             print >> out, lines[0]
         else:
-            print >> out, 'untitled'
+            print >> out, gray_span('untitled')
         print >> out, '<br/>'
         print >> out, '<code>',
         if self.source_link:
             relative_link = '../' + self.source_link
             print >> out, '<a href="%s">source code</a>' % relative_link
         else:
-            print >> out, '<span style="color:gray;">source code</span>'
+            print >> out, gray_span('source code')
         print >> out, '</code>'
         print >> out, '<br/><br/>'
         print >> out
         if len(lines) > 1:
+            print >> out, '<!-- long description -->'
             for line in lines[1:]:
                 print >> out, line
-        print >> out, '<br/><br/>'
+            print >> out, '<br/><br/>'
+        else:
+            print >> out, '<!-- no long description available -->'
         print >> out
         print >> out, '<!-- main form -->'
         print >> out, '<div style="float: left;">'
@@ -235,19 +241,19 @@ class MainForm(object):
             if g.module:
                 link = '[<a href="%s">cgi</a>]' % g.module_name
             else:
-                link = '[<span style="color:gray;">cgi</span>]'
+                link = '[' + gray_span('cgi') + ']'
             arr.append(link)
             if g.source_link:
                 src = '[<a href="%s">src</a>]' % g.source_link
             else:
-                src = '[<span style="color:gray;">src</span>]'
+                src = '[' + gray_span('src') + ']'
             arr.append(src)
             if g.module:
                 desc = get_first_line(g.module.__doc__)
                 if not desc:
                     desc = '(no description)'
             else:
-                desc = '<span style="color:gray;">%s</span>' % g.import_error
+                desc = gray_span(str(g.import_error))
             arr.append(desc)
             arr.append('<br />')
         return '\n'.join(arr)
