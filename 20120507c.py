@@ -1,5 +1,10 @@
 """
-Check the eigendecomposition of a parent independent Markov process.
+Check the properties of simplifications of GTR Markov processes.
+
+The two simplifications each preserve the stationary distribution
+and a rate summary.
+The 'parent-independent' simplification preserves the 'randomization rate.'
+The 'child-independent' simplification preserves the expected rate.
 """
 
 from StringIO import StringIO
@@ -24,6 +29,9 @@ from MatrixUtil import ndot
 
 def get_form():
     form_objects = [
+            Form.RadioGroup('simplification', 'simplification', [
+                Form.RadioItem('parent_indep', 'parent independent', True),
+                Form.RadioItem('child_indep', 'child independent')]),
             Form.Integer('nstates', 'number of states', 4, low=2, high=10)]
     return form_objects
 
@@ -83,9 +91,10 @@ def get_cheeger_bounds(R, v):
     high = 2 * cheeger
     return low, cheeger, high
 
-def get_mi(Q, v, t):
+def get_pi_mi(Q, v, t):
     """
     Try to get a closed form for the mutual information.
+    This is for a parent independent process.
     @param Q: parent independent rate matrix
     @param v: stationary distribution
     @param t: amount of time
@@ -105,7 +114,7 @@ def get_mi(Q, v, t):
         mi += v[i] * (1 - v[i]) * pr * math.log(pr)
     return mi
 
-def get_transition_matrix(Q, v, t):
+def get_pi_transition_matrix(Q, v, t):
     """
     Try to get a closed form for the transition probability matrix.
     @param Q: parent independent rate matrix
@@ -125,7 +134,8 @@ def get_transition_matrix(Q, v, t):
         P[i] += (1 - p_no_random) * v
     return P
 
-def process(nstates):
+def process(fs):
+    nstates = fs.nstates
     np.set_printoptions(linewidth=200)
     # Sample a rate matrix.
     # Use a trick by Robert Kern to left and right multiply by diagonals.
@@ -140,8 +150,20 @@ def process(nstates):
     # as the sampled process.
     Q = np.outer(np.ones(nstates), v)
     Q -= np.diag(np.sum(Q, axis=1))
-    rescaling_factor = max(np.diag(R) / np.diag(Q))
-    Q *= rescaling_factor
+    pi_rescaling_factor = max(np.diag(R) / np.diag(Q))
+    Q *= pi_rescaling_factor
+    # Construct a child-independent process
+    # with the same expected rate
+    # as the sampled process
+    C = np.outer(1/v, np.ones(nstates))
+    C -= np.diag(np.sum(C, axis=1))
+    ci_rescaling_factor = np.max(R / C)
+    #expected_rate = -ndot(np.diag(R), v)
+    #ci_rescaling_factor = expected_rate / (nstates*(nstates-1))
+    #ci_rescaling_factor = expected_rate / (nstates*nstates)
+    C *= ci_rescaling_factor
+    if fs.child_indep:
+        Q = C
     # sample a random time
     time_mu = 0.01
     t = random.expovariate(1 / time_mu)
@@ -162,6 +184,9 @@ def process(nstates):
     print >> out
     print >> out, 'eigenvalues of R:', scipy.linalg.eigvals(R)
     print >> out
+    print >> out, 'relaxation rate of R:',
+    print >> out, sorted(np.abs(scipy.linalg.eigvals(R)))[1]
+    print >> out
     print >> out, 'expected rate of R:', mrate.Q_to_expected_rate(R)
     print >> out
     print >> out, 'cheeger bounds of R:', get_cheeger_bounds(R, v)
@@ -174,13 +199,19 @@ def process(nstates):
     else:
         print >> out, 'not all candidates are equal to this rate'
     print >> out
-    print >> out, 'related parent-independent rate matrix Q:'
+    print >> out, 'simplified rate matrix Q:'
     print >> out, Q
     print >> out
-    print >> out, 'rescaling factor:'
-    print >> out, rescaling_factor
+    print >> out, 'parent independent rescaling factor:'
+    print >> out, pi_rescaling_factor
+    print >> out
+    print >> out, 'child independent rescaling factor:'
+    print >> out, ci_rescaling_factor
     print >> out
     print >> out, 'eigenvalues of Q:', scipy.linalg.eigvals(Q)
+    print >> out
+    print >> out, 'relaxation rate of Q:',
+    print >> out, sorted(np.abs(scipy.linalg.eigvals(Q)))[1]
     print >> out
     print >> out, 'expected rate of Q:', mrate.Q_to_expected_rate(Q)
     print >> out
@@ -193,8 +224,6 @@ def process(nstates):
         print >> out, 'all candidates are equal to this rate'
     else:
         print >> out, 'warning: not all candidates are equal to this rate'
-    print >> out
-    print >> out, 'randomization rate of Q:', get_randomization_rate(Q, v)
     print >> out
     print >> out, 'E(rate) of Q divided by logical entropy:',
     print >> out, mrate.Q_to_expected_rate(Q) / ndot(v, 1-v)
@@ -215,18 +244,18 @@ def process(nstates):
     print >> out, 'stationary distn logical entropy:', ndot(v, 1-v)
     print >> out
     # 
-    P_by_hand = get_transition_matrix(Q, v, t)
-    print >> out, 'parent independent transition matrix computed by hand:'
+    P_by_hand = get_pi_transition_matrix(Q, v, t)
+    print >> out, 'simplified-process transition matrix computed by hand:'
     print >> out, P_by_hand
     print >> out
-    print >> out, 'parent independent transition matrix computed by expm:'
+    print >> out, 'simplified-process transition matrix computed by expm:'
     print >> out, scipy.linalg.expm(Q*t)
     print >> out
     #
-    print >> out, 'parent independent m.i. by hand:'
-    print >> out, get_mi(Q, v, t)
+    print >> out, 'simplified-process m.i. by hand:'
+    print >> out, get_pi_mi(Q, v, t)
     print >> out
-    print >> out, 'parent independent m.i. by expm:'
+    print >> out, 'simplified-process m.i. by expm:'
     print >> out, ctmcmi.get_expected_ll_ratio(Q, t)
     print >> out
     #
@@ -241,5 +270,5 @@ def process(nstates):
     return out.getvalue().rstrip()
 
 def get_response_content(fs):
-    return process(fs.nstates) + '\n'
+    return process(fs) + '\n'
 
