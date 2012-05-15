@@ -27,7 +27,9 @@ import FormOut
 import ctmcmi
 import mrate
 import divtime
+import cheeger
 import MatrixUtil
+from MatrixUtil import ndot
 
 def get_form():
     """
@@ -80,7 +82,7 @@ def get_presets():
                     'mutscale' : '1',
                     'mutselweights' : ('1', '0.01', '1', '0.01'),
                     't' : '0.1',
-                    'infotype' : 'info_fis'}),
+                    'infotype' : 'info_mut'}),
             Form.Preset(
                 'two state, mut has greater entropy',
                 {
@@ -102,7 +104,79 @@ def get_presets():
     return presets
 
 def get_form_out():
-    return FormOut.Report('summary')
+    return FormOut.Html('summary')
+
+class RateMatrixSummary:
+    def __init__(self, Q):
+        """
+        @param Q: rate matrix
+        """
+        # define intermediate variables
+        v = mrate.R_to_distn(Q)
+        n = len(v)
+        psi = np.sqrt(v)
+        c_low, c_mid, c_high = cheeger.get_cheeger_bounds(Q, v)
+        # define member variables to summarize the rate matrix
+        self.rate_matrix = Q
+        self.exch_matrix = Q / v
+        if not np.allclose(self.exch_matrix, self.exch_matrix.T):
+            print self.exch_matrix
+            raise ValueError('expected symmetry')
+        self.sim_sym_matrix = np.outer(psi, 1/psi) * Q
+        if not np.allclose(self.sim_sym_matrix, self.sim_sym_matrix.T):
+            print self.sim_sym_matrix
+            raise ValueError('expected symmetry')
+        self.distn = v
+        self.distn_shannon_entropy = -ndot(np.log(v), v)
+        self.distn_logical_entropy = ndot(v, 1-v)
+        self.expected_rate = -ndot(np.diag(Q), v)
+        self.spectrum = scipy.linalg.eigvalsh(self.sim_sym_matrix)
+        self.spectral_gap = -self.spectrum[-2]
+        self.isoperimetric_low = c_low
+        self.isoperimetric_constant = c_mid
+        self.isoperimetric_high = c_high
+        self.trace_bound_high = -sum(np.diag(Q)) / (n-1)
+
+def get_html_table(summaries):
+    """
+    Return text for an html table comparing rate matrix summaries.
+    """
+    out = StringIO()
+    summary_names = [
+            'distn shannon entropy',
+            'distn logical entropy',
+            'expected rate',
+            'spectral gap',
+            'isoperimetric lower bound on spectral gap',
+            'isoperimetric constant',
+            'isoperimetric upper bound on spectral gap',
+            'trace upper bound on spectral gap',
+            ]
+    data_columns = []
+    for x in summaries:
+        col = [
+                x.distn_shannon_entropy,
+                x.distn_logical_entropy,
+                x.expected_rate,
+                x.spectral_gap,
+                x.isoperimetric_low,
+                x.isoperimetric_constant,
+                x.isoperimetric_high,
+                x.trace_bound_high,
+                ]
+        data_columns.append(col)
+    headers = ('', 'pure mutation', 'mutation selection balance')
+    rows = [headers] + zip(*([summary_names] + data_columns))
+    print >> out, '<table border="1">'
+    for row in rows:
+        print >> out, '<tr>'
+        for item in row:
+            print >> out, '<td>'
+            print >> out, item
+            print >> out, '</td>'
+        print >> out, '</tr>'
+    print >> out, '</table>'
+    return out.getvalue().rstrip()
 
 def _heuristic_helper(m_sign):
     """
@@ -121,6 +195,60 @@ def _heuristic_helper(m_sign):
         s = '  this heuristic is uninformative'
     return s
 
+def get_mi_asymptotics(M, R):
+    """
+    Return a multiline string with some asymptotics.
+    @param M: pure mutation rate matrix
+    @param R: mutation-selection balance rate matrix
+    @return: multiline string
+    """
+    out = StringIO()
+    # get the stationary distributions
+    M_v = mrate.R_to_distn(M)
+    R_v = mrate.R_to_distn(R)
+    # The shannon entropy of the stationary distribution of the process
+    # determines the mutual information at small times.
+    M_shannon_entropy = -np.dot(np.log(M_v), M_v)
+    R_shannon_entropy = -np.dot(np.log(R_v), R_v)
+    if not np.allclose(M_shannon_entropy, R_shannon_entropy):
+        print >> out, 'At small enough times'
+        if R_shannon_entropy < M_shannon_entropy:
+            print >> out, '* pure mutation',
+        else:
+            print >> out, '* mutation-selection balance',
+        print >> out, 'will be more informative'
+        print >> out, 'because its stationary distribution has greater',
+        print >> out, 'Shannon entropy.'
+    else:
+        print >> out, 'There is not enough difference between the'
+        print >> out, 'Shannon entropies of the stationary distributions'
+        print >> out, 'to determine which process'
+        print >> out, 'is more informative at times near zero'
+    print >> out
+    # The spectral gap of the process
+    # determines the mutual information at large times.
+    M_spectral_gap = sorted(abs(w) for w in scipy.linalg.eigvals(M))[1]
+    R_spectral_gap = sorted(abs(w) for w in scipy.linalg.eigvals(R))[1]
+    M_cheeg_low, M_cheeg_mid, M_cheeg_high = cheeger.get_cheeger_bounds(M, M_v)
+    R_cheeg_low, R_cheeg_mid, R_cheeg_high = cheeger.get_cheeger_bounds(R, R_v)
+    if not np.allclose(M_spectral_gap, R_spectral_gap):
+        print >> out, 'At large enough times'
+        if R_spectral_gap < M_spectral_gap:
+            print >> out, '* mutation-selection balance',
+        else:
+            print >> out, '* pure mutation',
+        print >> out, 'will be more informative'
+        print >> out, 'because it has a smaller spectral gap.'
+        if (R_cheeg_high < M_cheeg_low) or (M_cheeg_high < R_cheeg_low):
+            print >> out, 'And also because of the isoperimetric bounds.'
+    else:
+        print >> out, 'There is not enough difference between the'
+        print >> out, 'spectral gaps to determine which process'
+        print >> out, 'is more informative at times near infinity'
+    print >> out
+    # return the text
+    return out.getvalue().strip()
+
 def get_heuristics(M, R):
     """
     Return a multiline string with some heuristics.
@@ -129,7 +257,7 @@ def get_heuristics(M, R):
     Greater stationary distribution logical entropy suggests less saturation.
     Greater expected rate suggests more saturation.
     Greater spectral rate suggests more saturation.
-    @param M: mutation rate matrix
+    @param M: pure mutation rate matrix
     @param R: mutation-selection balance rate matrix
     @return: multiline string
     """
@@ -193,6 +321,10 @@ def get_response_content(fs):
     elif fs.info_fis:
         information_sign = np.sign(fi_mut - fi_bal)
     out = StringIO()
+    print >> out, '<html>'
+    print >> out, '<body>'
+    print >> out
+    print >> out, '<pre>'
     print >> out, 'Explicitly computed answer',
     print >> out, '(not a heuristic but may be numerically imprecise):'
     if information_sign == 1:
@@ -206,6 +338,13 @@ def get_response_content(fs):
         print >> out, 'are numerically indistinguishable'
     print >> out
     print >> out
+    if fs.info_mut:
+        print >> out, 'Mutual information properties',
+        print >> out, 'at very small and very large times:'
+        print >> out
+        print >> out, get_mi_asymptotics(M, R)
+        print >> out
+        print >> out
     print >> out, 'Heuristics without regard to time or to the selected',
     print >> out, 'information variant (Fisher vs. mutual information):'
     print >> out
@@ -272,6 +411,14 @@ def get_response_content(fs):
     print >> out, 'Fisher information for mut-sel balance:'
     print >> out, fi_bal
     print >> out
+    print >> out, '</pre>'
+    #
+    # create the summaries
+    summaries = (RateMatrixSummary(M), RateMatrixSummary(R))
+    print >> out, get_html_table(summaries)
+    print >> out
+    print >> out, '<html>'
+    print >> out, '<body>'
     return out.getvalue()
 
 def get_input_matrices(fs):

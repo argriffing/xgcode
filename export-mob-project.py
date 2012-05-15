@@ -14,12 +14,13 @@ but on the other hand the scripts need to be modified
 so that they use a custom written script which in turn calls bsub.
 Example usages:
 python export-mob-project.py
+--mobyle_version=0.96
 --make_installer=ztools --universal_category=ztools
 --mobyle_core=/home/mobyleuser/Mobyle96
 --python_path=/home/mobyleuser/install/bin/python
 --manifest=manifests/carbone.manifest --target=/home/mobyleuser/ztools
 python export-mob-project.py
---deploy --create_all --mobyle_version=0.98
+--deploy --create_all --mobyle_version=1.04
 --mobyle_core=/home/username/mymobyle/core
 --target=/home/username/mymobyle/ztools
 """
@@ -155,7 +156,7 @@ if __name__ == '__main__':
     parser.add_argument('--create_tagged',
             help='create xmls for snippets with this tag')
     parser.add_argument('--mobyle_version', metavar='VER',
-            choices=('0.96', '0.98'), default='0.96',
+            choices=('0.96', '0.98', '1.04'), default='1.04',
             help='the target Mobyle version')
     parser.add_argument('--runbsub',
             help='use this command for submission to the lsf queue')

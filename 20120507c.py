@@ -22,6 +22,7 @@ import Form
 import FormOut
 import mrate
 import ctmcmi
+import cheeger
 import iterutils
 import MatrixUtil
 from MatrixUtil import ndot
@@ -32,7 +33,8 @@ def get_form():
             Form.RadioGroup('simplification', 'simplification', [
                 Form.RadioItem('parent_indep', 'parent independent', True),
                 Form.RadioItem('child_indep', 'child independent')]),
-            Form.Integer('nstates', 'number of states', 4, low=2, high=10)]
+            Form.Integer('nstates', 'number of states', 4, low=2, high=10),
+            Form.Float('t', 'time', '0.1', low_exclusive=0)]
     return form_objects
 
 def get_form_out():
@@ -91,6 +93,34 @@ def get_cheeger_bounds(R, v):
     high = 2 * cheeger
     return low, cheeger, high
 
+def get_pi_mi_t2_approx(Q, v, t):
+    """
+    Second order taylor expansion for the contribution of each joint entry.
+    @param Q: parent independent rate matrix
+    @param v: stationary distribution
+    @param t: amount of time
+    """
+    n = len(v)
+    # get the randomization rate
+    a = -np.trace(Q) / (n-1)
+    return 0.5 * math.exp(-2 * a * t) * (n - 1)
+
+def get_pi_mi_t2_diag_approx(Q, v, t):
+    """
+    Second order taylor expansion for only some contributions.
+    Contributions of off-diagonal entries are computed exactly.
+    @param Q: parent independent rate matrix
+    @param v: stationary distribution
+    @param t: amount of time
+    """
+    n = len(v)
+    # get the randomization rate
+    a = -np.trace(Q) / (n-1)
+    x = math.exp(-a*t)
+    h = ndot(v, 1-v)
+    adjustment = (x*(1 - 0.5*x - math.log(1-x)) + math.log(1-x))*h
+    return get_pi_mi_t2_approx(Q, v, t) + adjustment
+
 def get_pi_mi(Q, v, t):
     """
     Try to get a closed form for the mutual information.
@@ -137,6 +167,10 @@ def get_pi_transition_matrix(Q, v, t):
 def process(fs):
     nstates = fs.nstates
     np.set_printoptions(linewidth=200)
+    t = fs.t
+    ### sample a random time
+    ##time_mu = 0.01
+    ##t = random.expovariate(1 / time_mu)
     # Sample a rate matrix.
     # Use a trick by Robert Kern to left and right multiply by diagonals.
     # http://mail.scipy.org/pipermail/numpy-discussion/2007-March/
@@ -164,9 +198,6 @@ def process(fs):
     C *= ci_rescaling_factor
     if fs.child_indep:
         Q = C
-    # sample a random time
-    time_mu = 0.01
-    t = random.expovariate(1 / time_mu)
     # Check that the mutual information of the
     # parent independent process is smaller.
     out = StringIO()
@@ -266,6 +297,14 @@ def process(fs):
     print >> out, 'stationary distn Shannon entropy:'
     print >> out, -ndot(v, np.log(v))
     print >> out
+    #
+    if fs.parent_indep:
+        print >> out, 'approximate simplified process m.i. 2nd order approx:'
+        print >> out, get_pi_mi_t2_approx(Q, v, t)
+        print >> out
+        print >> out, 'approximate simplified process m.i. "better" approx:'
+        print >> out, get_pi_mi_t2_diag_approx(Q, v, t)
+        print >> out
     #
     return out.getvalue().rstrip()
 
