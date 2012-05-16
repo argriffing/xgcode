@@ -27,6 +27,16 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
+            Form.Float('plot_width', 'plot width in tikz units',
+                '4', low_exclusive=0, high_exclusive=20),
+            Form.Float('plot_height', 'plot height in tikz units',
+                '4', low_exclusive=0, high_exclusive=20),
+            Form.Float('t_max', 'max time',
+                '5', low_exclusive=0),
+            Form.Float('t_a', 'lower bound of interval of interest',
+                '1.0', low_exclusive=0),
+            Form.Float('t_b', 'upper bound of interval of interest',
+                '1.5', low_exclusive=0),
             Form.TikzFormat()]
     return form_objects
 
@@ -69,10 +79,14 @@ def get_segment(pta, ptb):
 
 def get_tikz_body(fs):
     out = StringIO()
-    #
-    plot_height = 5.0
-    plot_width = 5.0
-    timescale = 6.0
+    # define user variables
+    plot_width = fs.plot_width
+    plot_height = fs.plot_height
+    timescale = fs.t_max
+    # validate
+    if fs.t_b <= fs.t_a:
+        raise ValueError('interval lower bound should be below upper bound')
+    # define hardcoded variables
     mu = 1.0
     origin = (0, 0)
     plotscale = np.array((plot_width, plot_height))
@@ -83,14 +97,14 @@ def get_tikz_body(fs):
             origin, (0, plot_height))
     print >> out, r'\draw[color=gray] ' + get_segment(
             (0,plot_height), (plot_width, plot_height))
-    print >> out, r'\draw[dashed,color=gray] ' + get_segment(
+    print >> out, r'\draw[dotted,color=gray] ' + get_segment(
             (0,0.25*plot_height), (plot_width, 0.25*plot_height))
-    # define the times of interest
-    t0 = 0.0 # initial time
-    ta = 0.2 # interval of interest begins
-    tb = 0.3 # interval of interest ends
-    tx = 0.6 # an extra bezier knot for smoothness
-    t1 = 1.0 # final time
+    # define times of interest
+    t0 = 0
+    ta = fs.t_a / timescale
+    tb = fs.t_b / timescale
+    tx = (tb + 1) / 2
+    t1 = 1
     # draw the bezier curve hitting the right knots
     scale = np.array((plot_width / timescale, plot_height))
     times = (t0, ta, tb, tx, t1)
@@ -133,13 +147,13 @@ def get_tikz_body(fs):
             pta * scale * xproj, ptb * scale * xproj)
     print >> out, r'\draw[color=black] ' + get_segment(
             pta * scale * yproj, ptb * scale * yproj)
-    print >> out, r'\draw[dashed,color=gray] ' + get_segment(
+    print >> out, r'\draw[dotted,color=gray] ' + get_segment(
             pta * scale, pta * scale * xproj)
-    print >> out, r'\draw[dashed,color=gray] ' + get_segment(
+    print >> out, r'\draw[dotted,color=gray] ' + get_segment(
             ptb * scale, ptb * scale * xproj)
-    print >> out, r'\draw[dashed,color=gray] ' + get_segment(
+    print >> out, r'\draw[dotted,color=gray] ' + get_segment(
             pta * scale, pta * scale * yproj)
-    print >> out, r'\draw[dashed,color=gray] ' + get_segment(
+    print >> out, r'\draw[dotted,color=gray] ' + get_segment(
             ptb * scale, ptb * scale * yproj)
     # draw filled black dots at some intersections
     dot_points = [
