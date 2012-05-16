@@ -108,12 +108,14 @@ def get_picture(tikz_body, *args, **kwargs):
         tikz_body,
         '\\end{tikzpicture}'))
 
-def get_response(tikzpicture, tikzformat, packages=(), preamble=''):
+def get_response(
+        tikzpicture, tikzformat, packages=(), preamble='', tikzlibraries=()):
     """
     @param tikzpicture: a complete tikzpicture environment
     @param tikzformat: one of four tikz output formats
     @param packages: a collection of requested packages
     @param preamble: color definitions, for example
+    @param tikzlibraries: a collection of requested tikz libraries
     @return: a response suitable to return from the get_response interface
     """
     # check the requested format
@@ -121,6 +123,14 @@ def get_response(tikzpicture, tikzformat, packages=(), preamble=''):
     # immediately return the tikzpicture if requested
     if tikzformat == TIKZFORMAT_TIKZ:
         return tikzpicture
+    # If tikz libraries are requested then add these to the preamble
+    # before handing off to latex.
+    tikzlibraries_lines = []
+    for name in tikzlibraries:
+        line = r'\usetikzlibrary{%s}' % name
+        tikzlibraries_lines.append(line)
+    if tikzlibraries_lines:
+        preamble += '\n' + '\n'.join(tikzlibraries_lines)
     # delegate to latexutil
     requested_packages = set(packages) | set(['tikz'])
     return latexutil.get_response(
