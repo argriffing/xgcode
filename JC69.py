@@ -5,11 +5,74 @@ This is the continuous time Markov model defined by Jukes and Cantor in 1969.
 
 from StringIO import StringIO
 import unittest
-import math
 import random
+import math
+from math import log, exp
+
+import numpy as np
 
 import MatrixUtil
 import Util
+
+class FisherInformation:
+    def __init__(self, mu, N=4):
+        pass
+
+class MutualInformation:
+    def __init__(self, mu, N=4):
+        """
+        This is the mutual information between X(0) and X(t).
+        @param mu: randomization rate
+        @param N: number of states
+        """
+        self.mu = mu
+        self.N = N
+        # define the logical entropy of the stationary distribution
+        self.h = (N-1) / float(N)
+    def deriv(self, t):
+        x = exp(-self.mu*t)
+        return self.h*(log(1-x) - log(x*(self.N-1) + 1))*self.mu*x
+    def __call__(self, t):
+        x = exp(-self.mu*t)
+        return self.h*(1-x)*log(1-x) + (x+(1-x)/self.N)*log(self.N*x + (1-x))
+
+class IdentitySlopeInformation:
+    """
+    This is like an information.
+    """
+    def __init__(self, mu, N=4):
+        """
+        @param mu: randomization rate
+        @param N: number of states
+        """
+        self.f_identity = ExpectedIdentity(mu, N)
+    def deriv(self, t):
+        return -self.f_identity.d2(t)
+    def __call__(self, t):
+        return -self.f_identity.deriv(t)
+
+class ExpectedIdentity:
+    """
+    The negative derivative of this function is like an information.
+    """
+    def __init__(self, mu, N=4):
+        """
+        This is P(X(0) == X(t)) for N-state Jukes-Cantor.
+        @param mu: randomization rate
+        @param N: number of states
+        """
+        self.mu = mu
+        self.N = N
+        # define the logical entropy of the stationary distribution
+        self.h = (N-1) / float(N)
+    def d2(self, t):
+        return self.h * self.mu * self.mu * math.exp(-self.mu * t)
+    def deriv(self, t):
+        return -self.h * self.mu * math.exp(-self.mu * t)
+    def inv(self, p):
+        return -math.log((p + self.h - 1) / self.h) / self.mu
+    def __call__(self, t):
+        return self.h * math.exp(-self.mu * t) + (1 - self.h)
 
 def distance_to_probability(d):
     """

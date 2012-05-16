@@ -18,6 +18,7 @@ import latexutil
 import iterutils
 import mrate
 import bezier
+import JC69
 
 def get_form():
     """
@@ -39,24 +40,6 @@ def get_form():
 
 def get_form_out():
     return FormOut.Tikz()
-
-class MyCurve:
-    def __init__(self, mu):
-        """
-        This is P(X(0) == X(t)) for 4-state Jukes-Cantor.
-        @param mu: randomization rate
-        """
-        self.mu = mu
-        # define the logical entropy of the stationary distribution
-        self.h = 0.75
-    def d2(self, t):
-        return self.h * self.mu * self.mu * math.exp(-self.mu * t)
-    def deriv(self, t):
-        return -self.h * self.mu * math.exp(-self.mu * t)
-    def inv(self, p):
-        return -math.log((p + self.h - 1) / self.h) / self.mu
-    def __call__(self, t):
-        return self.h * math.exp(-self.mu * t) + (1 - self.h)
 
 def get_tikz_bezier(bchunks):
     """
@@ -86,9 +69,9 @@ def get_tikz_body(fs):
     timescale = fs.t_max
     fast_mu = fs.fast_mu
     slow_mu = fs.slow_mu
-    f_fast = MyCurve(fast_mu)
-    f_slow = MyCurve(slow_mu)
-    ymax = max(-f_fast.deriv(0), -f_slow.deriv(0)) * 1.2
+    f_fast = JC69.IdentitySlopeInformation(fast_mu)
+    f_slow = JC69.IdentitySlopeInformation(slow_mu)
+    ymax = max(f_fast(0), f_slow(0)) * 1.2
     plotscale = np.array((plot_width / timescale, plot_height / ymax))
     origin = (0, 0)
     # Compute the intersection time.
@@ -101,18 +84,16 @@ def get_tikz_body(fs):
             'edge node[color=black,below]',
             '$t$',
             tikz.point_to_tikz((plot_width, 0)))
-    #print >> out, r'\draw[color=gray] ' + get_segment(
-            #origin, (plot_width, 0))
     print >> out, r'\draw[color=gray] ' + get_segment(
             origin, (0, plot_height))
     # draw the bezier curves hitting the right knots
     for f in (f_slow, f_fast):
         bchunks = []
         for a, b in iterutils.pairwise(times):
-            pta = np.array((a, -f.deriv(a)))
-            ptb = np.array((b, -f.deriv(b)))
-            dta = np.array((1, -f.d2(a)))
-            dtb = np.array((1, -f.d2(b)))
+            pta = np.array((a, f(a)))
+            ptb = np.array((b, f(b)))
+            dta = np.array((1, f.deriv(a)))
+            dtb = np.array((1, f.deriv(b)))
             bchunk = bezier.create_bchunk_hermite(
                     a, b,
                     pta * plotscale, ptb * plotscale,
@@ -122,9 +103,9 @@ def get_tikz_body(fs):
     # draw filled black dots at some intersections
     dot_points = [
             origin,
-            (0, -f_fast.deriv(0)),
-            (0, -f_slow.deriv(0)),
-            (t_x, -f_slow.deriv(t_x))
+            (0, f_fast(0)),
+            (0, f_slow(0)),
+            (t_x, f_slow(t_x))
             ]
     for p in dot_points:
         print >> out, r'\fill[color=black,inner sep=0pt]',
