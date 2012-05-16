@@ -30,13 +30,17 @@ def get_form():
             Form.Float('plot_width', 'plot width in tikz units',
                 '4', low_exclusive=0, high_exclusive=20),
             Form.Float('plot_height', 'plot height in tikz units',
-                '4', low_exclusive=0, high_exclusive=20),
+                '6', low_exclusive=0, high_exclusive=20),
             Form.Float('t_max', 'max time',
                 '5', low_exclusive=0),
-            Form.Float('t_a', 'lower bound of interval of interest',
-                '1.0', low_exclusive=0),
-            Form.Float('t_b', 'upper bound of interval of interest',
-                '1.5', low_exclusive=0),
+            Form.Float('p_low', 'proportion lower bound',
+                '0.6', low_exclusive=0.25, high_exclusive=1.0),
+            Form.Float('p_high', 'proportion upper bound',
+                '0.8', low_exclusive=0.25, high_exclusive=1.0),
+            #Form.Float('t_a', 'lower bound of interval of interest',
+                #'1.0', low_exclusive=0),
+            #Form.Float('t_b', 'upper bound of interval of interest',
+                #'1.5', low_exclusive=0),
             Form.TikzFormat()]
     return form_objects
 
@@ -54,6 +58,8 @@ class MyCurve:
         self.h = 0.75
     def deriv(self, t):
         return -self.h * self.mu * math.exp(-self.mu * t)
+    def inv(self, p):
+        return -math.log((p + self.h - 1) / self.h) / self.mu
     def __call__(self, t):
         return self.h * math.exp(-self.mu * t) + (1 - self.h)
 
@@ -79,16 +85,19 @@ def get_segment(pta, ptb):
 
 def get_tikz_body(fs):
     out = StringIO()
+    # predefined variables
+    mu = 1.0
+    origin = (0, 0)
+    f = MyCurve(mu)
     # define user variables
     plot_width = fs.plot_width
     plot_height = fs.plot_height
     timescale = fs.t_max
+    ta = f.inv(fs.p_high) / timescale
+    tb = f.inv(fs.p_low) / timescale
     # validate
-    if fs.t_b <= fs.t_a:
+    if tb <= ta:
         raise ValueError('interval lower bound should be below upper bound')
-    # define hardcoded variables
-    mu = 1.0
-    origin = (0, 0)
     plotscale = np.array((plot_width, plot_height))
     # draw the boundary of the plot
     print >> out, r'\draw[color=gray] ' + get_segment(
@@ -101,14 +110,11 @@ def get_tikz_body(fs):
             (0,0.25*plot_height), (plot_width, 0.25*plot_height))
     # define times of interest
     t0 = 0
-    ta = fs.t_a / timescale
-    tb = fs.t_b / timescale
     tx = (tb + 1) / 2
     t1 = 1
     # draw the bezier curve hitting the right knots
     scale = np.array((plot_width / timescale, plot_height))
     times = (t0, ta, tb, tx, t1)
-    f = MyCurve(mu)
     bchunks = []
     for a, b in iterutils.pairwise(times):
         a = timescale * a
