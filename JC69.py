@@ -7,7 +7,7 @@ from StringIO import StringIO
 import unittest
 import random
 import math
-from math import log, exp
+from math import log, exp, expm1
 
 import numpy as np
 
@@ -34,7 +34,23 @@ class MutualInformation:
         return self.h*(log(1-x) - log(x*(self.N-1) + 1))*self.mu*x
     def __call__(self, t):
         x = exp(-self.mu*t)
-        return self.h*(1-x)*log(1-x) + (x+(1-x)/self.N)*log(self.N*x + (1-x))
+        xcomp = -expm1(-self.mu*t)
+        if not x:
+            return 0
+        elif not xcomp:
+            shannon_entropy = log(self.N)
+            return shannon_entropy
+        try:
+            a = self.h*xcomp*log(xcomp)
+            b = (x + xcomp/self.N)*log(self.N*x + xcomp)
+            mi = a + b
+        except ValueError as e:
+            print 'mu:', self.mu
+            print 'N:', self.N
+            print 'x:', x
+            print '1-x:', xcomp
+            raise e
+        return mi
 
 class IdentitySlopeInformation:
     """

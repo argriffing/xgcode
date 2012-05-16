@@ -35,6 +35,10 @@ def get_form():
                 '0.4', low_exclusive=0),
             Form.Float('fast_mu', 'fast randomization rate',
                 '1', low_exclusive=0),
+            Form.RadioGroup('info_type', 'information type', [
+                Form.RadioItem('info_identity_slope',
+                    'abs slope of expected identity', True),
+                Form.RadioItem('info_mi', 'mutual information')]),
             Form.TikzFormat()]
     return form_objects
 
@@ -69,15 +73,21 @@ def get_tikz_body(fs):
     timescale = fs.t_max
     fast_mu = fs.fast_mu
     slow_mu = fs.slow_mu
-    f_fast = JC69.IdentitySlopeInformation(fast_mu)
-    f_slow = JC69.IdentitySlopeInformation(slow_mu)
+    if fs.info_identity_slope:
+        f_fast = JC69.IdentitySlopeInformation(fast_mu)
+        f_slow = JC69.IdentitySlopeInformation(slow_mu)
+    elif fs.info_mi:
+        f_fast = JC69.MutualInformation(fast_mu)
+        f_slow = JC69.MutualInformation(slow_mu)
     ymax = max(f_fast(0), f_slow(0)) * 1.2
     plotscale = np.array((plot_width / timescale, plot_height / ymax))
     origin = (0, 0)
-    # Compute the intersection time.
-    t_x = math.log(fast_mu / slow_mu) / (fast_mu - slow_mu)
     # Define some times for evaluation of the curve.
-    times = (0, t_x/2, t_x, (t_x+timescale)/2, timescale)
+    times = [timescale*2**-i for i in range(10)]
+    if fs.info_identity_slope:
+        # Compute the intersection time.
+        t_x = math.log(fast_mu / slow_mu) / (fast_mu - slow_mu)
+        times.extend([t_x / 2, t_x, (t_x + timescale)/2])
     # draw the boundary of the plot
     print >> out, r'\draw[color=gray] %s %s {%s} %s;' % (
             tikz.point_to_tikz(origin),
@@ -89,7 +99,7 @@ def get_tikz_body(fs):
     # draw the bezier curves hitting the right knots
     for f in (f_slow, f_fast):
         bchunks = []
-        for a, b in iterutils.pairwise(times):
+        for a, b in iterutils.pairwise(sorted(times)):
             pta = np.array((a, f(a)))
             ptb = np.array((b, f(b)))
             dta = np.array((1, f.deriv(a)))
@@ -105,8 +115,9 @@ def get_tikz_body(fs):
             origin,
             (0, f_fast(0)),
             (0, f_slow(0)),
-            (t_x, f_slow(t_x))
             ]
+    if fs.info_identity_slope:
+        dot_points.append((t_x, f_slow(t_x)))
     for p in dot_points:
         print >> out, r'\fill[color=black,inner sep=0pt]',
         print >> out, tikz.point_to_tikz(np.array(p) * plotscale),
