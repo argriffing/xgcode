@@ -1,6 +1,9 @@
-"""Functions dealing with the JC69 nucleotide rate matrix.
+"""
+Functions dealing with the JC69 nucleotide rate matrix.
 
 This is the continuous time Markov model defined by Jukes and Cantor in 1969.
+Some analysis was attempted using Theano but it is very slow
+and is probably not useful except for testing.
 """
 
 from StringIO import StringIO
@@ -10,13 +13,95 @@ import math
 from math import log, exp, expm1
 
 import numpy as np
+import theano
+import theano.tensor as T
 
 import MatrixUtil
 import Util
 
+class FisherInformationTheano:
+    def __init__(self, mu, N=4):
+        """
+        This is the Fisher information for time.
+        Try using Theano with the naive definition of Fisher information.
+        @param mu: randomization rate
+        @param N: number of states
+        """
+        self.mu = mu
+        self.N = N
+        self.cached_theano_f = None
+        self.cached_theano_df = None
+    def _get_theano_f_df(self):
+        if not self.cached_theano_f:
+            f, df = self._compute_theano_f_df()
+            self.cached_theano_f = f
+            self.cached_theano_df = df
+        return self.cached_theano_f, self.cached_theano_df
+    def _compute_theano_f_df(self):
+        mu = T.dscalar('mu')
+        N = T.dscalar('N')
+        t = T.dscalar('t')
+        x = T.exp(-t*mu)
+        Pii = x + (1-x)/N
+        Pij = (1-x)/N
+        Jii = Pii/N
+        Jij = Pij/N
+        ii_contrib = Jii*T.grad(T.log(Jii), t)**2
+        ij_contrib = Jij*T.grad(T.log(Jij), t)**2
+        fi = N*(N-1)*ij_contrib + N*ii_contrib
+        fi_grad = T.grad(fi, t)
+        #print theano.pp(fi)
+        #print theano.pp(fi_grad)
+        f = theano.function([mu, N, t], fi)
+        df = theano.function([mu, N, t], fi_grad)
+        #print theano.pp(f.maker.env.outputs[0])
+        #print theano.pp(df.maker.env.outputs[0])
+        return f, df
+    def __call__(self, t):
+        f, df = self._get_theano_f_df()
+        return f(self.mu, self.N, t)
+    def deriv(self, t):
+        f, df = self._get_theano_f_df()
+        return df(self.mu, self.N, t)
+
 class FisherInformation:
     def __init__(self, mu, N=4):
-        pass
+        """
+        This is the Fisher information for time.
+        Try using Theano with the naive definition of Fisher information.
+        @param mu: randomization rate
+        @param N: number of states
+        """
+        self.mu = mu
+        self.N = N
+    def deriv(self, t):
+        """
+        This is from a symbolic differentiation output.
+        The following expression was differentiated with respect to x.
+        N*(N-1)*(1/N)*(N/(1-x))*(u*x/N)**2 +
+        N*(1/N)*(1/(x + (1-x)/N))*(-u*x + (u*x)/N)**2
+        Alternate form
+        - ( (N-1)*(mu*x)**2 ) / ( (x-1)*((N-1)*x+1) )
+        """
+        x = exp(-self.mu*t)
+        N = self.N
+        mu = self.mu
+        a = (N-1)*mu*mu*x*((N-2)*x+2)
+        b = ( (x-1)*((N-1)*x+1) )**2
+        return -mu*x*(a/b)
+    def __call__(self, t):
+        x = exp(-self.mu*t)
+        N = self.N
+        mu = self.mu
+        Pii = x + (1-x)/N
+        Pij = (1-x)/N
+        Pii_grad = -mu*x + (mu/N)*x
+        Pij_grad = (mu/N)*x
+        ii_contrib = (Pii_grad**2) / (N*Pii)
+        ij_contrib = (Pij_grad**2) / (N*Pij)
+        return N*(N-1)*ij_contrib + N*ii_contrib
+
+
 
 class MutualInformation:
     def __init__(self, mu, N=4):
@@ -235,6 +320,22 @@ class TestJC69(unittest.TestCase):
             d_expected = probability_to_distance(p_expected)
             d_observed = get_ML_distance(sa, sb)
             self.assertAlmostEqual(d_expected, d_observed)
+
+    def test_fisher_theano_f(self):
+        mu = 0.6
+        N = 4
+        t = 1.4
+        obj_plain = FisherInformation(mu, N)
+        obj_theano = FisherInformationTheano(mu, N)
+        self.assertAlmostEqual(obj_plain(t), obj_theano(t))
+
+    def test_fisher_theano_df(self):
+        mu = 0.6
+        N = 4
+        t = 1.4
+        obj_plain = FisherInformation(mu, N)
+        obj_theano = FisherInformationTheano(mu, N)
+        self.assertAlmostEqual(obj_plain.deriv(t), obj_theano.deriv(t))
 
 
 if __name__ == '__main__':

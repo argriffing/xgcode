@@ -3,6 +3,8 @@ Draw two derivatives of sequence identity curves with different rates.
 
 Show that there is a tradeoff between
 divergence time information at small and large times.
+The Fisher information approaches infinity at time zero,
+and so does the negative of the derivative of the mutual information.
 """
 
 from StringIO import StringIO
@@ -38,6 +40,7 @@ def get_form():
             Form.RadioGroup('info_type', 'information type', [
                 Form.RadioItem('info_identity_slope',
                     'abs slope of expected identity', True),
+                Form.RadioItem('info_fi', 'Fisher information'),
                 Form.RadioItem('info_mi', 'mutual information')]),
             Form.TikzFormat()]
     return form_objects
@@ -79,15 +82,21 @@ def get_tikz_body(fs):
     elif fs.info_mi:
         f_fast = JC69.MutualInformation(fast_mu)
         f_slow = JC69.MutualInformation(slow_mu)
-    ymax = max(f_fast(0), f_slow(0)) * 1.2
-    plotscale = np.array((plot_width / timescale, plot_height / ymax))
-    origin = (0, 0)
+    elif fs.info_fi:
+        #f_fast = JC69.FisherInformationTheano(fast_mu)
+        #f_slow = JC69.FisherInformationTheano(slow_mu)
+        f_fast = JC69.FisherInformation(fast_mu)
+        f_slow = JC69.FisherInformation(slow_mu)
     # Define some times for evaluation of the curve.
     times = [timescale*2**-i for i in range(10)]
     if fs.info_identity_slope:
         # Compute the intersection time.
         t_x = math.log(fast_mu / slow_mu) / (fast_mu - slow_mu)
         times.extend([t_x / 2, t_x, (t_x + timescale)/2])
+    # define some more intermediate values
+    ymax = max(f_fast(min(times)), f_slow(min(times))) * 1.2
+    plotscale = np.array((plot_width / timescale, plot_height / ymax))
+    origin = (0, 0)
     # draw the boundary of the plot
     print >> out, r'\draw[color=gray] %s %s {%s} %s;' % (
             tikz.point_to_tikz(origin),
@@ -111,11 +120,10 @@ def get_tikz_body(fs):
             bchunks.append(bchunk)
         print >> out, r'\draw[color=gray] ' + get_tikz_bezier(bchunks)
     # draw filled black dots at some intersections
-    dot_points = [
-            origin,
-            (0, f_fast(0)),
-            (0, f_slow(0)),
-            ]
+    dot_points = [origin]
+    if not fs.info_fi:
+        dot_points.append((0, f_fast(0)))
+        dot_points.append((0, f_slow(0)))
     if fs.info_identity_slope:
         dot_points.append((t_x, f_slow(t_x)))
     for p in dot_points:
