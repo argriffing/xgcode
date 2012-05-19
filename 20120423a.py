@@ -67,6 +67,15 @@ def get_expectation_t_selection_tweaked(N, M, t):
     c = (M - 1) / M
     return a - b + c
 
+def get_simplified(N, mu, t):
+    """
+    @param N: nstates
+    @param mu: randomization rate
+    @param t: time
+    @return: criterion
+    """
+    return math.log(1 + (N-1)*math.exp(-2*mu*t))
+
 
 def get_response_content(fs):
     N = 4.0
@@ -90,6 +99,10 @@ def get_response_content(fs):
     print >> out, 'observed results (wrong):'
     print >> out, 'N=4:', result_neutral
     print >> out, 'N=4, M=2:', result_selection
+    print >> out
+    print >> out, 'attempted simplification of criterion:'
+    print >> out, 'N=4:', get_simplified(4, 1/0.75, t)
+    print >> out, 'N=4, M=2:', get_simplified(2, 0.5/0.75, t)
     print >> out
     print >> out, 'tweaked results (extra wrong):'
     print >> out, 'N=4:', result_neutral_tweaked
