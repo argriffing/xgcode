@@ -68,7 +68,6 @@ class FisherInformation:
     def __init__(self, mu, N=4):
         """
         This is the Fisher information for time.
-        Try using Theano with the naive definition of Fisher information.
         @param mu: randomization rate
         @param N: number of states
         """
@@ -101,6 +100,36 @@ class FisherInformation:
         ij_contrib = (Pij_grad**2) / (N*Pij)
         return N*(N-1)*ij_contrib + N*ii_contrib
 
+class FisherInformationB:
+    """
+    This is another derivation by hand.
+    """
+    def __init__(self, mu, N=4):
+        """
+        This is the Fisher information for time.
+        @param mu: randomization rate
+        @param N: number of states
+        """
+        self.mu = mu
+        self.N = N
+    def deriv(self, t):
+        """
+        This is copied from FisherInformation.
+        """
+        x = exp(-self.mu*t)
+        N = self.N
+        mu = self.mu
+        a = (N-1)*mu*mu*x*((N-2)*x+2)
+        b = ( (x-1)*((N-1)*x+1) )**2
+        return -mu*x*(a/b)
+    def __call__(self, t):
+        x = exp(-self.mu*t)
+        N = self.N
+        mu = self.mu
+        coeff = (N-1)*(mu*x)**2 / N
+        a = (N-1) / (1 + (N-1)*x)
+        b = 1 / (1 - x)
+        return coeff * (a + b)
 
 
 class MutualInformation:
@@ -336,6 +365,16 @@ class TestJC69(unittest.TestCase):
         obj_plain = FisherInformation(mu, N)
         obj_theano = FisherInformationTheano(mu, N)
         self.assertAlmostEqual(obj_plain.deriv(t), obj_theano.deriv(t))
+
+    def test_fisher_b(self):
+        mu = 0.6
+        N = 4
+        t = 1.4
+        obj_plain = FisherInformation(mu, N)
+        obj_theano = FisherInformationTheano(mu, N)
+        obj_b = FisherInformationB(mu, N)
+        self.assertAlmostEqual(obj_plain(t), obj_b(t))
+        self.assertAlmostEqual(obj_theano(t), obj_b(t))
 
 
 if __name__ == '__main__':
