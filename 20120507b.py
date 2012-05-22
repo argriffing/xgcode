@@ -21,6 +21,7 @@ import Form
 import FormOut
 import mrate
 import ctmcmi
+import msimpl
 import combobreaker
 import MatrixUtil
 from MatrixUtil import ndot
@@ -28,15 +29,19 @@ from MatrixUtil import ndot
 
 def get_form():
     form_objects = [
-            Form.Integer('nstates', 'number of states', 4, low=2, high=10)]
+            Form.Integer('nstates', 'number of states', 4, low=2, high=10),
+            Form.CheckGroup('partition_options', 'partition options', [
+                Form.CheckItem('bipartitioned', 'bipartitioned', True)]),
+                ]
     return form_objects
 
 def get_form_out():
     return FormOut.Report()
 
 class Accumulate:
-    def __init__(self, nstates):
+    def __init__(self, nstates, simplification):
         self.nstates = nstates
+        self.simplification = simplification
         self.counterexample = None
         self.n_too_close = 0
     def __call__(self):
@@ -58,9 +63,10 @@ class Accumulate:
         #expected_rate = np.dot(v, -np.diag(R))
         #logical_entropy = np.dot(v, 1-v)
         #randomization_rate = expected_rate / logical_entropy
-        Q = np.outer(np.ones(self.nstates), v)
-        Q -= np.diag(np.sum(Q, axis=1))
-        Q *= max(np.diag(R) / np.diag(Q))
+        Q = self.simplification(R)
+        #Q = np.outer(np.ones(self.nstates), v)
+        #Q -= np.diag(np.sum(Q, axis=1))
+        #Q *= max(np.diag(R) / np.diag(Q))
         # sample a random time
         t = random.expovariate(1)
         # Check that the mutual information of the
@@ -109,7 +115,11 @@ def get_response_content(fs):
     # request a limited amount of time
     nseconds = 4.0
     # get the results
-    accum = Accumulate(nstates)
+    if fs.bipartitioned:
+        simplification = msimpl.get_fast_meta_f81_autobarrier
+    else:
+        simplification = msimpl.get_fast_f81
+    accum = Accumulate(nstates, simplification)
     info = combobreaker.run_callable(accum, nseconds=nseconds)
     return str(info)
 

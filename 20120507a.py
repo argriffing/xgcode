@@ -31,7 +31,8 @@ import combobreaker
 
 def get_form():
     form_objects = [
-            Form.Integer('nstates', 'number of states', 4, low=2, high=10)]
+            Form.Integer('nstates', 'number of states', 4, low=2, high=10),
+            ]
     return form_objects
 
 def get_form_out():

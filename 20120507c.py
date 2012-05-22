@@ -23,6 +23,7 @@ import FormOut
 import mrate
 import ctmcmi
 import cheeger
+import msimpl
 import iterutils
 import MatrixUtil
 from MatrixUtil import ndot
@@ -32,6 +33,7 @@ def get_form():
     form_objects = [
             Form.RadioGroup('simplification', 'simplification', [
                 Form.RadioItem('parent_indep', 'parent independent', True),
+                Form.RadioItem('bipartitioned', 'bipartitioned'),
                 Form.RadioItem('child_indep', 'child independent')]),
             Form.Integer('nstates', 'number of states', 4, low=2, high=10),
             Form.Float('t', 'time', '0.1', low_exclusive=0)]
@@ -182,22 +184,26 @@ def process(fs):
     # Construct a parent-independent process
     # with the same max rate and stationary distribution
     # as the sampled process.
-    Q = np.outer(np.ones(nstates), v)
-    Q -= np.diag(np.sum(Q, axis=1))
-    pi_rescaling_factor = max(np.diag(R) / np.diag(Q))
-    Q *= pi_rescaling_factor
+    if fs.parent_indep:
+        Q = np.outer(np.ones(nstates), v)
+        Q -= np.diag(np.sum(Q, axis=1))
+        pi_rescaling_factor = max(np.diag(R) / np.diag(Q))
+        Q *= pi_rescaling_factor
+        Z = msimpl.get_fast_meta_f81_autobarrier(Q)
     # Construct a child-independent process
     # with the same expected rate
     # as the sampled process
-    C = np.outer(1/v, np.ones(nstates))
-    C -= np.diag(np.sum(C, axis=1))
-    ci_rescaling_factor = np.max(R / C)
-    #expected_rate = -ndot(np.diag(R), v)
-    #ci_rescaling_factor = expected_rate / (nstates*(nstates-1))
-    #ci_rescaling_factor = expected_rate / (nstates*nstates)
-    C *= ci_rescaling_factor
     if fs.child_indep:
+        C = np.outer(1/v, np.ones(nstates))
+        C -= np.diag(np.sum(C, axis=1))
+        ci_rescaling_factor = np.max(R / C)
+        #expected_rate = -ndot(np.diag(R), v)
+        #ci_rescaling_factor = expected_rate / (nstates*(nstates-1))
+        #ci_rescaling_factor = expected_rate / (nstates*nstates)
+        C *= ci_rescaling_factor
         Q = C
+    if fs.bipartitioned:
+        Q = msimpl.get_fast_meta_f81_autobarrier(R)
     # Check that the mutual information of the
     # parent independent process is smaller.
     out = StringIO()
@@ -233,12 +239,14 @@ def process(fs):
     print >> out, 'simplified rate matrix Q:'
     print >> out, Q
     print >> out
-    print >> out, 'parent independent rescaling factor:'
-    print >> out, pi_rescaling_factor
-    print >> out
-    print >> out, 'child independent rescaling factor:'
-    print >> out, ci_rescaling_factor
-    print >> out
+    if fs.parent_indep:
+        print >> out, 'parent independent rescaling factor:'
+        print >> out, pi_rescaling_factor
+        print >> out
+    if fs.child_indep:
+        print >> out, 'child independent rescaling factor:'
+        print >> out, ci_rescaling_factor
+        print >> out
     print >> out, 'eigenvalues of Q:', scipy.linalg.eigvals(Q)
     print >> out
     print >> out, 'relaxation rate of Q:',
@@ -304,6 +312,9 @@ def process(fs):
         print >> out
         print >> out, 'approximate simplified process m.i. "better" approx:'
         print >> out, get_pi_mi_t2_diag_approx(Q, v, t)
+        print >> out
+        print >> out, '"f81-ization plus barrier" of pure f81-ization:'
+        print >> out, Z
         print >> out
     #
     return out.getvalue().rstrip()
