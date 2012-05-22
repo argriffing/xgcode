@@ -213,6 +213,9 @@ def process(fs):
     print >> out, 'sampled stationary distribution v:'
     print >> out, v
     print >> out
+    print >> out, 'shannon entropy of stationary distribution v:'
+    print >> out, -np.dot(np.log(v), v)
+    print >> out
     print >> out, 'sqrt stationary distribution:'
     print >> out, np.sqrt(v)
     print >> out
@@ -238,6 +241,16 @@ def process(fs):
     print >> out
     print >> out, 'simplified rate matrix Q:'
     print >> out, Q
+    print >> out
+    qv = mrate.R_to_distn(Q)
+    print >> out, 'stationary distribution of Q:'
+    print >> out, qv
+    print >> out
+    print >> out, 'ratio qv/v:'
+    print >> out, qv / v
+    print >> out
+    print >> out, 'shannon entropy of stationary distribution of Q:'
+    print >> out, -np.dot(np.log(qv), qv)
     print >> out
     if fs.parent_indep:
         print >> out, 'parent independent rescaling factor:'
