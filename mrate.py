@@ -255,6 +255,19 @@ def R_to_distn_nonspectral(R):
     total = sum(weights)
     return np.array(weights) / total
 
+def P_to_distn(R):
+    """
+    @param P: transition matrix
+    @return: stationary distribution
+    """
+    n = len(R)
+    Wl, Vl = scipy.linalg.eig(R, left=True, right=False)
+    val_vec_pairs = [(abs(Wl[i]), Vl[:,i]) for i in range(n)]
+    dummy, pi_eigenvector = max(val_vec_pairs)
+    total = np.sum(pi_eigenvector)
+    pi_arr = np.array([v/total for v in pi_eigenvector])
+    return pi_arr
+
 def R_to_distn(R):
     """
     @param R: rate matrix
