@@ -1,9 +1,9 @@
 """
 Plot upper and lower mutual information bounds for reversible Markov processes.
 
-The upper bound is not so great; it is just the constant entropy
+The nonspectral upper bound is not so great; it is just the constant entropy
 of the stationary distribution.
-There are two lower bounds, each of which corresponds to the
+There are two nonspectral lower bounds, each of which corresponds to the
 mutual information of a process which I believe never has more
 mutual information than the original process.
 One of these less informative processes
@@ -15,6 +15,10 @@ in the original process;
 it is a weak lower bound at small divergence times
 because its stationary distribution has not so much entropy,
 but at larger times it should be a quite good lower bound.
+I have not proved that the spectral bounds are actually bounds,
+but they are close approximations near zero and infinity.
+For that matter I have not proved that the non-spectral
+bounds are bounds either.
 """
 
 from StringIO import StringIO
@@ -45,6 +49,12 @@ def get_form():
             Form.Float('scale',
                 'extra scaling factor',
                 '1.333333333333', low_exclusive=0),
+            Form.Float('start_time', 'start time',
+                '0', low_inclusive=0),
+            Form.Float('stop_time', 'stop time',
+                '5', low_exclusive=0),
+            Form.CheckGroup('options', 'options', [
+                Form.CheckItem('show_entropy', 'show entropy', True)]),
             Form.ImageFormat()]
     return form_objects
 
@@ -52,33 +62,57 @@ def get_form_out():
     return FormOut.Image('mutual-info-bounds')
 
 def get_response_content(fs):
+    if fs.stop_time <= fs.start_time:
+        raise ValueError('check the start and stop times')
     M = get_input_matrix(fs)
     # create the R table string and scripts
-    headers = [
-            't',
-            'ub.entropy',
+    headers = ['t']
+    if fs.show_entropy:
+        headers.append('ub.entropy')
+    headers.extend([
+            'ub.jc.spectral',
+            'ub.f81.spectral',
             'mutual.information',
+            'lb.2.state.spectral',
+            'lb.2.state',
             'lb.f81',
-            'lb.2.state']
+            ])
     npoints = 100
-    t_low = 0.0
-    t_high = 5.0
+    t_low = fs.start_time
+    t_high = fs.stop_time
     t_incr = (t_high - t_low) / (npoints - 1)
     t_values = [t_low + t_incr*i for i in range(npoints)]
     # define some extra stuff
     v = mrate.R_to_distn(M)
     entropy = -np.dot(v, np.log(v))
+    n = len(M)
+    gap = sorted(abs(x) for x in np.linalg.eigvals(M))[1]
     print 'stationary distn:', v
     print 'entropy:', entropy
+    print 'spectral gap:', gap
+    M_slow_jc = gap * (1.0 / n) * (np.ones((n,n)) - n*np.eye(n))
+    M_slow_f81 = gap * np.outer(np.ones(n), v)
+    M_slow_f81 -= np.diag(np.sum(M_slow_f81, axis=1))
     M_f81 = msimpl.get_fast_f81(M)
     M_2state = msimpl.get_fast_two_state_autobarrier(M)
+    M_2state_spectral = -gap * M_2state / np.trace(M_2state)
     # get the data for the R table
     arr = []
-    for t in t_values:
+    for u in t_values:
+        # experiment with log time
+        #t = math.exp(u)
+        t = u
+        mi_slow_jc = ctmcmi.get_mutual_information(M_slow_jc, t)
+        mi_slow_f81 = ctmcmi.get_mutual_information(M_slow_f81, t)
         mi_mut = ctmcmi.get_mutual_information(M, t)
+        mi_2state_spectral = ctmcmi.get_mutual_information(M_2state_spectral, t)
         mi_f81 = ctmcmi.get_mutual_information(M_f81, t)
         mi_2state = ctmcmi.get_mutual_information(M_2state, t)
-        row = [t, entropy, mi_mut, mi_f81, mi_2state]
+        row = [u]
+        if fs.show_entropy:
+            row.append(entropy)
+        row.extend([mi_slow_jc, mi_slow_f81,
+                mi_mut, mi_2state_spectral, mi_2state, mi_f81])
         arr.append(row)
     # get the R table
     table_string = RUtil.get_table_string(arr, headers)
@@ -103,7 +137,8 @@ def get_ggplot():
     print >> out, ') + geom_line()',
     print >> out, '+',
     print >> out, mk_call_str(
-            'xlim', '0',
+            'xlim',
+            mk_call_str('min', 'my.table.long$t'),
             mk_call_str('max', 'my.table.long$t')),
     print >> out, '+',
     print >> out, mk_call_str(
