@@ -68,6 +68,8 @@ def get_response_content(fs):
     # define some extra stuff
     v = mrate.R_to_distn(M)
     entropy = -np.dot(v, np.log(v))
+    print 'stationary distn:', v
+    print 'entropy:', entropy
     M_f81 = msimpl.get_fast_f81(M)
     M_2state = msimpl.get_fast_two_state_autobarrier(M)
     # get the data for the R table
