@@ -145,6 +145,24 @@ def get_fast_meta_f81_autobarrier(R):
     A = get_barrier(R)
     return get_fast_meta_f81(R, A)
 
+def get_fast_two_state(R, A):
+    n = len(R)
+    v = mrate.R_to_distn(R)
+    A = sorted(set(A))
+    B = sorted(set(range(n)) - set(A))
+    flow = sum(v[i] * R[i, j] for i, j in product(A, B))
+    pa = sum(v[A])
+    pb = sum(v[B])
+    Q = np.array([
+        [0, flow / pa],
+        [flow / pb, 0]])
+    Q -= np.diag(np.sum(Q, axis=1))
+    return Q
+
+def get_fast_two_state_autobarrier(R):
+    A = get_barrier(R)
+    return get_fast_two_state(R, A)
+
 def get_fast_meta_f81_b(R, A):
     """
     The following conjecture does not work.

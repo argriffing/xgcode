@@ -89,16 +89,7 @@ class Accumulate:
         A = random.sample(range(self.nstates), k)
         mi_non_markov = get_mutual_information(R, A, t)
         # get summary statistics of the non-markov process
-        v = mrate.R_to_distn(R)
-        A = sorted(A)
-        B = sorted(set(range(self.nstates)) - set(A))
-        flow = sum(v[i] * R[i, j] for i, j in product(A, B))
-        pa = sum(v[A])
-        pb = sum(v[B])
-        Q = np.array([
-            [0, flow / pa],
-            [flow / pb, 0]])
-        Q -= np.diag(np.sum(Q, axis=1))
+        Q = msimpl.get_fast_two_state(R, A)
         mi_markov = ctmcmi.get_expected_ll_ratio(Q, t)
         # check if the mutual informations are indistinguishable
         if np.allclose(mi_non_markov, mi_markov):
