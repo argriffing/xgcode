@@ -35,6 +35,9 @@ def get_form():
             Form.Integer('nstates', 'number of states', 4, low=2, high=10),
             Form.Float('eps', 'norm of stationary distribution change',
                 0.001, low_exclusive=0, high_exclusive=1),
+            Form.RadioGroup('seltype', 'selection type', [
+                Form.RadioItem('knudsen', 'Knudsen-Miyamoto', True),
+                Form.RadioItem('sella', 'Sella-Hirsh')]),
             ]
     return form_objects
 
@@ -59,6 +62,7 @@ def process(fs):
         raise ValueError('the similar symmetric matrix is not symmetric...')
     R_sim_W, R_sim_V = scipy.linalg.eigh(R_sim)
     R_gap = -R_sim_W[-2]
+    v2 = R_sim_V.T[-2]**2
     # reconstruct the eigenvectors of R
     R_V_rebuilt = (R_sim_V.T / psi).T
     # Sample some numbers then subtract mean then normalize.
@@ -71,7 +75,16 @@ def process(fs):
             'the stationary distribution change was too large '
             'for the randomly sampled process')
     qpsi = np.sqrt(qv)
-    Q = (S.T / qpsi).T * qpsi
+    # define the rate matrix
+    if fs.knudsen:
+        Q = (S.T / qpsi).T * qpsi
+    elif fs.sella:
+        Q = R.copy()
+        for a in range(n):
+            for b in range(n):
+                if a != b:
+                    tau = (qv[b] / v[b]) / (qv[a] / v[a])
+                    Q[a, b] *= math.log(tau) / (1 - 1/tau)
     Q -= np.diag(np.sum(Q, axis=1))
     # construct the symmetric matrix that is similar to Q
     Q_sim = (Q.T * qpsi).T / qpsi
@@ -97,6 +110,8 @@ def process(fs):
     print >> out, R_sim_V ** 2
     print >> out, 'a bilinear form involving a fiedler-like eigenvector:'
     print >> out, ndot(R_sim_V.T[-2], R_sim, R_sim_V.T[-2])
+    print >> out, 'expected rate:', -np.dot(v, np.diag(R))
+    print >> out, 'second order expected rate:', -np.dot(v2, np.diag(R))
     print >> out
     print >> out, 'eigenvectors of R from eigenvectors of the similar matrix:'
     print >> out, R_sim_W
