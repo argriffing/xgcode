@@ -22,6 +22,18 @@ def sample_distn(n):
     v = np.random.exponential(1, n)
     return v / np.sum(v)
 
+def get_commute_distance_matrix(R, v):
+    """
+    @param R: reversible rate matrix
+    """
+    n = len(R)
+    psi = np.sqrt(v)
+    R_sim = (R.T * psi).T / psi
+    R_sim_pinv = scipy.linalg.pinv(R_sim)
+    myouter = np.outer(np.ones(n), np.diag(R_sim_pinv))
+    D = 2 * R_sim_pinv - myouter - myouter.T
+    return D
+
 def get_path_rate_matrix(nstates):
     """
     This is a 3-state path rate matrix.
