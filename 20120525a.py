@@ -71,6 +71,19 @@ def get_f81_pollock(r, v, t):
     x = math.exp(-r*t)
     return r*h*x
 
+def get_gtr_pollock(R, t):
+    """
+    This does not depend on f81 assuptions.
+    It also does not use any explicitly spectral method.
+    But it does use
+    the equation (d/dt)sum(p_i P^t_ii) = sum(p_i (Q P^t)_ii)
+    And it also uses the scipy expm function.
+    """
+    v = mrate.R_to_distn(R)
+    P = scipy.linalg.expm(R*t)
+    return -np.dot(v, np.diag(np.dot(R, P)))
+
+
 class Contradiction(Exception): pass
 
 class Accumulate:
@@ -93,14 +106,18 @@ class Accumulate:
         # get some information criterion values
         mi_general = ctmcmi.get_mutual_information(R, t)
         fi_general = divtime.get_fisher_information(R, t)
+        pollock_general = get_gtr_pollock(R, t)
         mi_f81 = get_f81_mi(r, v, t)
         fi_f81 = get_f81_fi(r, v, t)
+        pollock_f81 = get_f81_pollock(r, v, t)
         # check for contradictions
         try:
             if not np.allclose(mi_general, mi_f81):
                 raise Contradiction('mutual information')
             if not np.allclose(fi_general, fi_f81):
                 raise Contradiction('fisher information')
+            if not np.allclose(pollock_general, pollock_f81):
+                raise Contradiction('neg slope identity proportion')
         except Contradiction as e:
             out = StringIO()
             print >> out, 'found', str(e), 'contradiction'
@@ -116,6 +133,12 @@ class Accumulate:
             print >> out
             print >> out, 'F81 Fisher information:'
             print >> out, fi_f81
+            print >> out
+            print >> out, 'GTR neg slope identity proportion:'
+            print >> out, pollock_general
+            print >> out
+            print >> out, 'F81 neg slope identity proportion:'
+            print >> out, pollock_f81
             print >> out
             self.counterexample = out.getvalue()
             return True
