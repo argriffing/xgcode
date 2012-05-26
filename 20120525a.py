@@ -83,6 +83,12 @@ def get_gtr_pollock(R, t):
     P = scipy.linalg.expm(R*t)
     return -np.dot(v, np.diag(np.dot(R, P)))
 
+def get_f81_fi_2state(r, v, t):
+    h = np.sum(v*(1-v))
+    x = math.exp(-r*t)
+    coeff = (1 + x) / (1 - x)
+    return coeff * (r*x)**2 / (x*2/h + (1-x)**2)
+
 
 class Contradiction(Exception): pass
 
@@ -110,6 +116,8 @@ class Accumulate:
         mi_f81 = get_f81_mi(r, v, t)
         fi_f81 = get_f81_fi(r, v, t)
         pollock_f81 = get_f81_pollock(r, v, t)
+        if n == 2:
+            fi_f81_2state = get_f81_fi_2state(r, v, t)
         # check for contradictions
         try:
             if not np.allclose(mi_general, mi_f81):
@@ -118,6 +126,9 @@ class Accumulate:
                 raise Contradiction('fisher information')
             if not np.allclose(pollock_general, pollock_f81):
                 raise Contradiction('neg slope identity proportion')
+            if n == 2:
+                if not np.allclose(fi_general, fi_f81_2state):
+                    raise Contradiction('fisher information (2-state)')
         except Contradiction as e:
             out = StringIO()
             print >> out, 'found', str(e), 'contradiction'
@@ -134,6 +145,10 @@ class Accumulate:
             print >> out, 'F81 Fisher information:'
             print >> out, fi_f81
             print >> out
+            if n == 2:
+                print >> out, 'F81 2-state Fisher information:'
+                print >> out, fi_f81_2state
+                print >> out
             print >> out, 'GTR neg slope identity proportion:'
             print >> out, pollock_general
             print >> out
