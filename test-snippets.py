@@ -58,7 +58,7 @@ def process_module_name(module_name, bad_modules):
         msg = 'error importing the snippet: ' + error_message
         raise SnippetTestError(msg)
     if any(hasattr(module, x) for x in bad_modules):
-        msg = 'snippet imports a disallowed module'
+        msg = 'skipping because the snippet imports a disallowed module'
         raise SnippetTestError(msg)
     try:
         response = module.get_form()
@@ -149,14 +149,14 @@ def main(args):
     print
     # show the snippets with the longest lines
     pairs = [(t, name) for name, t in name_to_linemax.items()]
-    bad_pairs = list(reversed(sorted(pairs)))[:5]
+    bad_pairs = sorted(pairs, reverse=True)[:5]
     print len(bad_pairs), 'snippets with longest lines:'
     for value, name in bad_pairs:
         print name, value
     print
     # show the slowest snippets
     pairs = [(t, name) for name, t in name_to_nseconds.items()]
-    bad_pairs = list(reversed(sorted(pairs)))[:5]
+    bad_pairs = sorted(pairs, reverse=True)[:5]
     print len(bad_pairs), 'slowest snippets with elapsed seconds:'
     for value, name in bad_pairs:
         print name, value

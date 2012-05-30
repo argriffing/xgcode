@@ -95,14 +95,14 @@ def get_sparse_sequence_rate_matrix(nresidues, nsites):
 ########################################################################
 ## These are rate matrix transformations which preserve detailed balance.
 
-def to_gtr_balanced(M, v):
+def to_gtr_balanced_known_distn(M, p, v):
     """
     @param M: time-reversible rate matrix
+    @param p: current stationary distribution
     @param v: target stationary distribution
     @return: a time-reversible rate matrix
     """
     n = len(v)
-    p = R_to_distn(M)
     R = M.copy()
     # adjust the entries of the rate matrix
     for a in range(n):
@@ -113,25 +113,56 @@ def to_gtr_balanced(M, v):
     R -= np.diag(np.sum(R, axis=1))
     return R
 
+def to_gtr_balanced(M, v):
+    """
+    @param M: time-reversible rate matrix
+    @param v: target stationary distribution
+    @return: a time-reversible rate matrix
+    """
+    p = R_to_distn(M)
+    return to_gtr_balanced_known_distn
+
+def to_gtr_halpern_bruno_known_distn(M, p, v):
+    """
+    @param M: a time-reversible rate matrix
+    @param p: current stationary distribution
+    @param v: target stationary distribution
+    @return: a time-reversible rate matrix
+    """
+    n = len(v)
+    R = M.copy()
+    # adjust the entries of the rate matrix
+    for a in range(n):
+        for b in range(n):
+            if a != b:
+                if p[a] == p[b]:
+                    tau = v[b] / v[a]
+                elif v[a] == v[b]:
+                    tau = p[a] / p[b]
+                else:
+                    tau = (v[b] * p[a]) / (v[a] * p[b])
+                if np.isnan(tau):
+                    print a, b, v[b], p[b], v[a], p[a]
+                    raise ValueError('tau is nan')
+                if not tau:
+                    coeff = 0
+                elif np.allclose(tau, 1):
+                    coeff = 1
+                else:
+                    coeff = math.log(tau) / (1 - 1/tau)
+                R[a, b] *= coeff
+    # reset the diagonal entries of the rate matrix
+    R -= np.diag(np.sum(R, axis=1))
+    return R
+
 def to_gtr_halpern_bruno(M, v):
     """
     @param M: a time-reversible rate matrix
     @param v: target stationary distribution
     @return: a time-reversible rate matrix
     """
-    n = len(v)
     p = R_to_distn(M)
-    R = M.copy()
-    # adjust the entries of the rate matrix
-    for a in range(n):
-        for b in range(n):
-            if a != b:
-                tau = (v[b] / p[b]) / (v[a] / p[a])
-                if not np.allclose(tau, 1):
-                    R[a, b] *= math.log(tau) / (1 - 1/tau)
-    # reset the diagonal entries of the rate matrix
-    R -= np.diag(np.sum(R, axis=1))
-    return R
+    return to_gtr_halpern_bruno_known_distn(M, p, v)
 
 
 ###########################
@@ -282,6 +313,8 @@ def P_to_distn(R):
 
 def R_to_distn(R):
     """
+    This seems to have a problem when eigenvalues are not distinct.
+    The problem is that it tries to compare the eigenvectors.
     @param R: rate matrix
     @return: stationary distribution
     """
@@ -326,6 +359,18 @@ def symmetrized(R):
     in the sense of linear algebra matrix similarity.
     """
     v = R_to_distn(R)
+    lam = np.diag(np.sqrt(v))
+    rlam = np.diag(np.reciprocal(np.sqrt(v)))
+    return ndot(lam, R, rlam)
+
+def symmetrized_known_distn(R, v):
+    """
+    Get the symmetrized matrix of a reversible markov process.
+    This returns a symmetric matrix that is not a rate matrix
+    because rows do not sum to zero.
+    The returned matrix should be similar to R
+    in the sense of linear algebra matrix similarity.
+    """
     lam = np.diag(np.sqrt(v))
     rlam = np.diag(np.reciprocal(np.sqrt(v)))
     return ndot(lam, R, rlam)

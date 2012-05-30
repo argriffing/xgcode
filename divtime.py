@@ -39,14 +39,23 @@ def sample_symmetric_rate_matrix(n):
 ############################################################################
 # ASYMPTOTIC VARIANCE STUFF
 
-
-def get_fisher_information(R, t):
-    # get non-spectral summaries
-    n = len(R)
-    P = scipy.linalg.expm(R*t)
-    p = mrate.R_to_distn(R)
+def get_fisher_info_known_distn(R, p, t):
+    """
+    @param R: time reversible rate matrix
+    @param p: stationary distribution
+    @param t: time
+    @return: fisher information
+    """
+    n = len(p)
+    if len(R) != len(p):
+        raise ValueError('state space size contradiction')
+    try:
+        P = scipy.linalg.expm(R*t)
+    except ValueError as e:
+        print R
+        raise e
     # get spectral summaries
-    S = mrate.symmetrized(R)
+    S = mrate.symmetrized_known_distn(R, p)
     w, U = scipy.linalg.eigh(S)
     # compute the asymptotic variance
     accum = 0
@@ -68,6 +77,9 @@ def get_fisher_information(R, t):
             accum += f_dtt - (f_dt * f_dt) / f
     return -accum
 
+def get_fisher_information(R, t):
+    p = mrate.R_to_distn(R)
+    return get_fisher_info_known_distn(R, p, t)
 
 def get_asymptotic_variance(R, t):
     """

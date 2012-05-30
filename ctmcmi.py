@@ -416,6 +416,9 @@ def get_mutual_information_b(R, t):
             accum_a, accum_b, accum_c]
     return sum(terms)
 
+def get_mutual_info_known_distn(R, v, t):
+    return get_expected_ll_ratio_known_distn(R, v, t)
+
 def get_mutual_information(R, t):
     """
     Get the mutual information between two observations.
@@ -533,6 +536,31 @@ def get_mutual_information_diff_zero(R):
     print B
     return np.sum(B * G_diff * np.log(G))
 
+def get_expected_ll_ratio_known_distn(R, v, t):
+    #FIXME redundant function
+    # define the number of states
+    n = len(R)
+    # define the transition matrix
+    P = scipy.linalg.expm(R*t)
+    # define the stationary distribution
+    p = v
+    # get the expected log likelihood ratio
+    accum = 0
+    for i in range(n):
+        for j in range(n):
+            if p[i] and P[i, j]:
+                coeff = p[i] * P[i, j]
+                # cancel the p[i] in the numerator and denominator
+                #numerator = p[i] * P[i, j]
+                #denominator = p[i] * p[j]
+                numerator = P[i, j]
+                denominator = p[j]
+                value = coeff * math.log(numerator / denominator)
+                if not np.allclose(np.imag(value), 0):
+                    raise ValueError('rogue imaginary number')
+                accum += np.real(value)
+    return accum
+
 def get_expected_ll_ratio(R, t):
     """
     This is also the mutual information.
@@ -540,6 +568,7 @@ def get_expected_ll_ratio(R, t):
     of a finite-state continuous-time Markov process at equilibrium
     where the observations are separated by time t.
     """
+    #FIXME redundant function
     # define the number of states
     n = len(R)
     # define the transition matrix
