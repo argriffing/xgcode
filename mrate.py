@@ -122,6 +122,41 @@ def to_gtr_balanced(M, v):
     p = R_to_distn(M)
     return to_gtr_balanced_known_distn
 
+def to_gtr_hb_known_distn_log_target(M, p, log_weights):
+    """
+    The hb in the function name stands for Halpern-Bruno.
+    @param M: a time-reversible rate matrix
+    @param p: current stationary distribution
+    @param log_weights: logs of weights for target stationary distribution
+    @return: a time-reversible rate matrix
+    """
+    n = len(v)
+    R = M.copy()
+    # adjust the entries of the rate matrix
+    for a in range(n):
+        for b in range(n):
+            if a != b:
+                if p[a] == p[b]:
+                    tau = v[b] / v[a]
+                elif v[a] == v[b]:
+                    tau = p[a] / p[b]
+                else:
+                    tau = (v[b] / p[b]) / (v[a] / p[a])
+                if np.isnan(tau):
+                    print a, b, v[b], p[b], v[a], p[a]
+                    raise ValueError('tau is nan')
+                if not tau:
+                    coeff = 0
+                elif np.allclose(tau, 1):
+                    coeff = 1
+                else:
+                    coeff = math.log(tau) / (1 - 1/tau)
+                R[a, b] *= coeff
+    # reset the diagonal entries of the rate matrix
+    R -= np.diag(np.sum(R, axis=1))
+    return R
+
+
 def to_gtr_halpern_bruno_known_distn(M, p, v):
     """
     @param M: a time-reversible rate matrix
@@ -140,7 +175,7 @@ def to_gtr_halpern_bruno_known_distn(M, p, v):
                 elif v[a] == v[b]:
                     tau = p[a] / p[b]
                 else:
-                    tau = (v[b] * p[a]) / (v[a] * p[b])
+                    tau = (v[b] / p[b]) / (v[a] / p[a])
                 if np.isnan(tau):
                     print a, b, v[b], p[b], v[a], p[a]
                     raise ValueError('tau is nan')

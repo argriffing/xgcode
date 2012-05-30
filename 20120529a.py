@@ -52,14 +52,14 @@ def get_form():
     form_objects = [
             Form.Sequence('lowtri',
                 'stricty lower triangular mut exch',
-                ('1', '1 1', '1 1 1')),
+                ('1',)),
             Form.Sequence('distn_weights',
                 'unnormalized mut stationary distn',
-                ('1', '1', '1', '1')),
+                ('1', '1')),
             Form.Float('scale', 'extra scaling factor',
                 '1.0', low_exclusive=0),
             Form.Float('start_time', 'start time', '0.1', low_exclusive=0),
-            Form.Float('stop_time', 'stop time', '3.0', low_exclusive=0),
+            Form.Float('stop_time', 'stop time', '0.6', low_exclusive=0),
             Form.Integer('nsites', 'number of sites',
                 '2', low=2, high=4),
             Form.CheckGroup('proctypes', 'foo types', [
@@ -70,8 +70,8 @@ def get_form():
                 Form.CheckItem('dep_balance',
                     'site dependent mutation-selection balance', True)]),
             Form.RadioGroup('infotype', 'information variant', [
-                Form.RadioItem('info_fis', 'Fisher information', True),
-                Form.RadioItem('info_mut', 'mutual information')]),
+                Form.RadioItem('info_fis', 'Fisher information'),
+                Form.RadioItem('info_mut', 'mutual information', True)]),
             Form.ImageFormat(),
             ]
     return form_objects
@@ -157,6 +157,11 @@ class OptDep:
         v_target = np.exp([0] + X.tolist())
         v_target /= np.sum(v_target)
         Q = self.f_selection(self.R, self.v, v_target)
+        if np.any(np.isnan(Q)):
+            print self.R
+            print v_target
+            print Q
+            raise ValueError('the rate matrix has nans')
         return Q, v_target
     def __call__(self, X):
         """
@@ -197,6 +202,11 @@ class OptIndep:
         Q_single_site = self.f_selection(self.R, self.v, v_target)
         Q = get_site_independent_process(Q_single_site, self.nsites)
         v_site_indep = get_site_independent_distn(v_target, self.nsites)
+        if np.any(np.isnan(Q)):
+            print self.R
+            print v_target
+            print Q
+            raise ValueError('the rate matrix has nans')
         return Q, v_site_indep
     def __call__(self, X):
         """
