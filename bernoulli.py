@@ -31,7 +31,12 @@ def bgf_naive_expm1(x):
     Its purpose is accuracy near zero but that feature is not used here,
     because the ratio is badly behaved near zero anyway.
     """
-    return x / math.expm1(x)
+    try:
+        denominator = math.expm1(x)
+    except OverflowError as e:
+        return 0
+    else:
+        return x / denominator
 
 def bgf_near_zero(x):
     """
@@ -67,6 +72,9 @@ class TestBgf(unittest.TestCase):
         self.assertFalse(
                 abs(y_bgf_naive - y_bgf) < eps,
                 (y_bgf, y_bgf_naive))
+
+    def test_bgf_huge(self):
+        self.assertEqual(bgf(800), 0)
 
 
 if __name__ == '__main__':

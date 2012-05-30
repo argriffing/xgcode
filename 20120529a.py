@@ -154,15 +154,20 @@ class OptDep:
         """
         if len(X) != len(self.R) - 1:
             raise ValueError('state space size mismatch')
-        v_target = np.exp([0] + X.tolist())
-        v_target /= np.sum(v_target)
-        Q = self.f_selection(self.R, self.v, v_target)
+        # define the mutation and balance energies
+        u = -(np.log(self.v) - math.log(self.v[0]))
+        v = np.array([0.0] + X.tolist())
+        # apply the selection using the stable halpern bruno function
+        Q = self.f_selection(self.R, u, v)
+        # get the stationary distribution for downstream
+        qdistn = np.exp(-v)
+        qdistn /= np.sum(qdistn)
         if np.any(np.isnan(Q)):
             print self.R
-            print v_target
+            print qdistn
             print Q
             raise ValueError('the rate matrix has nans')
-        return Q, v_target
+        return Q, qdistn
     def __call__(self, X):
         """
         @param X: some log ratio probabilities
@@ -192,22 +197,27 @@ class OptIndep:
         self.f_selection = f_selection
     def get_process(self, X):
         """
-        @param X: some log ratio probabilities
+        @param X: some energies defining the probability distribution
         @return: the mut-sel balance rate matrix and stationary distn
         """
         if len(X) != len(self.R) - 1:
             raise ValueError('state space size mismatch')
-        v_target = np.exp([0] + X.tolist())
-        v_target /= np.sum(v_target)
-        Q_single_site = self.f_selection(self.R, self.v, v_target)
+        # define the mutation and balance energies
+        u = -(np.log(self.v) - math.log(self.v[0]))
+        v = np.array([0.0] + X.tolist())
+        # apply the selection using the stable halpern bruno function
+        Q_single_site = self.f_selection(self.R, u, v)
         Q = get_site_independent_process(Q_single_site, self.nsites)
-        v_site_indep = get_site_independent_distn(v_target, self.nsites)
+        # get the stationary distribution for downstream
+        qdistn = np.exp(-v)
+        qdistn /= np.sum(qdistn)
+        qdistn_site_indep = get_site_independent_distn(qdistn, self.nsites)
         if np.any(np.isnan(Q)):
             print self.R
-            print v_target
+            print qdistn_site_indep
             print Q
             raise ValueError('the rate matrix has nans')
-        return Q, v_site_indep
+        return Q, qdistn_site_indep
     def __call__(self, X):
         """
         @param X: some log ratio probabilities
@@ -237,7 +247,7 @@ def get_response_content(fs):
         f_info = ctmcmi.get_mutual_info_known_distn
     else:
         raise ValueError('no info type specified')
-    f_selection = mrate.to_gtr_halpern_bruno_known_distn
+    f_selection = mrate.to_gtr_hb_known_energies
     # Spend a lot of time doing the optimizations
     # to construct the points for the R table.
     t0 = time.time()
