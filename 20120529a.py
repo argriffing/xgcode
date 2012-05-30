@@ -242,7 +242,7 @@ def get_response_content(fs):
     v = mrate.R_to_distn(M)
     v_site_indep = get_site_independent_distn(v, nsites)
     if fs.info_fis:
-        f_info = divtime.get_fisher_info_known_distn
+        f_info = divtime.get_fisher_info_known_distn_fast
     elif fs.info_mut:
         f_info = ctmcmi.get_mutual_info_known_distn
     else:

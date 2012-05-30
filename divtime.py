@@ -39,6 +39,38 @@ def sample_symmetric_rate_matrix(n):
 ############################################################################
 # ASYMPTOTIC VARIANCE STUFF
 
+def get_fisher_info_known_distn_fast(R, p, t):
+    """
+    Try a faster way.
+    This does not directly depend on the spectral representation.
+    Use the idea that [ log(f(x)) ]' is f'(x) / f(x) .
+    @param R: time reversible rate matrix
+    @param p: stationary distribution
+    @param t: time
+    @return: fisher information
+    """
+    n = len(p)
+    if len(R) != len(p):
+        print p.shape
+        print R.shape
+        raise ValueError('state space size contradiction')
+    # Get the conditional transition probabilities as a function of time t.
+    P = scipy.linalg.expm(R*t)
+    # Get the joint distribution of states separated by time t at stationarity.
+    J = (P.T * p).T
+    # Get the derivatives of the conditional probabilities with
+    # respect to time; this equation is a property of the
+    # matrix exponential, see wikipedia.
+    dP = np.dot(R, P)
+    # Skip calculating the derivative of joint probability,
+    # because some stuff cancels.
+    # dJ = (dP.T * p).T
+    # Z = dJ**2 / J
+    # Directly get the matrix of entries whose sum we want.
+    Z = ((dP**2 / P).T * p).T
+    fi = np.sum(Z)
+    return fi
+
 def get_fisher_info_known_distn(R, p, t):
     """
     @param R: time reversible rate matrix
@@ -48,12 +80,10 @@ def get_fisher_info_known_distn(R, p, t):
     """
     n = len(p)
     if len(R) != len(p):
+        print p.shape
+        print R.shape
         raise ValueError('state space size contradiction')
-    try:
-        P = scipy.linalg.expm(R*t)
-    except ValueError as e:
-        print R
-        raise e
+    P = scipy.linalg.expm(R*t)
     # get spectral summaries
     S = mrate.symmetrized_known_distn(R, p)
     w, U = scipy.linalg.eigh(S)
@@ -344,7 +374,7 @@ class TestDivtime(unittest.TestCase):
             [a, -(a+c), c],
             [a, b, -(a+b)]])
         """
-        t = 5.0
+        t = 2.0
         dt = 0.0000001
         rtime = mrate.R_to_relaxation_time(R)
         var_a = get_ml_variance(R, t)
@@ -370,6 +400,12 @@ class TestDivtime(unittest.TestCase):
         print 'asymptotic variance (ver. 3):', get_asymptotic_variance_c(R, t)
         print 'AV approx (ver. 4):', get_asymptotic_variance_d(R, t)
         print 'AV approx (ver. 5):', get_asymptotic_variance_e(R, t)
+        print
+        print '--- another thing ---'
+        fi_slow = get_fisher_info_known_distn(R, v, t)
+        fi_fast = get_fisher_info_known_distn_fast(R, v, t)
+        print 'slow asymptotic variance:', 1 / fi_slow
+        print 'fast asymptotic variance:', 1 / fi_fast
         print
 
     def test_variance(self):
