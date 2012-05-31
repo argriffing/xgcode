@@ -1,16 +1,7 @@
 r"""
-Plot max Fisher information for several single-parameter selection models.
+Plot max mutual information for several selection models and their limits.
 
 The mutation process is site-independent 3-site 2-state-per-site.
-The site-dependent selection processes vary, but they all fall under
-the Halpern-Bruno-like formula that associates a selection parameter
-with each state.
-Three of the selection processes assume a given lethality pattern
-with no other selection,
-while the other three selection processes add a single-parameter
-selection on top of these lethality patterns.
-For the parameterized selection processes,
-the numerically optimized max information is plotted.
 """
 
 from StringIO import StringIO
@@ -40,12 +31,6 @@ import evozoo
 
 # variable name, description, python object
 g_process_triples = [
-        ('nonuniform_cube', '3d cube with single parameter stationary distn',
-            evozoo.AlternatingHypercube_2_3_1()),
-        ('nonuniform_cycle', 'max induced cycle with 1-parameter distn',
-            evozoo.AlternatingCoil_2_3_1()),
-        ('nonuniform_path', 'max induced path with 1-parameter distn',
-            evozoo.AlternatingSnake_2_3_1()),
         ('cube', '3d cube',
             evozoo.Hypercube_2_3_0()),
         ('cycle', 'maximal induced cycle',
@@ -60,12 +45,15 @@ def get_form():
     """
     check_items = [Form.CheckItem(a, b, True) for a, b, c in g_process_triples]
     return [
+            Form.CheckGroup('logs', 'plot process reducibility limits', [
+                Form.CheckItem(
+                    'log4', 'log(4) cube limit', True),
+                Form.CheckItem(
+                    'log3', 'log(3) cycle and path limit', True)]),
             Form.CheckGroup(
-                'processes',
-                'plot max divtime info for these parameterized processes',
-                check_items),
-            Form.Float('start_time', 'start time', '0.6', low_exclusive=0),
-            Form.Float('stop_time', 'stop time', '1.4', low_exclusive=0),
+                'processes', 'plot mutual information', check_items),
+            Form.Float('start_time', 'start time', '0.04', low_exclusive=0),
+            Form.Float('stop_time', 'stop time', '0.1', low_exclusive=0),
             Form.ImageFormat(),
             ]
 
@@ -116,48 +104,40 @@ def get_response_content(fs):
     # validate and store user input
     if fs.stop_time <= fs.start_time:
         raise ValueError('check the start and stop times')
-    f_info = divtime.get_fisher_info_known_distn_fast
+    f_info = ctmcmi.get_mutual_info_known_distn
     requested_triples = []
     for triple in g_process_triples:
         name, desc, zoo_obj = triple
         if getattr(fs, name):
             requested_triples.append(triple)
     # define the R table headers
+    headers = ['t']
+    if fs.log4:
+        headers.append('log.4')
+    if fs.log3:
+        headers.append('log.3')
     r_names = [a.replace('_', '.') for a, b, c in requested_triples]
-    headers = ['t'] + r_names
+    headers.extend(r_names)
     # Spend a lot of time doing the optimizations
     # to construct the points for the R table.
-    t0 = time.time()
+    ntimes = 100
+    incr = (fs.stop_time - fs.start_time) / float(ntimes - 1)
+    times = [fs.start_time + i*incr for i in range(ntimes)]
     arr = []
-    for t in gen_overdispersed_events(fs.start_time, fs.stop_time):
-        if time.time() - t0 > nseconds:
-            break
+    for t in times:
         row = [t]
+        if fs.log4:
+            row.append(math.log(4))
+        if fs.log3:
+            row.append(math.log(3))
         for python_name, desc, zoo_obj in requested_triples:
-            df = zoo_obj.get_df()
-            opt_dep = OptDep(zoo_obj, t, f_info)
-            if df:
-                X0 = np.random.randn(df)
-                #xopt = scipy.optimize.fmin(
-                        #opt_dep, X0, maxiter=10000, maxfun=10000)
-                # I would like to use scipy.optimize.minimize
-                # except that this requires a newer version of
-                # scipy than is packaged for ubuntu right now.
-                xopt = scipy.optimize.fmin_bfgs(opt_dep, X0,
-                        gtol=1e-8, maxiter=10000)
-            else:
-                xopt = np.array([])
-            info_value = -opt_dep(xopt)
+            X = np.array([])
+            info_value = f_info(
+                    zoo_obj.get_rate_matrix(X),
+                    zoo_obj.get_distn(X),
+                    t)
             row.append(info_value)
-            # for debug
-            print python_name
-            print info_value
-            print zoo_obj.get_distn(xopt)
-            print zoo_obj.get_rate_matrix(xopt)
-            print
         arr.append(row)
-    arr.sort()
-    npoints = len(arr)
     # create the R table string and scripts
     # get the R table
     table_string = RUtil.get_table_string(arr, headers)
