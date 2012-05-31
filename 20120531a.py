@@ -1,5 +1,5 @@
 r"""
-Plot max information for several single-parameter selection models.
+Plot max Fisher information for several single-parameter selection models.
 
 The mutation process is site-dependent 3-site 2-state-per-site.
 The site-dependent selection processes vary, but they all fall under
@@ -64,11 +64,8 @@ def get_form():
                 'processes',
                 'plot max divtime info for these parameterized processes',
                 check_items),
-            Form.Float('start_time', 'start time', '0.1', low_exclusive=0),
-            Form.Float('stop_time', 'stop time', '0.6', low_exclusive=0),
-            Form.RadioGroup('infotype', 'divtime information', [
-                Form.RadioItem('info_fis', 'Fisher information'),
-                Form.RadioItem('info_mut', 'mutual information', True)]),
+            Form.Float('start_time', 'start time', '0.6', low_exclusive=0),
+            Form.Float('stop_time', 'stop time', '1.4', low_exclusive=0),
             Form.ImageFormat(),
             ]
 
@@ -119,12 +116,7 @@ def get_response_content(fs):
     # validate and store user input
     if fs.stop_time <= fs.start_time:
         raise ValueError('check the start and stop times')
-    if fs.info_fis:
-        f_info = divtime.get_fisher_info_known_distn_fast
-    elif fs.info_mut:
-        f_info = ctmcmi.get_mutual_info_known_distn
-    else:
-        raise ValueError('no info type specified')
+    f_info = divtime.get_fisher_info_known_distn_fast
     requested_triples = []
     for triple in g_process_triples:
         name, desc, zoo_obj = triple
