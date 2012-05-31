@@ -35,6 +35,9 @@ def get_form():
     """
     return [
             Form.Float('t', 'divergence time', '2.0', low_exclusive=0),
+            Form.RadioGroup('infotype', 'information type', [
+                Form.RadioItem('infotype_fi', 'Fisher information', True),
+                Form.RadioItem('infotype_mi', 'mutual information')]),
             ]
 
 def get_form_out():
@@ -145,18 +148,56 @@ class OptDepNearParity(OptDep):
             raise ValueError('the rate matrix has nans')
         return Q, qdistn
 
+def do_search_opt_dep(opt_dep, df, nseconds):
+    """
+    @param opt_dep: a function object for numerical optimization
+    @param df: the number of degrees of freedom
+    @param nseconds: spend roughly this many seconds searching
+    @return: a freeform multiline string report
+    """
+    # utility vars
+    n = len(M)
+    uniform_distn = np.ones(n, dtype=float) / n
+    f_selection = mrate.to_gtr_hb_known_energies
+    # init the search
+    best_info = None
+    best_state = None
+    t0 = time.time()
+    niter = 0
+    while time.time() - t0 < nseconds:
+        niter += 1
+        # get the site-dependent mutation selection balance information
+        X0 = np.random.randn(df)
+        xopt = scipy.optimize.fmin(
+                opt_dep, X0, maxiter=10000, maxfun=10000)
+        info = -opt_dep(xopt)
+        if best_info is None or info > best_info:
+            Q_bal, v_bal = opt_dep.get_process(xopt)
+            state = [
+                    info,
+                    v_bal,
+                    Q_bal,
+                    ]
+            best_info = info
+            best_state = state
+    out = StringIO()
+    print >> out, 'numerical maximization runs:', niter
+    for thing in state:
+        print >> out, str(thing)
+    return out.getvalue().rstrip()
+
 #TODO this is way too copypasted and hardcoded
-def do_search_near_parity(M, t, nseconds):
+def do_search_near_parity(M, t, f_info, nseconds):
     """
     @param M: mutation process assumed uniform stationary distribution
     @param t: the divergence time for the process
+    @param f_info: information function
     @param nseconds: number of seconds allowed for search
     @return: search result text
     """
     # utility vars
     n = len(M)
     uniform_distn = np.ones(n, dtype=float) / n
-    f_info = divtime.get_fisher_info_known_distn_fast
     f_selection = mrate.to_gtr_hb_known_energies
     # init the search
     best_info = None
@@ -181,22 +222,22 @@ def do_search_near_parity(M, t, nseconds):
             best_info = info
             best_state = state
     out = StringIO()
-    print >> out, 'iterations:', niter
+    print >> out, 'numerical maximization runs:', niter
     for thing in state:
         print >> out, str(thing)
     return out.getvalue().rstrip()
 
-def do_search(M, t, nseconds):
+def do_search(M, t, f_info, nseconds):
     """
     @param M: mutation process assumed uniform stationary distribution
     @param t: the divergence time for the process
+    @param f_info: information function
     @param nseconds: number of seconds allowed for search
     @return: search result text
     """
     # utility vars
     n = len(M)
     uniform_distn = np.ones(n, dtype=float) / n
-    f_info = divtime.get_fisher_info_known_distn_fast
     f_selection = mrate.to_gtr_hb_known_energies
     # init the search
     best_info = None
@@ -233,10 +274,13 @@ def get_response_content(fs):
     # hardcode some stuff
     nseconds_per_constraint = 2
     nsites = 3
-    f_info = divtime.get_fisher_info_known_distn_fast
     f_selection = mrate.to_gtr_hb_known_energies
     # validate and store user input
     t = fs.t
+    if fs.infotype_fi:
+        f_info = divtime.get_fisher_info_known_distn_fast
+    elif fs.infotype_mi:
+        f_info = ctmcmi.get_mutual_info_known_distn
     # define the single site and multi site mutation rate matrix
     M_two_state = 0.5 * np.array([[-1, 1], [1, -1]])
     M_box = get_site_independent_process(M_two_state, nsites)
@@ -256,13 +300,15 @@ def get_response_content(fs):
         [0, 0, 1, -2, 1],
         [0, 0, 0, 1, -1]])
     # do the searches
+    #uniform_distn = np.ones(n, dtype=float) / n
     out = StringIO()
     for M, name in (
             (M_box, 'cube near parity'),
             ):
         print >> out, 'selection constraint:', name
         print >> out, M
-        print >> out, do_search_near_parity(M, t, nseconds_per_constraint)
+        print >> out, do_search_near_parity(
+                M, t, f_info, nseconds_per_constraint)
         print >> out
     for M, name in (
             (M_box, 'cube'),
@@ -270,7 +316,8 @@ def get_response_content(fs):
             (M_coil_in_the_box, 'coil-in-the-box')):
         print >> out, 'selection constraint:', name
         print >> out, M
-        print >> out, do_search(M, t, nseconds_per_constraint)
+        print >> out, do_search(
+                M, t, f_info, nseconds_per_constraint)
         print >> out
     return out.getvalue()
 
