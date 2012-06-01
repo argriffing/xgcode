@@ -1,7 +1,7 @@
 r"""
 Plot max Fisher information for several single-parameter selection models.
 
-The mutation process is site-independent 3-site 2-state-per-site.
+The mutation process is site-independent d-site 2-state-per-site.
 The site-dependent selection processes vary, but they all fall under
 the Halpern-Bruno-like formula that associates a selection parameter
 with each state.
@@ -189,7 +189,9 @@ def get_ggplot():
             mk_call_str('max', 'my.table.long$t')),
     print >> out, '+',
     print >> out, mk_call_str(
-            'ylim', '0',
+            'ylim',
+            #'0',
+            mk_call_str('min', 'my.table.long$value'),
             mk_call_str('max', 'my.table.long$value'))
     return out.getvalue()
 
