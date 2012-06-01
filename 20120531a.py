@@ -40,18 +40,18 @@ import evozoo
 
 # variable name, description, python object
 g_process_triples = [
-        ('nonuniform_cube', '3d cube with single parameter stationary distn',
-            evozoo.AlternatingHypercube_2_3_1()),
+        ('nonuniform_cube', 'hypercube with single parameter stationary distn',
+            evozoo.AlternatingHypercube_d_1),
         ('nonuniform_cycle', 'max induced cycle with 1-parameter distn',
-            evozoo.AlternatingCoil_2_3_1()),
+            evozoo.AlternatingCoil_d_1),
         ('nonuniform_path', 'max induced path with 1-parameter distn',
-            evozoo.AlternatingSnake_2_3_1()),
-        ('cube', '3d cube',
-            evozoo.Hypercube_2_3_0()),
+            evozoo.AlternatingSnake_d_1),
+        ('cube', 'hypercube with uniform stationary distribution',
+            evozoo.Hypercube_d_0),
         ('cycle', 'maximal induced cycle',
-            evozoo.Coil_2_3_0()),
+            evozoo.Coil_d_0),
         ('path', 'maximal induced path',
-            evozoo.Snake_2_3_0()),
+            evozoo.Snake_d_0),
         ]
 
 def get_form():
@@ -60,6 +60,7 @@ def get_form():
     """
     check_items = [Form.CheckItem(a, b, True) for a, b, c in g_process_triples]
     return [
+            Form.Integer('d', 'number of sites', 3, low=2, high=5),
             Form.CheckGroup(
                 'processes',
                 'plot max divtime info for these parameterized processes',
@@ -133,7 +134,8 @@ def get_response_content(fs):
         if time.time() - t0 > nseconds:
             break
         row = [t]
-        for python_name, desc, zoo_obj in requested_triples:
+        for python_name, desc, zoo_class in requested_triples:
+            zoo_obj = zoo_class(fs.d)
             df = zoo_obj.get_df()
             opt_dep = OptDep(zoo_obj, t, f_info)
             if df:

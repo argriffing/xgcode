@@ -338,7 +338,7 @@ class AlternatingSnake_2_3_1(Process):
 
 class _Alternating(Process):
     def get_df(self):
-        return 0
+        return 1
     def get_distn(self, X):
         return energies_to_distn(self.get_energies(X))
 
