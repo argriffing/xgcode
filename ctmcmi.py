@@ -416,6 +416,17 @@ def get_mutual_information_b(R, t):
             accum_a, accum_b, accum_c]
     return sum(terms)
 
+def get_mutual_info_known_distn_fast(R, p, t):
+    """
+    @param R: rate matrix
+    @param p: stationary distribution
+    @param t: time
+    @return: mutual information
+    """
+    n = len(R)
+    P = scipy.linalg.expm(R*t)
+    return np.sum((P.T * p).T * np.log(P/p))
+
 def get_mutual_info_known_distn(R, v, t):
     return get_expected_ll_ratio_known_distn(R, v, t)
 

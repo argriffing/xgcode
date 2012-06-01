@@ -123,6 +123,8 @@ def get_response_content(fs):
         name, desc, zoo_obj = triple
         if getattr(fs, name):
             requested_triples.append(triple)
+    if not requested_triples:
+        raise ValueError('nothing to plot')
     # define the R table headers
     r_names = [a.replace('_', '.') for a, b, c in requested_triples]
     headers = ['t'] + r_names

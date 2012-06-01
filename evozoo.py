@@ -394,6 +394,56 @@ class AlternatingPath_N_1(_Alternating):
         return mrate.to_gtr_hb_known_energies(M, u, v)
 
 
+# The following are fully parameterized selection processes.
+
+class _General(Process):
+    def get_df(self):
+        return self.get_nstates() - 1
+    def get_distn(self, X):
+        return energies_to_distn(self.get_energies(X))
+    def get_energies(self, X):
+        self._check_params(X)
+        return np.hstack(([0], X))
+
+class GeneralHypercube_d_full(_General):
+    def __init__(self, d):
+        self.d = d
+    def get_nstates(self):
+        return 2**self.d
+    def get_rate_matrix(self, X):
+        self._check_params(X)
+        M = Hypercube_d_0(self.d).get_rate_matrix()
+        u = np.zeros(self.get_nstates())
+        v = self.get_energies(X)
+        return mrate.to_gtr_hb_known_energies(M, u, v)
+
+class GeneralCycle_N_full(_General):
+    def __init__(self, nstates):
+        self.nstates = nstates
+    def get_nstates(self):
+        return self.nstates
+    def get_rate_matrix(self, X):
+        self._check_params(X)
+        n = self.get_nstates()
+        M = Cycle_N_0(n).get_rate_matrix()
+        u = np.zeros(n)
+        v = self.get_energies(X)
+        return mrate.to_gtr_hb_known_energies(M, u, v)
+
+class GeneralPath_N_full(_General):
+    def __init__(self, nstates):
+        self.nstates = nstates
+    def get_nstates(self):
+        return self.nstates
+    def get_rate_matrix(self, X):
+        self._check_params(X)
+        n = self.get_nstates()
+        M = Path_N_0(n).get_rate_matrix()
+        u = np.zeros(n)
+        v = self.get_energies(X)
+        return mrate.to_gtr_hb_known_energies(M, u, v)
+
+
 # These are coil-in-the-box and snake-in-the-box.
 # http://en.wikipedia.org/wiki/Snake-in-the-box
 # No selection parameters.
@@ -422,4 +472,17 @@ class AlternatingSnake_d_1(AlternatingPath_N_1):
     def __init__(self, d):
         nstates = snake_in_the_box(d) + 1
         AlternatingPath_N_1.__init__(self, nstates)
+
+
+# Fully parameterized.
+
+class GeneralCoil_d_full(GeneralCycle_N_full):
+    def __init__(self, d):
+        nstates = coil_in_the_box(d)
+        GeneralCycle_N_full.__init__(self, nstates)
+
+class GeneralSnake_d_full(GeneralPath_N_full):
+    def __init__(self, d):
+        nstates = snake_in_the_box(d) + 1
+        GeneralPath_N_full.__init__(self, nstates)
 

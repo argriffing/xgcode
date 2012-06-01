@@ -107,6 +107,8 @@ def get_response_content(fs):
         name, desc, zoo_class = triple
         if getattr(fs, name):
             requested_triples.append(triple)
+    if not requested_triples:
+        raise ValueError('nothing to plot')
     # define the R table headers
     headers = ['t']
     if fs.log:
@@ -158,7 +160,8 @@ def get_ggplot():
             mk_call_str('max', 'my.table.long$t')),
     print >> out, '+',
     print >> out, mk_call_str(
-            'ylim', '0',
+            'ylim',
+            mk_call_str('min', 'my.table.long$value'),
             mk_call_str('max', 'my.table.long$value'))
     return out.getvalue()
 
