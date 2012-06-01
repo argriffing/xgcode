@@ -9,6 +9,8 @@ per-state selection parameters.
 
 import numpy as np
 
+import gmpy
+
 import mrate
 
 
@@ -27,6 +29,49 @@ import mrate
 # For most of these processes,
 # the mutation process will have each rate the same and equal to 1.
 
+def coil_in_the_box(d):
+    """
+    OEIS A000937
+    @param d: hypercube dimension
+    @return: edges in the longest inducible cycle
+    """
+    d_to_edge_count = {
+            2 : 4,
+            3 : 6,
+            4 : 8,
+            5 : 14,
+            6 : 26,
+            7 : 48,
+            }
+    dstr = '(d = %d)' % d
+    if d < 2:
+        raise ValueError('coil-in-the-box does not exist ' + dstr)
+    if d not in d_to_edge_count:
+        raise ValueError('coil-in-the-box has not been solved ' + dstr)
+    return d_to_edge_count[d]
+
+def snake_in_the_box(d):
+    """
+    OEIS A099155
+    @param d: hypercube dimension
+    @return: edges in the longest inducible path
+    """
+    d_to_edge_count = {
+            1 : 1,
+            2 : 2,
+            3 : 4,
+            4 : 7,
+            5 : 13,
+            6 : 26,
+            7 : 50,
+            }
+    dstr = '(d = %d)' % d
+    if d < 2:
+        raise ValueError('snake-in-the-box does not exist ' + dstr)
+    if d not in d_to_edge_count:
+        raise ValueError('snake-in-the-box has not been solved ' + dstr)
+    return d_to_edge_count[d]
+
 def energies_to_distn(v):
     p = np.exp(-v)
     return p / np.sum(p)
@@ -38,6 +83,92 @@ class Process:
     def _check_params(self, X):
         if len(X) != self.get_df():
             raise ValueError('mismatch of number of degrees of freedom')
+
+# The following cycle and path have no selection parameters.
+# The N refers to the number of states.
+# The 0 refers to the degrees of freedom of selection.
+
+class Cycle_N_0(Process):
+    def __init__(self, nstates):
+        self.nstates = nstates
+    def get_df(self):
+        return 0
+    def get_nstates(self):
+        return self.nstates
+    def get_distn(self, X=None):
+        if X is not None:
+            self._check_params(X)
+        return get_uniform_distn(self.get_nstates())
+    def get_rate_matrix(self, X=None):
+        if X is not None:
+            self._check_params(X)
+        n = self.get_nstates()
+        Q = np.zeros((n, n))
+        for i in range(n):
+            Q[i,i] = -2
+        for i in range(n-1):
+            Q[i,i+1] = 1
+            Q[i+1,i] = 1
+        Q[0,n-1] = 1
+        Q[n-1,0] = 1
+        return Q
+
+class Path_N_0(Process):
+    def __init__(self, nstates):
+        self.nstates = nstates
+    def get_df(self):
+        return 0
+    def get_nstates(self):
+        return self.nstates
+    def get_distn(self, X=None):
+        if X is not None:
+            self._check_params(X)
+        return get_uniform_distn(self.get_nstates())
+    def get_rate_matrix(self, X=None):
+        if X is not None:
+            self._check_params(X)
+        n = self.get_nstates()
+        Q = np.zeros((n, n))
+        for i in range(n):
+            Q[i,i] = -2
+        for i in range(n-1):
+            Q[i,i+1] = 1
+            Q[i+1,i] = 1
+        Q[0,0] = -1
+        Q[n-1,n-1] = -1
+        return Q
+
+# This is a hypercube graph with 2^d states.
+# It has no selection parameters.
+# Because it is a hypercube, the number of states per
+# dimension is hardcoded to two.
+
+class Hypercube_d_0(Process):
+    def __init__(self, d):
+        self.d = d
+    def get_df(self):
+        return 0
+    def get_nstates(self):
+        return 2**self.d
+    def get_distn(self, X=None):
+        if X is not None:
+            self._check_params(X)
+        return get_uniform_distn(self.get_nstates())
+    def get_rate_matrix(self, X=None):
+        if X is not None:
+            self._check_params(X)
+        d = self.d
+        n = self.get_nstates()
+        Q = np.zeros((n, n))
+        for a in range(n):
+            for b in range(n):
+                dist = gmpy.hamdist(a, b)
+                if dist == 0:
+                    Q[a, b] = -d
+                elif dist == 1:
+                    Q[a, b] = 1
+        return Q
+
 
 # In the following sequence of processes,
 # the _x_y_z describe
@@ -201,4 +332,94 @@ class AlternatingSnake_2_3_1(Process):
         u = np.zeros(self.get_nstates())
         v = self._get_energies(X)
         return mrate.to_gtr_hb_known_energies(M, u, v)
+
+
+# The following are single selection parameter processes.
+
+class _Alternating(Process):
+    def get_df(self):
+        return 0
+    def get_distn(self, X):
+        return energies_to_distn(self.get_energies(X))
+
+class AlternatingHypercube_d_1(_Alternating):
+    def __init__(self, d):
+        self.d = d
+    def get_nstates(self):
+        return 2**self.d
+    def get_energies(self, X):
+        self._check_params(X)
+        g, = X
+        popcounts = [gmpy.popcount(i) for i in range(self.get_nstates())]
+        return np.array([g if p%2 else 0 for p in popcounts])
+    def get_rate_matrix(self, X):
+        self._check_params(X)
+        M = Hypercube_d_0(self.d).get_rate_matrix()
+        u = np.zeros(self.get_nstates())
+        v = self.get_energies(X)
+        return mrate.to_gtr_hb_known_energies(M, u, v)
+
+class AlternatingCycle_N_1(_Alternating):
+    def __init__(self, nstates):
+        self.nstates = nstates
+    def get_nstates(self):
+        return self.nstates
+    def get_energies(self, X):
+        self._check_params(X)
+        g, = X
+        return np.array([g if i%2 else 0 for i in range(self.get_nstates())])
+    def get_rate_matrix(self, X):
+        self._check_params(X)
+        n = self.get_nstates()
+        M = Cycle_N_0(n).get_rate_matrix()
+        u = np.zeros(n)
+        v = self.get_energies(X)
+        return mrate.to_gtr_hb_known_energies(M, u, v)
+
+class AlternatingPath_N_1(_Alternating):
+    def __init__(self, nstates):
+        self.nstates = nstates
+    def get_nstates(self):
+        return self.nstates
+    def get_energies(self, X):
+        self._check_params(X)
+        g, = X
+        return np.array([g if i%2 else 0 for i in range(self.get_nstates())])
+    def get_rate_matrix(self, X):
+        self._check_params(X)
+        n = self.get_nstates()
+        M = Path_N_0(n).get_rate_matrix()
+        u = np.zeros(n)
+        v = self.get_energies(X)
+        return mrate.to_gtr_hb_known_energies(M, u, v)
+
+
+# These are coil-in-the-box and snake-in-the-box.
+# http://en.wikipedia.org/wiki/Snake-in-the-box
+# No selection parameters.
+# The d is the number of dimensions of the embedding hypercube.
+
+class Coil_d_0(Cycle_N_0):
+    def __init__(self, d):
+        nstates = coil_in_the_box(d)
+        Cycle_N_0.__init__(self, nstates)
+
+class Snake_d_0(Path_N_0):
+    def __init__(self, d):
+        nstates = snake_in_the_box(d) + 1
+        Path_N_0.__init__(self, nstates)
+
+
+# These are coil-in-the-box and snake-in-the-box with a selection parameter.
+# The d is the number of dimensions of the embedding hypercube.
+
+class AlternatingCoil_d_1(AlternatingCycle_N_1):
+    def __init__(self, d):
+        nstates = coil_in_the_box(d)
+        AlternatingCycle_N_1.__init__(self, nstates)
+
+class AlternatingSnake_d_1(AlternatingPath_N_1):
+    def __init__(self, d):
+        nstates = snake_in_the_box(d) + 1
+        AlternatingPath_N_1.__init__(self, nstates)
 
