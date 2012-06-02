@@ -66,7 +66,7 @@ def get_response_content(fs):
     headers = ['log.probability.ratio', 'mutual.information']
     # make the array
     arr = []
-    for x in np.linspace(fs.x_min, fs.x_max, 100):
+    for x in np.linspace(fs.x_min, fs.x_max, 101):
         row = [x]
         proc = evozoo.AlternatingHypercube_d_1(3)
         X = np.array([x])
