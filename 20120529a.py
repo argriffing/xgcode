@@ -58,7 +58,7 @@ def get_form():
             Form.Float('start_time', 'start time', '0.1', low_exclusive=0),
             Form.Float('stop_time', 'stop time', '0.6', low_exclusive=0),
             Form.Integer('nsites', 'number of sites',
-                '2', low=2, high=4),
+                '2', low=1, high=4),
             Form.CheckGroup('proctypes', 'processes', [
                 Form.CheckItem('indep_mutation',
                     'site independent mutation', True),
