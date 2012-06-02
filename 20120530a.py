@@ -13,11 +13,11 @@ import argparse
 import math
 import time
 import random
+import itertools
 from itertools import product
 
 import numpy as np
 import scipy
-from scipy import linalg
 from scipy import optimize
 
 import Form
@@ -25,9 +25,7 @@ import FormOut
 import ctmcmi
 import mrate
 import divtime
-import cheeger
-import MatrixUtil
-from MatrixUtil import ndot
+import cbreaker
 
 def get_form():
     """
@@ -148,6 +146,7 @@ class OptDepNearParity(OptDep):
             raise ValueError('the rate matrix has nans')
         return Q, qdistn
 
+# FIXME this is unused
 def do_search_opt_dep(opt_dep, df, nseconds):
     """
     @param opt_dep: a function object for numerical optimization
@@ -202,10 +201,8 @@ def do_search_near_parity(M, t, f_info, nseconds):
     # init the search
     best_info = None
     best_state = None
-    t0 = time.time()
-    niter = 0
-    while time.time() - t0 < nseconds:
-        niter += 1
+    proc = cbreaker.Throttled()
+    for i in proc.run(itertools.count(), nseconds=nseconds):
         # get the site-dependent mutation selection balance information
         dep_balance = OptDepNearParity(M, uniform_distn, t, f_info, f_selection)
         X0 = np.random.randn(1)
@@ -222,8 +219,8 @@ def do_search_near_parity(M, t, f_info, nseconds):
             best_info = info
             best_state = state
     out = StringIO()
-    print >> out, 'numerical maximization runs:', niter
-    for thing in state:
+    print >> out, str(proc)
+    for thing in best_state:
         print >> out, str(thing)
     return out.getvalue().rstrip()
 
@@ -242,10 +239,8 @@ def do_search(M, t, f_info, nseconds):
     # init the search
     best_info = None
     best_state = None
-    t0 = time.time()
-    niter = 0
-    while time.time() - t0 < nseconds:
-        niter += 1
+    proc = cbreaker.Throttled()
+    for i in proc.run(itertools.count(), nseconds=nseconds):
         # get the site-dependent mutation selection balance information
         dep_balance = OptDep(M, uniform_distn, t, f_info, f_selection)
         X0 = np.random.randn(n - 1)
@@ -262,13 +257,12 @@ def do_search(M, t, f_info, nseconds):
             best_info = info
             best_state = state
     out = StringIO()
-    print >> out, 'iterations:', niter
-    for thing in state:
+    print >> out, str(proc)
+    for thing in best_state:
         print >> out, str(thing)
     return out.getvalue().rstrip()
 
 
-#TODO recode this with combobreaker
 def get_response_content(fs):
     np.set_printoptions(linewidth=200)
     # hardcode some stuff
@@ -300,7 +294,6 @@ def get_response_content(fs):
         [0, 0, 1, -2, 1],
         [0, 0, 0, 1, -1]])
     # do the searches
-    #uniform_distn = np.ones(n, dtype=float) / n
     out = StringIO()
     for M, name in (
             (M_box, 'cube near parity'),

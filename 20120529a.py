@@ -25,13 +25,10 @@ from StringIO import StringIO
 import argparse
 import math
 import time
-import random
-import heapq
 from itertools import product
 
 import numpy as np
 import scipy
-from scipy import linalg
 from scipy import optimize
 
 import Form
@@ -39,11 +36,11 @@ import FormOut
 import ctmcmi
 import mrate
 import divtime
-import cheeger
 import MatrixUtil
-from MatrixUtil import ndot
 import RUtil
 from RUtil import mk_call_str
+import cbreaker
+import progrid
 
 def get_form():
     """
@@ -51,7 +48,7 @@ def get_form():
     """
     form_objects = [
             Form.Sequence('lowtri',
-                'stricty lower triangular mut exch',
+                'strictly lower triangular mut exch',
                 ('1',)),
             Form.Sequence('distn_weights',
                 'unnormalized mut stationary distn',
@@ -78,25 +75,6 @@ def get_form():
 
 def get_form_out():
     return FormOut.Image('plot')
-
-def gen_overdispersed_events(low, high):
-    """
-    This is a generator that samples overdispersed events in an interval.
-    It is useful for plotting.
-    """
-    # Create the min heap.
-    # The triples are the neg length, the low, and the high values.
-    # Popping from the queue will return the longest interval.
-    # The queue grows linearly with the number of sampled events.
-    yield low
-    yield high
-    q = [(low-high, low, high)]
-    while True:
-        dummy, a, b = heapq.heappop(q)
-        mid = random.uniform(a, b)
-        heapq.heappush(q, (a-mid, a, mid))
-        heapq.heappush(q, (mid-b, mid, b))
-        yield mid
 
 def get_site_independent_distn(v, nsites):
     n = len(v)
@@ -227,8 +205,6 @@ class OptIndep:
         return -self.f_info(Q, v_site_indep, self.t)
 
 def get_response_content(fs):
-    # hardcode the amount of time allowed
-    nseconds = 4
     # validate and store user input
     if fs.stop_time <= fs.start_time:
         raise ValueError('check the start and stop times')
@@ -250,11 +226,10 @@ def get_response_content(fs):
     f_selection = mrate.to_gtr_hb_known_energies
     # Spend a lot of time doing the optimizations
     # to construct the points for the R table.
-    t0 = time.time()
     arr = []
-    for t in gen_overdispersed_events(fs.start_time, fs.stop_time):
-        if time.time() - t0 > nseconds:
-            break
+    for t in cbreaker.throttled(
+            progrid.gen_binary(fs.start_time, fs.stop_time),
+            nseconds=4, ncount=100):
         row = [t]
         # get the site-dependent mutation selection balance information
         if fs.dep_balance:
@@ -270,6 +245,7 @@ def get_response_content(fs):
             print max_dep_balance_info
             print v_bal
             print Q_bal
+            print
         # get the site-independent mutation selection balance information
         if fs.indep_balance:
             indep_balance = OptIndep(
@@ -284,6 +260,7 @@ def get_response_content(fs):
             print max_indep_balance_info
             print v_bal
             print Q_bal
+            print
         # get the site-independent mutation process information
         if fs.indep_mutation:
             indep_mut_info = f_info(M_site_indep, v_site_indep, t)
@@ -321,11 +298,6 @@ def get_ggplot():
     print >> out, 'ggplot(data=my.table.long,'
     print >> out, mk_call_str('aes', x='t', y='value', colour='variable')
     print >> out, ') + geom_line()',
-    print >> out, '+',
-    print >> out, mk_call_str(
-            'xlim',
-            mk_call_str('min', 'my.table.long$t'),
-            mk_call_str('max', 'my.table.long$t')),
     print >> out, '+',
     print >> out, mk_call_str(
             'ylim', '0',
