@@ -5,29 +5,18 @@ The mutation process is site-independent d-site 2-state-per-site.
 """
 
 from StringIO import StringIO
-import argparse
 import math
-import time
-import random
-import heapq
-from itertools import product
 
 import numpy as np
 import scipy
-from scipy import linalg
 from scipy import optimize
 
 import Form
 import FormOut
 import ctmcmi
-import mrate
-import divtime
-import cheeger
-import MatrixUtil
-from MatrixUtil import ndot
+import evozoo
 import RUtil
 from RUtil import mk_call_str
-import evozoo
 
 # variable name, description, python object
 g_process_triples = [
@@ -56,25 +45,6 @@ def get_form():
 def get_form_out():
     return FormOut.Image('plot')
 
-def gen_overdispersed_events(low, high):
-    """
-    This is a generator that samples overdispersed events in an interval.
-    It is useful for plotting.
-    """
-    # Create the min heap.
-    # The triples are the neg length, the low, and the high values.
-    # Popping from the queue will return the longest interval.
-    # The queue grows linearly with the number of sampled events.
-    yield low
-    yield high
-    q = [(low-high, low, high)]
-    while True:
-        dummy, a, b = heapq.heappop(q)
-        mid = random.uniform(a, b)
-        heapq.heappush(q, (a-mid, a, mid))
-        heapq.heappush(q, (mid-b, mid, b))
-        yield mid
-
 class OptDep:
     def __init__(self, zoo_obj, t, f_info):
         """
@@ -95,8 +65,6 @@ class OptDep:
         return -self.f_info(Q, distn, self.t)
 
 def get_response_content(fs):
-    # hardcode the amount of time allowed
-    nseconds = 8
     # validate and store user input
     if fs.stop_time <= fs.start_time:
         raise ValueError('check the start and stop times')
@@ -153,15 +121,5 @@ def get_ggplot():
     print >> out, 'ggplot(data=my.table.long,'
     print >> out, mk_call_str('aes', x='t', y='value', colour='variable')
     print >> out, ') + geom_line()',
-    print >> out, '+',
-    print >> out, mk_call_str(
-            'xlim',
-            mk_call_str('min', 'my.table.long$t'),
-            mk_call_str('max', 'my.table.long$t')),
-    print >> out, '+',
-    print >> out, mk_call_str(
-            'ylim',
-            mk_call_str('min', 'my.table.long$value'),
-            mk_call_str('max', 'my.table.long$value'))
     return out.getvalue()
 
