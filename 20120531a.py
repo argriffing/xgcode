@@ -110,13 +110,17 @@ def get_response_content(fs):
             opt_dep = OptDep(zoo_obj, t, f_info)
             if df:
                 X0 = np.random.randn(df)
-                #xopt = scipy.optimize.fmin(
-                        #opt_dep, X0, maxiter=10000, maxfun=10000)
+                xopt = scipy.optimize.fmin(
+                        opt_dep, X0, maxiter=10000, maxfun=10000)
                 # I would like to use scipy.optimize.minimize
                 # except that this requires a newer version of
                 # scipy than is packaged for ubuntu right now.
+                # fmin_bfgs seems to have problems sometimes
+                # either hanging or maxiter=10K is too big.
+                """
                 xopt = scipy.optimize.fmin_bfgs(opt_dep, X0,
                         gtol=1e-8, maxiter=10000)
+                """
             else:
                 xopt = np.array([])
             info_value = -opt_dep(xopt)
