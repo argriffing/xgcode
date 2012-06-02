@@ -10,26 +10,18 @@ No other constraint is applied to the selection.
 """
 
 from StringIO import StringIO
-import argparse
 import math
-import time
-import random
-from itertools import product
+import itertools
 
 import numpy as np
 import scipy
-from scipy import linalg
 from scipy import optimize
 
 import Form
 import FormOut
 import ctmcmi
-import mrate
-import divtime
-import cheeger
-import MatrixUtil
-from MatrixUtil import ndot
 import evozoo
+import cbreaker
 
 
 def get_form():
@@ -116,10 +108,8 @@ def do_search_opt(opt_min, nseconds):
     df = opt_min.zoo_obj.get_df()
     best_info = None
     best_xopt = None
-    t0 = time.time()
-    niter = 0
-    while time.time() - t0 < nseconds:
-        niter += 1
+    proc = cbreaker.Throttled()
+    for i in proc.run(itertools.count(), nseconds=nseconds):
         X0 = np.random.randn(df)
         # fmin_powell is not so great and also slow
         # fmin_bfgs seems pretty good and also fast
@@ -127,33 +117,27 @@ def do_search_opt(opt_min, nseconds):
         # but maybe this is only with the high variance energies
         xopt = scipy.optimize.fmin(
                 opt_min, X0, maxiter=10000, maxfun=10000)
-        """
-        xopt = scipy.optimize.fmin_bfgs(opt_min, X0)
-        """
-        """
-        xopt = scipy.optimize.brute(
-                opt_min, ranges=tuple([(-10, 10, 5)]*df))
-        """
         info = -opt_min(xopt)
         if best_info is None or info > best_info:
             best_info = info
             best_xopt = xopt
     # write the report
     out = StringIO()
+    print >> out, proc
+    print >> out
     Q = opt_min.zoo_obj.get_rate_matrix(best_xopt)
     distn = opt_min.zoo_obj.get_distn(best_xopt)
-    print >> out, 'numerical maximization runs:', niter
+    print >> out, '-- best result --'
     print >> out, 't:', opt_min.t
     print >> out, 'expected info:', (opt_min.zoo_obj.d - 1)*math.log(2)
     print >> out, 'observed info:', best_info
     print >> out, distn
     print >> out, Q
-    return out.getvalue().rstrip()
+    return out.getvalue()
 
 def get_response_content(fs):
     nseconds = 4
     t = get_opt_divtime(fs.d, fs.a, fs.b)
-    print t
     opt_min = OptMin(fs.d, t)
-    return do_search_opt(opt_min, nseconds) + '\n'
+    return do_search_opt(opt_min, nseconds)
 

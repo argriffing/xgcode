@@ -9,26 +9,12 @@ changes in the selection-induced log probability ratio.
 """
 
 from StringIO import StringIO
-import argparse
-import math
-import time
-import random
-import heapq
-from itertools import product
 
 import numpy as np
-import scipy
-from scipy import linalg
-from scipy import optimize
 
 import Form
 import FormOut
 import ctmcmi
-import mrate
-import divtime
-import cheeger
-import MatrixUtil
-from MatrixUtil import ndot
 import RUtil
 from RUtil import mk_call_str
 import evozoo

@@ -5,6 +5,7 @@ for example on ctrl-c or timeout or iteration limit,
 or when a sentinel value is reached or the search space is exhausted.
 """
 
+from StringIO import StringIO
 import time
 import unittest
 
@@ -37,7 +38,14 @@ class Throttled:
                 yield state
                 self.ncompleted += 1
         except Stop as e:
+            self.condition = e.condition
             self.nseconds = time.time() - self.t0
+    def __str__(self):
+        out = StringIO()
+        print >> out, 'termination condition:', self.condition
+        print >> out, 'completed iterations:', self.ncompleted
+        print >> out, 'elapsed time:', self.nseconds
+        return out.getvalue().rstrip()
 
 
 def throttled(states, nseconds=None, ncount=None):
