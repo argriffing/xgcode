@@ -90,9 +90,7 @@ def get_response_content(fs):
     headers.extend(r_names)
     # Spend a lot of time doing the optimizations
     # to construct the points for the R table.
-    ntimes = 100
-    incr = (fs.stop_time - fs.start_time) / float(ntimes - 1)
-    times = [fs.start_time + i*incr for i in range(ntimes)]
+    times = np.linspace(fs.start_time, fs.stop_time, 101)
     arr = []
     for t in times:
         row = [t]
