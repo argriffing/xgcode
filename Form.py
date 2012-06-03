@@ -267,8 +267,8 @@ class RadioGroup:
     def _get_checked_list(self):
         checked_list = [item for item in self.radio_items if item.default]
         if len(checked_list) != 1:
-            msg = 'exactly one radio button should be checked by default'
-            raise FormError(msg)
+            raise FormError(
+                    'exactly one radio button should be checked by default')
         return checked_list
     
     def _get_default_string(self):
@@ -354,24 +354,24 @@ class RadioGroup:
         for item in self.radio_items:
             if item.label in d_in:
                 if d_in[item.label] != True:
-                    msg_a = 'to select the %s option ' % item.label
-                    msg_b = 'use --%s' % item.label
-                    raise FormError(msg_a + msg_b)
+                    raise FormError(
+                            'to select the %s option '
+                            'use --%s' % (item.label, item.label))
                 if selected_item:
-                    msg_a = 'multiple radio button selections: '
-                    msg_b = '%s and %s' % (selected_item.label, item.label)
-                    raise FormError(msg_a + msg_b)
+                    raise FormError(
+                            'multiple radio button selections: '
+                            '%s and %s' % (selected_item.label, item.label))
                 selected_item = item
         if selected_item is None:
             for item in self.radio_items:
                 if item.default:
                     if selected_item:
-                        msg = 'multiple radio button default selections'
-                        raise FormError(msg)
+                        raise FormError(
+                                'multiple radio button default selections')
                     selected_item = item
         if selected_item is None:
-            msg = 'no default radio button selection'
-            raise FormError(msg)
+            raise FormError(
+                    'no default radio button selection')
         for item in self.radio_items:
             _set_unique(d_out, item.label, item is selected_item)
         _set_unique(d_out, self.label, selected_item.label)
@@ -382,25 +382,24 @@ class RadioGroup:
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
-            lines = (
-                    'no radio button option',
+            raise FormError(
+                    'no radio button option '
                     'was selected for the field "%s"' % self.label)
-            raise FormError(' '.join(lines))
         elif len(values) == 1:
             value = values[0]
         elif len(values) > 2:
-            msg = 'the value for the field "%s" is ambiguous' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the value for the field "%s" is ambiguous' % self.label)
         # Assert that the selected value
         # is actually one of the radio button options.
         if value not in set(item.label for item in self.radio_items):
-            msg = 'an invalid radio button option was selected: %s' % value
-            raise FormError(msg)
+            raise FormError(
+                    'an invalid radio button option was selected: %s' % value)
         # For the group,
         # set the value for the attribute in the fieldstorage object.
         setattr(fs, self.label, value)
@@ -409,8 +408,9 @@ class RadioGroup:
         for radio_item in self.radio_items:
             # verify that the attribute is not already taken
             if hasattr(fs, radio_item.label):
-                msg = 'the object already has the attribute "%s"' % self.label
-                raise FormError(msg)
+                raise FormError(
+                        'the object already has '
+                        'the attribute "%s"' % self.label)
             is_checked = (radio_item.label == value)
             setattr(fs, radio_item.label, is_checked)
 
@@ -520,8 +520,8 @@ class CheckGroup:
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # Decorate the FieldStorage object
         # with the boolean values of each item separately.
         for check_item in self.check_items:
@@ -646,8 +646,8 @@ class CheckItem:
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         # set the value for the attribute in the fieldstorage object
@@ -752,8 +752,8 @@ class SingleLine:
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
@@ -761,8 +761,8 @@ class SingleLine:
         elif len(values) == 1:
             value = values[0]
         elif len(values) > 2:
-            msg = 'the value for the field "%s" is ambiguous' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the value for the field "%s" is ambiguous' % self.label)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -909,27 +909,25 @@ class Float:
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
-            lines = (
-                    'no floating point number',
+            raise FormError(
+                    'no floating point number '
                     'was given for the field "%s"' % self.label)
-            raise FormError(' '.join(lines))
         elif len(values) == 1:
             value_string = values[0]
             try:
                 value = float(value_string)
             except ValueError as e:
-                lines = (
-                        '%s could not be interpreted' % value_string,
-                        'as a floating point number')
-                raise FormError(' '.join(lines))
+                raise FormError(
+                        '%s could not be interpreted '
+                        'as a floating point number' % value_string)
         elif len(values) > 2:
-            msg = 'the value for the field "%s" is ambiguous' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the value for the field "%s" is ambiguous' % self.label)
         self.validate(value)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
@@ -1028,14 +1026,14 @@ class Integer:
     def validate(self, value):
         if self.low is not None:
             if value < self.low:
-                msg_a = 'the integer in the field "%s" ' % self.label
-                msg_b = 'must be at least %d' % self.low
-                raise FormError(msg_a + msg_b)
+                raise FormError(
+                        'the integer in the field "%s" '
+                        'must be at least %d' % (self.label, self.low))
         if self.high is not None:
             if value > self.high:
-                msg_a = 'the integer in the field "%s" ' % self.label
-                msg_b = 'must be at most %d' % self.high
-                raise FormError(msg_a + msg_b)
+                raise FormError(
+                        'the integer in the field "%s" '
+                        'must be at most %d' % (self.label, self.high))
 
     def process_cmdline_dict(self, d_in, d_out):
         value_s = d_in.get(self.label, None)
@@ -1055,13 +1053,13 @@ class Integer:
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
-            msg = 'no integer was given for the field "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'no integer was given for the field "%s"' % self.label)
         elif len(values) == 1:
             value_string = values[0]
             try:
@@ -1069,8 +1067,8 @@ class Integer:
             except ValueError as e:
                 raise FormError('%s is not an integer' % value_string)
         elif len(values) > 2:
-            msg = 'the value for the field "%s" is ambiguous' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the value for the field "%s" is ambiguous' % self.label)
         self.validate(value)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
@@ -1193,13 +1191,13 @@ class Matrix:
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
-            msg = 'the value for the field "%s" is empty' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the value for the field "%s" is empty' % self.label)
         elif len(values) == 1:
             try:
                 value = np.array(matrixio.read_matrix(StringIO(values[0])))
@@ -1208,8 +1206,8 @@ class Matrix:
             except MatrixIOError as e:
                 raise FormError(e)
         elif len(values) > 2:
-            msg = 'the value for the field "%s" is ambiguous' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the value for the field "%s" is ambiguous' % self.label)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -1320,8 +1318,8 @@ class MultiLine:
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
@@ -1329,8 +1327,8 @@ class MultiLine:
         elif len(values) == 1:
             value = values[0]
         elif len(values) > 2:
-            msg = 'the value for the field "%s" is ambiguous' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the value for the field "%s" is ambiguous' % self.label)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
@@ -1380,8 +1378,8 @@ class Sequence(MultiLine):
         """
         # verify that the attribute is not already taken
         if hasattr(fs, self.label):
-            msg = 'the object already has the attribute "%s"' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the object already has the attribute "%s"' % self.label)
         # read the attribute value from the fieldstorage object
         values = fs.getlist(self.label)
         if not values:
@@ -1389,8 +1387,8 @@ class Sequence(MultiLine):
         elif len(values) == 1:
             value = values[0]
         elif len(values) > 2:
-            msg = 'the value for the field "%s" is ambiguous' % self.label
-            raise FormError(msg)
+            raise FormError(
+                    'the value for the field "%s" is ambiguous' % self.label)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, tuple(self._gen_reduced(value.splitlines())))
 

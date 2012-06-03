@@ -141,9 +141,9 @@ def make_table(args, distn_modes):
             try:
                 W, V = scipy.linalg.eig(R, left=True, right=False)
             except ValueError, e:
-                msga = 'scipy.linalg.eig had a problem with this array:'
-                msgb = ' %s' % R
-                raise ValueError(msga + msgb)
+                raise ValueError(
+                    'scipy.linalg.eig had a problem '
+                    'with this array: %s' % R)
             recip_relaxation_time = sorted(abs(w) for w in W)[1]
             relaxation_time = 1.0 / recip_relaxation_time
             row.append(relaxation_time)

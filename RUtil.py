@@ -233,9 +233,9 @@ def run_plotter(table, user_script_content, device_name,
             with open(temp_plot_name, 'rb') as fin:
                 image_data = fin.read()
         except IOError as e:
-            msg_a = 'could not open the plot image file'
-            msg_b = ' that R was supposed to write'
-            raise RError(msg_a + msg_b)
+            raise RError(
+                    'could not open the plot image file '
+                    'that R was supposed to write')
         if not keep_intermediate:
             os.unlink(temp_plot_name)
     return retcode, r_out, r_err, image_data
@@ -274,9 +274,9 @@ def run_plotter_multiple_scripts(table, scripts, device_name,
                 with open(temp_plot_name, 'rb') as fin:
                     image_data_list.append(fin.read())
         except IOError as e:
-            msg_a = 'could not open the plot image file'
-            msg_b = ' that R was supposed to write'
-            raise RError(msg_a + msg_b)
+            raise RError(
+                    'could not open the plot image file '
+                    'that R was supposed to write')
         os.unlink(temp_plot_name)
     return retcode, r_out, r_err, image_data_list
 
@@ -305,9 +305,9 @@ def run_plotter_no_table(user_script_content, device_name,
             with open(temp_plot_name, 'rb') as fin:
                 image_data = fin.read()
         except IOError as e:
-            msg_a = 'could not open the plot image file'
-            msg_b = ' that R was supposed to write'
-            raise RError(msg_a + msg_b)
+            raise RError(
+                    'could not open the plot image file '
+                    'that R was supposed to write')
         os.unlink(temp_plot_name)
     return retcode, r_out, r_err, image_data
 
@@ -320,13 +320,13 @@ def get_table_string(M, column_headers):
     if len(set(len(row) for row in M)) != 1:
         raise ValueError('all rows should have the same length')
     if len(M[0]) != len(column_headers):
-        msg = 'the number of columns does not match the number of headers'
-        raise ValueError(msg)
+        raise ValueError(
+                'the number of columns does not match the number of headers')
     for header in column_headers:
         if '_' in header:
-            msg_a = 'the header "%s" is invalid '
-            msg_b = 'because it has an underscore' % header
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'the header "%s" is invalid '
+                    'because it has an underscore' % header)
     # define each line in the output string
     lines = []
     lines.append('\t'.join([''] + list(column_headers)))
@@ -399,21 +399,21 @@ class RTable:
         self.data = [line.split() for line in data_lines]
         nheaders = len(self.headers)
         if len(set(self.headers)) != nheaders:
-            msg = 'multiple columns are labeled with the same header'
-            raise RTableError(msg)
+            raise RTableError(
+                    'multiple columns are labeled with the same header')
         for row in self.data:
             if len(row) != nheaders+1:
-                msg_a = 'the header row has %d elements ' % nheaders
-                msg_b = 'and a data row has %d elements; ' % len(row)
-                msg_c = 'all data rows should have one more element '
-                msg_d = 'than the header row'
-                raise RTableError(msg_a + msg_b + msg_c + msg_d)
+                raise RTableError(
+                        'the header row has %d elements '
+                        'and a data row has %d elements; '
+                        'all data rows should have one more element '
+                        'than the header row' % (nheaders, len(row)))
         validate_headers(self.headers)
     
     def header_to_column_index(self, header):
         if header not in self.h_to_i:
-            msg = 'the column header %s was not found in the table' % header
-            raise RTableError(msg)
+            raise RTableError(
+                    'the column header %s was not found in the table' % header)
         return self.h_to_i[header]
 
     def header_to_column(self, header):
@@ -432,13 +432,13 @@ class RTable:
             d[x] += 1
         repeated_keys = [k for k, v in d.items() if v > 1]
         if len(repeated_keys) > 5:
-            msg_a = '%d repeated keys ' % len(repeated_keys)
-            msg_b = 'found in the primary column'
-            raise RTableError(msg_a + msg_b)
+            raise RTableError(
+                    '%d repeated keys '
+                    'found in the primary column' % len(repeated_keys))
         elif repeated_keys:
-            msg_a = 'repeated keys in the primary column: '
-            msg_b = ', '.join(repeated_keys)
-            raise RTableError(msg_a + msg_b)
+            raise RTableError(
+                'repeated keys '
+                'in the primary column: %s' % ', '.join(repeated_keys))
         return column
 
 
