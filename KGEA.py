@@ -15,8 +15,7 @@ import Progress
 import Util
 
 
-class KGEAError(Exception):
-    pass
+class KGEAError(Exception): pass
 
 
 def get_piece_index(fin, position):
@@ -288,13 +287,13 @@ class Indexer:
         self.pieces_directory = pieces_dir
         # check some conditions so we fail early instead of late
         if not os.path.isdir(self.pieces_directory):
-            msg_a = 'missing the directory '
-            msg_b = 'with fasta files: ' + self.pieces_directory
-            raise KGEAError(msg_a + msg_b)
+            raise KGEAError(
+                    'missing the directory '
+                    'with fasta files: ' + self.pieces_directory)
         if not os.path.isdir(self.index_directory):
-            msg_a = 'missing the directory to which the index files '
-            msg_b = 'should be written: ' + self.index_directory
-            raise KGEAError(msg_a + msg_b)
+            raise KGEAError(
+                    'missing the directory to which the index files '
+                    'should be written: ' + self.index_directory)
 
     def run(self, verbose=False):
         """
@@ -359,20 +358,20 @@ class Finder:
         self.valid_chromosome_strings = None
         # check some conditions so we fail early
         if not os.path.isdir(self.fasta_directory):
-            msg_a = 'missing the directory '
-            msg_b = 'with fasta files: ' + self.fasta_directory
-            raise KGEAError(msg_a + msg_b)
+            raise KGEAError(
+                    'missing the directory '
+                    'with fasta files: ' + self.fasta_directory)
         if not os.path.isdir(self.index_directory):
-            msg_a = 'missing the directory to which the index files '
-            msg_b = 'should be written: ' + self.index_directory
-            raise KGEAError(msg_a + msg_b)
+            raise KGEAError(
+                    'missing the directory to which the index files '
+                    'should be written: ' + self.index_directory)
         # try to get the list of valid chromosome strings
         try:
             fin = open(chrom_list_filename)
         except IOError as e:
-            msg_a = 'there was a problem opening '
-            msg_b = 'the chromosome list file: ' + chrom_list_filename
-            raise KGEAError(msg_a + msg_b)
+            raise KGEAError(
+                    'there was a problem opening '
+                    'the chromosome list file: ' + chrom_list_filename)
         lines = [line.strip() for line in fin.readlines()]
         fin.close()
         self.valid_chromosome_strings = set(line for line in lines if line)
@@ -408,9 +407,9 @@ class Finder:
         with open(piece_pathname) as fin:
             line_list = get_line_list(fin, chrom_string, chrom_position)
         if line_list is None:
-            msg_a = 'the index pointed to a fasta file '
-            msg_b = 'that does not have the requested position'
-            raise KGEAError(msg_a + msg_b)
+            raise KGEAError(
+                    'the index pointed to a fasta file '
+                    'that does not have the requested position')
         # return the lines of the alignment
         return line_list
 
@@ -428,8 +427,8 @@ class Finder:
             return
         ntaxa, remainder = divmod(len(fasta_line_list), 2)
         if remainder:
-            msg = 'the number of lines in each alignment should be even'
-            raise KGEAError(msg)
+            raise KGEAError(
+                    'the number of lines in each alignment should be even')
         # get the amino acid offset of interest
         header_line = fasta_line_list[0]
         p = LocationParser(header_line)

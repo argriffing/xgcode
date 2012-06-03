@@ -62,9 +62,8 @@ def get_tier(names):
         if names & sample:
             tiers.add(i)
     if len(tiers) > 1:
-        msg_a = 'expected modules from the same tier: '
-        msg_b = ', '.join(names)
-        raise MetaError(msg_a + msg_b)
+        raise MetaError(
+                'expected modules from the same tier: ' + ', '.join(names))
     if tiers:
         return list(tiers)[0]
 
@@ -98,11 +97,9 @@ def _get_import_tiers(paragraphs):
             continue
         valid_perms.append(perm)
     if not valid_perms:
-        msg = 'found no valid tier permutation'
-        raise MetaError(msg)
+        raise MetaError('found no valid tier permutation')
     if len(valid_perms) > 1:
-        msg = 'found multiple valid pier permutations'
-        raise MetaError(msg)
+        raise MetaError('found multiple valid pier permutations')
     return valid_perms[0]
 
 def _get_import_paragraphs(raw_lines):
@@ -125,8 +122,8 @@ def _get_import_paragraphs(raw_lines):
             if s.startswith('"""') or s.startswith('r"""'):
                 doc_start = True
             else:
-                msg = 'the file should start with a """ quoted docstring'
-                raise MetaError(msg)
+                raise MetaError(
+                        'the file should start with a """ quoted docstring')
             if s.count('"""') > 1:
                 doc_end = True
         elif not doc_end:
@@ -145,8 +142,8 @@ def _get_import_paragraphs(raw_lines):
             elements = s.split()
             if elements[0] == 'import':
                 if ',' in s:
-                    msg = 'each import should be on a separate line'
-                    raise MetaError(msg)
+                    raise MetaError(
+                            'each import should be on a separate line')
             if elements[0] in ('import', 'from'):
                 p.append(elements[1])
             else:
@@ -216,8 +213,8 @@ class Dep(object):
             try:
                 deps = get_tiered_names(fin)
             except MetaError as e:
-                msg = 'dependency format error in %s: %s' % (filename, e)
-                raise MetaError(msg)
+                raise MetaError(
+                        'dependency format error in %s: %s' % (filename, e))
         self.d_deps[module_name] = deps
         return deps
 
@@ -309,8 +306,9 @@ def get_module_names(manifest, create_all, create_tagged, srcdir='.'):
     """
     pattern = r'^\d{8}[a-zA-Z]\.py$'
     if sum(bool(x) for x in (manifest, create_all, create_tagged)) != 1:
-        msg = 'expected exactly one of {manifest, create_all, create_tagged}'
-        raise ValueError(msg)
+        raise ValueError(
+                'expected exactly one of '
+                '{manifest, create_all, create_tagged}')
     module_names = None
     if manifest:
         with open(manifest) as fin:

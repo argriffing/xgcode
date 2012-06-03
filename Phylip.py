@@ -14,8 +14,7 @@ import Fasta
 import iterutils
 import Util
 
-class PhylipError(Exception):
-    pass
+class PhylipError(Exception): pass
 
 def _get_lines(raw_lines):
     """
@@ -53,9 +52,9 @@ def decode(raw_lines):
     # check the number of data lines
     ntaxa_observed = len(data_lines)
     if ntaxa_observed != ntaxa:
-        msg_a = 'the header says there are %d taxa' % ntaxa
-        msg_b = 'but %d taxa were observed' % ntaxa_observed
-        raise PhylipError(msg_a + msg_b)
+        raise PhylipError(
+                'the header says there are %d taxa '
+                'but %d taxa were observed' % (ntaxa, ntaxa_observed))
     # all line lengths should be the same
     if nunique_lengths(data_lines) != 1:
         raise PhylipError('all data lines should be the same length')
@@ -64,9 +63,10 @@ def decode(raw_lines):
     headers, sequences = zip(*compound_data_rows)
     ncolumns_observed = len(sequences[0])
     if ncolumns_observed != ncolumns:
-        msg_a = 'the header says there are %d alignment columns' % ncolumns
-        msg_b = 'but %d alignment columns were observed' % ncolumns_observed
-        raise PhylipError(msg_a + msg_b)
+        raise PhylipError(
+                'the header says there are %d alignment columns '
+                'but %d alignment columns '
+                'were observed' % (ncolumns, ncolumns_observed))
     return headers, sequences
 
 def encode(headers, sequences):

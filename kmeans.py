@@ -303,9 +303,9 @@ def get_calinski_index(bgss, wgss, k, n):
     @return: a floating point number
     """
     if not (1 < k < n):
-        msg_a = 'the calinski index '
-        msg_b = 'is defined for integers k and n such that 1 < k < n'
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'the calinski index '
+                'is defined for integers k and n such that 1 < k < n')
     numerator = bgss / float(k - 1)
     denominator = wgss / float(n - k)
     if not denominator:
@@ -329,9 +329,9 @@ def get_calinski_index_naive(points, labels):
     n = len(points)
     k = len(cluster_map)
     if not (1 < k < n):
-        msg_a = 'the calinski index '
-        msg_b = 'is defined for integers k and n such that 1 < k < n'
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'the calinski index '
+                'is defined for integers k and n such that 1 < k < n')
     # compute wgss using squares of distances
     wgss = 0
     for point_indices in cluster_map.values():

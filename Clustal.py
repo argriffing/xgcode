@@ -9,8 +9,7 @@ from StringIO import StringIO
 import Util
 
 
-class ClustalError(Exception):
-    pass
+class ClustalError(Exception): pass
 
 
 def get_headers_and_sequences(raw_lines):
@@ -30,23 +29,23 @@ def get_headers_and_sequences(raw_lines):
         taxon_chunk_pairs = [line.split() for line in paragraph]
         for taxon_chunk_pair in taxon_chunk_pairs:
             if len(taxon_chunk_pair) != 2:
-                msg_a = 'each sequence line '
-                msg_b = 'should be two whitespace separated strings'
-                raise ClustalError(msg_a + msg_b)
+                raise ClustalError(
+                        'each sequence line '
+                        'should be two whitespace separated strings')
         # validate the paragraph (taxon, chunk) pairs
         paragraph_taxa, chunks = zip(*taxon_chunk_pairs)
         if len(set(len(chunk) for chunk in chunks)) > 1:
-            msg_a = 'within each paragraph each sequence chunk '
-            msg_b = 'should be the same length'
-            raise ClustalError(msg_a + msg_b)
+            raise ClustalError(
+                    'within each paragraph each sequence chunk '
+                    'should be the same length')
         if taxa:
             if len(taxa) != len(paragraph_taxa):
-                msg = 'each paragraph should have the same number of taxa'
-                raise ClustalError(msg)
+                raise ClustalError(
+                        'each paragraph should have the same number of taxa')
             if taxa != paragraph_taxa:
-                msg_a = 'each paragraph should have the same taxa '
-                msg_b = 'in the same order'
-                raise ClustalError(msg_a + msg_b)
+                raise ClustalError(
+                        'each paragraph should have the same taxa '
+                        'in the same order')
         else:
             taxa = paragraph_taxa
         # append the chunks to the sequences of chunks

@@ -21,26 +21,24 @@ def decode(raw_lines):
     ncols = len(rows[0])
     for row in rows:
         if len(row) != ncols:
-            msg_a = 'all rows of a .hud table '
-            msg_b = 'should have the same number of elements'
-            raise HudError(msg_a + msg_b)
+            raise HudError(
+                    'all rows of a .hud table '
+                    'should have the same number of elements')
     headers = [row[0] for row in rows]
     header_counts = defaultdict(int)
     for h in headers:
         header_counts[h] += 1
     repeats = [k for k, v in header_counts.items() if v > 1]
     if len(repeats) > 5:
-        msg = '%d repeated OTUs within a table' % len(repeats)
-        raise HudError(msg)
+        raise HudError('%d repeated OTUs within a table' % len(repeats))
     elif repeats:
-        msg = 'repeated OTUs within a table: ' + ', '.join(repeats)
-        raise HudError(msg)
+        raise HudError('repeated OTUs within a table: ' + ', '.join(repeats))
     data = [row[1:] for row in rows]
     for row in data:
         for element in row:
             if element not in list('012'):
-                msg = 'invalid diploid or haploid element: ' + element
-                raise HudError(msg)
+                raise HudError(
+                        'invalid diploid or haploid element: ' + element)
     data = [[int(x) for x in row] for row in data]
     return headers, data
 
@@ -53,9 +51,9 @@ def encode(headers, rows):
     if not headers:
         return ''
     if len(headers) != len(rows):
-        msg_a = 'expected the number of headers (%d) ' % len(headers)
-        msg_b = 'to be the same as the number of rows (%d)' % len(rows)
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'expected the number of headers (%d) to be the same '
+                'as the number of rows (%d)' % (len(headers), len(rows)))
     n = max(len(x) for x in headers)
     ljust_headers = (x.ljust(n+1) for x in headers)
     data_lines = [' '.join(str(x) for x in row) for row in rows]
