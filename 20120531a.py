@@ -1,16 +1,12 @@
 r"""
-Plot max Fisher information for several single-parameter selection models.
+Plot max Fisher information for several selection models.
 
 The mutation process is site-independent d-site 2-state-per-site.
 The site-dependent selection processes vary, but they all fall under
-the Halpern-Bruno-like formula that associates a selection parameter
+the Halpern-Bruno-like formula that associates a set of selection parameters
 with each state.
-Three of the selection processes assume a given lethality pattern
-with no other selection,
-while the other three selection processes add a single-parameter
-selection on top of these lethality patterns.
-For the parameterized selection processes,
-the numerically optimized max information is plotted.
+Because this is a numerical optimization in possibly high dimensional space,
+the search will often fail to find a global max information.
 """
 
 from StringIO import StringIO
@@ -31,13 +27,15 @@ from RUtil import mk_call_str
 
 # variable name, description, python object
 g_process_triples = [
-        ('nonuniform_cube', 'hypercube with single parameter stationary distn',
+        ('general_cube', 'hypercube with general selection',
+            evozoo.GeneralHypercube_d_full),
+        ('one_param_cube', 'hypercube with single parameter stationary distn',
             evozoo.AlternatingHypercube_d_1),
         ('distinguished_corner_pair', 'a corner pair is distinguished',
             evozoo.DistinguishedCornerPairHypercube_d_1),
-        ('nonuniform_cycle', 'max induced cycle with 1-parameter distn',
+        ('one_param_cycle', 'max induced cycle with 1-parameter distn',
             evozoo.AlternatingCoil_d_1),
-        ('nonuniform_path', 'max induced path with 1-parameter distn',
+        ('one_param_path', 'max induced path with 1-parameter distn',
             evozoo.AlternatingSnake_d_1),
         ('cube', 'hypercube with uniform stationary distribution',
             evozoo.Hypercube_d_0),
