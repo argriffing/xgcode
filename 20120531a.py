@@ -28,10 +28,13 @@ import progrid
 import RUtil
 from RUtil import mk_call_str
 
+
 # variable name, description, python object
 g_process_triples = [
         ('nonuniform_cube', 'hypercube with single parameter stationary distn',
             evozoo.AlternatingHypercube_d_1),
+        ('distinguished_corner_pair', 'a corner pair is distinguished',
+            evozoo.DistinguishedCornerPairHypercube_d_1),
         ('nonuniform_cycle', 'max induced cycle with 1-parameter distn',
             evozoo.AlternatingCoil_d_1),
         ('nonuniform_path', 'max induced path with 1-parameter distn',

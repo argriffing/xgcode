@@ -486,3 +486,29 @@ class GeneralSnake_d_full(GeneralPath_N_full):
         nstates = snake_in_the_box(d) + 1
         GeneralPath_N_full.__init__(self, nstates)
 
+
+# A one-off.
+# A single pair of corners of the hypercube is distinguished.
+# When d=3 this interpolates between the 3-cube and its largest induced cycle.
+
+class DistinguishedCornerPairHypercube_d_1(Process):
+    def __init__(self, d):
+        self.d = d
+    def get_df(self):
+        return 1
+    def get_distn(self, X):
+        return energies_to_distn(self.get_energies(X))
+    def get_nstates(self):
+        return 2 ** self.d
+    def get_energies(self, X):
+        self._check_params(X)
+        g, = X
+        popcounts = [gmpy.popcount(i) for i in range(self.get_nstates())]
+        return np.array([g if p in (0, self.d) else 0 for p in popcounts])
+    def get_rate_matrix(self, X):
+        self._check_params(X)
+        M = Hypercube_d_0(self.d).get_rate_matrix()
+        u = np.zeros(self.get_nstates())
+        v = self.get_energies(X)
+        return mrate.to_gtr_hb_known_energies(M, u, v)
+
