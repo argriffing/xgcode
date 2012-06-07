@@ -15,7 +15,9 @@ def create_environment_info(auto_path, python_path, mob_core, mob_version):
     @param mob_core: mobyle core directory
     @param mob_version: mobyle version as a string
     """
-    if mob_version == '0.98':
+    if mob_version == '1.04':
+        klass = EnvironmentInfo98
+    elif mob_version == '0.98':
         klass = EnvironmentInfo98
     elif mob_version == '0.96':
         klass = EnvironmentInfo96

@@ -8,7 +8,6 @@ per-state selection parameters.
 """
 
 import numpy as np
-
 import gmpy
 
 import mrate

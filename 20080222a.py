@@ -1,4 +1,5 @@
-"""Visualize a matrix as a heat map.
+"""
+Visualize a matrix as a heat map.
 """
 
 import numpy as np
@@ -10,8 +11,6 @@ import HeatMap
 import MatrixUtil
 import Form
 import FormOut
-
-#FIXME importing numpy is unnecessary if row major lists will suffice
 
 def get_form():
     """

@@ -43,7 +43,7 @@ g_common_t2 = set([
 
 g_common_t3 = set([
         'smallutil', 'matrixio', 'latexutil',
-        'ambignt', 'Progress',
+        'ambignt', 'Progress', 'cbreaker',
         'EqualArcLayout', 'MatrixUtil', 'iterutils', 'Form', 'Util',
         'Newick', 'FelTree', 'NewickIO', 'SnippetUtil'])
 
