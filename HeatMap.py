@@ -89,7 +89,7 @@ class Legend:
         """
         @param values: a set of numeric values
         @param max_categories: the maximum number of categories
-        @param css_prefix: the prefix of custom css classes used for background color
+        @param css_prefix: prefix of custom css classes used background color
         @param gradient: a callable specifying the color gradient
         """
         self.discretizer = Discretizer.Discretizer(values, max_categories)
@@ -113,7 +113,8 @@ class Legend:
                 t = 1
             else:
                 t = i / float(ngroups - 1)
-            yield '.%s {background-color: rgb%s}' % (css_class, self.gradient(t))
+            yield '.%s {background-color: rgb%s}' % (
+                    css_class, self.gradient(t))
 
     def gen_legend_lines(self):
         for i, (low, high) in enumerate(self.discretizer.get_boundaries()):
@@ -123,9 +124,11 @@ class Legend:
             low_string = '%f' % low
             high_string = '%f' % high
             if low_string == high_string:
-                line = '<span class="%s">&nbsp;</span> %s' % (css_class, low_string)
+                line = '<span class="%s">&nbsp;</span> %s' % (
+                        css_class, low_string)
             else:
-                line = '<span class="%s">&nbsp;</span> [%s, %s]' % (css_class, low_string, high_string)
+                line = '<span class="%s">&nbsp;</span> [%s, %s]' % (
+                        css_class, low_string, high_string)
             yield line
 
 
@@ -199,7 +202,7 @@ class PreHeatMap(HtmlHeatMap):
 
 class HeatMap:
     """
-    Creates a basic heatmap from a row major matrix and a number of heat levels.
+    Creates a basic heatmap from a row major matrix and heat level count.
     The purpose is simply to visualize a matrix.
     """
 
@@ -221,8 +224,9 @@ class HeatMap:
 
     def _gen_table_rows(self):
         """
+        Get an html string defining a row of color blocks within an html table.
         Note that for flexibility the tr tag is not used here.
-        @return: an html string defining a row of color blocks within an html table
+        @return: html string
         """
         for row in self.row_major_matrix:
             arr = []
@@ -233,8 +237,9 @@ class HeatMap:
 
     def _gen_pre_lines(self):
         """
+        Get an html string defining a row of color blocks within a pre block.
         Note that for flexibility the pre tag is not used here.
-        @return: an html string defining a row of color blocks within an html pre block
+        @return: html string
         """
         for row in self.row_major_matrix:
             arr = []
@@ -249,7 +254,8 @@ class HeatMap:
 
 class LabeledHeatMap(HeatMap):
 
-    def __init__(self, row_major_matrix, max_categories, row_labels, column_labels):
+    def __init__(self, row_major_matrix, max_categories,
+            row_labels, column_labels):
         """
         @param row_major_matrix: a row major matrix of heat values
         @param max_categories: the maximum number of heat levels
@@ -265,8 +271,7 @@ class LabeledHeatMap(HeatMap):
         @return: row labels padded to the length of the longest row label
         """
         rmax = max(len(s) for s in self.row_labels)
-        row_labels = [Monospace.left_justify(label, rmax, '.') for label in self.row_labels]
-        return row_labels
+        return [Monospace.left_justify(x, rmax, '.') for x in self.row_labels]
 
     def _get_padded_column_labels(self):
         """
@@ -279,8 +284,7 @@ class LabeledHeatMap(HeatMap):
         rmax = max(len(s) for s in self.row_labels)
         cmax = max(len(s) for s in self.column_labels)
         column_labels = [''] * rmax + self.column_labels
-        column_labels = [Monospace.left_justify(label, cmax, '.') for label in column_labels]
-        return column_labels
+        return [Monospace.left_justify(x, cmax, '.') for x in column_labels]
 
     def _gen_table_rows(self):
         """
@@ -320,7 +324,9 @@ class TestHeatMap(unittest.TestCase):
         max_categories = 3
         row_labels = list('12345')
         column_labels = list('ABCDEFGHIJ')
-        heatmap = LabeledHeatMap(sample_row_major_matrix, max_categories, row_labels, column_labels)
+        heatmap = LabeledHeatMap(
+                sample_row_major_matrix, max_categories,
+                row_labels, column_labels)
         renderer = PreHeatMap(heatmap)
         renderer.get_example_html()
 
@@ -328,7 +334,9 @@ class TestHeatMap(unittest.TestCase):
         max_categories = 3
         row_labels = list('12345')
         column_labels = list('ABCDEFGHIJ')
-        heatmap = LabeledHeatMap(sample_row_major_matrix, max_categories, row_labels, column_labels)
+        heatmap = LabeledHeatMap(
+                sample_row_major_matrix, max_categories,
+                row_labels, column_labels)
         renderer = TableHeatMap(heatmap)
         renderer.get_example_html()
 
@@ -344,7 +352,10 @@ def run(out, format):
         raise NotImplementedError('the format "%s" is not implemented' % format)
     out.write(renderer.get_example_html())
 
-def main():
+def old_main():
+    """
+    This has a bunch of stuff that used to be used in standalone mode.
+    """
     valid_formats = ('pre', 'table', 'numeric')
     from optparse import OptionParser
     parser = OptionParser()
@@ -358,18 +369,14 @@ def main():
         print 'invalid --format parameter:', options.format, 'is not in', valid_formats
         return
     # run a test or run a demo
-    if options.test:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestHeatMap)
-        unittest.TextTestRunner(verbosity=2).run(suite)
+    if options.output_filename == '-':
+        out = sys.stdout
     else:
-        if options.output_filename == '-':
-            out = sys.stdout
-        else:
-            out = open(options.output_filename, 'w')
-        run(out, options.format)
-        if out is not sys.stdout:
-            out.close()
+        out = open(options.output_filename, 'w')
+    run(out, options.format)
+    if out is not sys.stdout:
+        out.close()
 
 if __name__ == '__main__':
-    main()
+    unittest.main()
 
