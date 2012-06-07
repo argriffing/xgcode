@@ -3,11 +3,6 @@ Check the spectral effect of adding a sink state to a reversible Markov model.
 """
 
 from StringIO import StringIO
-import random
-import math
-import itertools
-from itertools import combinations
-from itertools import product
 
 import numpy as np
 import scipy
@@ -16,12 +11,7 @@ from scipy import linalg
 import Form
 import FormOut
 import mrate
-import ctmcmi
-import cheeger
-import msimpl
-import iterutils
 import MatrixUtil
-from MatrixUtil import ndot
 
 
 def get_form():
