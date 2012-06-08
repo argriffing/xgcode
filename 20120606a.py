@@ -1,5 +1,5 @@
 """
-Modify a sequence alignment within a BEAST xml, by taking a column subset. [UNFINISHED]
+Modify a sequence alignment within a BEAST xml, by taking a column subset.
 
 The number of MCMC steps is also set.
 The web interface modifies the primates.xml from the BEAST tutorial.
@@ -50,10 +50,11 @@ def process(fs, xmldata):
     alignment_id = fs.alignment_id
     # read the xml tree
     tree = etree.parse(StringIO(xmldata))
-    # modify the xml tree
+    # modify the number of mcmc steps
     for event, element in etree.iterwalk(tree, tag='mcmc'):
         if element.get('id') == fs.mcmc_id:
             element.set('chainLength', str(fs.nsteps))
+    # modify the sequences within the alignment
     for event, element in etree.iterwalk(tree, tag='alignment'):
         if element.get('id') == fs.alignment_id:
             for seq_element in element:
