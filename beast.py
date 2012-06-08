@@ -6,15 +6,100 @@ This assumes that BEAST is on the path and that BEAGLE has been installed.
 2) write the "<basepath>/myjob.xml" file referencing "myjob.log"
 3) run_beast(basepath)
 4) run_loganalyser(basepath)
+The module also has a couple of functions to modify the BEAST xml files.
+Perhaps these should be moved into their own module.
 """
 
+from StringIO import StringIO
 import subprocess
 import time
 import os
 import tempfile
 
+from lxml import etree
+
 import Util
 
+def set_log_logevery(xmldata, log_id, logevery):
+    """
+    Sometimes the log id is fileLog.
+    @param xmldata: xml file contents
+    @param log_id: id of the log xml element
+    @param logevery: log the statistics once every this many mcmc steps
+    @return: new xml file contents
+    """
+    # read the xml tree
+    tree = etree.parse(StringIO(xmldata))
+    # modify the logging frequency
+    for event, element in etree.iterwalk(tree, tag='log'):
+        if element.get('id') == log_id:
+            element.set('logEvery', str(logevery))
+    # write the xml tree
+    return etree.tostring(tree)
+
+def set_log_filename(xmldata, log_id, filename):
+    """
+    Sometimes the log id is fileLog.
+    @param xmldata: xml file contents
+    @param log_id: id of the log xml element
+    @param filename: name of the logfile
+    @return: new xml file contents
+    """
+    # read the xml tree
+    tree = etree.parse(StringIO(xmldata))
+    # modify the log filename
+    for event, element in etree.iterwalk(tree, tag='log'):
+        if element.get('id') == log_id:
+            element.set('fileName', str(filename))
+    # write the xml tree
+    return etree.tostring(tree)
+
+def set_nsamples(xmldata, mcmc_id, nsamples):
+    """
+    @param xmldata: xml file contents
+    @param mcmc_id: id of the mcmc xml element
+    @param nsamples: target number of samples
+    @return: new xml file contents
+    """
+    # read the xml tree
+    tree = etree.parse(StringIO(xmldata))
+    # modify the number of mcmc steps
+    for event, element in etree.iterwalk(tree, tag='mcmc'):
+        if element.get('id') == mcmc_id:
+            element.set('chainLength', str(nsamples))
+    # write the xml tree
+    return etree.tostring(tree)
+
+def _modify_taxon_sequence(taxon_element, start_pos, stop_pos):
+    """
+    This is a helper function for xml modification.
+    """
+    sequence = taxon_element.tail.strip()
+    taxon_element.tail = sequence[start_pos-1 : stop_pos]
+
+def set_alignment_interval(xmldata, alignment_id, start_pos, stop_pos):
+    """
+    @param xmldata: xml file contents
+    @param alignment_id: id of the alignment xml element
+    @param start_pos: one-based start position
+    @param stop_pos: one-based inclusive stop position
+    @return: new xml file contents
+    """
+    # read the xml tree
+    tree = etree.parse(StringIO(xmldata))
+    # modify the sequences within the alignment
+    for event, element in etree.iterwalk(tree, tag='alignment'):
+        if element.get('id') == alignment_id:
+            for seq_element in element:
+                if seq_element.tag != 'sequence':
+                    continue
+                for taxon_element in seq_element:
+                    if taxon_element.tag != 'taxon':
+                        continue
+                    _modify_taxon_sequence(
+                            taxon_element, start_pos, stop_pos)
+    # write the xml tree
+    return etree.tostring(tree)
 
 def prepare():
     """

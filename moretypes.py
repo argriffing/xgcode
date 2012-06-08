@@ -1,5 +1,5 @@
 """
-Simple types for argparse.
+Constrained simple types for argparse.
 """
 
 def _int(x):
@@ -28,6 +28,28 @@ def positive_float(x):
         raise TypeError('expected a positive float')
     return x
 
+def nonneg_int(x):
+    x = _int(x)
+    if x < 0:
+        raise TypeError('expected a non-negative integer')
+
+def pos_int(x):
+    x = _int(x)
+    if x < 1:
+        raise TypeError('expected a positive integer')
+    return x
+
+def nonneg_float(x):
+    x = _float(x)
+    if x < 0:
+        raise TypeError('expected a non-negative float')
+
+def pos_float(x):
+    x = _float(x)
+    if x <= 0:
+        raise TypeError('expected a positive float')
+    return x
+
 class int_ge:
     def __init__(self, k):
         self.k = k
@@ -41,3 +63,4 @@ class int_ge:
 def whitespace_separated_sequence(s):
     seq = s.split()
     return tuple(seq)
+

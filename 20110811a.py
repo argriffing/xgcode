@@ -22,7 +22,7 @@ import bezier
 import sympyutils
 import bezintersect
 import color
-import typeutils
+import moretypes
 
 STYLE_X = 'x-style'
 STYLE_Y = 'y-style'
@@ -209,10 +209,10 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--width',
-            default=6, type=typeutils.positive_float,
+            default=6, type=moretypes.pos_float,
             help='max width in default tikz units')
     parser.add_argument('--height',
-            default=6, type=typeutils.positive_float,
+            default=6, type=moretypes.pos_float,
             help='max height in default tikz units')
     parser.add_argument('--outdir',
             default='', help='output directory')

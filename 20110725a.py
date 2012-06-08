@@ -18,7 +18,7 @@ import FormOut
 import tikz
 import color
 import interlace
-import typeutils
+import moretypes
 
 def get_form():
     """
@@ -158,11 +158,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--ncurves', type=typeutils.positive_integer,
+    parser.add_argument('--ncurves', type=moretypes.pos_int,
             default=3, help='plot this many curves on top of the x axis')
-    parser.add_argument('--nsegs', type=typeutils.positive_integer,
+    parser.add_argument('--nsegs', type=moretypes.pos_int,
             default=10, help='use a piecewise bezier with this many segments')
-    parser.add_argument('--nframes', type=typeutils.positive_integer,
+    parser.add_argument('--nframes', type=moretypes.pos_int,
             default=3, help='make this many files like frame????.tikz')
     parser.add_argument('--outdir',
             default='', help='output directory')

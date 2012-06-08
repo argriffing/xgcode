@@ -20,7 +20,6 @@ import interlacesample
 import pcurve
 import sympyutils
 import color
-import typeutils
 import iterutils
 
 
