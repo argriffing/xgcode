@@ -85,45 +85,33 @@ def get_table_string_and_scripts(
         midpoint = (start_pos + stop_pos) / 2.0
         interval_xml_data = beast.set_alignment_interval(
                 xmldata, alignment_id, start_pos, stop_pos)
-        arr = get_loganalysis_array(interval_xml_data)
-        """
-			0 <posterior idref="posterior"/>
-			1 <treeLikelihood idref="treeLikelihood"/>
-			2 <speciationLikelihood idref="speciation"/>
-			3 <rateStatistic idref="meanRate"/>
-			4 <parameter idref="treeModel.rootHeight"/>
-			5 <parameter idref="yule.birthRate"/>
-			6 <parameter idref="gtr.ac"/>
-			7 <parameter idref="gtr.ag"/>
-			8 <parameter idref="gtr.at"/>
-			9 <parameter idref="gtr.cg"/>
-		    10 <parameter idref="gtr.gt"/>
-			11 <parameter idref="siteModel.alpha"/>
-			12 <parameter idref="siteModel.pInv"/>
-			13 <parameter idref="ucld.mean"/>
-			14 <parameter idref="ucld.stdev"/>
-			15 <rateStatistic idref="coefficientOfVariation"/>
-			16 <rateCovarianceStatistic idref="covariance"/>
-        """
-        # define indices
-        mean_index = 4
-        var_index = 16
-        cov_index = 17
-        # extract the statistics
-        mean_low = arr[mean_index][4]
-        mean_mean = arr[mean_index][1]
-        mean_high = arr[mean_index][5]
-        var_low = arr[var_index][4]
-        var_mean = arr[var_index][1]
-        var_high = arr[var_index][5]
-        cov_low = arr[cov_index][4]
-        cov_mean = arr[cov_index][1]
-        cov_high = arr[cov_index][5]
+        row_labels, col_labels, arr = get_loganalysis_labeled_array(
+                interval_xml_data)
+        stat_name_to_row_index = dict(
+                (x, i) for i, x in enumerate(row_labels))
+        summary_name_to_col_index = dict(
+                (x, i) for i, x in enumerate(col_labels))
+        # define row indices of interest
+        mean_row_index = stat_name_to_row_index['meanRate']
+        var_row_index = stat_name_to_row_index['coefficientOfVariation']
+        cov_row_index = stat_name_to_row_index['covariance']
+        # define column indices of interest
+        mean_col_index = summary_name_to_col_index['mean']
+        low_col_index = summary_name_to_col_index['hpdLower']
+        high_col_index = summary_name_to_col_index['hpdUpper']
         row = [
-                sequence_length, midpoint,
-                mean_low, mean_mean, mean_high,
-                var_low, var_mean, var_high,
-                cov_low, cov_mean, cov_high]
+                sequence_length,
+                midpoint,
+                arr[mean_row_index][low_col_index],
+                arr[mean_row_index][mean_col_index],
+                arr[mean_row_index][high_col_index],
+                arr[var_row_index][low_col_index],
+                arr[var_row_index][mean_col_index],
+                arr[var_row_index][high_col_index],
+                arr[cov_row_index][low_col_index],
+                arr[cov_row_index][mean_col_index],
+                arr[cov_row_index][high_col_index],
+                ]
         data_arr.append(row)
         sequence_lengths.append(sequence_length)
         midpoints.append(midpoint)
@@ -135,7 +123,7 @@ def get_table_string_and_scripts(
     # return the table string and scripts
     return table_string, scripts
 
-def get_loganalysis_array(xmldata):
+def get_loganalysis_text(xmldata):
     # prepare the base path for the beast analysis
     basepath = beast.prepare()
     with open(os.path.join(basepath, 'myjob.xml'), 'w') as fout:
@@ -145,9 +133,15 @@ def get_loganalysis_array(xmldata):
     # read the analysis
     with open(os.path.join(basepath, 'myjob-loganalyser.txt')) as fin:
         analysis_text = fin.read()
-    # parse the analysis
-    arr = beast.loganalyser_to_array(analysis_text)
-    return arr
+    return analysis_text
+
+def get_loganalysis_array(xmldata):
+    analysis_text = get_loganalysis_text(xmldata)
+    return beast.loganalyser_to_array(analysis_text)
+
+def get_loganalysis_labeled_array(xmldata):
+    analysis_text = get_loganalysis_text(xmldata)
+    return beast.loganalyser_to_labeled_array(analysis_text)
 
 def main(args):
     # check args

@@ -20,6 +20,11 @@ from lxml import etree
 
 import Util
 
+g_loganalyser_headers = [
+        'statistic', 'mean', 'stdErr', 'median',
+        'hpdLower', 'hpdUpper', 'ESS',
+        '50hpdLower', '50hpdUpper']
+
 def set_log_logevery(xmldata, log_id, logevery):
     """
     Sometimes the log id is fileLog.
@@ -183,25 +188,39 @@ def loganalyser_to_array(lstr):
     @return: an array whose first row is headers
     """
     arr = []
-    expected_headers = [
-            'statistic', 'mean', 'stdErr', 'median',
-            'hpdLower', 'hpdUpper', 'ESS',
-            '50hpdLower', '50hpdUpper']
     lines = [line.strip() for line in lstr.splitlines()]
     if not lines[0].startswith('burnIn'):
         msg = 'expected the first line to start with burnIn'
         raise LoganalyserParsingError(msg)
-    if lines[1].split() != expected_headers:
-        msg = 'expected the second line to have the headers'
-        raise LoganalyserParsingError(msg)
-    arr.append(expected_headers)
+    second_line_entries_observed = lines[1].split()
+    if second_line_entries_observed != g_loganalyser_headers:
+        raise LoganalyserParsingError(
+                'expected the second line to have the headers; '
+                'observed entries: %s '
+                'expected entries: %s ' % (
+                    second_line_entries_observed, g_loganalyser_headers))
+    arr.append(g_loganalyser_headers)
     for line in lines[2:]:
         # stop if we reach a blank line
         if not line:
             break
         # add the row to the array
-        row = line.split()[:len(expected_headers)]
+        row = line.split()[:len(g_loganalyser_headers)]
         row = [row[0]] + [float(x) for x in row[1:]]
         arr.append(row)
     return arr
+
+def loganalyser_to_labeled_array(lstr):
+    """
+    @param lstr: contents of a loganalyser file
+    @return: row labels, column labels, array
+    """
+    arr_in = loganalyser_to_array(lstr)
+    row_labels = zip(*arr_in)[0][1:]
+    column_labels = arr_in[0][1:]
+    arr_out = []
+    for row_in in arr_in[1:]:
+        row_out = [float(x) for x in row_in[1:]]
+        arr_out.append(row_out)
+    return row_labels, column_labels, arr_out
 
