@@ -66,7 +66,7 @@ def get_response_content(fs):
     s = '\n'.join('\t'.join(str(x) for x in row) for row in arr) + '\n'
     return s
 
-def get_table_string_and_scripts(
+def get_table_strings_and_scripts(
         xmldata, alignment_id, start_stop_pairs,
         nsamples):
     """
@@ -75,7 +75,10 @@ def get_table_string_and_scripts(
     @param alignment_id: xml element id
     @param start_stop_pairs: alignment interval bounds
     @param nsamples: an extra parameter for script generation
+    @return: short table string, long table string, scripts (for short table)
     """
+    # init the array for the full R table
+    full_data_arr = []
     # build the array for the R table
     data_arr = []
     sequence_lengths = []
@@ -113,15 +116,38 @@ def get_table_string_and_scripts(
                 arr[cov_row_index][high_col_index],
                 ]
         data_arr.append(row)
+        # add rows to the full data array
+        for row_index, row_label in enumerate(row_labels):
+            for col_index, col_label in enumerate(col_labels):
+                row = [
+                        sequence_length,
+                        midpoint,
+                        '"' + row_label + '"',
+                        '"' + col_label + '"',
+                        arr[row_index][col_index],
+                        ]
+                full_data_arr.append(row)
+        # add entries to some utility arrays
         sequence_lengths.append(sequence_length)
         midpoints.append(midpoint)
-    # build the table string
+    # build the table strings
     table_string = RUtil.get_table_string(data_arr, g_headers)
+    full_table_string = RUtil.get_table_string(
+            full_data_arr,
+            [
+                'sequence.length',
+                'midpoint',
+                'statistic.name',
+                'posterior.analysis',
+                'value'
+                ],
+            force_float=False,
+            )
     # get the scripts
     scripts = beasttut.get_ggplot2_scripts(
             nsamples, sequence_lengths, midpoints)
     # return the table string and scripts
-    return table_string, scripts
+    return table_string, full_table_string, scripts
 
 def get_loganalysis_text(xmldata):
     # prepare the base path for the beast analysis
@@ -171,8 +197,12 @@ def main(args):
             (a+1,b) for a, b in beasttiling.gen_hierarchical_slices(
                 args.tile_width, args.offset, args.tile_width * args.ntiles))
     f.info('(local) run BEAST serially locally and build the R stuff')
-    table_string, scripts = get_table_string_and_scripts(
+    table_string, full_table_string, scripts = get_table_strings_and_scripts(
             xmldata, args.alignment_id, start_stop_pairs, args.nsamples)
+    if args.full_table_out:
+        f.info('(local) create the verbose R table')
+        with open(args.full_table_out, 'w') as fout:
+            fout.write(full_table_string)
     f.info('(local) create the composite R script')
     out = StringIO()
     print >> out, 'library(ggplot2)'
@@ -209,6 +239,10 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose',
             action='store_true',
             help='show more info')
+    #
+    # optionally write a more verbose R table
+    parser.add_argument('--full_table_out',
+            help='write a verbose R table to this location')
     #
     # define the mcmc id and the number of samples
     parser.add_argument('--mcmc_id',

@@ -311,7 +311,7 @@ def run_plotter_no_table(user_script_content, device_name,
         os.unlink(temp_plot_name)
     return retcode, r_out, r_err, image_data
 
-def get_table_string(M, column_headers):
+def get_table_string(M, column_headers, force_float=True):
     """
     Convert a row major rate matrix to a string representing an R table.
     @param M: a row major matrix
@@ -331,7 +331,10 @@ def get_table_string(M, column_headers):
     lines = []
     lines.append('\t'.join([''] + list(column_headers)))
     for i, row in enumerate(M):
-        R_row = [float_to_R(value) for value in row]
+        if force_float:
+            R_row = [float_to_R(value) for value in row]
+        else:
+            R_row = [str(value) for value in row]
         lines.append('\t'.join([str(i+1)] + R_row))
     return '\n'.join(lines)
 
