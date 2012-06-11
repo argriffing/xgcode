@@ -211,7 +211,7 @@ def run_plotter(table, user_script_content, device_name,
     @param keep_intermediate: a flag to keep the intermediate files
     @return: returncode, r_stdout, r_stderr, image_data
     """
-    temp_table_name = Util.create_tmp_file(table)
+    temp_table_name = Util.create_tmp_file(table, suffix='.table')
     temp_plot_name = Util.get_tmp_filename()
     s = StringIO()
     print >> s, 'my.table <- read.table("%s")' % temp_table_name
@@ -222,7 +222,7 @@ def run_plotter(table, user_script_content, device_name,
     print >> s, user_script_content
     print >> s, 'dev.off()'
     script_content = s.getvalue()
-    temp_script_name = Util.create_tmp_file(script_content)
+    temp_script_name = Util.create_tmp_file(script_content, suffix='.R')
     retcode, r_out, r_err = run(temp_script_name)
     image_data = None
     if not retcode:
