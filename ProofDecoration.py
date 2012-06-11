@@ -82,8 +82,7 @@ def assemble_corners(A, B, C, D):
         return np.vstack([np.hstack([A, B]), np.hstack([C, D])])
     except ValueError as e:
         arr = [A.shape, B.shape, C.shape, D.shape]
-        msg = ', '.join(str(x) for x in arr)
-        raise ValueError(msg)
+        raise ValueError(', '.join(str(x) for x in arr))
 
 def tree_to_leaf_first_ids(tree):
     ordered_ids = []

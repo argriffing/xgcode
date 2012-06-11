@@ -190,8 +190,8 @@ def loganalyser_to_array(lstr):
     arr = []
     lines = [line.strip() for line in lstr.splitlines()]
     if not lines[0].startswith('burnIn'):
-        msg = 'expected the first line to start with burnIn'
-        raise LoganalyserParsingError(msg)
+        raise LoganalyserParsingError(
+                'expected the first line to start with burnIn')
     second_line_entries_observed = lines[1].split()
     if second_line_entries_observed != g_loganalyser_headers:
         raise LoganalyserParsingError(

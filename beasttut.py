@@ -495,26 +495,25 @@ def read_log(log_loc, nsamples_expected):
     expected = nsamples_expected + 3 + 1
     observed = len(lines)
     if expected != observed:
-        msg= 'expected %d lines but observed %d' % (expected, observed)
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError(
+                'expected %d lines but observed %d' % (expected, observed))
     # check the first line
     expected = '# BEAST'
     if not lines[0].startswith(expected):
-        msg = 'expected the first line to start with ' + expected
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError(
+                'expected the first line to start with ' + expected)
     # check the second line
     expected = '# Generated'
     if not lines[1].startswith(expected):
-        msg = 'expected the second line to start with ' + expected
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError(
+                'expected the second line to start with ' + expected)
     # check the third line
     values = lines[2].split()
     if len(values) != 4:
-        msg = 'expected the third line to have four column labels'
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError(
+                'expected the third line to have four column labels')
     if values != ['state', 'meanRate', 'coefficientOfVariation', 'covariance']:
-        msg = 'unexpected column labels on the third line'
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError('unexpected column labels on the third line')
     # read the rest of the lines
     means = []
     variations = []

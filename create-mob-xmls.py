@@ -12,8 +12,7 @@ import mobyle
 
 def main(args):
     if bool(args.manifest) == bool(args.create_all):
-        msg = 'expected exactly one of {manifest, create_all}'
-        raise ValueError(msg)
+        raise ValueError('expected exactly one of {manifest, create_all}')
     if args.manifest:
         with open(args.manifest) as fin:
             module_names = [x.strip() for x in fin]

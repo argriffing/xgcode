@@ -66,8 +66,8 @@ class ChromoSkimmer:
             name = row[0]
             if name != self.last_name:
                 if name in self.name_set:
-                    msg = 'each chromsome should be a contiguous block'
-                    raise Exception(msg)
+                    raise ValueError(
+                            'each chromsome should be a contiguous block')
                 yield name
                 self.name_set.add(name)
                 self.name_list.append(name)
@@ -84,17 +84,19 @@ def check_chromo_monotonicity(rows):
     # scan the input file for formatting
     name_to_last_pos = {}
     for i, row in enumerate(rows):
-        msg = 'the first two values of each row should be name and position'
         if len(row) < 2:
-            raise Exception(msg)
+            raise ValueError(
+                    'the first two values of each row '
+                    'should be name and position')
         name, pos = row[0], row[1]
         if type(pos) is not int:
-            raise Exception('the position should be an integer')
+            raise ValueError('the position should be an integer')
         last_pos = name_to_last_pos.get(name, None)
-        msg = 'expected strictly increasing positions per chromosome'
         if last_pos is not None:
             if last_pos >= pos:
-                raise Exception(msg)
+                raise ValueError(
+                        'expected strictly increasing '
+                        'positions per chromosome')
         name_to_last_pos[name] = pos
         yield i
 
@@ -107,13 +109,15 @@ def filtered_pileup_row_to_typed(values):
     if len(values) != 16:
         raise DGRPError('expected 16 values per line')
     if values[2] not in ambignt.g_resolve_nt:
-        msg = 'the reference allele should be a nucleotide code: ' + values[2]
-        raise DGRPError(msg)
-    msg = 'literal A, C, G, T letters were not found where expected'
+        raise DGRPError(
+                'the reference allele '
+                'should be a nucleotide code: ' + values[2])
     if values[5] != 'A' or values[7] != 'C':
-        raise DGRPError(msg)
+        raise DGRPError(
+                'literal A, C, G, T letters were not found where expected')
     if values[9] != 'G' or values[11] != 'T':
-        raise DGRPError(msg)
+        raise DGRPError(
+                'literal A, C, G, T letters were not found where expected')
     typed_values = [
             values[0], int(values[1]), values[2],
             values[3], int(values[4]),

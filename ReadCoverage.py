@@ -64,13 +64,14 @@ class Mixture:
         if not len(states):
             raise ValueError('no states were specified')
         if len(states) != len(distribution):
-            msg = 'the number of states should match the distribution length'
-            raise ValueError(msg)
+            raise ValueError(
+                    'the number of states '
+                    'should match the distribution length')
         if not np.allclose(sum(distribution), 1):
             raise ValueError('expected the distribution to sum to 1.0')
         if min(distribution) < 0:
-            msg = 'expected the distribution to be a stochastic vector'
-            raise ValueError(msg)
+            raise ValueError(
+                    'expected the distribution to be a stochastic vector')
         # store the arguments, leaving out states with zero probability
         self.states = [state for state, d in zip(states, distribution) if d]
         self.distribution = [d for d in distribution if d]

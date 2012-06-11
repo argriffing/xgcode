@@ -528,7 +528,7 @@ class TestBuildTreeTopology(unittest.TestCase):
             [2.5, 3.5, 0]])
         index_set = set([2,3])
         D_out_a = update_generalized_nj(D, index_set)
-        self.assertTrue(np.allclose(D_out_a_expected, D_out_a), msg=D_out_a)
+        self.assertTrue(np.allclose(D_out_a_expected, D_out_a), D_out_a)
         # check the second successor distance matrix
         D_out_b_expected = ([
             [0, 5.5, 6.5],
@@ -536,7 +536,7 @@ class TestBuildTreeTopology(unittest.TestCase):
             [6.5, 9, 0]])
         index_set = set([0,1])
         D_out_b = update_generalized_nj(D, index_set)
-        self.assertTrue(np.allclose(D_out_b_expected, D_out_b), msg=D_out_b)
+        self.assertTrue(np.allclose(D_out_b_expected, D_out_b), D_out_b)
 
     def test_update_generalized_nj_big(self):
         """
