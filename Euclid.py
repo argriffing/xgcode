@@ -428,18 +428,18 @@ class TestEuclid(unittest.TestCase):
             X = edm_to_weighted_points(D, m)
             # check one way of getting the distance matrix back from the points
             D_prime = dccov_to_edm(np.dot(X, X.T))
-            msg = (D, D_prime)
-            self.assertTrue(np.allclose(D, D_prime), msg)
+            context = (D, D_prime)
+            self.assertTrue(np.allclose(D, D_prime), context)
             # Check one way of getting the distance matrix back from the cross product matrix.
             # This is equation (4) of the 2007 Abdi chapter.
             S = edm_to_weighted_cross_product(D, m)
             D_prime = dccov_to_edm(S)
-            msg = (D, D_prime)
-            self.assertTrue(np.allclose(D, D_prime), msg)
+            context = (D, D_prime)
+            self.assertTrue(np.allclose(D, D_prime), context)
             # compute the pairwise distances of these points
             D_prime = np.array([[np.dot(pb-pa, pb-pa) for pa in X] for pb in X])
-            msg = (D, D_prime)
-            self.assertTrue(np.allclose(D, D_prime), msg)
+            context = (D, D_prime)
+            self.assertTrue(np.allclose(D, D_prime), context)
 
 
 if __name__ == '__main__':

@@ -25,8 +25,7 @@ class LatexPackageError(Exception): pass
 
 def assert_latexformat(latexformat):
     if latexformat not in g_latexformats:
-        msg = 'invalid requested format: ' + latexformat
-        raise ValueError(msg)
+        raise ValueError('invalid requested format: ' + latexformat)
 
 def m_to_latex_string(matrix):
     """
@@ -271,8 +270,8 @@ def get_response(
     # has not been requested, then show the most optimistic settings.
     if missing_list:
         if latexformat in (LATEXFORMAT_PDF, LATEXFORMAT_PNG):
-            msg = 'missing LaTeX packages: ' + ' '.join(missing_list)
-            raise LatexPackageError(msg)
+            raise LatexPackageError(
+                    'missing LaTeX packages: ' + ' '.join(missing_list))
         else:
             documentclass = requested_documentclass
             usepackage_list = sorted(requested_set)
@@ -314,8 +313,8 @@ def get_centered_figure_response(
     if latexformat in (LATEXFORMAT_PDF, LATEXFORMAT_PNG):
         missing_list = sorted(requested_pkg_set - installed_pkg_set)
         if missing_list:
-            msg = 'missing LaTeX packages: ' + ' '.join(missing_list)
-            raise LatexPackageError(msg)
+            raise LatexPackageError(
+                    'missing LaTeX packages: ' + ' '.join(missing_list))
     # define the usepackage text
     usepackage_list = sorted(requested_pkg_set)
     usepackage_lines = ['\\usepackage{%s}' % s for s in usepackage_list]

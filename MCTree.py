@@ -369,7 +369,7 @@ class TestMCTree(unittest.TestCase):
             frozenset([frozenset([2, 3, 5]), frozenset([1, 4])])])
         a, b, c = mc_tree
         for alpha, beta in ((a, b), (b, c), (c, a)):
-            result, comment = split_consistency(alpha, beta, verbose=True)
+            result, comment = split_consistency_verbose(alpha, beta)
             print comment
         # get the trees compatible with this set of splits
         N = 6

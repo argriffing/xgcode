@@ -25,19 +25,6 @@ class SnippetTestError(Exception): pass
 
 np.seterr(all='raise')
 
-# failed attempt to catch numpy/scipy warnings
-"""
-except Warning as e:
-    msg = 'warning getting the response: ' + str(e)
-    raise SnippetTestError(msg)
-"""
-
-# another failed attempt to catch numpy/scipy warnings
-"""
-with warnings.catch_warnings():
-    warnings.simplefilter('error')
-"""
-
 def process_module_name(module_name, bad_modules):
     """
     @param module_name: name of the snippet module to try to run
@@ -53,21 +40,17 @@ def process_module_name(module_name, bad_modules):
                 'get_response_content']
         module = __import__(module_name, globals(), locals(),
                 requested_methods)
-    except:
-        error_message = str(sys.exc_info()[1])
-        msg = 'error importing the snippet: ' + error_message
-        raise SnippetTestError(msg)
+    except Exception as e:
+        raise SnippetTestError('error importing the snippet: ' + str(e))
     if any(hasattr(module, x) for x in bad_modules):
-        msg = 'skipping because the snippet imports a disallowed module'
-        raise SnippetTestError(msg)
+        raise SnippetTestError(
+                'skipping because the snippet imports a disallowed module')
     try:
         response = module.get_form()
         form_body = Form.get_html_string(response)
         form_html = '<form>' + form_body  + '</form>'
-    except:
-        error_message = str(sys.exc_info()[1])
-        msg = 'get form: ' + error_message
-        raise SnippetTestError(msg)
+    except Exception as e:
+        raise SnippetTestError('get form: ' + str(e))
     # parse the default html parameters from the html string
     document = ht.fragment_fromstring(form_html)
     html_form = document.forms[0]
@@ -79,8 +62,7 @@ def process_module_name(module_name, bad_modules):
         for form_item in response:
             form_item.process_fieldstorage(mock_field_storage)
     except Form.FormError as e:
-        msg = 'default error: ' + str(e)
-        raise SnippetTestError(msg)
+        raise SnippetTestError('default error: ' + str(e))
     # get the result of calling the function
     # using the default parameter values
     if hasattr(module, 'get_response_content'):
@@ -88,19 +70,15 @@ def process_module_name(module_name, bad_modules):
             response = module.get_response_content(mock_field_storage)
             if response is None:
                 raise SnippetTestError('no response')
-        except:
-            error_message = str(sys.exc_info()[1])
-            msg = 'get response content: ' + error_message
-            raise SnippetTestError(msg)
+        except Exception as e:
+            raise SnippetTestError('get response content: ' + str(e))
         else:
             return module, True
     elif hasattr(module, 'get_response'):
         try:
             module.get_response(mock_field_storage)
-        except:
-            error_message = str(sys.exc_info()[1])
-            msg = 'get response: ' + error_message
-            raise SnippetTestError(msg)
+        except Exception as e:
+            raise SnippetTestError('get response: ' + str(e))
         else:
             return module, True
     return module, False

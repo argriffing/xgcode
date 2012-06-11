@@ -76,8 +76,9 @@ class Bar:
         @param progress: the total amount of progress made so far
         """
         if not (0 <= progress <= self.high):
-            msg = 'progress %d is not in [%d, %d]' % (progress, 0, self.high)
-            raise ValueError(msg)
+            raise ValueError(
+                    'progress %d is not '
+                    'in [%d, %d]' % (progress, 0, self.high))
         if not self.finished:
             self.progress = progress
             nfilled = self.get_nfilled()

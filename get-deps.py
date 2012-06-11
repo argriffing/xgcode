@@ -11,8 +11,7 @@ import meta
 def main(args):
     if args.module:
         if not args.module.endswith('.py'):
-            msg = 'expected the module filename to end with .py'
-            raise ValueError(msg)
+            raise ValueError('expected the module filename to end with .py')
         module_names = [args.module[:-3]]
     if args.manifest:
         with open(args.manifest) as fin:

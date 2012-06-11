@@ -60,8 +60,9 @@ def get_xml(usermod, module_name, short_name):
     if hasattr(usermod, 'get_form_out'):
         form_out = usermod.get_form_out()
     else:
-        msg = 'snippet %s provides no output format information' % module_name
-        raise FormOutError(msg)
+        raise FormOutError(
+                'snippet %s provides no output '
+                'format information' % module_name)
     doc_lines = Util.get_stripped_lines(usermod.__doc__.splitlines())
     try:
         tags = usermod.g_tags
@@ -125,10 +126,8 @@ def add_xml_files(galaxy_root, module_names, short_name_length, tools_subdir):
         try:
             xml_content = get_xml(usermod, name, short_name)
             nsuccesses += 1
-        except:
-            error_message = str(sys.exc_info()[1])
-            msg = '%s: error making xml: %s' % (name, error_message)
-            print >> sys.stderr, msg
+        except Exception as e:
+            print >> sys.stderr, '%s: error making xml: %s' % (name, str(e))
             nfailures += 1
         if xml_content:
             xml_filename = short_name + '.xml'
@@ -171,10 +170,8 @@ def add_xml_archive_files(module_names, short_name_length, archive):
         try:
             xml_content = get_xml(usermod, name, short_name)
             nsuccesses += 1
-        except:
-            error_message = str(sys.exc_info()[1])
-            msg = '%s: error making xml: %s' % (name, error_message)
-            print >> sys.stderr, msg
+        except Exception as e:
+            print >> sys.stderr, '%s: error making xml: %s' % (name, str(e))
             nfailures += 1
         if xml_content:
             xml_pathname = os.path.join(archive, short_name + '.xml')
@@ -228,11 +225,11 @@ def get_suite_config_xml(added_infos, suite_name):
 def main_non_archive(args):
     # validation
     if not args.galaxy_root:
-        msg = 'in non-archive mode the galaxy root must be specified'
-        raise ValueError(msg)
+        raise ValueError(
+                'in non-archive mode the galaxy root must be specified')
     if not args.tools_subdir:
-        msg = 'in non-archive mode the tools subdirectory must be specified'
-        raise ValueError(msg)
+        raise ValueError(
+                'in non-archive mode the tools subdirectory must be specified')
     # get the module names
     module_names = meta.get_module_names(
             args.manifest, args.create_all, args.create_tagged)
@@ -259,11 +256,11 @@ def main_non_archive(args):
 def main_archive(args):
     # validation
     if args.galaxy_root:
-        msg = 'in archive mode the galaxy root must not be specified'
-        raise ValueError(msg)
+        raise ValueError(
+                'in archive mode the galaxy root must not be specified')
     if args.tools_subdir:
-        msg = 'in archive mode the tools subdirectory must not be specified'
-        raise ValueError(msg)
+        raise ValueError(
+                'in archive mode the tools subdirectory must not be specified')
     # define the archive extension and the compression command
     archive_extension = '.tar.bz2'
     archive_prefix = os.path.basename(args.suite_archive.rstrip('/'))

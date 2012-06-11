@@ -112,8 +112,8 @@ def create_installer(args, cat_info, env_info, module_names):
 def main(args):
     # check for flag conflicts
     if args.deploy and args.make_installer:
-        msg = 'the "deploy" and "make_installer" flags are incompatible'
-        raise ValueError(msg)
+        raise ValueError(
+                'the "deploy" and "make_installer" flags are incompatible')
     # initialize the mobyle category information
     cat_info = mobyle.CategoryInfo(
             args.show_io_types, args.show_tags, args.universal_category)

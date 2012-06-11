@@ -1,4 +1,5 @@
-"""Construct an example tree with pedagogically useful properties.
+"""
+Construct an example tree with pedagogically useful properties.
 """
 
 from StringIO import StringIO
@@ -100,30 +101,40 @@ class TreeSearch:
         out = StringIO()
         if self.force_difference or self.informative_full_split:
             print >> out, 'full graph split stats:'
-            print >> out, self.aug_split_collision_count, 'full graph splits collided with the desired primary split'
-            print >> out, self.aug_split_degenerate_count, 'full graph splits were degenerate'
+            print >> out, self.aug_split_collision_count,
+            print >> out, 'full graph splits collided with the desired primary split'
+            print >> out, self.aug_split_degenerate_count,
+            print >> out, 'full graph splits were degenerate'
             print >> out
         print >> out, 'primary split stats:'
-        print >> out, self.error_primary_split_count, 'errors in finding the primary split (should be 0)'
-        print >> out, self.invalid_primary_split_count, 'invalid primary splits (should be 0)'
-        print >> out, self.degenerate_primary_split_count, 'degenerate primary splits'
-        print >> out, self.undesired_primary_split_count, 'primary splits were not the target split'
-        print >> out, self.desired_primary_split_count, 'primary splits were the target split'
+        print >> out, self.error_primary_split_count,
+        print >> out, 'errors in finding the primary split (should be 0)'
+        print >> out, self.invalid_primary_split_count,
+        print >> out, 'invalid primary splits (should be 0)'
+        print >> out, self.degenerate_primary_split_count,
+        print >> out, 'degenerate primary splits'
+        print >> out, self.undesired_primary_split_count,
+        print >> out, 'primary splits were not the target split'
+        print >> out, self.desired_primary_split_count,
+        print >> out, 'primary splits were the target split'
         print >> out
         if self.informative_children:
             print >> out, 'secondary split stats:'
-            print >> out, self.uninformative_child_count, 'samples had at least one uninformative child tree'
-            print >> out, self.informative_child_count, 'samples had two informative child trees'
+            print >> out, self.uninformative_child_count,
+            print >> out, 'samples had at least one uninformative child tree'
+            print >> out, self.informative_child_count,
+            print>> out, 'samples had two informative child trees'
             print >> out
         if self.invalid_dendrogram:
             print >> out, 'naive dendrogram stats:'
-            print >> out, self.valid_dendrogram_count, 'naive dendrograms were valid'
+            print >> out, self.valid_dendrogram_count,
+            print >> out, 'naive dendrograms were valid'
             print >> out
         return out.getvalue().strip()
 
     def do_search(self, nseconds, sampling_function):
         """
-        @param nseconds: the allowed time for the search or None to search until interrupted
+        @param nseconds: allowed search time or None
         @param sampling_function: a function that samples a branch length
         @return: True if a tree was found that met the criteria
         """

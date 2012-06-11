@@ -280,12 +280,12 @@ def _split_consistency(split_a, split_b):
         return True, '%s is orthogonal to %s' % (A, B)
     return False, 'fails the rules'
 
-def split_consistency(split_a, split_b, verbose=False):
-    result, msg = _split_consistency(split_a, split_b)
-    if verbose:
-        return result, msg
-    else:
-        return result
+def split_consistency_verbose(split_a, split_b):
+    return _split_consistency(split_a, split_b)
+
+def split_consistency(split_a, split_b):
+    result, message = _split_consistency(split_a, split_b)
+    return result
 
 def pairwise_split_compatibility(splits):
     return all(split_compatibility(a,b) for a,b in combinations(splits, 2))

@@ -142,8 +142,8 @@ def get_grant_proposal_points_b(lfdi):
                 GX.shape,
                 U.shape,
                 S_sqrt_pinv.shape]
-        msg = ', '.join(str(x) for x in arr)
-        raise ValueError(msg)
+        raise ValueError(
+                ', '.join(str(x) for x in arr))
     # put them together and get only the first coordinates
     full_points = np.vstack([X, W])
     X = full_points.T[0]

@@ -92,8 +92,9 @@ def get_xml(cat_info, env_info, usermod, module_name, short_name, runbsub):
     if hasattr(usermod, 'get_form_out'):
         form_out = usermod.get_form_out()
     else:
-        msg = 'snippet %s provides no output format information' % module_name
-        raise FormOutError(msg)
+        raise FormOutError(
+                'snippet %s provides no '
+                'output format information' % module_name)
     doc_lines = Util.get_stripped_lines(usermod.__doc__.splitlines())
     try:
         tags = usermod.g_tags
@@ -159,10 +160,8 @@ def add_xml_files(cat_info, env_info,
             xml_content = get_xml(
                     cat_info, env_info, usermod, name, short_name, runbsub)
             nsuccesses += 1
-        except:
-            error_message = str(sys.exc_info()[1])
-            msg = '%s: error making xml: %s' % (name, error_message)
-            print >> sys.stderr, msg
+        except Exception as e:
+            print >> sys.stderr, '%s: error making xml: %s' % (name, str(e))
             nfailures += 1
         if xml_content:
             xml_filename = os.path.join(local_xml_dir, short_name + '.xml')

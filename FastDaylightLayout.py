@@ -142,11 +142,11 @@ class CurvedBranchLayout:
             for node in old_nodes:
                 if node is tree.root:
                     if node.blen is not None:
-                        msg = 'the root node should not have a branch length'
-                        raise HandlingError(msg)
+                        raise HandlingError(
+                                'the root node should not have a branch length')
                 elif node.blen is None:
-                    msg = 'each non-root node should have a branch length'
-                    raise HandlingError(msg)
+                    raise HandlingError(
+                            'each non-root node should have a branch length')
                 elif node.blen > max_branch_length:
                     # create a new node and set its attributes
                     new = self.node_factory()
@@ -176,11 +176,11 @@ def segment_tree(tree, min_segment_count, node_factory):
         for node in old_nodes:
             if node is tree.root:
                 if node.blen is not None:
-                    msg = 'the root node should not have a branch length'
-                    raise HandlingError(msg)
+                    raise HandlingError(
+                            'the root node should not have a branch length')
             elif node.blen is None:
-                msg = 'each non-root node should have a branch length'
-                raise HandlingError(msg)
+                raise HandlingError(
+                        'each non-root node should have a branch length')
             elif node.blen > max_branch_length:
                 # create a new node and set its attributes
                 new = node_factory()

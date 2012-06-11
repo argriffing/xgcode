@@ -54,8 +54,7 @@ g_stub = r"""
 
 def assert_tikzformat(tikzformat):
     if tikzformat not in g_tikzformats:
-        msg = 'invalid requested format: ' + tikzformat
-        raise ValueError(msg)
+        raise ValueError('invalid requested format: ' + tikzformat)
 
 def point_to_tikz(pt):
     """

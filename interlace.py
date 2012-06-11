@@ -409,14 +409,12 @@ def is_strictly_increasing(seq):
 def assert_support(t_seq, y_seqs):
     # check that the t sequence is increasing
     if not is_strictly_increasing(t_seq):
-        msg = 'expected a strictly increasing t sequence'
-        raise ValueError(msg)
+        raise ValueError('expected a strictly increasing t sequence')
     # check that each sequence has the same number of samples
     seqs = [t_seq] + y_seqs
     lengths = set(len(seq) for seq in seqs)
     if len(lengths) != 1:
-        msg = 'expected each sequence to have the same length'
-        raise ValueError(msg)
+        raise ValueError('expected each sequence to have the same length')
 
 def get_tikz_bezier_2d(bpath):
     lines = []

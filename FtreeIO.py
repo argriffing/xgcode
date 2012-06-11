@@ -69,8 +69,7 @@ class _IO_Tree:
     def finish(self):
         r = Ftree.R_to_root(self.R)
         if r in self.v_to_hanging_length:
-            msg = 'the root should not have a hanging branch'
-            raise FtreeIOError(msg)
+            raise FtreeIOError('the root should not have a hanging branch')
 
 def dendropy_to_RBN(tree):
     """
@@ -301,11 +300,10 @@ def get_validated_name_map(N, name_type):
     nvertices = len(N)
     names = N.values()
     if any(n is None for n in names):
-        msg = 'expected a name for each vertex, including internal vertices'
-        raise ValueError(msg)
+        raise ValueError(
+                'expected a name for each vertex, including internal vertices')
     if len(set(names)) < nvertices:
-        msg = 'expected unique vertex names'
-        raise ValueError(msg)
+        raise ValueError('expected unique vertex names')
     return N
 
 

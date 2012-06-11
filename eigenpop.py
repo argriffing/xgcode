@@ -61,8 +61,8 @@ def get_eval_evec_pairs(C_full, diploid_and_biallelic):
     # check compatibility of counts and ploidy
     if diploid_and_biallelic:
         if np.max(C_full) > 2:
-            msg = 'no count should be greater than two for diploid data'
-            raise ValueError(msg)
+            raise ValueError(
+                    'no count should be greater than two for diploid data')
     # remove invariant columns
     C = np.vstack([v for v in C_full.T if len(set(v))>1]).T
     # get the shape of the matrix

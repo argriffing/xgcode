@@ -56,14 +56,11 @@ def TB_assert_branch_lengths(T, B):
     extra = set(B) - set(T)
     missing = set(T) - set(B)
     if not B:
-        msg = 'no branch lengths were found'
-        raise ValueError(msg)
+        raise ValueError('no branch lengths were found')
     if extra:
-        msg = 'lengths are specified for nonexistent branches'
-        raise ValueError(msg)
+        raise ValueError('lengths are specified for nonexistent branches')
     if missing:
-        msg = 'some branches do not have lengths'
-        raise ValueError(msg)
+        raise ValueError('some branches do not have lengths')
 
 def RB_assert_branch_lengths(R, B):
     TB_assert_branch_lengths(R_to_T(B), B)

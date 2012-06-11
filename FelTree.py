@@ -245,9 +245,9 @@ class Node:
             child_undirected_branch = child_directed_branch.get_undirected_branch()
             child_parent = child_directed_branch.get_target()
             if child_parent:
-                msg_a = 'adding a child node '
-                msg_b = 'that already has a non-degenerate parent'
-                raise ValueError(msg_a + msg_b)
+                raise ValueError(
+                        'adding a child node '
+                        'that already has a non-degenerate parent')
             child_directed_branch.set_target(self)
         else:
             # If the child has no dummy parent
@@ -267,9 +267,9 @@ class Node:
         @param branch: the undirected branch that connects with the parent
         """
         if branch.is_root():
-            msg_a = 'setting the undirected branch of the root '
-            msg_b = 'is an undefined operation'
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'setting the undirected branch of the root '
+                    'is an undefined operation')
         directed_branch_to_parent = self.get_directed_branch_to_parent()
         parent = branch_to_parent.get_target()
         directed_branch_from_parent = parent.get_directed_branch_to(self)

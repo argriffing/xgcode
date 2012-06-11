@@ -95,8 +95,8 @@ def _pnh_blen(tree, symbols, index, node):
     try:
         branch_length = float(blen_str)
     except ValueError:
-        msg = 'found "%s" instead of a branch length' % blen_str
-        raise NewickSyntaxError(msg)
+        raise NewickSyntaxError(
+                'found "%s" instead of a branch length' % blen_str)
     tree.set_branch_length(node, branch_length)
     return index+2
 
@@ -110,8 +110,8 @@ def _pnh(tree, symbols, index):
     @return: (root node, next index)
     """
     if symbols[-1] != ';':
-        msg = 'the newick symbol list should end with a semicolon'
-        raise NewickSyntaxError(msg)
+        raise NewickSyntaxError(
+                'the newick symbol list should end with a semicolon')
     if index >= len(symbols):
         raise NewickSyntaxError('premature string termination')
     root = tree.create_root()
@@ -149,9 +149,9 @@ def _pnh(tree, symbols, index):
                     next_index = index+1
                 return (root, next_index)
             else:
-                msg_a = 'found "%s" instead of ' % symbols[index]
-                msg_b = 'a comma or a closing parenthesis'
-                raise NewickSyntaxError(msg_a + msg_b)
+                raise NewickSyntaxError(
+                        'found "%s" instead of '
+                        'a comma or a closing parenthesis' % symbols[index])
     elif symbols[index] == ';':
         raise NewickSyntaxError('found the ";" terminator prematurely')
     else:
@@ -179,16 +179,16 @@ def parse_simple(s, tree):
     if symbols.count('(') != symbols.count(')'):
         raise NewickSyntaxError('parenthesis mismatch')
     if not symbols[-1] == ';':
-        msg_a = 'the newick symbol list should end with a semicolon: '
-        msg_b = str(symbols)
-        raise NewickSyntaxError(msg_a + msg_b)
+        raise NewickSyntaxError(
+                'the newick symbol list '
+                'should end with a semicolon: ' + str(symbols))
     root, index = _pnh(tree, symbols, 0)
     if index >= len(symbols):
-        msg = 'the parser tried to use too much of the newick string'
-        raise NewickSyntaxError(msg)
+        raise NewickSyntaxError(
+                'the parser tried to use too much of the newick string')
     if index < len(symbols) - 1:
-        msg = 'the parser did not use the whole newick string'
-        raise NewickSyntaxError(msg)
+        raise NewickSyntaxError(
+                'the parser did not use the whole newick string')
     tree.set_root(root)
     tree.finish()
     return tree

@@ -383,14 +383,14 @@ def get_H_bound(x_abs_bound, y_low, y_high):
     """
     # check some properties of the numerical optimization
     if not (h_max > -h_min):
-        msg = 'expected the max to have greater magnitude than the min'
-        raise ValueError(msg)
+        raise ValueError(
+                'expected the max to have greater magnitude than the min')
     if not np.allclose(x_argmax, x_low):
-        msg = 'expected the x argmax to be at the minimum allowed x'
-        raise ValueError(msg)
+        raise ValueError(
+                'expected the x argmax to be at the minimum allowed x')
     if not np.allclose(y_argmax, y_low):
-        msg = 'expected the y argmax to be at the minimum allowed y'
-        raise ValueError(msg)
+        raise ValueError(
+                'expected the y argmax to be at the minimum allowed y')
     # return the max absolute value of h on the domain
     return h_max
 

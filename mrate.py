@@ -262,11 +262,11 @@ def R_to_relaxation_time(R):
     abs_eigenvalue_h = sorted(abs(w) for w in W_h)[1]
     # check that the absolute values of the eigenvalues is the same
     if not np.allclose(abs_eigenvalue, abs_eigenvalue_h):
-        msg_a = 'relaxation time computation error: %f != %f' % (
-                abs_eigenvalue, abs_eigenvalue_h)
-        msg_b = 'plain spectrum: %s \n symmetrized spectrum: %s' % (
-                W, W_h)
-        raise ValueError(msg_a + '\n' + msg_b)
+        raise ValueError(
+                'relaxation time computation error: %f != %f\n'
+                'plain spectrum: %s\n'
+                'symmetrized spectrum: %s' % (
+                    abs_eigenvalue, abs_eigenvalue_h, W, W_h))
     # return the relaxation time
     return 1 / abs_eigenvalue
 
@@ -283,9 +283,9 @@ def R_to_relaxation_time_experimental(R):
     abs_eigenvalue_h = sorted(abs(w) for w in W_h)[1]
     # check that the absolute values of the eigenvalues is the same
     if not np.allclose(abs_eigenvalue, abs_eigenvalue_h):
-        msg = 'relaxation time computation error: %f != %f' % (abs_eigenvalue,
-                abs_eigenvalue_h)
-        raise ValueError(msg)
+        raise ValueError(
+                'relaxation time computation error: %f != %f' % (
+                    abs_eigenvalue, abs_eigenvalue_h))
     # return the relaxation time
     return 1 / abs_eigenvalue
 

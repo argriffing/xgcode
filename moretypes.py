@@ -56,8 +56,9 @@ class int_ge:
     def __call__(self, x):
         x = _int(x)
         if not (x >= self.k):
-            msg = 'expected an integer greater than or equal to %d' % self.k
-            raise TypeError(msg)
+            raise TypeError(
+                    'expected an integer '
+                    'greater than or equal to %d' % self.k)
         return x
 
 def whitespace_separated_sequence(s):

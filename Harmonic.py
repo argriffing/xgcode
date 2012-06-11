@@ -36,9 +36,9 @@ def get_eigenvalue_and_harmonic_valuations(tree, eig_idx):
     p = len(ordered_internal_ids)
     N = q + p
     # check the requested indices
-    eig_msg = 'eigenfunction indices must be less than the number of leaves'
     if eig_idx >= q:
-        raise ValueError(eig_msg)
+        raise ValueError(
+                'eigenfunction indices must be less than the number of leaves')
     # define the Laplacian matrix and its pieces
     L = get_laplacian(tree, id_to_idx, q, p)
     L11 = L[:q][:, :q]
