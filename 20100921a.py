@@ -42,11 +42,9 @@ def get_response_content(fs):
     Carbone.validate_headers(header_row)
     # check requested variable names as column headers
     if fs.var_a not in header_row:
-        msg = 'the first variable name is not column header'
-        raise ValueError(msg)
+        raise ValueError('the first variable name is not column header')
     if fs.var_b not in header_row:
-        msg = 'the second variable name is not column header'
-        raise ValueError(msg)
+        raise ValueError('the second variable name is not column header')
     return RUtil.run_with_table(fs.table, fs, get_script_content)
 
 def get_script_content(fs, temp_table_name):

@@ -7,6 +7,8 @@ Running this should take a few seconds
 before showing moments of posterior distributions
 of a few rate statistics.
 Extra functionality is available from the command line.
+Some of this functionality has been replaced by the
+BEAST associated command line 'loganalyser' program.
 """
 
 from StringIO import StringIO
@@ -518,26 +520,25 @@ def get_value_lists(start_pos, stop_pos, nsamples):
     expected = nsamples + 3 + 1
     observed = len(lines)
     if expected != observed:
-        msg= 'expected %d lines but observed %d' % (expected, observed)
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError(
+                'expected %d lines but observed %d' % (expected, observed))
     # check the first line
     expected = '# BEAST'
     if not lines[0].startswith(expected):
-        msg = 'expected the first line to start with ' + expected
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError(
+                'expected the first line to start with ' + expected)
     # check the second line
     expected = '# Generated'
     if not lines[1].startswith(expected):
-        msg = 'expected the second line to start with ' + expected
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError(
+                'expected the second line to start with ' + expected)
     # check the third line
     values = lines[2].split()
     if len(values) != 4:
-        msg = 'expected the third line to have four column labels'
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError(
+                'expected the third line to have four column labels')
     if values != ['state', 'meanRate', 'coefficientOfVariation', 'covariance']:
-        msg = 'unexpected column labels on the third line'
-        raise BeastLogFileError(msg)
+        raise BeastLogFileError('unexpected column labels on the third line')
     # read the rest of the lines
     means = []
     variations = []

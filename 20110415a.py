@@ -101,11 +101,10 @@ def sigmoid(x, alpha=12):
 def get_edge(R, N, name):
     pairs = [(a,b) for a, b in R if N.get(b, None) == name]
     if len(pairs) > 1:
-        msg = 'expected the vertex to define a single variable branch'
-        raise ValueError(msg)
+        raise ValueError(
+                'expected the vertex to define a single variable branch')
     if len(pairs) < 1:
-        msg = 'the provided vertex is not associated with a branch'
-        raise ValueError(msg)
+        raise ValueError('the provided vertex is not associated with a branch')
     return frozenset(pairs[0])
 
 def get_response_content(fs):
@@ -127,8 +126,8 @@ def get_response_content(fs):
     x_index = fs.x_axis - 1
     y_index = fs.y_axis - 1
     if x_index >= nleaves-1 or y_index >= nleaves-1:
-        msg = 'projection indices must be smaller than the number of leaves'
-        raise ValueError(msg)
+        raise ValueError(
+                'projection indices must be smaller than the number of leaves')
     # adjust the branch length
     initial_length = B[edge]
     t = sigmoid(fs.frame_progress)
@@ -215,8 +214,8 @@ def main(args):
     x_index = args.x_axis - 1
     y_index = args.y_axis - 1
     if x_index >= nleaves-1 or y_index >= nleaves-1:
-        msg = 'projection indices must be smaller than the number of leaves'
-        raise ValueError(msg)
+        raise ValueError(
+                'projection indices must be smaller than the number of leaves')
     X_prev = None
     # create the animation frames and write them as image files
     pbar = Progress.Bar(args.nframes)

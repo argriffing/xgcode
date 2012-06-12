@@ -31,8 +31,7 @@ def get_form_out():
 
 def assert_reversible(R):
     if not is_reversible(R):
-        msg = 'the rate matrix is not time-reversible'
-        raise ValueError(msg)
+        raise ValueError('the rate matrix is not time-reversible')
 
 def is_reversible(R):
     v = R_to_distn(R)
@@ -201,8 +200,9 @@ def get_response_content(fs):
     v_uniform = np.ones(n, dtype=float) / n
     S_distn = R_to_distn(S)
     if not np.allclose(S_distn, v_uniform):
-        msg = 'symmetric rate matrix should have uniform stationary distn'
-        raise ValueError(msg)
+        raise ValueError(
+                'a symmetric rate matrix should have '
+                'a uniform stationary distn')
     v = sample_distribution(n)
     # report the random inputs
     print >> out, 'random symmetric rate matrix:'
@@ -219,8 +219,9 @@ def get_response_content(fs):
         R = to_gtr(S, v)
         R_distn = R_to_distn(R)
         if not np.allclose(R_distn, v):
-            msg = 'constructed rate matrix should have target stationary distn'
-            raise ValueError(msg)
+            raise ValueError(
+                    'the constructed rate matrix '
+                    'should have the target stationary distn')
         assert_reversible(R)
         # report the reconstruction
         print >> out, 'constructed rate matrix:'

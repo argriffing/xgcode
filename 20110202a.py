@@ -1,4 +1,5 @@
-"""Check an asymptotic formula for eigenvectors of a path Laplacian.
+"""
+Check an asymptotic formula for eigenvectors of a path Laplacian.
 
 Assume that the path has unit length.
 """
@@ -67,9 +68,9 @@ def sinusoidal_approximation(N, n, k):
 def get_response_content(fs):
     # check input compatibility
     if fs.nvertices < fs.naxes+1:
-        msg_a = 'attempting to plot too many eigenvectors '
-        msg_b = 'for the given number of vertices'
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'attempting to plot too many eigenvectors '
+                'for the given number of vertices')
     # construct the path Laplacian matrix
     N = fs.nvertices
     L = create_laplacian_matrix(N)

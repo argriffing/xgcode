@@ -50,8 +50,8 @@ def get_response_content(fs):
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
     # check the indices
     if fs.last_index <= fs.first_index:
-        msg = 'the last index should be greater than the first index'
-        raise ValueError(msg)
+        raise ValueError(
+                'the last index should be greater than the first index')
     # get the vertex valuations
     valuations = [Harmonic.get_harmonic_valuations(
         tree, i) for i in range(fs.first_index, fs.last_index+1)]

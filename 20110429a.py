@@ -1,4 +1,5 @@
-"""Draw a combination of the 2D tip MDS and the harmonic extension of two trees.
+"""
+Draw a combination of the 2D tip MDS and the harmonic extension of two trees.
 
 The first input tree supplies the 2D MDS relating the leaves.
 The second input tree supplies the topology and branch lengths
@@ -53,22 +54,23 @@ def get_response_content(fs):
     test_leaf_to_n = dict((v, N_test[v]) for v in test_leaves)
     # check that all leaves are named
     if len(true_leaves) != len(true_leaf_to_n):
-        msg = 'all leaves in the leaf MDS tree should be named'
-        raise ValueError(msg)
+        raise ValueError(
+                'all leaves in the leaf MDS tree should be named')
     if len(test_leaves) != len(test_leaf_to_n):
-        msg = 'all leaves in the harmonic extension tree should be named'
-        raise ValueError(msg)
+        raise ValueError(
+                'all leaves in the harmonic extension tree should be named')
     # check that within each tree all leaves are uniquely named
     if len(set(true_leaf_to_n.values())) != len(true_leaves):
-        msg = 'all leaf names in the leaf MDS tree should be unique'
-        raise ValueError(msg)
+        raise ValueError(
+                'all leaf names in the leaf MDS tree should be unique')
     if len(set(test_leaf_to_n.values())) != len(test_leaves):
-        msg = 'all leaf names in the harmonic extension tree should be unique'
-        raise ValueError(msg)
+        raise ValueError(
+                'all leaf names in the harmonic extension tree '
+                'should be unique')
     # check that the leaf name sets are the same
     if set(true_leaf_to_n.values()) != set(test_leaf_to_n.values()):
-        msg = 'the two trees should have corresponding leaf names'
-        raise ValueError(msg)
+        raise ValueError(
+                'the two trees should have corresponding leaf names')
     # invert the leaf name maps
     true_n_to_leaf = dict((n, v) for v, n in true_leaf_to_n.items())
     test_n_to_leaf = dict((n, v) for v, n in test_leaf_to_n.items())

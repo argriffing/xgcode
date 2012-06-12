@@ -63,9 +63,9 @@ def get_fp1_ordered_leaf_partition(T, v_to_value):
     # find the two edges where the valuation changes at the endpoints
     cuts = [frozenset([a,b]) for a, b in T if v_to_value[a]*v_to_value[b]<0]
     if len(cuts) != 2:
-        msg_a = 'expected exactly two nodes (in the sense of Courant) '
-        msg_b = 'but found ' + str(len(cuts))
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'expected exactly two nodes (in the sense of Courant) '
+                'but found ' + str(len(cuts)))
     # create a forest by cauterizing the cut edges
     next_vertex = nvertices
     T_cut = set(T)

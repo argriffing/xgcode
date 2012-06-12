@@ -39,11 +39,12 @@ class RunInfo(object):
 
     def __str__(self):
         lines = [
-            'termination condition: %s' % self.stop_msg,
+            'loop termination explanation: %s' % self.stop_msg,
             'completed iterations: %s' % self.iterations,
             'elapsed seconds: %s' % self.seconds,
             str(self.state)]
         return '\n'.join(lines)
+
 
 def run(states, nseconds=None, niterations=None):
     """

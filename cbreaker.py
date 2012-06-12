@@ -3,6 +3,10 @@ An updated module to eventually replace the combobreaker module.
 This is about running loops that terminate under any of various conditions,
 for example on ctrl-c or timeout or iteration limit,
 or when a sentinel value is reached or the search space is exhausted.
+Instantiate a 'Throttled' object if you care why the termination stopped.
+Otherwise use the 'throttled' wrapper.
+If you need to accumulate a summary over the course of the iterations,
+then use the more complicated 'combobreaker' module instead.
 """
 
 from StringIO import StringIO

@@ -8,23 +8,16 @@ The stuff about barriers is related to isoperimetry-type inequalities.
 """
 
 from StringIO import StringIO
-import random
 import math
 import itertools
 from itertools import product
 
 import numpy as np
-import scipy
-from scipy import linalg
 
 import Form
 import FormOut
 import mrate
-import ctmcmi
 import iterutils
-import combobreaker
-import MatrixUtil
-from MatrixUtil import ndot
 
 #FIXME
 def uniformize_split(R):

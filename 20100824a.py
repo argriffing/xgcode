@@ -1,4 +1,5 @@
-"""Update a combination log for a .phy to .hud conversion.
+"""
+Update a combination log for a .phy to .hud conversion.
 
 The combination log file looks really free-form so I
 am probably making unrealistic assumptions about its format.
@@ -65,38 +66,36 @@ def gen_combo_line_triples(raw_lines):
     """
     paragraphs = list(Util.gen_paragraphs(raw_lines))
     if paragraphs[0] != ['Loci combined']:
-        msg_a = "expected the only line of the first paragraph "
-        msg_b = "of the combination input to be 'Loci combined'"
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                "expected the only line of the first paragraph "
+                "of the combination input to be 'Loci combined'")
     for line in paragraphs[1]:
         elements = line.split()
         if len(elements) != 2:
-            msg_a = 'expected two whitespace separated elements '
-            msg_b = 'on this line of the combination input: '
-            msg_c = line
-            raise ValueError(msg_a + msg_b + msg_c)
+            raise ValueError(
+                    'expected two whitespace separated elements '
+                    'on this line of the combination input: ' + line)
         name, lowhigh = elements
         if lowhigh.count('-') != 1:
-            msg_a = 'expected a single hyphen in the second '
-            msg_b = 'whitespace separated element '
-            msg_c = 'on this line of the combination input: '
-            msg_d = line
-            raise ValueError(msg_a + msg_b + msg_c + msg_d)
+            raise ValueError(
+                    'expected a single hyphen in the second '
+                    'whitespace separated element '
+                    'on this line of the combination input: ' + line)
         s_low, s_high = lowhigh.split('-')
         try:
             low = int(s_low)
             high = int(s_high)
         except ValueError as e:
-            msg = 'expected integer ranges in the combination input'
-            raise ValueError(msg)
+            raise ValueError(
+                    'expected integer ranges in the combination input')
         if low < 1 or high < 1:
-            msg_a = 'expected positive integer range bounds '
-            msg_b = 'in the combination input'
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'expected positive integer range bounds '
+                    'in the combination input')
         if high < low:
-            msg_a = 'the lower bound of a combination range '
-            msg_b = 'should not be greater than the upper bound'
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'the lower bound of a combination range '
+                    'should not be greater than the upper bound')
         yield name, low, high
 
 def expand_ranges(ranges):
@@ -114,22 +113,21 @@ def get_response_content(fs):
     names, lows, highs = zip(*combo_triples)
     ranges = zip(lows, highs)
     if lows[0] != 1:
-        msg = 'expected the first lower bound to be 1'
-        raise ValueError(msg)
+        raise ValueError('expected the first lower bound to be 1')
     for (low, high), (nlow, nhigh) in iterutils.pairwise(ranges):
         if high + 1 != nlow:
-            msg_a = 'expected the next lower bound '
-            msg_b = 'to be one more than the current upper bound'
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'expected the next lower bound '
+                    'to be one more than the current upper bound')
     # get the phylip info
     headers, sequences = Phylip.decode(fs.phylip.splitlines())
     phylip_columns = zip(*sequences)
     counts = [len(set(col)) for col in phylip_columns]
     # validate the compatibility between the combo and phylip data
     if highs[-1] != len(phylip_columns):
-        msg_a = 'expected the last upper bound to be '
-        msg_b = 'equal to the number of columns of the phylip alignment'
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'expected the last upper bound to be '
+                'equal to the number of columns of the phylip alignment')
     # get the sum of counts in each combination group
     combo_counts = []
     for i, (low, high) in enumerate(ranges):

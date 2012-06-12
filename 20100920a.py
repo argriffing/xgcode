@@ -51,14 +51,14 @@ def get_response_content(fs):
     # check requested variable names as column headers
     bad_indep_names = set(indep) - set(header_row)
     if bad_indep_names:
-        msg_a = 'these requested independent variable names '
-        msg_b = 'were not found as columns in the data table: '
-        msg_c = str(bad_indep_names)
-        raise ValueError(msg_a + msg_b + msg_c)
+        raise ValueError(
+            'these requested independent variable names '
+            'were not found as columns '
+            'in the data table: ' + str(bad_indep_names))
     if dep not in header_row:
-        msg_a = 'the dependent variable name '
-        msg_b = 'was not found as a column in the data table'
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'the dependent variable name '
+                'was not found as a column in the data table')
     return RUtil.run_with_table(fs.table, (indep, dep), get_script_content)
 
 def get_script_content(data, temp_table_name):

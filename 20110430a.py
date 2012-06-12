@@ -1,4 +1,5 @@
-"""Draw a tree into the 2D MDS of an arbitrary leaf distance matrix.
+"""
+Draw a tree into the 2D MDS of an arbitrary leaf distance matrix.
 
 The input distance matrix supplies the 2D MDS relating the leaves.
 The input tree supplies the topology and branch lengths
@@ -180,22 +181,25 @@ def get_response_content(fs):
     test_leaf_to_n = dict((v, N_test[v]) for v in test_leaves)
     # check that all leaves are named
     if len(D_names) != len(fs.D):
-        msg_a = 'the number of ordered leaf names should be the same '
-        msg_b = 'as the number of rows in the distance matrix'
-        raise HandlingError(msg_a + msg_b)
+        raise HandlingError(
+                'the number of ordered leaf names '
+                'should be the same as the number of rows '
+                'in the distance matrix')
     if len(test_leaves) != len(test_leaf_to_n):
-        msg = 'all leaves in the harmonic extension tree should be named'
-        raise ValueError(msg)
+        raise ValueError(
+                'all leaves in the harmonic extension tree '
+                'should be named')
     # check that leaves are uniquely named
     if len(set(D_names)) != len(D_names):
-        msg = 'all ordered leaf names in the distance matrix should be unique'
-        raise ValueError(msg)
+        raise ValueError(
+                'all ordered leaf names in the distance matrix '
+                'should be unique')
     # check that the leaf name sets are the same
     if set(D_names) != set(test_leaf_to_n.values()):
-        msg_a = 'the set of leaf names on the tree '
-        msg_b = 'should be the same as '
-        msg_c = 'the set of leaf names for the distance matrix'
-        raise ValueError(msg_a + msg_b + msg_c)
+        raise ValueError(
+                'the set of leaf names on the tree '
+                'should be the same as '
+                'the set of leaf names for the distance matrix')
     # invert the leaf name map
     test_n_to_leaf = dict((n, v) for v, n in test_leaf_to_n.items())
     # get correspondingly ordered leaf sequences

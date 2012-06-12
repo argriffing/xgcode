@@ -129,8 +129,8 @@ def assert_named_equation(a_name_pair, b_name_pair):
 
 def sample_bad_nullspace(nullity, nleading, ntrailing):
     if nullity < 2:
-        msg = 'the nullity is too small for the nullspace to be bad'
-        raise ValueError(msg)
+        raise ValueError(
+                'the nullity is too small for the nullspace to be bad')
     nullity_a = nullity / 2
     nullity_b = nullity - nullity_a
     A = np.random.rand()

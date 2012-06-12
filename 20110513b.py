@@ -102,8 +102,8 @@ def get_response_content(fs):
     T, B, N = FtreeIO.newick_to_TBN(fs.tree)
     # check the indices
     if fs.last_index < fs.first_index:
-        msg = 'the last index should not be greater than the first index'
-        raise ValueError(msg)
+        raise ValueError(
+                'the last index should not be greater than the first index')
     # get the vertex valuations
     all_valuations = TB_to_harmonic_valuations(T, B)
     valuations = all_valuations[fs.first_index:]

@@ -107,8 +107,8 @@ class Process:
         self.p_high = p_high
         # validate
         if p_high <= p_low:
-            msg = 'interval lower bound should be below upper bound'
-            raise ValueError(msg)
+            raise ValueError(
+                    'interval lower bound should be below upper bound')
         # aux members
         self.f = MyCurve(self.mu)
     def _get_knot_times(self):

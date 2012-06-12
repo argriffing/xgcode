@@ -154,9 +154,8 @@ def get_input_matrices(fs):
     for i, line in enumerate(fs.lowtri):
         values = line.split()
         if len(values) != i + 1:
-            msg = 'expected %d values on line "%s"' % (
-                    i+1, line)
-            raise ValueError(msg)
+            raise ValueError(
+                    'expected %d values on line "%s"' % (i+1, line))
         vs = [float(v) for v in values]
         if any(x<0 for x in vs):
             raise ValueError('exchangeabilities must be nonnegative')
@@ -178,12 +177,10 @@ def get_input_matrices(fs):
             S[j, i+1] = v
     # check the state space sizes implied by the inputs
     if len(set(len(x) for x in (S, mut_weights, mutsel_weights))) != 1:
-        msg = 'the inputs do not agree on the state space size'
-        raise ValueError(msg)
+        raise ValueError('the inputs do not agree on the state space size')
     # check for sufficient number of states
     if nstates < 2:
-        msg = 'at least two states are required'
-        raise ValueError(msg)
+        raise ValueError('at least two states are required')
     # check reducibility of the exchangeability
     if not MatrixUtil.is_symmetric_irreducible(S):
         raise ValueError('exchangeability is not irreducible')
@@ -192,23 +189,24 @@ def get_input_matrices(fs):
     M -= np.diag(np.sum(M, axis=1))
     # check sign symmetry and irreducibility
     if not MatrixUtil.is_symmetric_irreducible(np.sign(M)):
-        msg = 'mutation rate matrix is not sign symmetric irreducible'
-        raise ValueError(msg)
+        raise ValueError(
+                'mutation rate matrix is not sign symmetric irreducible')
     # get the mutation selection balance rate matrix
     R = mrate.to_gtr_halpern_bruno(M, mutsel_distn)
     # check sign symmetry and irreducibility
     if not MatrixUtil.is_symmetric_irreducible(np.sign(R)):
-        msg = 'mut-sel balance rate matrix is not sign symmetric irreducible'
-        raise ValueError(msg)
+        raise ValueError(
+                'mut-sel balance rate matrix '
+                'is not sign symmetric irreducible')
     # check the stationary distributions
     mut_distn_observed = mrate.R_to_distn(M)
     if not np.allclose(mut_distn_observed, mut_distn):
-        msg = 'internal mut stationary distribution computation error'
-        raise ValueError(msg)
+        raise ValueError(
+                'internal mut stationary distribution computation error')
     mutsel_distn_observed = mrate.R_to_distn(R)
     if not np.allclose(mutsel_distn_observed, mutsel_distn):
-        msg = 'internal mut-sel stationary distribution computation error'
-        raise ValueError(msg)
+        raise ValueError(
+                'internal mut-sel stationary distribution computation error')
     # return the values
     return M, R
 

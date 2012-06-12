@@ -1,4 +1,5 @@
-"""Compute Perron values near a vertex of a tree.
+"""
+Compute Perron values near a vertex of a tree.
 
 Given a single specified vertex of articulation,
 all other vertices of articulation in a given tree
@@ -51,12 +52,10 @@ def get_unique_vertex(N, name):
     @param N: vertex to name
     """
     if len(set(N.values())) != len(N.values()):
-        msg = 'vertex names should be unique'
-        raise ValueError(msg)
+        raise ValueError('vertex names should be unique')
     name_to_v = dict((n, v) for v, n in N.items())
     if name not in name_to_v:
-        msg = 'the vertex name was not found in the newick string'
-        raise ValueError(msg)
+        raise ValueError('the vertex name was not found in the newick string')
     return name_to_v[name]
 
 def get_algebraic_connectivity(T, B, leaves):
@@ -72,8 +71,8 @@ def get_response_content(fs):
     # get the distinguished vertex of articulation
     r = get_unique_vertex(N, fs.vertex)
     if r not in internal:
-        msg = 'the distinguished vertex should have degree at least two'
-        raise ValueError(msg)
+        raise ValueError(
+                'the distinguished vertex should have degree at least two')
     # Partition the leaves with respect to the given root.
     # Each set of leaves will eventually define a connected component.
     R = Ftree.T_to_R_specific(T, r)
