@@ -114,7 +114,19 @@ def _collection_to_javascript_literal(coll):
     return out.getvalue().strip()
 
 def _get_cat_4_text(form_objects, presets):
-    label_to_form_object = dict((o.label, o) for o in form_objects)
+    # this complicatedness helps to deal with integer and float intervals
+    label_object_pairs = []
+    for obj in form_objects:
+        obj_items = None
+        try:
+            obj_items = obj._get_temp_items()
+        except AttributeError as e:
+            pass
+        if obj_items is None:
+            obj_items = [obj]
+        label_object_pairs.extend([(x.label, x) for x in obj_items])
+    label_to_form_object = dict(label_object_pairs)
+    # write the javascript using horrific typechecking
     out = StringIO()
     print >> out, '<!-- these are hardcoded presets -->'
     print >> out, '<script type="text/javascript">'

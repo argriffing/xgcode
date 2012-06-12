@@ -25,8 +25,8 @@ def get_form():
     """
     return [
             Form.Float('t', 'divergence time', '0.68', low_exclusive=0),
-            Form.Float('x_min', 'min log probability ratio', '-1'),
-            Form.Float('x_max', 'max log probability ratio', '2'),
+            Form.FloatInterval(
+                'x_min', 'x_max', 'log probability ratio interval', '-1', '2'),
             Form.ImageFormat(),
             ]
 

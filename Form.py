@@ -1388,6 +1388,34 @@ class _Interval:
     def get_help_objects(self):
         return tuple(item.get_help_object() for item in self._get_temp_items())
 
+    def get_html_lines(self):
+        """
+        @return: the list of lines of html text
+        """
+        # get the default line of text
+        default_line_a = str(self.first_default)
+        default_line_b = str(self.second_default)
+        # calculate a multiple of ten that will hold the string
+        width = max(
+                ((len(default_line_a) / 10) + 1) * 10,
+                ((len(default_line_b) / 10) + 1) * 10,
+                )
+        # get escaped values
+        esc_label_a = cgi.escape(self.first_label)
+        esc_label_b = cgi.escape(self.second_label)
+        esc_description = cgi.escape(self.description)
+        esc_default_line_a = cgi.escape(default_line_a)
+        esc_default_line_b = cgi.escape(default_line_b)
+        lines = [
+                # clicking the description selects the first textbox
+                _get_colon_label_line(esc_label_a, esc_description),
+                '<br/>',
+                _get_textbox_line(esc_label_a, esc_default_line_a, width),
+                '<code> -- </code>',
+                _get_textbox_line(esc_label_b, esc_default_line_b, width),
+                ]
+        return lines
+
     def process_cmdline_dict(self, d_in, d_out):
         a, b = self._get_temp_items()
         a.process_cmdline_dict(d_in, d_out)
@@ -1447,34 +1475,6 @@ class IntegerInterval(_Interval):
                     self.second_default, low=self.low, high=self.high),
                 )
 
-    def get_html_lines(self):
-        """
-        @return: the list of lines of html text
-        """
-        # get the default line of text
-        default_line_a = str(self.first_default)
-        default_line_b = str(self.second_default)
-        # calculate a multiple of ten that will hold the string
-        width = max(
-                ((len(default_line_a) / 10) + 1) * 10,
-                ((len(default_line_b) / 10) + 1) * 10,
-                )
-        # get escaped values
-        esc_label_a = cgi.escape(self.first_label)
-        esc_label_b = cgi.escape(self.second_label)
-        esc_description = cgi.escape(self.description)
-        esc_default_line_a = cgi.escape(default_line_a)
-        esc_default_line_b = cgi.escape(default_line_b)
-        lines = [
-                # clicking the description selects the first textbox
-                _get_colon_label_line(esc_label_a, esc_description),
-                '<br/>',
-                _get_textbox_line(esc_label_a, esc_default_line_a, width),
-                '<code> -- </code>',
-                _get_textbox_line(esc_label_b, esc_default_line_b, width),
-                ]
-        return lines
-
     def _validate_interaction(self, first_value, second_value):
         width = second_value - first_value
         if width < 0:
@@ -1499,7 +1499,95 @@ class IntegerInterval(_Interval):
                             self.first_label, self.second_label,
                             self.high_width))
 
+class FloatInterval(_Interval):
+    """
+    This represents an ordered pair of floats.
+    """
 
+    def __init__(self,
+            first_label, second_label,
+            description,
+            first_default, second_default,
+            low_inclusive=None, high_inclusive=None,
+            low_exclusive=None, high_exclusive=None,
+            low_width_inclusive=None, high_width_inclusive=None,
+            low_width_exclusive=None, high_width_exclusive=None,
+            ):
+        """
+        Parameters are similar to IntegerInterval.
+        """
+        self.first_label = first_label
+        self.second_label = second_label
+        self.description = description
+        self.first_default = first_default
+        self.second_default = second_default
+        self.low_inclusive = low_inclusive
+        self.low_exclusive = low_exclusive
+        self.high_inclusive = high_inclusive
+        self.high_exclusive = high_exclusive
+        self.low_width_inclusive = low_width_inclusive
+        self.low_width_exclusive = low_width_exclusive
+        self.high_width_inclusive = high_width_inclusive
+        self.high_width_exclusive = high_width_exclusive
+
+    def _get_temp_items(self):
+        """
+        Make a couple of temporary Integer items for convenience.
+        """
+        return (
+                Float(self.first_label, self.description + ' (low)',
+                    self.first_default,
+                    low_inclusive=self.low_inclusive,
+                    low_exclusive=self.low_exclusive,
+                    high_inclusive=self.high_inclusive,
+                    high_exclusive=self.high_exclusive),
+                Float(self.second_label, self.description + ' (high)',
+                    self.second_default,
+                    low_inclusive=self.low_inclusive,
+                    low_exclusive=self.low_exclusive,
+                    high_inclusive=self.high_inclusive,
+                    high_exclusive=self.high_exclusive),
+                )
+
+    def _validate_interaction(self, first_value, second_value):
+        width = second_value - first_value
+        if width < 0:
+            raise FormError(
+                    'the value in the field "%s" should not be greater than '
+                    'the value in the field "%s"' % (
+                        self.first_label, self.second_label))
+        if self.low_width_inclusive is not None:
+            if width < self.low_width:
+                raise FormError(
+                        'the difference between the endpoints '
+                        'of the interval from '
+                        '"%s" to "%s" should be at least %s' % (
+                            self.first_label, self.second_label,
+                            self.low_width_inclusive))
+        if self.low_width_exclusive is not None:
+            if width <= self.low_width:
+                raise FormError(
+                        'the difference between the endpoints '
+                        'of the interval from '
+                        '"%s" to "%s" should be more than %s' % (
+                            self.first_label, self.second_label,
+                            self.low_width_exclusive))
+        if self.high_width_inclusive is not None:
+            if width > self.high_width_inclusive:
+                raise FormError(
+                        'the difference between the endpoints '
+                        'of the interval from '
+                        '"%s" to "%s" should be at most %s' % (
+                            self.first_label, self.second_label,
+                            self.high_width_inclusive))
+        if self.high_width_exclusive is not None:
+            if width > self.high_width_exclusive:
+                raise FormError(
+                        'the difference between the endpoints '
+                        'of the interval from '
+                        '"%s" to "%s" should less than %s' % (
+                            self.first_label, self.second_label,
+                            self.high_width_exclusive))
 
 
 class Sequence(MultiLine):
