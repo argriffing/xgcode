@@ -1557,7 +1557,7 @@ class FloatInterval(_Interval):
                     'the value in the field "%s"' % (
                         self.first_label, self.second_label))
         if self.low_width_inclusive is not None:
-            if width < self.low_width:
+            if width < self.low_width_inclusive:
                 raise FormError(
                         'the difference between the endpoints '
                         'of the interval from '
@@ -1565,7 +1565,7 @@ class FloatInterval(_Interval):
                             self.first_label, self.second_label,
                             self.low_width_inclusive))
         if self.low_width_exclusive is not None:
-            if width <= self.low_width:
+            if width <= self.low_width_exclusive:
                 raise FormError(
                         'the difference between the endpoints '
                         'of the interval from '

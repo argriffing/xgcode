@@ -121,12 +121,10 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('start',
-                'sub-sequence start position (1-%d)' % g_nchar,
-                1, low=1, high=g_nchar),
-            Form.Integer('stop',
-                'sub-sequence stop position (1-%d)' % g_nchar,
-                g_nchar, low=1, high=g_nchar)]
+            Form.IntegerInterval(
+                'start', 'stop', 'sub-sequence interval',
+                1, beasttut.g_nchar, low=1, high=beasttut.g_nchar),
+            ]
     return form_objects
 
 def get_form_out():

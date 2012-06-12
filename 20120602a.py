@@ -9,10 +9,6 @@ At medium times, the process with a cycle-like lethality pattern
 give more information.
 """
 
-from StringIO import StringIO
-import math
-
-import numpy as np
 import scipy
 from scipy import optimize
 
@@ -26,10 +22,9 @@ def get_form():
     @return: the body of a form
     """
     return [
-            Form.Float('a', 'a divtime bracket endpoint',
-                '0.65', low_inclusive=0),
-            Form.Float('b', 'a divtime bracket endpoint',
-                '0.70', low_inclusive=0),
+            Form.FloatInterval(
+                'a', 'b', 'divtime interval',
+                '0.65', '0.70', low_inclusive=0),
             ]
 
 def get_form_out():

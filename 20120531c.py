@@ -37,8 +37,9 @@ def get_form():
                     'log', '(d-1)*log(2) hypercube limit', True)]),
             Form.CheckGroup(
                 'processes', 'plot mutual information', check_items),
-            Form.Float('start_time', 'start time', '0.04', low_exclusive=0),
-            Form.Float('stop_time', 'stop time', '0.1', low_exclusive=0),
+            Form.FloatInterval(
+                'start_time', 'stop_time', 'divtime interval',
+                '0.04', '0.1', low_exclusive=0),
             Form.ImageFormat(),
             ]
 
@@ -65,9 +66,6 @@ class OptDep:
         return -self.f_info(Q, distn, self.t)
 
 def get_response_content(fs):
-    # validate and store user input
-    if fs.stop_time <= fs.start_time:
-        raise ValueError('check the start and stop times')
     d = fs.d
     f_info = ctmcmi.get_mutual_info_known_distn
     requested_triples = []

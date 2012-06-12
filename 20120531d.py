@@ -25,8 +25,9 @@ def get_form():
     """
     return [
             Form.Float('t', 'divergence time', '0.066', low_exclusive=0),
-            Form.Float('x_min', 'min log probability ratio', '-2.5'),
-            Form.Float('x_max', 'max log probability ratio', '2.5'),
+            Form.FloatInterval(
+                'x_min', 'x_max', 'log probability ratio interval',
+                '-2.5', '2.5'),
             Form.ImageFormat(),
             ]
 
@@ -44,9 +45,6 @@ def get_presets():
                     'imageformat' : 'png'})]
 
 def get_response_content(fs):
-    # validate and store user input
-    if fs.x_max <= fs.x_min:
-        raise ValueError('check the min and max logs')
     f_info = ctmcmi.get_mutual_info_known_distn
     # define the R table headers
     headers = ['log.probability.ratio', 'mutual.information']

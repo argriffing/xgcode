@@ -55,10 +55,11 @@ def get_form():
                 ('1', '1')),
             Form.Float('scale', 'extra scaling factor',
                 '1.0', low_exclusive=0),
-            Form.Float('start_time', 'start time', '0.1', low_exclusive=0),
-            Form.Float('stop_time', 'stop time', '0.6', low_exclusive=0),
             Form.Integer('nsites', 'number of sites',
                 '2', low=1, high=4),
+            Form.FloatInterval(
+                'start_time', 'stop_time', 'divtime interval',
+                '0.1', '0.6', low_exclusive=0),
             Form.CheckGroup('proctypes', 'processes', [
                 Form.CheckItem('indep_mutation',
                     'site independent mutation', True),
@@ -205,9 +206,6 @@ class OptIndep:
         return -self.f_info(Q, v_site_indep, self.t)
 
 def get_response_content(fs):
-    # validate and store user input
-    if fs.stop_time <= fs.start_time:
-        raise ValueError('check the start and stop times')
     M = get_input_matrix(fs)
     nstates = len(M)
     nsites = fs.nsites

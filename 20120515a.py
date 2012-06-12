@@ -33,14 +33,9 @@ def get_form():
                 '6', low_exclusive=0, high_exclusive=20),
             Form.Float('t_max', 'max time',
                 '5', low_exclusive=0),
-            Form.Float('p_low', 'proportion lower bound',
-                '0.6', low_exclusive=0.25, high_exclusive=1.0),
-            Form.Float('p_high', 'proportion upper bound',
-                '0.8', low_exclusive=0.25, high_exclusive=1.0),
-            #Form.Float('t_a', 'lower bound of interval of interest',
-                #'1.0', low_exclusive=0),
-            #Form.Float('t_b', 'upper bound of interval of interest',
-                #'1.5', low_exclusive=0),
+            Form.FloatInterval(
+                'p_low', 'p_high', 'proportion interval',
+                '0.6', '0.8', low_exclusive=0.25, high_exclusive=1),
             Form.TikzFormat()]
     return form_objects
 

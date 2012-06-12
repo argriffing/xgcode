@@ -49,10 +49,9 @@ def get_form():
             Form.Float('scale',
                 'extra scaling factor',
                 '1.333333333333', low_exclusive=0),
-            Form.Float('start_time', 'start time',
-                '0', low_inclusive=0),
-            Form.Float('stop_time', 'stop time',
-                '5', low_exclusive=0),
+            Form.FloatInterval(
+                'start_time', 'stop_time', 'divtime interval',
+                '0', '5', low_inclusive=0, low_width_exclusive=0),
             Form.CheckGroup('options', 'options', [
                 Form.CheckItem('show_entropy', 'show entropy', True)]),
             Form.ImageFormat()]
@@ -62,8 +61,6 @@ def get_form_out():
     return FormOut.Image('mutual-info-bounds')
 
 def get_response_content(fs):
-    if fs.stop_time <= fs.start_time:
-        raise ValueError('check the start and stop times')
     M = get_input_matrix(fs)
     # create the R table string and scripts
     headers = ['t']

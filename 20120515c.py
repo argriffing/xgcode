@@ -33,10 +33,9 @@ def get_form():
                 '4', low_exclusive=0, high_exclusive=20),
             Form.Float('t_max', 'max time',
                 '5', low_exclusive=0),
-            Form.Float('slow_mu', 'slow randomization rate',
-                '0.4', low_exclusive=0),
-            Form.Float('fast_mu', 'fast randomization rate',
-                '1', low_exclusive=0),
+            Form.FloatInterval(
+                'slow_mu', 'fast_mu', 'slow vs. fast randomization rates',
+                '0.4', '1', low_exclusive=0),
             Form.RadioGroup('info_type', 'information type', [
                 Form.RadioItem('info_identity_slope',
                     'abs slope of expected identity', True),

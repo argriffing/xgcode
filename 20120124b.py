@@ -38,12 +38,12 @@ def get_form():
                 Form.RadioItem('neg_skew', 'some are very fit'),
                 Form.RadioItem('no_skew', 'no skew', True),
                 Form.RadioItem('pos_skew', 'some are very unfit')]),
-            Form.Float('t_low', 'initial time',
-                '0.001', low_exclusive=0),
-            Form.Float('t_high', 'final time',
-                '4.0', low_exclusive=0),
             Form.Integer('ntimes', 'sample this many time points',
-                10, low=3, high=100)]
+                10, low=3, high=100),
+            Form.FloatInterval(
+                't_low', 't_high', 'divtime interval',
+                '0.001', '4.0', low_exclusive=0),
+            ]
     return form_objects
 
 def get_form_out():

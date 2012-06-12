@@ -30,28 +30,17 @@ def get_form():
                 '6', low_exclusive=0, high_exclusive=20),
             Form.Float('t_max', 'max time',
                 '5', low_exclusive=0),
-            Form.Float('slow_mu', 'slow randomization rate',
-                '0.4', low_exclusive=0),
-            Form.Float('fast_mu', 'fast randomization rate',
-                '1', low_exclusive=0),
+            Form.FloatInterval(
+                'slow_mu', 'fast_mu', 'slow vs. fast randomization rates',
+                '0.4', '1', low_exclusive=0),
+            Form.FloatInterval(
+                'slow_low', 'slow_high', 'slow process proportion midpoints',
+                '0.5', '0.9', low_exclusive=0.25, high_exclusive=1),
+            Form.FloatInterval(
+                'fast_low', 'fast_high', 'fast process proportion midpoints',
+                '0.3', '0.77', low_exclusive=0.25, high_exclusive=1),
             Form.Float('p_width', 'proportion interval width',
                 '0.06', low_exclusive=0, high_exclusive=0.75),
-            Form.Float('slow_high', 'high proportion for slow process',
-                '0.9', low_exclusive=0.25, high_exclusive=1),
-            Form.Float('fast_high', 'high proportion for fast process',
-                '0.77', low_exclusive=0.25, high_exclusive=1),
-            Form.Float('slow_low', 'low proportion for slow process',
-                '0.5', low_exclusive=0.25, high_exclusive=1),
-            Form.Float('fast_low', 'low proportion for fast process',
-                '0.3', low_exclusive=0.25, high_exclusive=1),
-            #Form.Float('p_low', 'proportion lower bound',
-                #'0.6', low_exclusive=0.25, high_exclusive=1.0),
-            #Form.Float('p_high', 'proportion upper bound',
-                #'0.8', low_exclusive=0.25, high_exclusive=1.0),
-            #Form.Float('t_a', 'lower bound of interval of interest',
-                #'1.0', low_exclusive=0),
-            #Form.Float('t_b', 'upper bound of interval of interest',
-                #'1.5', low_exclusive=0),
             Form.TikzFormat()]
     return form_objects
 

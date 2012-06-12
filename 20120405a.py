@@ -42,6 +42,7 @@ g_headers = (
 
 #TODO use lxml
 
+#TODO use the beastut and beast modules
 
 g_xml_pre_alignment = """
 <?xml version="1.0" standalone="yes"?>
@@ -430,12 +431,10 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('start',
-                'sub-sequence start position (1-%d)' % g_nchar,
-                1, low=1, high=g_nchar),
-            Form.Integer('stop',
-                'sub-sequence stop position (1-%d)' % g_nchar,
-                g_nchar, low=1, high=g_nchar)]
+            Form.IntegerInterval(
+                'start', 'stop', 'sub-sequence interval',
+                1, g_nchar, low=1, high=g_nchar),
+            ]
     return form_objects
 
 def get_form_out():

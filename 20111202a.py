@@ -53,13 +53,12 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.Integer('nstates', 'number of states', 4, low=2, high=9),
-            Form.Float('t_low', 'initial time',
-                0, low_inclusive=0),
-            Form.Float('t_high', 'final time',
-                '0.8', low_exclusive=0),
             Form.Float('sel_surr',
                 'unitless deviation from uniformity (between 0 and 1)',
                 '0.95', low_inclusive=0, high_exclusive=1),
+            Form.FloatInterval(
+                't_low', 't_high', 'divtime interval',
+                '0', '0.8', low_inclusive=0, low_width_exclusive=0),
             Form.RadioGroup('selection', 'selection approximation', [
                 Form.RadioItem(BALANCED, 'WAG-like f=1/2'),
                 Form.RadioItem(HALPERN_BRUNO, 'Halpern-Bruno', True)]),

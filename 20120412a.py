@@ -25,12 +25,9 @@ def get_form():
     @return: the body of a form
     """
     form_objects = [
-            Form.Integer('start',
-                'sub-sequence start position (1-%d)' % beasttut.g_nchar,
-                1, low=1, high=beasttut.g_nchar),
-            Form.Integer('stop',
-                'sub-sequence stop position (1-%d)' % beasttut.g_nchar,
-                beasttut.g_nchar, low=1, high=beasttut.g_nchar),
+            Form.IntegerInterval(
+                'start', 'stop', 'sub-sequence interval',
+                1, beasttut.g_nchar, low=1, high=beasttut.g_nchar),
             Form.Integer('nsamples', 'mcmc chain steps',
                 8000, low=80, high=8000)]
     return form_objects

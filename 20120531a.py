@@ -56,8 +56,9 @@ def get_form():
                 'processes',
                 'plot max divtime info for these parameterized processes',
                 check_items),
-            Form.Float('start_time', 'start time', '0.6', low_exclusive=0),
-            Form.Float('stop_time', 'stop time', '1.4', low_exclusive=0),
+            Form.FloatInterval(
+                'start_time', 'stop_time', 'divtime interval',
+                '0.6', '1.4', low_exclusive=0),
             Form.ImageFormat(),
             ]
 
@@ -84,9 +85,6 @@ class OptDep:
         return -self.f_info(Q, distn, self.t)
 
 def get_response_content(fs):
-    # validate and store user input
-    if fs.stop_time <= fs.start_time:
-        raise ValueError('check the start and stop times')
     f_info = divtime.get_fisher_info_known_distn_fast
     requested_triples = []
     for triple in g_process_triples:

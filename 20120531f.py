@@ -30,10 +30,9 @@ def get_form():
     """
     return [
             Form.Integer('d', 'number of sites', 2, low=2, high=5),
-            Form.Float('a', 'a divtime bracket endpoint',
-                '.1', low_inclusive=0),
-            Form.Float('b', 'a divtime bracket endpoint',
-                '.2', low_inclusive=0),
+            Form.FloatInterval(
+                'a', 'b', 'divtime interval',
+                '.1', '.2', low_inclusive=0),
             ]
 
 def get_form_out():

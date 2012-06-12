@@ -10,9 +10,6 @@ parameterized by a single degree of freedom
 gives more information.
 """
 
-from StringIO import StringIO
-import math
-
 import numpy as np
 import scipy
 from scipy import optimize
@@ -27,10 +24,9 @@ def get_form():
     @return: the body of a form
     """
     return [
-            Form.Float('a', 'a divtime bracket endpoint',
-                '1.13', low_inclusive=0),
-            Form.Float('b', 'a divtime bracket endpoint',
-                '1.15', low_inclusive=0),
+            Form.FloatInterval(
+                'a', 'b', 'divtime interval',
+                '1.13', '1.15', low_inclusive=0),
             ]
 
 def get_form_out():

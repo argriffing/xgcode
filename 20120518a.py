@@ -34,10 +34,9 @@ def get_form():
                 '1.333333333', low_exclusive=0),
             Form.Float('mu_b', 'second process randomization rate',
                 '0.666666666', low_exclusive=0),
-            Form.Float('t_low', 'initial time',
-                0, low_inclusive=0),
-            Form.Float('t_high', 'final time',
-                '5.0', low_exclusive=0),
+            Form.FloatInterval(
+                't_low', 't_high', 'divtime interval',
+                '0', '5', low_inclusive=0, low_width_exclusive=0),
             Form.RadioGroup('legend_placement', 'plot legend location', [
                 Form.RadioItem(TOPLEFT, 'top left'),
                 Form.RadioItem(BOTTOMLEFT, 'bottom left'),

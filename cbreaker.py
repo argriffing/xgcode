@@ -46,7 +46,7 @@ class Throttled:
             self.nseconds = time.time() - self.t0
     def __str__(self):
         out = StringIO()
-        print >> out, 'termination condition:', self.condition
+        print >> out, 'loop termination explanation:', self.condition
         print >> out, 'completed iterations:', self.ncompleted
         print >> out, 'elapsed time:', self.nseconds
         return out.getvalue().rstrip()

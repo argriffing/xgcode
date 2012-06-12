@@ -28,10 +28,9 @@ def get_form():
     @return: the body of a form
     """
     return [
-            Form.Float('a', 'a divtime bracket endpoint',
-                '0.85', low_inclusive=0),
-            Form.Float('b', 'a divtime bracket endpoint',
-                '0.87', low_inclusive=0),
+            Form.FloatInterval(
+                'a', 'b', 'divtime interval',
+                '0.85', '0.87', low_inclusive=0),
             ]
 
 def get_form_out():
