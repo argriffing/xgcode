@@ -1348,10 +1348,60 @@ class MultiLine:
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
 
+
 class _Interval:
+    """
+    This is a virtual base class for Integer and Float intervals.
+    """
 
     def web_only(self):
         return False
+
+    def get_preset_pairs(self):
+        return tuple(item.get_preset_pair() for item in self._get_temp_items())
+
+    def get_galaxy_cmd(self):
+        a, b = self._get_temp_items()
+        return '%s %s' % (a.get_galaxy_cmd(), b.get_galaxy_cmd())
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        for item in self._get_temp_items():
+            item.add_galaxy_xml(parent)
+
+    def add_mob_xml(self, parent, next_argpos):
+        """
+        Add a mobyle parameter to the xml tree.
+        @param parent: parent etree element
+        @param next_argpos: a 1-based integer for cmdline arg ordering
+        @return: the number of args added on the command line
+        """
+        items = self._get_temp_items()
+        argpos = next_argpos
+        for i, item in items:
+            argpos = item.add_mob_xml(parent, argpos)
+        return len(items)
+
+    def get_help_objects(self):
+        return tuple(item.get_help_object() for item in self._get_temp_items())
+
+    def process_cmdline_dict(self, d_in, d_out):
+        a, b = self._get_temp_items()
+        a.process_cmdline_dict(d_in, d_out)
+        b.process_cmdline_dict(d_in, d_out)
+        self._validate_interaction(d_out[a.label], d_out[b.label])
+
+    def process_fieldstorage(self, fs):
+        """
+        @param fs: a FieldStorage object to be decorated with extra attributes
+        """
+        a, b = self._get_temp_items()
+        a.process_fieldstorage(fs)
+        b.process_fieldstorage(fs)
+        self._validate_interaction(getattr(fs, a.label), getattr(fs, b.label))
 
 
 class IntegerInterval(_Interval):
@@ -1397,37 +1447,6 @@ class IntegerInterval(_Interval):
                     self.second_default, low=self.low, high=self.high),
                 )
 
-    def get_preset_pairs(self):
-        return tuple(item.get_preset_pair() for item in self._get_temp_items())
-
-    def get_galaxy_cmd(self):
-        a, b = self._get_temp_items()
-        return '%s %s' % (a.get_galaxy_cmd(), b.get_galaxy_cmd())
-
-    def add_galaxy_xml(self, parent):
-        """
-        Add a galaxy parameter to the xml tree.
-        @param parent: parent etree element
-        """
-        for item in self._get_temp_items():
-            item.add_galaxy_xml(parent)
-
-    def add_mob_xml(self, parent, next_argpos):
-        """
-        Add a mobyle parameter to the xml tree.
-        @param parent: parent etree element
-        @param next_argpos: a 1-based integer for cmdline arg ordering
-        @return: the number of args added on the command line
-        """
-        items = self._get_temp_items()
-        argpos = next_argpos
-        for i, item in items:
-            argpos = item.add_mob_xml(parent, argpos)
-        return len(items)
-
-    def get_help_objects(self):
-        return tuple(item.get_help_object() for item in self._get_temp_items())
-
     def get_html_lines(self):
         """
         @return: the list of lines of html text
@@ -1447,7 +1466,8 @@ class IntegerInterval(_Interval):
         esc_default_line_a = cgi.escape(default_line_a)
         esc_default_line_b = cgi.escape(default_line_b)
         lines = [
-                esc_description + ':',
+                # clicking the description selects the first textbox
+                _get_colon_label_line(esc_label_a, esc_description),
                 '<br/>',
                 _get_textbox_line(esc_label_a, esc_default_line_a, width),
                 '<code> -- </code>',
@@ -1479,20 +1499,6 @@ class IntegerInterval(_Interval):
                             self.first_label, self.second_label,
                             self.high_width))
 
-    def process_cmdline_dict(self, d_in, d_out):
-        a, b = self._get_temp_items()
-        a.process_cmdline_dict(d_in, d_out)
-        b.process_cmdline_dict(d_in, d_out)
-        self._validate_interaction(d_out[a.label], d_out[b.label])
-
-    def process_fieldstorage(self, fs):
-        """
-        @param fs: a FieldStorage object to be decorated with extra attributes
-        """
-        a, b = self._get_temp_items()
-        a.process_fieldstorage(fs)
-        b.process_fieldstorage(fs)
-        self._validate_interaction(getattr(fs, a.label), getattr(fs, b.label))
 
 
 
