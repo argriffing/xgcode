@@ -1,5 +1,5 @@
 """
-Use BEAST to analyze multiple partitions of an alignment. [UNFINISHED]
+Use BEAST to analyze multiple partitions of an alignment.
 
 The idea is that different intervals will have different
 estimates for the coefficient of variation
@@ -46,10 +46,9 @@ def get_form():
     # The web interface uses a fixed xml
     # and looks at only a single column interval.
     return [
-            Form.Integer('start_pos', 'alignment interval start position',
-                '1', low=1, high=g_ncols_max),
-            Form.Integer('stop_pos', 'alignment interval stop position',
-                '456', low=1, high=g_ncols_max),
+            Form.IntegerInterval(
+                'start_pos', 'stop_pos', 'alignment interval',
+                1, g_ncols_max, low=1, high=g_ncols_max),
             Form.Integer('nsamples', 'mcmc chain steps',
                 8000, low=80, high=8000)
             ]

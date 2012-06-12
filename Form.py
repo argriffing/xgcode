@@ -76,8 +76,17 @@ class Preset(object):
         self.d = d
 
 def get_default_preset(form_objects):
-    d = dict(o.get_preset_pair() for o in form_objects)
-    return Preset('default', d)
+    preset_pairs = []
+    for obj in form_objects:
+        obj_preset_pairs = None
+        try:
+            obj_preset_pairs = obj.get_preset_pairs()
+        except AttributeError as e:
+            pass
+        if obj_preset_pairs is None:
+            obj_preset_pairs = [obj.get_preset_pair()]
+        preset_pairs.extend(obj_preset_pairs)
+    return Preset('default', dict(preset_pairs))
 
 class HelpItem(object):
     def __init__(self, command, description):
@@ -126,8 +135,16 @@ def get_help_string(form_objects):
     @param form_objects: a list of form objects
     """
     # Get the help objects
-    help_objects = [
-            x.get_help_object() for x in form_objects if not x.web_only()]
+    help_objects = []
+    for obj in form_objects:
+        obj_help_objects = None
+        try:
+            obj_help_objects = obj.get_help_objects()
+        except AttributeError as e:
+            pass
+        if obj_help_objects is None:
+            obj_help_objects = [obj.get_help_object()]
+        help_objects.extend(obj_help_objects)
     # Get the length of the longest partial line.
     pline_lists = [x.get_partial_lines() for x in help_objects]
     plines = list(itertools.chain.from_iterable(pline_lists))
@@ -1215,8 +1232,7 @@ class Matrix:
 class MultiLine:
     """
     This represents a multi-line text box.
-    The text wrapping is always off,
-    and the number of columns is always seventy.
+    The text wrapping is always off, and the number of columns is fixed.
     """
 
     def __init__(self, label, description, default_string):
@@ -1331,6 +1347,153 @@ class MultiLine:
                     'the value for the field "%s" is ambiguous' % self.label)
         # set the value for the attribute in the fieldstorage object
         setattr(fs, self.label, value)
+
+class _Interval:
+
+    def web_only(self):
+        return False
+
+
+class IntegerInterval(_Interval):
+    """
+    This represents an ordered pair of integers.
+    It is experimental.
+    """
+
+    def __init__(self,
+            first_label, second_label,
+            description,
+            first_default, second_default,
+            low=None, high=None, low_width=None, high_width=None):
+        """
+        @param first_label: something like a variable name
+        @param second_label: something like a variable name
+        @param description: a single line description of the item
+        @param first_default: the default low integer
+        @param second_default: the default high integer
+        @param low: inclusive lower bound on the first and second values
+        @param high: inclusive upper bound on the first and second values
+        @param low_width: inclusive lower bound on width
+        @param high_width: inclusive upper bound on width
+        """
+        self.first_label = first_label
+        self.second_label = second_label
+        self.description = description
+        self.first_default = first_default
+        self.second_default = second_default
+        self.low = low
+        self.high = high
+        self.low_width = low_width
+        self.high_width = high_width
+
+    def _get_temp_items(self):
+        """
+        Make a couple of temporary Integer items for convenience.
+        """
+        return (
+                Integer(self.first_label, self.description + ' (low)',
+                    self.first_default, low=self.low, high=self.high),
+                Integer(self.second_label, self.description + ' (high)',
+                    self.second_default, low=self.low, high=self.high),
+                )
+
+    def get_preset_pairs(self):
+        return tuple(item.get_preset_pair() for item in self._get_temp_items())
+
+    def get_galaxy_cmd(self):
+        a, b = self._get_temp_items()
+        return '%s %s' % (a.get_galaxy_cmd(), b.get_galaxy_cmd())
+
+    def add_galaxy_xml(self, parent):
+        """
+        Add a galaxy parameter to the xml tree.
+        @param parent: parent etree element
+        """
+        for item in self._get_temp_items():
+            item.add_galaxy_xml(parent)
+
+    def add_mob_xml(self, parent, next_argpos):
+        """
+        Add a mobyle parameter to the xml tree.
+        @param parent: parent etree element
+        @param next_argpos: a 1-based integer for cmdline arg ordering
+        @return: the number of args added on the command line
+        """
+        items = self._get_temp_items()
+        argpos = next_argpos
+        for i, item in items:
+            argpos = item.add_mob_xml(parent, argpos)
+        return len(items)
+
+    def get_help_objects(self):
+        return tuple(item.get_help_object() for item in self._get_temp_items())
+
+    def get_html_lines(self):
+        """
+        @return: the list of lines of html text
+        """
+        # get the default line of text
+        default_line_a = str(self.first_default)
+        default_line_b = str(self.second_default)
+        # calculate a multiple of ten that will hold the string
+        width = max(
+                ((len(default_line_a) / 10) + 1) * 10,
+                ((len(default_line_b) / 10) + 1) * 10,
+                )
+        # get escaped values
+        esc_label_a = cgi.escape(self.first_label)
+        esc_label_b = cgi.escape(self.second_label)
+        esc_description = cgi.escape(self.description)
+        esc_default_line_a = cgi.escape(default_line_a)
+        esc_default_line_b = cgi.escape(default_line_b)
+        lines = [
+                esc_description + ':',
+                '<br/>',
+                _get_textbox_line(esc_label_a, esc_default_line_a, width),
+                '<code> -- </code>',
+                _get_textbox_line(esc_label_b, esc_default_line_b, width),
+                ]
+        return lines
+
+    def _validate_interaction(self, first_value, second_value):
+        width = second_value - first_value
+        if width < 0:
+            raise FormError(
+                    'the integer in the field "%s" should not be greater than '
+                    'the integer in the field "%s"' % (
+                        self.first_label, self.second_label))
+        if self.low_width is not None:
+            if width < self.low_width:
+                raise FormError(
+                        'the difference between the endpoints '
+                        'of the integer interval from '
+                        '"%s" to "%s" should be at least %s' % (
+                            self.first_label, self.second_label,
+                            self.low_width))
+        if self.high_width is not None:
+            if width > self.high_width:
+                raise FormError(
+                        'the difference between the endpoints '
+                        'of the integer interval from '
+                        '"%s" to "%s" should be at most %s' % (
+                            self.first_label, self.second_label,
+                            self.high_width))
+
+    def process_cmdline_dict(self, d_in, d_out):
+        a, b = self._get_temp_items()
+        a.process_cmdline_dict(d_in, d_out)
+        b.process_cmdline_dict(d_in, d_out)
+        self._validate_interaction(d_out[a.label], d_out[b.label])
+
+    def process_fieldstorage(self, fs):
+        """
+        @param fs: a FieldStorage object to be decorated with extra attributes
+        """
+        a, b = self._get_temp_items()
+        a.process_fieldstorage(fs)
+        b.process_fieldstorage(fs)
+        self._validate_interaction(getattr(fs, a.label), getattr(fs, b.label))
+
 
 
 class Sequence(MultiLine):

@@ -20,10 +20,9 @@ g_primates_xml = const.read('20120605a')
 
 def get_form():
     form_objects = [
-            Form.Integer('start_pos', 'alignment interval start position',
-                '1', low=1, high=4263),
-            Form.Integer('stop_pos', 'alignment interval stop position',
-                '4263', low=1, high=4263),
+            Form.IntegerInterval(
+                'start_pos', 'stop_pos', 'alignment interval',
+                1, 4263, low=1, high=4263),
             Form.Integer('nsteps', 'MCMC steps', 8000, low=1),
             Form.SingleLine('alignment_id', 'alignment id', 'alignment'),
             Form.SingleLine('mcmc_id', 'mcmc id', 'mcmc'),
