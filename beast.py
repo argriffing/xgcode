@@ -25,6 +25,20 @@ g_loganalyser_headers = [
         'hpdLower', 'hpdUpper', 'ESS',
         '50hpdLower', '50hpdUpper']
 
+def to_float(s):
+    """
+    The loganalyser output has annoying infinity symbols.
+    I think it is ascii 236.
+    """
+    loganalyser_infinity = chr(226) + chr(136) + chr(158)
+    python_infinity = 'inf'
+    s = s.replace(loganalyser_infinity, python_infinity)
+    try:
+        value = float(s)
+    except ValueError as e:
+        raise ValueError(str(e) + ' : ' + ' '.join(str(ord(x)) for x in s))
+    return value
+
 def set_log_logevery(xmldata, log_id, logevery):
     """
     Sometimes the log id is fileLog.
@@ -206,7 +220,10 @@ def loganalyser_to_array(lstr):
             break
         # add the row to the array
         row = line.split()[:len(g_loganalyser_headers)]
-        row = [row[0]] + [float(x) for x in row[1:]]
+        try:
+            row = [row[0]] + [to_float(x) for x in row[1:]]
+        except ValueError as e:
+            raise ValueError(str(e) + '\n' + lstr)
         arr.append(row)
     return arr
 
@@ -220,7 +237,7 @@ def loganalyser_to_labeled_array(lstr):
     column_labels = arr_in[0][1:]
     arr_out = []
     for row_in in arr_in[1:]:
-        row_out = [float(x) for x in row_in[1:]]
+        row_out = row_in[1:]
         arr_out.append(row_out)
     return row_labels, column_labels, arr_out
 
