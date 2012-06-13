@@ -41,10 +41,10 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.Integer('first_index',
-                'first eigenfunction index (1 means Fiedler)', 0, low=0),
-            Form.Integer('last_index',
-                'last eigenfunction index (1 means Fiedler)', 12, low=0),
+            Form.IntegerInterval(
+                'first_index', 'last_index',
+                'eigenfunction index range (1 means Fiedler)',
+                0, 12, low=0),
             Form.CheckGroup('check_options', 'output options', [
                 Form.CheckItem('reflect_trees',
                     'reflect trees across the vertical axis'),
@@ -100,10 +100,6 @@ def get_response_content(fs):
     """
     # get a properly formatted newick tree with branch lengths
     T, B, N = FtreeIO.newick_to_TBN(fs.tree)
-    # check the indices
-    if fs.last_index < fs.first_index:
-        raise ValueError(
-                'the last index should not be greater than the first index')
     # get the vertex valuations
     all_valuations = TB_to_harmonic_valuations(T, B)
     valuations = all_valuations[fs.first_index:]

@@ -27,10 +27,10 @@ def get_form():
     # define the form objects
     form_objects = [
             Form.MultiLine('tree', 'newick tree', formatted_tree_string),
-            Form.Integer('first_index',
-                'first eigenfunction index (1 means Fiedler)', 0, low=0),
-            Form.Integer('last_index',
-                'last eigenfunction index (1 means Fiedler)', 12, low=0),
+            Form.IntegerInterval(
+                'first_index', 'last_index',
+                'eigenfunction index range (1 means Fiedler)',
+                0, 12, low=0),
             Form.CheckGroup('check_options', 'output options', [
                 Form.CheckItem('reflect_trees', 'reflect trees', True),
                 Form.CheckItem('draw_background', 'draw background', True),
@@ -48,10 +48,6 @@ def get_form_out():
 def get_response_content(fs):
     # get a properly formatted newick tree with branch lengths
     tree = Newick.parse(fs.tree, SpatialTree.SpatialTree)
-    # check the indices
-    if fs.last_index <= fs.first_index:
-        raise ValueError(
-                'the last index should be greater than the first index')
     # get the vertex valuations
     valuations = [Harmonic.get_harmonic_valuations(
         tree, i) for i in range(fs.first_index, fs.last_index+1)]
