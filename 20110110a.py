@@ -25,7 +25,7 @@ import math
 import argparse
 
 import numpy as np
-from enthought.mayavi import mlab
+from mayavi import mlab
 
 from SnippetUtil import HandlingError
 import SnippetUtil
