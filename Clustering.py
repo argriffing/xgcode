@@ -318,7 +318,7 @@ class StoneSpectralThresholdDMS(DistanceMatrixSplitter):
         """
         n = len(distance_matrix)
         R = get_R_balaji(distance_matrix)
-        # define the Fielder eigenvector
+        # define the Fiedler eigenvector
         w, v = scipy.linalg.eigh(R)
         eigenvalue_info = list(sorted((abs(x), i) for i, x in enumerate(w)))
         stationary_eigenvector_index = eigenvalue_info[0][1]
