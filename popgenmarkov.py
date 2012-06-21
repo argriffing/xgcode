@@ -23,7 +23,8 @@ def bin_to_int(arr):
     @param arr: sequence of zeros and ones
     @return: a nonnegative python integer
     """
-    return sum(v<<i for i, v in enumerate(reversed(arr)))
+    x = sum(v<<i for i, v in enumerate(reversed(arr)))
+    return int(x)
 
 def int_to_bin(x, npositions):
     """
@@ -32,37 +33,26 @@ def int_to_bin(x, npositions):
     @param npositions: length of the output array
     @return: an ndarray of zeros and ones
     """
-    return np.array([gmpy.getbit(x, npositions-1-i) for i in range(npositions)])
+    K = np.array(
+            [gmpy.getbit(x, npositions-1-i) for i in range(npositions)],
+            dtype=np.int8)
+    return K
 
-def ndarray_to_multiline_state(K):
-    return '\n'.join(''.join(str(x) for x in r) for r in K)
-
-def ndarray_to_integer_state(K):
+def bin2d_to_int(K):
     """
-    @param K: a rectangular array of integer ones and zeros
+    @param K: an ndarray of integer ones and zeros
     @return: a python integer representing the state
     """
-    nchromosomes, npositions = K.shape
-    w = []
-    for i in range(nchromosomes):
-        for j in range(npositions):
-            w.append(K[i,j])
-    return sum(v<<i for i, v in enumerate(w))
+    return bin_to_int(np.ravel(K))
 
-def integer_state_to_ndarray(k, nchromosomes, npositions):
+def int_to_bin2d(x, nrows, ncols):
     """
-    @param k: a python integer representing the state
-    @return: a rectangular array of integer ones and zeros
+    @param x: a nonnegative python integer
+    @param nrows: number of rows (chromosomes, domain-specifically)
+    @param ncols: number of columns (positions, domain-specifically)
+    @return: an ndarray with shape (nrows, ncols) containing zeros and ones
     """
-    arr = []
-    for i in range(nchromosomes):
-        row = []
-        for j in range(npositions):
-            v = k & 1
-            k >>= 1
-            row.append(v)
-        arr.append(row)
-    return np.array(arr)
+    return int_to_bin(x, nrows*ncols).reshape(nrows, ncols)
 
 def bitphase_to_nchanges(bitphase, npositions):
     """
@@ -71,8 +61,7 @@ def bitphase_to_nchanges(bitphase, npositions):
     @return: the number of state changes along the binary array
     """
     nboundaries = npositions - 1
-    mask = (1<<nboundaries) - 1
-    return gmpy.popcount(mask & (bitphase ^ (bitphase >> 1)))
+    return gmpy.popcount(gmpy.lowbits(bitphase ^ (bitphase >> 1), nboundaries))
 
 
 def get_chromosome_distn(selection, recombination, K):
@@ -107,9 +96,9 @@ def get_chromosome_distn(selection, recombination, K):
                 weight_phase += recombination**nchanges
                 weight_phase += (1-recombination)**(npositions-1-nchanges)
                 # get the corresponding chromosome index
-                w = [pair[(bitphase>>i) & 1] for i, pair in enumerate(
-                    parent_pairs)]
-                index = sum(v<<i for i, v in enumerate(w))
+                phases = int_to_bin(bitphase, npositions)
+                w = [pair[phase] for phase, pair in zip(phases, parent_pairs)]
+                index = bin_to_int(w)
                 distn[index] += weight_a * weight_b * weight_phase
     return distn / np.sum(distn)
 
@@ -151,6 +140,23 @@ class TestPopGenMarkov(unittest.TestCase):
         expected = 3
         observed = bitphase_to_nchanges(bitphase, npositions)
         self.assertEqual(expected, observed)
+
+    def test_bin2d_to_int(self):
+        K = np.array([
+            [0, 0, 1],
+            [1, 0, 1]])
+        expected = 13
+        observed = bin2d_to_int(K)
+        self.assertEqual(expected, observed)
+
+    def test_int_to_bin2d(self):
+        x = 13
+        expected = np.array([
+            [0, 0, 1],
+            [1, 0, 1]])
+        observed = int_to_bin2d(x, 2, 3)
+        self.assertTrue(np.allclose(expected, observed))
+
 
 
 if __name__ == '__main__':

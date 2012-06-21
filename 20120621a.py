@@ -69,6 +69,9 @@ def multiline_state_to_ndarray(multiline_state):
         arr.append(row)
     return np.array(arr)
 
+def ndarray_to_multiline_state(K):
+    return '\n'.join(''.join(str(x) for x in r) for r in K)
+
 
 def get_transition_matrix(
         selection, mutation, recombination,
