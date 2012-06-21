@@ -85,45 +85,10 @@ def get_transition_matrix(
     @param npositions: number of positions per chromosome
     @return: a numpy array
     """
-    nstates = 1 << (nchromosomes * npositions)
-    # define the mutation transition matrix
-    P_mutation = np.zeros((nstates, nstates))
-    for source in range(nstates):
-        for sink in range(nstates):
-            ndiff = gmpy.hamdist(source, sink)
-            nsame = nchromosomes * npositions - ndiff
-            P_mutation[source, sink] = (mutation**ndiff)*((1-mutation)**nsame)
-    """
-    print 'mutation transition matrix row sums:'
-    for value in np.sum(P_mutation, axis=1):
-        print value
-    print
-    """
-    # init the unnormalized selection and recombination transition matrix
-    M = np.zeros((nstates, nstates))
-    for source_index in range(nstates):
-        K_source = popgenmarkov.int_to_bin2d(
-                source_index, nchromosomes, npositions)
-        chromosome_distn = popgenmarkov.get_chromosome_distn(
-                selection, recombination, K_source)
-        for x in product(range(1<<npositions), repeat=nchromosomes):
-            weight = 1
-            for index in x:
-                weight *= chromosome_distn[index]
-            sink_index = 0
-            for i, index in enumerate(x):
-                sink_index <<= npositions
-                sink_index |= index
-            M[source_index, sink_index] = weight
-    M_row_sums = np.sum(M, axis=1)
-    P_selection_recombination = (M.T / M_row_sums).T
-    """
-    print 'selection-recombination matrix row sums:'
-    for value in np.sum(P_selection_recombination, axis=1):
-        print value
-    print
-    """
-    # define the state transition probability matrix
+    P_mutation = popgenmarkov.get_mutation_transition_matrix(
+            mutation, nchromosomes, npositions)
+    P_selection_recombination = popgenmarkov.get_selection_recombination_transition_matrix(
+            selection, recombination, nchromosomes, npositions)
     P = np.dot(P_selection_recombination, P_mutation)
     return P
 
@@ -187,8 +152,10 @@ def get_response_content(fs):
         raise ValueError(
                 'initial and final states do not have the same dimensions')
     nchromosomes, npositions = initial_state.shape
-    if nchromosomes * npositions > 10:
-        raise ValueError('at most 2^10 states are allowed per generation')
+    ndimcap = 12
+    if nchromosomes * npositions > ndimcap:
+        raise ValueError(
+                'at most 2^%d states are allowed per generation' % ndimcap)
     #
     mutation = 0.5 * fs.mutation_param
     recombination = 0.5 * fs.recombination_param

@@ -4,7 +4,7 @@ Sample a child chromosome given a parent population.
 The model is similar to that of Wright-Fisher
 and has mutation, selection, and recombination.
 Each of these effects is associated with a separate global parameter.
-For the initial and final state fields,
+For the parental population field,
 each row corresponds to a single chromosome
 and each column corresponds to a position within the chromosome.
 At every position in every chromosome
@@ -23,34 +23,24 @@ import FormOut
 import MatrixUtil
 from smallutil import stripped_lines
 import Util
+import popgenmarkov
 
-g_default_initial_state = """
+g_default_parental_state = """
 1111
 0000
-1010
-""".strip()
-
-g_default_final_state = """
-0000
-1100
-0011
 """.strip()
 
 def get_form():
     form_objects = [
-            Form.Integer('ngenerations', 'total number of generations',
-                10, low=3, high=100),
             Form.Float('selection_param', 'multiplicative allele fitness',
-                '1.01', low_inclusive=1),
+                '2.0', low_exclusive=0),
             Form.Float('mutation_param', 'mutation randomization probability',
-                '0.01', low_inclusive=0, high_inclusive=1),
+                '0.0001', low_inclusive=0, high_inclusive=1),
             Form.Float('recombination_param',
                 'linkage phase randomization probability',
-                '0.01', low_inclusive=0, high_inclusive=1),
-            Form.MultiLine('initial_state', 'initial state',
-                g_default_initial_state),
-            Form.MultiLine('final_state', 'final state',
-                g_default_final_state),
+                '0.001', low_inclusive=0, high_inclusive=1),
+            Form.MultiLine('parental_state', 'parental population',
+                g_default_parental_state),
             ]
     return form_objects
 
@@ -72,7 +62,6 @@ def multiline_state_to_ndarray(multiline_state):
 def ndarray_to_multiline_state(K):
     return '\n'.join(''.join(str(x) for x in r) for r in K)
 
-
 def get_transition_matrix(
         selection, mutation, recombination,
         nchromosomes, npositions):
@@ -81,8 +70,8 @@ def get_transition_matrix(
     The first transition matrix accounts for selection and recombination.
     The second transition matrix independently accounts for mutation.
     @param selection: a fitness ratio
-    @param mutation: a state randomization probability
-    @param recombination: a linkage phase randomization probability
+    @param mutation: a state change probability
+    @param recombination: a linkage phase change probability
     @param nchromosomes: number of chromosomes in the population
     @param npositions: number of positions per chromosome
     @return: a numpy array
@@ -95,16 +84,18 @@ def get_transition_matrix(
             ndiff = gmpy.hamdist(source, sink)
             nsame = nchromosomes * npositions - ndiff
             P_mutation[source, sink] = (mutation**ndiff)*((1-mutation)**nsame)
+    """
     print 'mutation transition matrix row sums:'
     for value in np.sum(P_mutation, axis=1):
         print value
     print
+    """
     # init the unnormalized selection and recombination transition matrix
     M = np.zeros((nstates, nstates))
     for source_index in range(nstates):
-        K_source = integer_state_to_ndarray(
+        K_source = popgenmarkov.int_to_bin2d(
                 source_index, nchromosomes, npositions)
-        chromosome_distn = get_chromosome_distn(
+        chromosome_distn = popgenmarkov.get_chromosome_distn(
                 selection, recombination, K_source)
         for x in product(range(1<<npositions), repeat=nchromosomes):
             weight = 1
@@ -117,10 +108,12 @@ def get_transition_matrix(
             M[source_index, sink_index] = weight
     M_row_sums = np.sum(M, axis=1)
     P_selection_recombination = (M.T / M_row_sums).T
+    """
     print 'selection-recombination matrix row sums:'
     for value in np.sum(P_selection_recombination, axis=1):
         print value
     print
+    """
     # define the state transition probability matrix
     P = np.dot(P_selection_recombination, P_mutation)
     return P
@@ -179,14 +172,14 @@ def sample_endpoint_conditioned_path(
     return path
 
 def get_response_content(fs):
-    initial_state = multiline_state_to_ndarray(fs.initial_state)
-    final_state = multiline_state_to_ndarray(fs.final_state)
-    if initial_state.shape != final_state.shape:
-        raise ValueError(
-                'initial and final states do not have the same dimensions')
-    nchromosomes, npositions = initial_state.shape
-    if nchromosomes * npositions > 12:
-        raise ValueError('at most 2^12 states are allowed per generation')
+    parental_state = multiline_state_to_ndarray(fs.parental_state)
+    nchromosomes, npositions = parental_state.shape
+    if nchromosomes * npositions > 10:
+        raise ValueError('at most 2^10 states are allowed')
+    #
+    mutation = 0.5 * fs.mutation_param
+    recombination = 0.5 * fs.recombination_param
+    selection = fs.selection_param
     #
     out = StringIO()
     print >> out, 'number of chromosomes:'
@@ -195,29 +188,21 @@ def get_response_content(fs):
     print >> out, 'number of positions per chromosome:'
     print >> out, npositions
     print >> out
-    print >> out, 'initial and final states:'
-    print >> out
-    for K in (initial_state, final_state):
-        print >> out, ndarray_to_multiline_state(
-                integer_state_to_ndarray(
-                    ndarray_to_integer_state(K), nchromosomes, npositions))
-        print >> out
-    print >> out
     # define the transition matrix
     P = get_transition_matrix(
-            fs.selection_param, fs.mutation_param, fs.recombination_param,
-            nchromosomes, npositions)
+            selection, mutation, recombination, nchromosomes, npositions)
     # sample the endpoint conditioned path
-    initial_integer_state = ndarray_to_integer_state(initial_state)
-    final_integer_state = ndarray_to_integer_state(final_state)
+    initial_integer_state = popgenmarkov.bin2d_to_int(initial_state)
+    final_integer_state = popgenmarkov.bin2d_to_int(final_state)
     path = sample_endpoint_conditioned_path(
             initial_integer_state, final_integer_state,
             fs.ngenerations, P)
     print >> out, 'sampled endpoint conditioned path, including endpoints:'
     print >> out
     for integer_state in path:
+        # print integer_state
         print >> out, ndarray_to_multiline_state(
-                integer_state_to_ndarray(
+                popgenmarkov.int_to_bin2d(
                     integer_state, nchromosomes, npositions))
         print >> out
     return out.getvalue()
