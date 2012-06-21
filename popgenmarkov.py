@@ -123,20 +123,33 @@ def get_chromosome_distn(selection, recombination, K):
 
 class TestPopGenMarkov(unittest.TestCase):
 
-    def test_bin_to_int(self):
+    def test_bin_to_int_a(self):
         b = (0, 0, 1, 1, 0)
         expected = 6
         self.assertEqual(expected, bin_to_int(b))
 
-    def test_int_to_bin(self):
+    def test_bin_to_int_b(self):
+        b = (1, 0, 0, 1, 0, 1)
+        expected = 37
+        self.assertEqual(expected, bin_to_int(b))
+
+    def test_int_to_bin_a(self):
         x = 6
         npositions = 5
         expected = [0, 0, 1, 1, 0]
+        self.assertEqual(expected, int_to_bin(x, npositions).tolist())
+
+    def test_int_to_bin_b(self):
+        x = 37
+        npositions = 6
+        expected = [1, 0, 0, 1, 0, 1]
         self.assertEqual(expected, int_to_bin(x, npositions).tolist())
 
     def test_bitphase_changes(self):
         #bitphase_to_nchanges(bitphase, npositions)
         pass
 
+
 if __name__ == '__main__':
     unittest.main()
+
