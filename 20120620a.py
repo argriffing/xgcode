@@ -13,18 +13,16 @@ denoted by 0 or 1 respectively.
 """
 
 from StringIO import StringIO
-from itertools import combinations
+from itertools import combinations, product
 
 import numpy as np
-import scipy
-from scipy import linalg
 
 import Form
 import FormOut
-import mrate
 import MatrixUtil
 from smallutil import stripped_lines
 import gmpy
+import Util
 
 g_default_initial_state = """
 1111
@@ -118,20 +116,20 @@ def get_chromosome_distn(selection, recombination, K):
     @param K: ndarray parental population state
     @return: array defining a conditional distribution over chromosomes
     """
-    nstates = 1 << (nchromosomes * npositions)
+    nchromosomes, npositions = K.shape
     distn = np.zeros(1<<npositions)
     # sum over all ways to independently pick parental chromosomes
     # this is (nchromosomes)^2 things because repetition is allowed
-    for parent_a in range(nstates):
+    for parent_a in range(nchromosomes):
         weight_a = selection**np.sum(K[parent_a])
-        for parent_b in range(nstates):
+        for parent_b in range(nchromosomes):
             weight_b = selection**np.sum(K[parent_b])
             # sum over all recombination phases
             # this is 2^(npositions) things
             parent_pairs = zip(K[parent_a], K[parent_b])
             for bitphase in range(1<<npositions):
                 # count the number of phase transitions in the bitphase
-                nchanges = bitphase_to_nchanges(bitphase)
+                nchanges = bitphase_to_nchanges(bitphase, npositions)
                 # compute the weight corresponding to this phase transition
                 weight_phase = 0
                 weight_phase += recombination**nchanges
@@ -140,7 +138,7 @@ def get_chromosome_distn(selection, recombination, K):
                 w = [pair[(bitphase>>i) & 1] for i, pair in enumerate(
                     parent_pairs)]
                 index = sum(v<<i for i, v in enumerate(w))
-                distn[index] *= weight_a * weight_b * weight_phase
+                distn[index] += weight_a * weight_b * weight_phase
     return distn / np.sum(distn)
 
 
@@ -159,34 +157,95 @@ def get_transition_matrix(
     @return: a numpy array
     """
     nstates = 1 << (nchromosomes * npositions)
+    # define the mutation transition matrix
+    P_mutation = np.zeros((nstates, nstates))
+    for source in range(nstates):
+        for sink in range(nstates):
+            ndiff = gmpy.hamdist(source, sink)
+            nsame = nchromosomes * npositions - ndiff
+            P_mutation[source, sink] = (mutation**ndiff)*((1-mutation)**nsame)
+    print 'mutation transition matrix row sums:'
+    for value in np.sum(P_mutation, axis=1):
+        print value
+    print
     # init the unnormalized selection and recombination transition matrix
     M = np.zeros((nstates, nstates))
-    for source_index in nstates:
+    for source_index in range(nstates):
         K_source = integer_state_to_ndarray(
                 source_index, nchromosomes, npositions)
         chromosome_distn = get_chromosome_distn(
                 selection, recombination, K_source)
         for x in product(range(1<<npositions), repeat=nchromosomes):
-                weight = 1
-                for index in x:
-                    weight *= chromosome_distn[x]
-                sink_index = 0
-                for i, index in enumerate(x):
-                    sink_index <<= i*npositions
-                    sink_index |= index
-                M[source_index, sink_index] = weight
+            weight = 1
+            for index in x:
+                weight *= chromosome_distn[index]
+            sink_index = 0
+            for i, index in enumerate(x):
+                sink_index <<= npositions
+                sink_index |= index
+            M[source_index, sink_index] = weight
     M_row_sums = np.sum(M, axis=1)
     P_selection_recombination = (M.T / M_row_sums).T
-    # define the mutation transition matrix
-    P_mutation = np.zeros((nstates, nstates))
-    for source in nstates:
-        for sink in states:
-            d = gmpy.hamdist(source, sink)
-            P_mutation[source, sink] = (mutation**d) * (1-mutation)**(nstates-d)
+    print 'selection-recombination matrix row sums:'
+    for value in np.sum(P_selection_recombination, axis=1):
+        print value
+    print
     # define the state transition probability matrix
     P = np.dot(P_selection_recombination, P_mutation)
     return P
 
+def sample_endpoint_conditioned_path(
+        initial_state, final_state, path_length, P):
+    """
+    Return a sequence of states.
+    The returned sequence starts at the initial state
+    and ends at the final state.
+    Consecutive states may be the same
+    if the transition matrix has positive diagonal elements.
+    This function is derived from an earlier function
+    in an old SamplePath module.
+    @param initial_state: the first state as a python integer
+    @param final_state: the last state as a python integer
+    @param path_length: the number of states in the returned path
+    @param P: ndarray state transition matrix
+    @return: list of integer states
+    """
+    # get the size of the state space and do some input validation
+    MatrixUtil.assert_transition_matrix(P)
+    nstates = len(P)
+    if not (0 <= initial_state < nstates):
+        raise ValueError('invalid initial state')
+    if not (0 <= final_state < nstates):
+        raise ValueError('invalid final state')
+    # take care of edge cases
+    if path_length == 0:
+        return []
+    elif path_length == 1:
+        if initial_state != final_state:
+            raise ValueError('unequal states for a path of length one')
+        return [initial_state]
+    elif path_length == 2:
+        return [initial_state, final_state]
+    # create transition matrices raised to various powers
+    max_power = path_length - 2
+    matrix_powers = [1]
+    matrix_powers.append(P)
+    for i in range(2, max_power + 1):
+        matrix_powers.append(np.dot(matrix_powers[i-1], P))
+    # sample the path
+    path = [initial_state]
+    for i in range(1, path_length-1):
+        previous_state = path[i-1]
+        weight_state_pairs = []
+        for state_index in range(nstates):
+            weight = 1
+            weight *= P[previous_state, state_index]
+            weight *= matrix_powers[path_length - 1 - i][state_index, final_state]
+            weight_state_pairs.append((weight, state_index))
+        next_state = Util.weighted_choice(weight_state_pairs)
+        path.append(next_state)
+    path.append(final_state)
+    return path
 
 def get_response_content(fs):
     initial_state = multiline_state_to_ndarray(fs.initial_state)
@@ -205,10 +264,30 @@ def get_response_content(fs):
     print >> out, 'number of positions per chromosome:'
     print >> out, npositions
     print >> out
+    print >> out, 'initial and final states:'
+    print >> out
     for K in (initial_state, final_state):
         print >> out, ndarray_to_multiline_state(
                 integer_state_to_ndarray(
                     ndarray_to_integer_state(K), nchromosomes, npositions))
+        print >> out
+    print >> out
+    # define the transition matrix
+    P = get_transition_matrix(
+            fs.selection_param, fs.mutation_param, fs.recombination_param,
+            nchromosomes, npositions)
+    # sample the endpoint conditioned path
+    initial_integer_state = ndarray_to_integer_state(initial_state)
+    final_integer_state = ndarray_to_integer_state(final_state)
+    path = sample_endpoint_conditioned_path(
+            initial_integer_state, final_integer_state,
+            fs.ngenerations, P)
+    print >> out, 'sampled endpoint conditioned path, including endpoints:'
+    print >> out
+    for integer_state in path:
+        print >> out, ndarray_to_multiline_state(
+                integer_state_to_ndarray(
+                    integer_state, nchromosomes, npositions))
         print >> out
     return out.getvalue()
 
