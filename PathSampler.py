@@ -392,8 +392,8 @@ def demo_uniformization():
 
 def main():
     #demo_rejection_sampling()
-    #demo_discrete_path_sampling()
-    demo_uniformization()
+    demo_discrete_path_sampling()
+    #demo_uniformization()
     
 
 if __name__ == '__main__':
