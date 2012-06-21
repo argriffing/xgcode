@@ -102,7 +102,7 @@ def integer_state_to_ndarray(k, nchromosomes, npositions):
     return np.array(arr)
 
 def bitphase_to_nchanges(bitphase, npositions):
-    mask = 1<<(npositions-1) - 1
+    mask = (1<<(npositions-1)) - 1
     return gmpy.popcount(mask & (bitphase ^ (bitphase >> 1)))
 
 def get_chromosome_distn(selection, recombination, K):
@@ -111,13 +111,38 @@ def get_chromosome_distn(selection, recombination, K):
     Given a parental population,
     the child chromosomes are independently and identically distributed
     when only selection and recombination are considered.
-    This distribution is separate from mutation.
+    This transition is independent from the immediately
+    subsequent mutation effect.
     @param selection: a fitness ratio
     @param recombination: a linkage phase randomization probability
     @param K: ndarray parental population state
     @return: array defining a conditional distribution over chromosomes
     """
-    pass
+    nstates = 1 << (nchromosomes * npositions)
+    distn = np.zeros(1<<npositions)
+    # sum over all ways to independently pick parental chromosomes
+    # this is (nchromosomes)^2 things because repetition is allowed
+    for parent_a in range(nstates):
+        weight_a = selection**np.sum(K[parent_a])
+        for parent_b in range(nstates):
+            weight_b = selection**np.sum(K[parent_b])
+            # sum over all recombination phases
+            # this is 2^(npositions) things
+            parent_pairs = zip(K[parent_a], K[parent_b])
+            for bitphase in range(1<<npositions):
+                # count the number of phase transitions in the bitphase
+                nchanges = bitphase_to_nchanges(bitphase)
+                # compute the weight corresponding to this phase transition
+                weight_phase = 0
+                weight_phase += recombination**nchanges
+                weight_phase += (1-recombination)**(npositions-1-nchanges)
+                # get the corresponding chromosome index
+                w = [pair[(bitphase>>i) & 1] for i, pair in enumerate(
+                    parent_pairs)]
+                index = sum(v<<i for i, v in enumerate(w))
+                distn[index] *= weight_a * weight_b * weight_phase
+    return distn / np.sum(distn)
+
 
 def get_transition_matrix(
         selection, mutation, recombination,
@@ -133,25 +158,25 @@ def get_transition_matrix(
     @param npositions: number of positions per chromosome
     @return: a numpy array
     """
-    nstates = 1 << nchromosomes * npositions
+    nstates = 1 << (nchromosomes * npositions)
     # init the unnormalized selection and recombination transition matrix
     M = np.zeros((nstates, nstates))
     for source_index in nstates:
         K_source = integer_state_to_ndarray(
                 source_index, nchromosomes, npositions)
-        # sum over all ways to independently pick parental chromosomes
-        # this is (nchromosomes)^2 things because repetition is allowed
-        for parent_a in range(nstates):
-            weight_a = selection**np.sum(K_source[parent_a])
-            for parent_b in range(nstates):
-                weight_b = selection**np.sum(K_source[parent_b])
-                # sum over all recombination phases
-                # this is 2^(npositions) things
-                for bitphase in range(1<<npositions):
-                    # count the number of phase transitions in the bitphase
-                    nchanges = bitphase_to_nchanges(bitphase)
-                    K_row
-
+        chromosome_distn = get_chromosome_distn(
+                selection, recombination, K_source)
+        for x in product(range(1<<npositions), repeat=nchromosomes):
+                weight = 1
+                for index in x:
+                    weight *= chromosome_distn[x]
+                sink_index = 0
+                for i, index in enumerate(x):
+                    sink_index <<= i*npositions
+                    sink_index |= index
+                M[source_index, sink_index] = weight
+    M_row_sums = np.sum(M, axis=1)
+    P_selection_recombination = (M.T / M_row_sums).T
     # define the mutation transition matrix
     P_mutation = np.zeros((nstates, nstates))
     for source in nstates:
