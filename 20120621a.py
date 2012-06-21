@@ -1,5 +1,5 @@
 """
-Endpoint conditioned sampling from a population genetic model.
+Sample a child chromosome given a parent population.
 
 The model is similar to that of Wright-Fisher
 and has mutation, selection, and recombination.
