@@ -34,18 +34,6 @@ def int_to_bin(x, npositions):
     """
     return np.array([gmpy.getbit(x, npositions-1-i) for i in range(npositions)])
 
-def multiline_state_to_ndarray(multiline_state):
-    arr = []
-    for line in stripped_lines(multiline_state.splitlines()):
-        row = []
-        for s in line:
-            v = int(s)
-            if v not in (0, 1):
-                raise ValueError('invalid allele')
-            row.append(v)
-        arr.append(row)
-    return np.array(arr)
-
 def ndarray_to_multiline_state(K):
     return '\n'.join(''.join(str(x) for x in r) for r in K)
 
@@ -77,9 +65,14 @@ def integer_state_to_ndarray(k, nchromosomes, npositions):
     return np.array(arr)
 
 def bitphase_to_nchanges(bitphase, npositions):
-    mask = (1<<(npositions-1)) - 1
+    """
+    @param bitphase: a python integer
+    @param npositions: length of binary array represented by the bitphase
+    @return: the number of state changes along the binary array
+    """
+    nboundaries = npositions - 1
+    mask = (1<<nboundaries) - 1
     return gmpy.popcount(mask & (bitphase ^ (bitphase >> 1)))
-
 
 
 def get_chromosome_distn(selection, recombination, K):
@@ -145,9 +138,19 @@ class TestPopGenMarkov(unittest.TestCase):
         expected = [1, 0, 0, 1, 0, 1]
         self.assertEqual(expected, int_to_bin(x, npositions).tolist())
 
-    def test_bitphase_changes(self):
-        #bitphase_to_nchanges(bitphase, npositions)
-        pass
+    def test_bitphase_changes_a(self):
+        bitphase = bin_to_int((1, 1, 0, 0, 0, 1))
+        npositions = 6
+        expected = 2
+        observed = bitphase_to_nchanges(bitphase, npositions)
+        self.assertEqual(expected, observed)
+
+    def test_bitphase_changes_b(self):
+        bitphase = bin_to_int((1, 1, 0, 0, 0, 1))
+        npositions = 7
+        expected = 3
+        observed = bitphase_to_nchanges(bitphase, npositions)
+        self.assertEqual(expected, observed)
 
 
 if __name__ == '__main__':
