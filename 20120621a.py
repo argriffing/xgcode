@@ -1,5 +1,5 @@
 """
-Sample a child chromosome given a parent population.
+Sample a child chromosome given a parent population. [UNFINISHED]
 
 The model is similar to that of Wright-Fisher
 and has mutation, selection, and recombination.
