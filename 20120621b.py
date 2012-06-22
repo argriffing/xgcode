@@ -122,9 +122,17 @@ def get_response_content(fs):
     if nchromosomes * npositions > ndimcap:
         raise ValueError(
                 'at most 2^%d states are allowed per generation' % ndimcap)
-    # define the initial and final integer states
-    initial_integer_state = popgenmarkov.bin2d_to_int(initial_state)
-    final_integer_state = popgenmarkov.bin2d_to_int(final_state)
+    #
+    results = pgmfancy.get_state_space_info(nchromosomes, npositions)
+    ci_to_short, short_to_count, sorted_chrom_lists = results
+    initial_ci = pgmfancy.chroms_to_index(
+            sorted(popgenmarkov.bin_to_int(row) for row in initial_state),
+            npositions)
+    initial_short = ci_to_short[initial_ci]
+    final_ci = pgmfancy.chroms_to_index(
+            sorted(popgenmarkov.bin_to_int(row) for row in final_state),
+            npositions)
+    final_short = ci_to_short[final_ci]
     #
     mutation = fs.mutation_param
     recombination = fs.recombination_param
@@ -137,29 +145,32 @@ def get_response_content(fs):
     no_recombination_prior = (1 - recombination)**(
             nsiteboundaries*ngenboundaries*nchromosomes)
     # get the transition matrices
-    P_sr = popgenmarkov.get_selection_recombination_transition_matrix(
+    P_sr_s = pgmfancy.get_selection_recombination_transition_matrix_s(
+            ci_to_short, short_to_count, sorted_chrom_lists,
             selection, recombination, nchromosomes, npositions)
-    P_s = pgmfancy.get_selection_transition_matrix(
+    P_s_s = pgmfancy.get_selection_transition_matrix_s(
+            ci_to_short, short_to_count, sorted_chrom_lists,
             selection, nchromosomes, npositions)
-    P_m = popgenmarkov.get_mutation_transition_matrix(
+    P_m_s = pgmfancy.get_mutation_transition_matrix_s(
+            ci_to_short, short_to_count, sorted_chrom_lists,
             mutation, nchromosomes, npositions)
     # define some conditional probabilities
-    p_b_given_a = linalg.matrix_power(
-            np.dot(P_sr, P_m), fs.ngenerations-1)[
-                    initial_integer_state, final_integer_state]
-    p_b_given_a_no_mutation = linalg.matrix_power(
-            P_sr, fs.ngenerations-1)[
-                    initial_integer_state, final_integer_state]
-    p_b_given_a_no_recombination = linalg.matrix_power(
-            np.dot(P_s, P_m), fs.ngenerations-1)[
-                    initial_integer_state, final_integer_state]
+    p_b_given_a_s = linalg.matrix_power(
+            np.dot(P_sr_s, P_m_s), fs.ngenerations-1)[
+                    initial_short, final_short]
+    p_b_given_a_no_mutation_s = linalg.matrix_power(
+            P_sr_s, fs.ngenerations-1)[
+                    initial_short, final_short]
+    p_b_given_a_no_recombination_s = linalg.matrix_power(
+            np.dot(P_s_s, P_m_s), fs.ngenerations-1)[
+                    initial_short, final_short]
     # define the conditional properties of properties of the history
     no_mutation_posterior = (
-            no_mutation_prior * p_b_given_a_no_mutation) / (
-                    p_b_given_a)
+            no_mutation_prior * p_b_given_a_no_mutation_s) / (
+                    p_b_given_a_s)
     no_recombination_posterior = (
-            no_recombination_prior * p_b_given_a_no_recombination) / (
-                    p_b_given_a)
+            no_recombination_prior * p_b_given_a_no_recombination_s) / (
+                    p_b_given_a_s)
     #
     out = StringIO()
     print >> out, 'probability of no mutation in the path history:'
