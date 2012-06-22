@@ -17,6 +17,7 @@ from itertools import product
 from collections import defaultdict
 
 import numpy as np
+from numpy import linalg
 import gmpy
 
 import popgenmarkov
@@ -175,6 +176,66 @@ class TestPGMFancy(unittest.TestCase):
                 ci_to_short, short_to_count, sorted_chrom_lists,
                 mutation, nchromosomes, npositions)
         MatrixUtil.assert_transition_matrix(P)
+
+    def test_regress_mutation_probability_endpoint_conditioning(self):
+        ngenerations = 10
+        selection = 2.0
+        mutation = 0.0001
+        recombination = 0.001
+        nchromosomes = 2
+        npositions = 4
+        K_initial = np.array([
+            [1,1,1,1],
+            [0,0,0,0]], dtype=np.int8)
+        K_final = np.array([
+            [1,1,0,0],
+            [0,0,1,1]], dtype=np.int8)
+        #
+        ngenboundaries = ngenerations - 1
+        no_mutation_prior = (1 - mutation)**(
+                npositions*ngenboundaries*nchromosomes)
+        #
+        initial_long = popgenmarkov.bin2d_to_int(K_initial)
+        final_long = popgenmarkov.bin2d_to_int(K_final)
+        ci_to_short, short_to_count, sorted_chrom_lists = get_state_space_info(
+                nchromosomes, npositions)
+        initial_ci = chroms_to_index(
+                sorted(popgenmarkov.bin_to_int(row) for row in K_initial),
+                npositions)
+        initial_short = ci_to_short[initial_ci]
+        final_ci = chroms_to_index(
+                sorted(popgenmarkov.bin_to_int(row) for row in K_final),
+                npositions)
+        final_short = ci_to_short[final_ci]
+        # get an answer using the less efficient methods
+        P_sr = popgenmarkov.get_selection_recombination_transition_matrix(
+                selection, recombination, nchromosomes, npositions)
+        P_m = popgenmarkov.get_mutation_transition_matrix(
+                mutation, nchromosomes, npositions)
+        p_b_given_a = linalg.matrix_power(np.dot(P_sr, P_m), ngenerations-1)[
+                initial_long, final_long]
+        p_b_given_a_no_mutation = linalg.matrix_power(P_sr, ngenerations-1)[
+                initial_long, final_long]
+        no_mutation_posterior = (
+                no_mutation_prior * p_b_given_a_no_mutation) / p_b_given_a
+        # get an answer using the more efficient methods
+        P_sr_s = get_selection_recombination_transition_matrix_s(
+                ci_to_short, short_to_count, sorted_chrom_lists,
+                selection, recombination, nchromosomes, npositions)
+        P_m_s = get_mutation_transition_matrix_s(
+                ci_to_short, short_to_count, sorted_chrom_lists,
+                mutation, nchromosomes, npositions)
+        p_b_given_a_s = linalg.matrix_power(
+                np.dot(P_sr_s, P_m_s), ngenerations-1)[
+                        initial_short, final_short]
+        p_b_given_a_no_mutation_s = linalg.matrix_power(
+                P_sr_s, ngenerations-1)[
+                        initial_short, final_short]
+        no_mutation_posterior_s = (
+                no_mutation_prior * p_b_given_a_no_mutation_s) / p_b_given_a_s
+        #
+        self.assertTrue(
+                np.allclose(no_mutation_posterior, no_mutation_posterior_s))
 
 
 if __name__ == '__main__':
