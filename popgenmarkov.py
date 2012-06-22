@@ -177,6 +177,7 @@ def get_selection_recombination_transition_matrix(
             P[source_index, sink_index] = p
     return P
 
+# FIXME possibly obsolete
 def get_chromosome_distn(selection, recombination, K):
     """
     Define the distribution over child chromosomes.
@@ -215,6 +216,7 @@ def get_chromosome_distn(selection, recombination, K):
                 distn[index] += weight_a * weight_b * weight_phase
     return distn / np.sum(distn)
 
+# FIXME possibly obsolete
 def get_chromosome_distn_fast(selection, recombination, K):
     """
     This is a faster version with more bitwise cleverness.
@@ -331,6 +333,15 @@ class TestPopGenMarkov(unittest.TestCase):
         npositions = 2
         P = get_mutation_transition_matrix(mutation, nchromosomes, npositions)
         MatrixUtil.assert_transition_matrix(P)
+    
+    def test_edgecase_mutation_transition(self):
+        mutation = 0.0
+        nchromosomes = 3
+        npositions = 2
+        #
+        nstates = 1 << (nchromosomes * npositions)
+        P = get_mutation_transition_matrix(mutation, nchromosomes, npositions)
+        self.assertTrue(np.allclose(P, np.eye(nstates)))
 
 if __name__ == '__main__':
     unittest.main()

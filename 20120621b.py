@@ -23,6 +23,7 @@ import MatrixUtil
 from smallutil import stripped_lines
 import Util
 import popgenmarkov
+import pgmfancy
 
 g_default_initial_state = """
 1111
@@ -75,6 +76,15 @@ def get_presets():
                     'recombination_param' : '0.001',
                     'initial_state' : '1111\n0001\n',
                     'final_state' : '1100\n0011\n'}),
+            Form.Preset(
+                'identical endpoints',
+                {
+                    'ngenerations' : '10',
+                    'selection_param' : '2.0',
+                    'mutation_param' : '0.0001',
+                    'recombination_param' : '0.001',
+                    'initial_state' : '1111\n1111\n',
+                    'final_state' : '1111\n1111\n'}),
                 ]
 
 def get_form_out():
@@ -94,39 +104,6 @@ def multiline_state_to_ndarray(multiline_state):
 
 def ndarray_to_multiline_state(K):
     return '\n'.join(''.join(str(x) for x in r) for r in K)
-
-def get_transition_matrix(
-        selection, mutation, recombination,
-        nchromosomes, npositions):
-    """
-    This factors into the product of two transition matrices.
-    The first transition matrix accounts for selection and recombination.
-    The second transition matrix independently accounts for mutation.
-    @param selection: a fitness ratio
-    @param mutation: a state change probability
-    @param recombination: a linkage phase change probability
-    @param nchromosomes: number of chromosomes in the population
-    @param npositions: number of positions per chromosome
-    @return: a numpy array
-    """
-    P_mutation = popgenmarkov.get_mutation_transition_matrix(
-            mutation, nchromosomes, npositions)
-    P_selection_recombination = popgenmarkov.get_selection_recombination_transition_matrix(
-            selection, recombination, nchromosomes, npositions)
-    P = np.dot(P_selection_recombination, P_mutation)
-    return P
-
-
-def get_conditional_probability(
-        initial_state, final_state,
-        selection, mutation, recombination,
-        nchromosomes, npositions,
-        ngenerations):
-    P_one = get_transition_matrix(
-            selection, mutation, recombination,
-            nchromosomes, npositions)
-    P_all = linalg.matrix_power(P_one, ngenerations - 1)
-    return P_all[initial_state, final_state]
 
 def get_response_content(fs):
     initial_state = multiline_state_to_ndarray(fs.initial_state)
@@ -152,27 +129,30 @@ def get_response_content(fs):
     mutation = fs.mutation_param
     recombination = fs.recombination_param
     selection = fs.selection_param
-    #
+    # define the prior probabilities of properties of the history
     nsiteboundaries = npositions - 1
     ngenboundaries = fs.ngenerations - 1
-    # define the prior probabilities of properties of the history
     no_mutation_prior = (1 - mutation)**(
             npositions*ngenboundaries*nchromosomes)
     no_recombination_prior = (1 - recombination)**(
             nsiteboundaries*ngenboundaries*nchromosomes)
+    # get the transition matrices
+    P_sr = popgenmarkov.get_selection_recombination_transition_matrix(
+            selection, recombination, nchromosomes, npositions)
+    P_s = pgmfancy.get_selection_transition_matrix(
+            selection, nchromosomes, npositions)
+    P_m = popgenmarkov.get_mutation_transition_matrix(
+            mutation, nchromosomes, npositions)
     # define some conditional probabilities
-    p_b_given_a = get_conditional_probability(
-            initial_integer_state, final_integer_state,
-            selection, mutation, recombination,
-            nchromosomes, npositions, fs.ngenerations)
-    p_b_given_a_no_mutation = get_conditional_probability(
-            initial_integer_state, final_integer_state,
-            selection, 0, recombination,
-            nchromosomes, npositions, fs.ngenerations)
-    p_b_given_a_no_recombination = get_conditional_probability(
-            initial_integer_state, final_integer_state,
-            selection, mutation, 0,
-            nchromosomes, npositions, fs.ngenerations)
+    p_b_given_a = linalg.matrix_power(
+            np.dot(P_sr, P_m), fs.ngenerations-1)[
+                    initial_integer_state, final_integer_state]
+    p_b_given_a_no_mutation = linalg.matrix_power(
+            P_sr, fs.ngenerations-1)[
+                    initial_integer_state, final_integer_state]
+    p_b_given_a_no_recombination = linalg.matrix_power(
+            np.dot(P_s, P_m), fs.ngenerations-1)[
+                    initial_integer_state, final_integer_state]
     # define the conditional properties of properties of the history
     no_mutation_posterior = (
             no_mutation_prior * p_b_given_a_no_mutation) / (
