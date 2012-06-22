@@ -12,10 +12,15 @@ import unittest
 from itertools import product
 
 import numpy as np
+import gmpy
 
 import popgenmarkov
 import MatrixUtil
 
+def get_state_space_info(nchromosomes, npositions):
+    """
+    """
+    pass
 
 def get_selection_transition_matrix(selection, nchromosomes, npositions):
     """
@@ -34,24 +39,22 @@ def get_selection_transition_matrix(selection, nchromosomes, npositions):
         for chrom in parent_chroms:
             source_index <<= npositions
             source_index |= chrom
-        # After a pair of parental chromosomes are chosen
-        # according to selection, one of them is passed at random to the
-        # child with no recombination.
-        child_distn = np.zeros(1<<npositions)
-        for chra, chrb, p in popgenmarkov._gen_parental_triples(
-                parent_chroms, selection):
-            child_distn[chra] += 0.5 * p
-            child_distn[chrb] += 0.5 * p
+        # get the distribution over indices into the parental population
+        parent_index_distn = np.zeros(nchromosomes)
+        for i, chrom in enumerate(parent_chroms):
+            parent_index_distn[i] = selection**gmpy.popcount(chrom)
+        parent_index_distn /= np.sum(parent_index_distn)
         # choose child chromosomes independently
-        for child_chroms in product(range(1<<npositions), repeat=nchromosomes):
+        for parent_idxs in product(range(nchromosomes), repeat=nchromosomes):
             # define the sink index and conditional probability
             p = 1
             sink_index = 0
-            for chrom in child_chroms:
-                p *= child_distn[chrom]
+            for i in parent_idxs:
+                p *= parent_index_distn[i]
+                child_chrom = parent_chroms[i]
                 sink_index <<= npositions
-                sink_index |= chrom
-            P[source_index, sink_index] = p
+                sink_index |= child_chrom
+            P[source_index, sink_index] += p
     return P
 
 
