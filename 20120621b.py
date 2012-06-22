@@ -65,7 +65,17 @@ def get_presets():
                     'mutation_param' : '0.0001',
                     'recombination_param' : '0.001',
                     'initial_state' : '1111\n0000\n',
-                    'final_state' : '0101\n0101\n'})]
+                    'final_state' : '0101\n0101\n'}),
+            Form.Preset(
+                'a mutation must have happened',
+                {
+                    'ngenerations' : '10',
+                    'selection_param' : '2.0',
+                    'mutation_param' : '0.0001',
+                    'recombination_param' : '0.001',
+                    'initial_state' : '1111\n0001\n',
+                    'final_state' : '1100\n0011\n'}),
+                ]
 
 def get_form_out():
     return FormOut.Report()
