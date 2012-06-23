@@ -14,8 +14,10 @@ denoted by 0 or 1 respectively.
 
 from StringIO import StringIO
 from itertools import combinations, product
+import random
 
 import numpy as np
+from numpy import linalg
 import gmpy
 
 import Form
@@ -24,6 +26,7 @@ import MatrixUtil
 from smallutil import stripped_lines
 import Util
 import popgenmarkov
+import pgmfancy
 
 g_default_initial_state = """
 1111
@@ -71,6 +74,7 @@ def multiline_state_to_ndarray(multiline_state):
 def ndarray_to_multiline_state(K):
     return '\n'.join(''.join(str(x) for x in r) for r in K)
 
+#TODO obsolete remove
 def get_transition_matrix(
         selection, mutation, recombination,
         nchromosomes, npositions):
@@ -124,21 +128,25 @@ def sample_endpoint_conditioned_path(
         return [initial_state]
     elif path_length == 2:
         return [initial_state, final_state]
+    """
     # create transition matrices raised to various powers
     max_power = path_length - 2
     matrix_powers = [1]
     matrix_powers.append(P)
     for i in range(2, max_power + 1):
         matrix_powers.append(np.dot(matrix_powers[i-1], P))
+    """
     # sample the path
     path = [initial_state]
     for i in range(1, path_length-1):
+        M = linalg.matrix_power(P, path_length - i)
         previous_state = path[i-1]
         weight_state_pairs = []
         for state_index in range(nstates):
             weight = 1
             weight *= P[previous_state, state_index]
-            weight *= matrix_powers[path_length - 1 - i][state_index, final_state]
+            weight *= M[state_index, final_state]
+            #weight *= matrix_powers[path_length - 1 - i][state_index, final_state]
             weight_state_pairs.append((weight, state_index))
         next_state = Util.weighted_choice(weight_state_pairs)
         path.append(next_state)
@@ -169,21 +177,41 @@ def get_response_content(fs):
     print >> out, npositions
     print >> out
     # define the transition matrix
-    P = get_transition_matrix(
-            selection, mutation, recombination, nchromosomes, npositions)
+    results = pgmfancy.get_state_space_info(nchromosomes, npositions)
+    ci_to_short, short_to_count, sorted_chrom_lists = results
+    initial_ci = pgmfancy.chroms_to_index(
+            sorted(popgenmarkov.bin_to_int(row) for row in initial_state),
+            npositions)
+    initial_short = ci_to_short[initial_ci]
+    final_ci = pgmfancy.chroms_to_index(
+            sorted(popgenmarkov.bin_to_int(row) for row in final_state),
+            npositions)
+    final_short = ci_to_short[final_ci]
+    P_sr_s = pgmfancy.get_selection_recombination_transition_matrix_s(
+            ci_to_short, short_to_count, sorted_chrom_lists,
+            selection, recombination, nchromosomes, npositions)
+    P_m_s = pgmfancy.get_mutation_transition_matrix_s(
+            ci_to_short, short_to_count, sorted_chrom_lists,
+            mutation, nchromosomes, npositions)
+    P = np.dot(P_sr_s, P_m_s)
     # sample the endpoint conditioned path
-    initial_integer_state = popgenmarkov.bin2d_to_int(initial_state)
-    final_integer_state = popgenmarkov.bin2d_to_int(final_state)
     path = sample_endpoint_conditioned_path(
-            initial_integer_state, final_integer_state,
+            initial_short, final_short,
             fs.ngenerations, P)
     print >> out, 'sampled endpoint conditioned path, including endpoints:'
     print >> out
-    for integer_state in path:
-        # print integer_state
-        print >> out, ndarray_to_multiline_state(
-                popgenmarkov.int_to_bin2d(
-                    integer_state, nchromosomes, npositions))
+    # print the initial state without shuffling of individuals
+    print >> out, ndarray_to_multiline_state(initial_state)
+    print >> out
+    # print the intermediate states with randomly permuted individuals
+    for short_index in path[1:-1]:
+        chroms = sorted_chrom_lists[short_index]
+        random.shuffle(chroms)
+        K = np.array([popgenmarkov.int_to_bin(x, npositions) for x in chroms])
+        print >> out, ndarray_to_multiline_state(K)
         print >> out
+    # print the final state without shuffling of individuals
+    print >> out, ndarray_to_multiline_state(final_state)
+    print >> out
     return out.getvalue()
 
