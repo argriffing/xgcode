@@ -1,4 +1,5 @@
-"""Cluster using agglomerative clustering.
+"""
+Cluster using agglomerative clustering.
 
 Input is an R table.
 Output is an R table with an extra column.
@@ -54,8 +55,9 @@ def get_rtable_info(rtable, cluster_header, axis_headers):
     if not Carbone.is_valid_header(cluster_header):
         raise ValueError('invalid column header: %s' % cluster_header)
     if cluster_header in header_row:
-        msg = 'the column header %s is already in the table' % cluster_header
-        raise ValueError(msg)
+        raise ValueError(
+                'the column header %s '
+                'is already in the table' % cluster_header)
     # get the numpy array of conformant points
     h_to_i = dict((h, i+1) for i, h in enumerate(header_row))
     if not axis_headers:
@@ -71,9 +73,9 @@ def get_rtable_info(rtable, cluster_header, axis_headers):
         try:
             axis_list = Carbone.get_numeric_column(data_rows, index)
         except Carbone.NumericError:
-            msg_a = 'expected the axis column %s ' % h
-            msg_b = 'to be numeric'
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'expected the axis column %s '
+                    'to be numeric' % h)
         axis_lists.append(axis_list)
     points = np.array(zip(*axis_lists))
     return points

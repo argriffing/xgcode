@@ -69,9 +69,9 @@ def process(args, raw_hud_lines):
     pcs = eigenpop.get_scaled_eigenvectors(C_full, args.diploid_and_biallelic)
     # check for sufficient number of eigenvectors
     if len(pcs) < args.ncoords:
-        msg_a = 'the number of requested principal components '
-        msg_b = 'must be no more than the number of OTUs'
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'the number of requested principal components '
+                'must be no more than the number of OTUs')
     # compute the correlation of each SNP vector with each principal PC
     mylist = []
     for snp in C_full.T:

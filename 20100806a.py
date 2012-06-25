@@ -1,4 +1,5 @@
-"""Given an R table, remove rows that are near-neighbors.
+"""
+Given an R table, remove rows that are near-neighbors.
 """
 
 from StringIO import StringIO
@@ -75,9 +76,9 @@ def get_response_content(fs):
         try:
             axis_list = Carbone.get_numeric_column(data_rows, index)
         except Carbone.NumericError:
-            msg_a = 'expected the axis column %s ' % h
-            msg_b = 'to be numeric'
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'expected the axis column %s '
+                    'to be numeric' % h)
         axis_lists.append(axis_list)
     points = np.array(zip(*axis_lists))
     # find the set of indices of duplicate points

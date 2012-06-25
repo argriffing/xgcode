@@ -1,4 +1,5 @@
-"""Find the number of agglomerated clusters using the gap statistic.
+"""
+Find the number of agglomerated clusters using the gap statistic.
 
 Apply hierarchical (agglomerative) clustering,
 using squared error and average linkage.
@@ -74,11 +75,9 @@ def do_sampling(extents, npoints, B):
         expectations.append(np.mean(wlogs))
         thresholds.append(tibshirani.get_simulation_correction(wlogs))
     if len(nclusters_list) != len(expectations):
-        msg = 'expected as many expectations as cluster levels'
-        raise ValueError(msg)
+        raise ValueError('expected as many expectations as cluster levels')
     if len(nclusters_list) != len(thresholds):
-        msg = 'expected as many thresholds as cluster levels'
-        raise ValueError(msg)
+        raise ValueError('expected as many thresholds as cluster levels')
     # reverse all of the lists so that they are by increasing cluster size
     triples = list(reversed(zip(nclusters_list, expectations, thresholds)))
     # Return the nclusters_list, the expectations, and the thresholds.
@@ -135,9 +134,9 @@ def get_response_content(fs):
         try:
             axis_list = Carbone.get_numeric_column(data_rows, index)
         except Carbone.NumericError:
-            msg_a = 'expected the axis column %s ' % h
-            msg_b = 'to be numeric'
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'expected the axis column %s '
+                    'to be numeric' % h)
         axis_lists.append(axis_list)
     points = np.array(zip(*axis_lists))
     # do the clustering while computing the wgss at each merge

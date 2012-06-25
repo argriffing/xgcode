@@ -1,4 +1,5 @@
-"""Compute the allele sharing distance given a diploid .hud table.
+"""
+Compute the allele sharing distance given a diploid .hud table.
 
 The allele sharing distance between two individuals
 is averaged over all alleles, and for each allele
@@ -40,9 +41,9 @@ def validate_diploid_data_rows(data_rows):
     expected_elements = set((0,1,2))
     bad_elements = observed_elements - expected_elements
     if bad_elements:
-        msg_a = 'expected diploid counts but found '
-        msg_b = '{' + ', '.join(str(x) for x in bad_elements) + '}'
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'expected diploid counts but found '
+                '{' + ', '.join(str(x) for x in bad_elements) + '}')
 
 def get_response_content(fs):
     headers, data_rows = hud.decode(fs.table.splitlines())

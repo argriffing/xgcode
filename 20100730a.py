@@ -1,4 +1,5 @@
-"""Convert k-ploid microsatellite data to a (k+1)-ary character alignment.
+"""
+Convert k-ploid microsatellite data to a (k+1)-ary character alignment.
 """
 
 from StringIO import StringIO
@@ -53,10 +54,10 @@ def get_ploidy(names):
                 continue
             else:
                 # the indicator is inconsistent with the ploidy
-                msg_a = 'autodetection found a ploidy of %d ' % ploidy
-                msg_b = 'so the label of row %d was expected ' % (i+1)
-                msg_c = 'to end with "%c"' % (expected_offset + ord('a'))
-                raise ValueError(msg_a + msg_b + msg_c)
+                raise ValueError(
+                        'autodetection found a ploidy of %d '
+                        'so the label of row %d was expected to end '
+                        'with "%c"' % (ploidy, i+1, expected_offset + ord('a')))
         elif offset == i:
             # the ploidy is in the process of being detected
             continue
@@ -86,16 +87,17 @@ def gen_headers(full_names, ploidy):
     """
     nchunks, remainder = divmod(len(full_names), ploidy)
     if remainder:
-        msg = 'the number of rows should be a multiple of the detected ploidy'
-        raise ValueError(msg)
+        raise ValueError(
+                'the number of rows '
+                'should be a multiple of the detected ploidy')
     for i in range(nchunks):
         expected_base = full_names[i*ploidy][:-1]
         for j in range(ploidy):
             observed_base = full_names[i*ploidy + j][:-1]
             if observed_base != expected_base:
-                msg_a = 'all but the last letter of each row label '
-                msg_b = 'should be consistent within each group'
-                raise ValueError(msg_a + msg_b)
+                raise ValueError(
+                        'all but the last letter of each row label '
+                        'should be consistent within each group')
         yield expected_base
 
 def read_microsatellite_lines(raw_lines):

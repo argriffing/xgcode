@@ -159,9 +159,9 @@ def get_response_content(fs):
     N = 1 + fs.lena + fs.lenb + fs.lenc
     # check input compatibility
     if not (fs.eigk+1 <= N):
-        msg_a = 'attempting to find a too highly indexed eigenvector '
-        msg_b = 'for the number of vertices in the graph'
-        raise ValueError(msg_a + msg_b)
+        raise ValueError(
+                'attempting to find a too highly indexed eigenvector '
+                'for the number of vertices in the graph')
     if N < 2:
         raise ValueError('the tree has no length')
     # define the total distance of the constructed tree

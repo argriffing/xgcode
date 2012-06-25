@@ -196,18 +196,17 @@ class PlotInfo:
         # verify the axis header contents
         bad_axis_headers = set(self.axis_headers) - set(headers)
         if bad_axis_headers:
-            msg_a = 'bad axis column headers: '
-            msg_b = ', '.join(bad_axis_headers)
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'bad axis column headers: ' + ', '.join(bad_axis_headers))
         self.axis_lists = []
         for h in self.axis_headers:
             index = self.h_to_i[h]
             try:
                 axis_list = Carbone.get_numeric_column(data, index)
             except Carbone.NumericError:
-                msg_a = 'expected the axis column %s ' % h
-                msg_b = 'to be numeric'
-                raise ValueError(msg_a + msg_b)
+                raise ValueError(
+                        'expected the axis column %s '
+                        'to be numeric' % h)
             self.axis_lists.append(axis_list)
 
     def _get_color_column(self, header, headers, data):
@@ -215,8 +214,7 @@ class PlotInfo:
         Colors are categorical.
         """
         if header not in headers:
-            msg = 'bad color column header: ' + header
-            raise ValueError(msg)
+            raise ValueError('bad color column header: ' + header)
         index = self.h_to_i[header]
         return zip(*data)[index]
 
@@ -225,8 +223,7 @@ class PlotInfo:
         Shapes are categorical.
         """
         if header not in headers:
-            msg = 'bad shape column header: ' + header
-            raise ValueError(msg)
+            raise ValueError('bad shape column header: ' + header)
         index = self.h_to_i[header]
         return zip(*data)[index]
 
@@ -256,14 +253,12 @@ class PlotInfo:
         try:
             symbol_legend_pos = Util.get_coordinate_pair(args.symbol_legend_pos)
         except Util.CoordinatePairError as e:
-            msg = 'symbol legend position error: ' + str(e)
-            raise ValueError(msg)
+            raise ValueError('symbol legend position error: ' + str(e))
         # get the color legend location
         try:
             color_legend_pos = Util.get_coordinate_pair(args.color_legend_pos)
         except Util.CoordinatePairError as e:
-            msg = 'color legend position error: ' + str(e)
-            raise ValueError(msg)
+            raise ValueError('color legend position error: ' + str(e))
         # get the image function
         image_function = Form.g_imageformat_to_r_function[args.imageformat]
         # get the R codes
