@@ -51,9 +51,9 @@ def get_amino_acid_alignment(table):
         raise HandlingError('the data table should have at least two rows')
     first_row = table[0]
     if len(first_row) < 6:
-        msg_a = 'the first row of the table has %d columns ' % len(first_row)
-        msg_b = 'but at least six were expected'
-        raise HandlingError(msg_a + msg_b)
+        raise HandlingError(
+                'the first row of the table has %d columns '
+                'but at least six were expected' % len(first_row))
     if first_row[0].upper() != 'variant'.upper():
         raise HandlingError('expected the first column to be the variant')
     if first_row[1].upper() != 'chr'.upper():
@@ -61,16 +61,16 @@ def get_amino_acid_alignment(table):
     if first_row[2].upper() != 'position'.upper():
         raise HandlingError('expected the third column to be the position')
     if first_row[3].upper() != 'Amino Acid Change'.upper():
-        msg = 'expected the fourth column to be the amino acid change'
-        raise HandlingError(msg)
+        raise HandlingError(
+                'expected the fourth column to be the amino acid change')
     if first_row[4].upper() != 'alleles'.upper():
-        msg = 'expected the fifth column to be the nucleotide change'
-        raise HandlingError(msg)
+        raise HandlingError(
+                'expected the fifth column to be the nucleotide change')
     remaining_rows = table[1:]
     for row in remaining_rows:
         if len(row) != len(first_row):
-            msg = 'each row should have the same number of columns'
-            raise HandlingError(msg)
+            raise HandlingError(
+                    'each row should have the same number of columns')
     # get the ordered taxa
     taxa = first_row[5:]
     if len(set(taxa)) != len(taxa):
@@ -88,11 +88,11 @@ def get_amino_acid_alignment(table):
             elif codon in Codon.g_non_stop_codons:
                 aa = Codon.g_codon_to_aa_letter[codon]
             elif codon in Codon.g_stop_codons:
-                msg = 'one of the codons is a stop codon: %s' % codon
-                raise HandlingError(msg)
+                raise HandlingError(
+                        'one of the codons is a stop codon: %s' % codon)
             else:
-                msg = 'one of the codons is invalid: %s' % codon
-                raise HandlingError(msg)
+                raise HandlingError(
+                        'one of the codons is invalid: %s' % codon)
             aa_list.append(aa)
         aa_sequences.append(''.join(aa_list))
     # return the alignment
@@ -115,9 +115,9 @@ def get_alignment(data_string, tree_string):
     alignment_taxa_set = set(alignment.headers)
     weird_alignment_taxa = alignment_taxa_set - tree_taxa_set
     if weird_alignment_taxa:
-        msg_a = 'the following taxa were not found '
-        msg_b = 'in the tree: %s' % str(weird_taxa)
-        raise HandlingError(msg_a + msg_b)
+        raise HandlingError(
+                'the following taxa were not found '
+                'in the tree: %s' % str(weird_taxa))
     # return the alignment
     return alignment
 

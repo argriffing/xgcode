@@ -74,9 +74,9 @@ def get_response_content(fs):
         tree = NewickIO.parse(tree_string, FelTree.NewickTree)
         tip_names = [tip.get_name() for tip in tree.gen_tips()]
         if len(tip_names) < 4:
-            msg_a = 'expected at least four tips '
-            msg_b = 'but found ' + str(len(tip_names))
-            raise HandlingError(msg_a + msg_b)
+            raise HandlingError(
+                    'expected at least four tips '
+                    'but found ' + str(len(tip_names)))
         if any(name is None for name in tip_names):
             raise HandlingError('each terminal node must be labeled')
         if len(set(tip_names)) != len(tip_names):

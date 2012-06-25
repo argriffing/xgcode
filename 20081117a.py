@@ -1,4 +1,5 @@
-"""Remove vertices from a graph and change the edge weights.
+"""
+Remove vertices from a graph and change the edge weights.
 
 If edges are like ohms then
 the input graph represents a resistor network where
@@ -238,32 +239,30 @@ def get_response_content(fs):
     for line in iterutils.stripped_lines(fs.graph.splitlines()):
         string_triple = line.split()
         if len(string_triple) != 3:
-            msg_a = 'each graph row should have three elements '
-            msg_b = 'but found this line: ' + line
-            raise HandlingError(msg_a + msg_b)
+            raise HandlingError(
+                    'each graph row should have three elements '
+                    'but found this line: ' + line)
         triple = string_triple[:2]
         try:
             weight = float(string_triple[2])
         except ValueError as e:
-            msg = 'edge weights should be floating point numbers'
-            raise HandlingError(msg)
+            raise HandlingError(
+                    'edge weights should be floating point numbers')
         if weight <= 0:
-            msg = 'edge weights should be positive'
-            raise HandlingError(msg)
+            raise HandlingError('edge weights should be positive')
         triple.append(weight)
         edge_triples.append(triple)
     # get the set of directed edges to check for redundant or invalid input
     unordered_directed_edges = set()
     for a, b, weight in edge_triples:
         if a == b:
-            msg = 'vertices should not have edges connecting to themselves'
-            raise HandlingError(msg)
+            raise HandlingError(
+                    'vertices should not have edges connecting to themselves')
         if (a, b) in unordered_directed_edges:
-            msg = 'each edge should be given only once'
-            raise HandlingError(msg)
+            raise HandlingError('each edge should be given only once')
         if (b, a) in unordered_directed_edges:
-            msg = 'each edge should be given in only one direction'
-            raise HandlingError(msg)
+            raise HandlingError(
+                    'each edge should be given in only one direction')
         unordered_directed_edges.add((a, b))
     # get the lexicographically ordered list of vertex names
     unordered_vertex_names = set()
@@ -277,16 +276,16 @@ def get_response_content(fs):
     vertex_names_to_remove = set()
     for name in iterutils.stripped_lines(fs.vertices.splitlines()):
         if name in vertex_names_to_remove:
-            msg = 'vertices should be named for removal at most once'
-            raise HandlingError(msg)
+            raise HandlingError(
+                    'vertices should be named for removal at most once')
         vertex_names_to_remove.add(name)
     # Assert that the set of vertex names for removal
     # is a subset of the vertex names in the graph.
     weird_names = vertex_names_to_remove - unordered_vertex_names
     if weird_names:
-        msg_a = 'some vertices named for removal '
-        msg_b = 'were not found in the graph: ' + str(weird_names)
-        raise HandlingError(msg_a + msg_b)
+        raise HandlingError(
+                'some vertices named for removal '
+                'were not found in the graph: ' + str(weird_names))
     # get the ordered list of vertex names that will remain
     reduced_ordered_vertex_names = list(
             sorted(unordered_vertex_names - vertex_names_to_remove))

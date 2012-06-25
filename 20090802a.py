@@ -1,4 +1,5 @@
-"""Examine deep splits of the tree of life.
+"""
+Examine deep splits of the tree of life.
 
 This is mostly for a figure for a paper.
 The default data is from a project called the interactive tree of life.
@@ -491,14 +492,14 @@ def get_supplementary_object(fs):
     nfull = len(all_names)
     ndisjoint = len(archaea_names) + len(bacteria_names) + len(eukaryota_names)
     if ndisjoint != nfull:
-        msg_a = 'there are %d taxa in the full tree ' % nfull
-        msg_b = 'but %d taxa in its subtrees' % ndisjoint
-        raise HandlingError(msg_a + msg_b)
+        raise HandlingError(
+                'there are %d taxa in the full tree '
+                'but %d taxa in its subtrees' % (nfull, ndisjoint))
     disjoint_union = archaea_names | bacteria_names | eukaryota_names
     if disjoint_union != all_names:
-        msg_a = 'the set of taxa in the full tree '
-        msg_b = 'is not the union of taxa in its subtrees'
-        raise HandlingError(msg_a + msg_b)
+        raise HandlingError(
+                'the set of taxa in the full tree '
+                'is not the union of taxa in its subtrees')
     # create the map from taxon name to taxonomic category
     taxon_to_domain = {}
     for name in archaea_names:
