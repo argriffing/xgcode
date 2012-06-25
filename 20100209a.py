@@ -74,8 +74,7 @@ def get_response_content(fs):
     fin = StringIO(fs.data_in)
     for i, line in enumerate(gen_output_lines(fs, fin)):
         if i+1 >= 2000:
-            msg = 'too many lines of output: ' + str(i+1)
-            raise HandlingError(msg)
+            raise HandlingError('too many lines of output: ' + str(i+1))
         print >> out, line
     return out.getvalue()
 
@@ -118,17 +117,17 @@ def gen_output_lines(args, fin):
                     fill, errlow, errhigh, default_obs)
         # check the chromosome name for consistency
         if name != chrom_name:
-            msg_a = 'conflicting chromosome names: '
-            msg_b = ' '.join((name, chrom_name))
-            raise Exception(msg_a + msg_b)
+            raise Exception(
+                    'conflicting chromosome '
+                    'names: %s %s' % (name, chrom_name))
         # check for reference nucleotide weirdness
         if reqambig:
             if not filler.check_bounds(pos):
                 if ref != 'N':
-                    msg_a = 'expected out of bounds reference nucleotides '
-                    msg_b = 'to be N but found %s ' % ref
-                    msg_c = 'at position %d of chrom %s' % (pos, name)
-                    raise Exception(msg_a + msg_b + msg_c)
+                    raise Exception(
+                            'expected out of bounds reference nucleotides '
+                            'to be N but found %s '
+                            'at position %d of chrom %s' % (ref, pos, name))
         # process lines emitted by the filler
         for value in filler.fill(pos, obs):
             yield '\t'.join(str(x) for x in value)
@@ -181,9 +180,7 @@ def main(args):
         if args.force:
             os.makedirs(output_directory)
         else:
-            msg_a = 'not an existing directory: ' 
-            msg_b = output_directory
-            raise Exception(msg_a + msg_b)
+            raise Exception('not an existing directory: ' + output_directory)
     # Define the input and output files.
     fpaths_in = []
     fpaths_out = []
@@ -195,18 +192,15 @@ def main(args):
         head_in, tail_in = os.path.split(fpath_in)
         # get the full path to the corresponding output file
         if head_in == output_directory:
-            msg_a = 'input and output directories are the same: '
-            msg_b = head_in
-            raise Exception(msg_a + msg_b)
+            raise Exception(
+                    'input and output directories are the same: '+ head_in)
         fpath_out = os.path.join(output_directory, tail_in)
         fpaths_out.append(fpath_out)
     # Make that we are not overwriting anything important.
     if not args.force:
         for fpath_out in fpaths_out:
             if os.path.isfile(fpath_out):
-                msg_a = 'would overwrite the file: '
-                msg_b = fpath_out
-                raise Exception(msg_a + msg_b)
+                raise Exception('would overwrite the file: ' + fpath_out)
     # Process each file using one or more processes.
     if args.nprocesses < 2:
         for fpath_in, fpath_out in zip(fpaths_in, fpaths_out):

@@ -111,18 +111,17 @@ class PlotInfo:
         # verify the axis header contents
         bad_axis_headers = set(self.axis_headers) - set(headers)
         if bad_axis_headers:
-            msg_a = 'bad axis column headers: '
-            msg_b = ', '.join(bad_axis_headers)
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'bad axis column headers: ' + ', '.join(bad_axis_headers))
         self.axis_lists = []
         for h in self.axis_headers:
             index = self.h_to_i[h]
             try:
                 axis_list = Carbone.get_numeric_column(data, index)
             except Carbone.NumericError:
-                msg_a = 'expected the axis column %s ' % h
-                msg_b = 'to be numeric'
-                raise ValueError(msg_a + msg_b)
+                raise ValueError(
+                        'expected the axis column %s '
+                        'to be numeric' % h)
             self.axis_lists.append(axis_list)
 
     def _init_colors(self, args, headers, data):
@@ -131,15 +130,14 @@ class PlotInfo:
         """
         self.color_header = args.color
         if self.color_header not in headers:
-            msg = 'bad color column header: ' + self.color_header
-            raise ValueError(msg)
+            raise ValueError('bad color column header: ' + self.color_header)
         index = self.h_to_i[self.color_header]
         try:
             self.color_list = Carbone.get_numeric_column(data, index)
         except Carbone.NumericError:
-            msg_a = 'expected the color column %s ' % self.color_header
-            msg_b = 'to be numeric'
-            raise ValueError(msg_a + msg_b)
+            raise ValueError(
+                    'expected the color column %s '
+                    'to be numeric' % self.color_header)
 
     def _init_shapes(self, args, headers, data):
         """
@@ -147,8 +145,7 @@ class PlotInfo:
         """
         self.shape_header = args.shape
         if self.shape_header not in headers:
-            msg = 'bad shape column header: ' + self.shape_header
-            raise ValueError(msg)
+            raise ValueError('bad shape column header: ' + self.shape_header)
         index = self.h_to_i[self.shape_header]
         self.shape_list = zip(*data)[index]
 
@@ -181,8 +178,7 @@ class PlotInfo:
         try:
             legend_pos = Util.get_coordinate_triple(args.legend_pos)
         except Util.CoordinateTripleError as e:
-            msg = 'legend position error: ' + str(e)
-            raise ValueError(msg)
+            raise ValueError('legend position error: ' + str(e))
         # get the unique locations and species
         symbol_legend_string = ', '.join("'%s'" % x for x in self.unique_shapes)
         color_legend_string = self.color_header

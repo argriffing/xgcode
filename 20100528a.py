@@ -92,9 +92,9 @@ class Snp(object):
     def __init__(self, lines):
         # check the number of lines
         if len(lines) != 4:
-            msg_a = 'expected 4 lines per annotated SNP '
-            msg_b = 'but found %d' % len(lines)
-            raise SnpError(msg_a + msg_b)
+            raise SnpError(
+                    'expected 4 lines per annotated SNP '
+                    'but found %d' % len(lines))
         # check for a known bad snp
         if lines[-1] == '?':
             raise KnownBadSnpError()
@@ -105,16 +105,14 @@ class Snp(object):
         self.column = [x.upper() if x.isalpha() else None for x in lines[3]]
         # do some basic validation
         if not self.column[0]:
-            msg = 'expected an aligned human amino acid for each SNP'
-            raise SnpError(msg)
+            raise SnpError('expected an aligned human amino acid for each SNP')
         if self.codon not in Codon.g_non_stop_codons:
-            msg = 'expected a codon but found ' + self.codon
-            raise SnpError(msg)
+            raise SnpError('expected a codon but found ' + self.codon)
         if self.within_codon_pos not in (1, 2, 3):
-            msg_a = 'expected the within-codon position '
-            msg_b = 'to be either 1, 2, or 3, '
-            msg_c = 'but found %d' % self.within_codon_pos
-            raise SnpError(msg_a + msg_b + msg_c)
+            raise SnpError(
+                    'expected the within-codon position '
+                    'to be either 1, 2, or 3, '
+                    'but found %d' % self.within_codon_pos)
         # Assert that the major allele is actually in the codon
         # at the correct position, taking into account strand orientation.
         expected_nt = self.major_allele
@@ -170,9 +168,9 @@ class Snp(object):
         v = [x.strip(ignore) for x in line.split(',')]
         # check the number of elements on the line
         if len(v) != 8:
-            msg_a = 'expected 8 elements on the first line '
-            msg_b = 'but found %d' % len(v)
-            raise SnpError(msg_a + msg_b)
+            raise SnpError(
+                    'expected 8 elements on the first line '
+                    'but found %d' % len(v))
         # unpack the elements into member variables
         self.variant_id = v[0]
         self.chromosome_name = v[1]
@@ -184,15 +182,15 @@ class Snp(object):
         self.orientation = v[7]
         # do some basic validation
         if self.major_allele not in 'ACGT':
-            msg = 'major allele is invalid nucleotide: ' + self.major_allele
-            raise SnpError(msg)
+            raise SnpError(
+                    'major allele is invalid nucleotide: ' + self.major_allele)
         if self.minor_allele not in 'ACGT':
-            msg = 'minor allele is invalid nucleotide: ' + self.minor_allele
-            raise SnpError(msg)
+            raise SnpError(
+                    'minor allele is invalid nucleotide: ' + self.minor_allele)
         if self.orientation not in '+-':
-            msg_a = 'expected the orientation to be + or - '
-            msg_b = 'but found ' + self.orientation
-            raise SnpError(msg_a + msg_b)
+            raise SnpError(
+                    'expected the orientation to be + or - '
+                    'but found ' + self.orientation)
 
     def get_simple_column(self):
         return ''.join(('-' if not x else x) for x in self.column)
@@ -253,18 +251,18 @@ def get_response_content(fs):
     lines = [line.rstrip('\n') for line in lines]
     lines = [line for line in lines if line]
     if len(snps) != len(lines):
-        msg_a = 'found %d snps ' % len(snps)
-        msg_b = 'but %d mapp data output lines' % len(lines)
-        raise HandlingError(msg_a + msg_b)
+        raise HandlingError(
+                'found %d snps but %d mapp data '
+                'output lines' % (len(snps), len(lines)))
     # write the output
     out = StringIO()
     for data_line, snp in zip(lines, snps):
         ignore = string.whitespace + "'" + '"'
         row = [x.strip(ignore) for x in data_line.split('\t')]
         if len(row) != 54:
-            msg_a = 'expected 54 mapp output columns '
-            msg_b = 'but found %d' % len(row)
-            raise HandlingError(msg_a + msg_b + '\n' + str(row))
+            raise HandlingError(
+                    'expected 54 mapp output columns '
+                    'but found %d\n%s' % (len(row), str(row)))
         impacts = [float(x) for x in row[12:32]]
         pvalues = [float(x) for x in row[32:52]]
         impact = impacts[aa_letter_to_aa_index(snp.mutant_aa)]
@@ -281,5 +279,5 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    main(args)
+
+    main(parser.parse_args())
