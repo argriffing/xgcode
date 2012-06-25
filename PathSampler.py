@@ -9,11 +9,63 @@ import math
 import random
 
 import numpy as np
-import scipy
+from numpy import linalg
+import scipy.stats
 
 import Util
 import RateMatrix
+import MatrixUtil
 
+
+def sample_endpoint_conditioned_path(
+        initial_state, final_state, path_length, P):
+    """
+    This is the only non-ancient function in this module.
+    Return a sequence of states.
+    The returned sequence starts at the initial state
+    and ends at the final state.
+    Consecutive states may be the same
+    if the transition matrix has positive diagonal elements.
+    This function is derived from an earlier function
+    in an old SamplePath module.
+    @param initial_state: the first state as a python integer
+    @param final_state: the last state as a python integer
+    @param path_length: the number of states in the returned path
+    @param P: ndarray state transition matrix
+    @return: list of integer states
+    """
+    # get the size of the state space and do some input validation
+    MatrixUtil.assert_transition_matrix(P)
+    nstates = len(P)
+    if not (0 <= initial_state < nstates):
+        raise ValueError('invalid initial state')
+    if not (0 <= final_state < nstates):
+        raise ValueError('invalid final state')
+    # take care of edge cases
+    if path_length == 0:
+        return []
+    elif path_length == 1:
+        if initial_state != final_state:
+            raise ValueError('unequal states for a path of length one')
+        return [initial_state]
+    elif path_length == 2:
+        return [initial_state, final_state]
+    # sample the path
+    path = [initial_state]
+    for i in range(path_length-2):
+        remaining_power = path_length - 2 - i
+        M = linalg.matrix_power(P, remaining_power)
+        previous_state = path[i]
+        weight_state_pairs = []
+        for state_index in range(nstates):
+            weight = 1
+            weight *= P[previous_state, state_index]
+            weight *= M[state_index, final_state]
+            weight_state_pairs.append((weight, state_index))
+        next_state = Util.weighted_choice(weight_state_pairs)
+        path.append(next_state)
+    path.append(final_state)
+    return path
 
 class MatrixPowerCache:
     """
@@ -390,23 +442,62 @@ def demo_uniformization():
     uniformization_events = get_uniformization_sample(initial_state, terminal_state, states, path_length, rate_matrix)
     print uniformization_events
 
-def main():
+def old_main():
     #demo_rejection_sampling()
     demo_discrete_path_sampling()
     #demo_uniformization()
     
 
-if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    #parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False)
-    #parser.add_option('-o', '--output', dest='output_filename', metavar='FILE', help='output file')
-    parser.add_option('--test', action='store_true', dest='test', default=False)
-    options, args = parser.parse_args()
-    if options.test:
-        suite = unittest.TestLoader().loadTestsFromTestCase(TestPathSampler)
-        unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        main()
+class TestNewerPathSampler(unittest.TestCase):
 
+    def test_endpoint_conditioned_path_a(self):
+        """
+        Check a two state path where no actual sampling occurs.
+        """
+        initial_state = 0
+        final_state = 1
+        path_length = 2
+        P = np.array([[0, 1], [0.5, 0.5]])
+        observed = sample_endpoint_conditioned_path(
+                initial_state, final_state, path_length, P)
+        expected = [initial_state, final_state]
+        self.assertEqual(observed, expected)
+
+    def test_endpoint_conditioned_path_b(self):
+        """
+        Check a three state sample with only one possible path.
+        """
+        initial_state = 0
+        final_state = 2
+        path_length = 3
+        P = np.array([
+            [0, 1, 0],
+            [0, 0, 1],
+            [1, 0, 0]],
+            dtype=float)
+        observed = sample_endpoint_conditioned_path(
+                initial_state, final_state, path_length, P)
+        expected = [0, 1, 2]
+        self.assertEqual(observed, expected)
+
+    def test_endpoint_conditioned_path_c(self):
+        """
+        Check another sample with only one possible path.
+        """
+        initial_state = 0
+        final_state = 2
+        path_length = 4
+        P = np.array([
+            [0.0, 0.5, 0.5],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0]],
+            dtype=float)
+        observed = sample_endpoint_conditioned_path(
+                initial_state, final_state, path_length, P)
+        expected = [0, 2, 2, 2]
+        self.assertEqual(observed, expected)
+
+
+if __name__ == '__main__':
+    unittest.main()
 

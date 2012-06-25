@@ -27,6 +27,7 @@ from smallutil import stripped_lines
 import Util
 import popgenmarkov
 import pgmfancy
+import PathSampler
 
 g_default_initial_state = """
 1111
@@ -96,63 +97,6 @@ def get_transition_matrix(
     P = np.dot(P_selection_recombination, P_mutation)
     return P
 
-def sample_endpoint_conditioned_path(
-        initial_state, final_state, path_length, P):
-    """
-    Return a sequence of states.
-    The returned sequence starts at the initial state
-    and ends at the final state.
-    Consecutive states may be the same
-    if the transition matrix has positive diagonal elements.
-    This function is derived from an earlier function
-    in an old SamplePath module.
-    @param initial_state: the first state as a python integer
-    @param final_state: the last state as a python integer
-    @param path_length: the number of states in the returned path
-    @param P: ndarray state transition matrix
-    @return: list of integer states
-    """
-    # get the size of the state space and do some input validation
-    MatrixUtil.assert_transition_matrix(P)
-    nstates = len(P)
-    if not (0 <= initial_state < nstates):
-        raise ValueError('invalid initial state')
-    if not (0 <= final_state < nstates):
-        raise ValueError('invalid final state')
-    # take care of edge cases
-    if path_length == 0:
-        return []
-    elif path_length == 1:
-        if initial_state != final_state:
-            raise ValueError('unequal states for a path of length one')
-        return [initial_state]
-    elif path_length == 2:
-        return [initial_state, final_state]
-    """
-    # create transition matrices raised to various powers
-    max_power = path_length - 2
-    matrix_powers = [1]
-    matrix_powers.append(P)
-    for i in range(2, max_power + 1):
-        matrix_powers.append(np.dot(matrix_powers[i-1], P))
-    """
-    # sample the path
-    path = [initial_state]
-    for i in range(1, path_length-1):
-        M = linalg.matrix_power(P, path_length - i)
-        previous_state = path[i-1]
-        weight_state_pairs = []
-        for state_index in range(nstates):
-            weight = 1
-            weight *= P[previous_state, state_index]
-            weight *= M[state_index, final_state]
-            #weight *= matrix_powers[path_length - 1 - i][state_index, final_state]
-            weight_state_pairs.append((weight, state_index))
-        next_state = Util.weighted_choice(weight_state_pairs)
-        path.append(next_state)
-    path.append(final_state)
-    return path
-
 def get_response_content(fs):
     initial_state = multiline_state_to_ndarray(fs.initial_state)
     final_state = multiline_state_to_ndarray(fs.final_state)
@@ -195,7 +139,7 @@ def get_response_content(fs):
             mutation, nchromosomes, npositions)
     P = np.dot(P_sr_s, P_m_s)
     # sample the endpoint conditioned path
-    path = sample_endpoint_conditioned_path(
+    path = PathSampler.sample_endpoint_conditioned_path(
             initial_short, final_short,
             fs.ngenerations, P)
     print >> out, 'sampled endpoint conditioned path, including endpoints:'

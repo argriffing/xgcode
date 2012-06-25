@@ -228,7 +228,10 @@ def weighted_choice(weight_state_pairs):
         weight, state = weight_state_pairs[0]
         return state
     total_weight = sum(weight for weight, state in weight_state_pairs)
-    assert total_weight > 0
+    if total_weight <= 0:
+        raise ValueError(
+                'expected positive total weight '
+                'but observed total weight %s' % total_weight)
     r = random.uniform(0, total_weight)
     cumulative_weight = 0
     for weight, state in weight_state_pairs:
