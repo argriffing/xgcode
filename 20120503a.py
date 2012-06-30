@@ -52,6 +52,18 @@ g_grid_min_1 = """
 ...8.6...
 """.strip()
 
+g_grid_arto_inkala = """
+8........
+..36.....
+.7..9.2..
+.5...7...
+....457..
+...1...3.
+..1....68
+..85...1.
+.9....4..
+""".strip()
+
 def get_form():
     form_objects = [
             Form.MultiLine('sudoku', 'puzzle', g_grid_wikipedia)]
@@ -67,7 +79,10 @@ def get_presets():
                 {'sudoku' : g_grid_hard}),
             Form.Preset(
                 'a 17 clue puzzle',
-                {'sudoku' : g_grid_min_1})
+                {'sudoku' : g_grid_min_1}),
+            Form.Preset(
+                'tricky by Arto Inkala',
+                {'sudoku' : g_grid_arto_inkala}),
             ]
     return presets
 
