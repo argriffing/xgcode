@@ -56,6 +56,10 @@ def assert_2d(M):
     if len(M.shape) != 2:
         raise MatrixError('the array is not 2d')
 
+def assert_allclose(A, B):
+    if not np.allclose(A, B):
+        raise MatrixError('the matrices are not close')
+
 def assert_square(M):
     assert_2d(M)
     nrows, ncols = M.shape

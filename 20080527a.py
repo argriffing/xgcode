@@ -1,4 +1,5 @@
-"""Calculate the expected time spent in each state on a path.
+"""
+Calculate the expected time spent in each state on a path.
 
 Given a rate matrix,
 calculate the expected amount of time spent in each state

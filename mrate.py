@@ -17,7 +17,9 @@ from scipy import linalg
 
 import bernoulli
 import graph
+import MatrixUtil
 from MatrixUtil import ndot
+import StatsUtil
 
 def sample_distn(n):
     v = np.random.exponential(1, n)
@@ -400,6 +402,104 @@ def symmetrized_known_distn(R, v):
     rlam = np.diag(np.reciprocal(np.sqrt(v)))
     return ndot(lam, R, rlam)
 
+def _holmes_rubin_2002_kernel_function(mu_k, mu_l, T):
+    """
+    This could be re-implemented more stably.
+    @param mu_k: a rate matrix eigenvalue
+    @param mu_l: a rate matrix eigenvalue
+    @param T: an amount of time
+    """
+    #if mu_k == mu_l:
+    if np.allclose(mu_k, mu_l):
+        return T * math.exp(mu_k * T)
+    else:
+        return (math.exp(mu_k * T) - math.exp(mu_l * T)) / (mu_k - mu_l)
+
+def _holmes_rubin_2002_kernel(w, T):
+    """
+    @param w: eigenvalues whose corresponding eigenvectors are columns of U
+    @param T: an amount of time
+    @return: a symmetric matrix
+    """
+    return np.array([[
+        _holmes_rubin_2002_kernel_function(x, y, T) for x in w] for y in w])
+
+def _holmes_rubin_2002_summation(U, a, b, i, K):
+    """
+    @param U: an orthonormal matrix
+    @param a: integer initial state index
+    @param b: integer final state index
+    @param i: integer query state index
+    @param K: a symmetric matrix with eigenvalue and time information
+    """
+    """
+    total = 0
+    for k in range(len(U)):
+        for l in range(len(U)):
+            total += U[a,k]*U[i,k]*U[i,l]*U[b,l]*K[k,l]
+    return total
+    """
+    u = U[a] * U[i]
+    v = U[b] * U[i]
+    return ndot(u, K, v)
+
+
+def get_endpoint_conditioned_expected_occupancy(R, v, a, b, T):
+    """
+    Holmes and Rubin 2002.
+    @param R: rate matrix
+    @param v: stationary distribution
+    @param a: integer state index of initial state
+    @param b: integer state index of final state
+    @param T: elapsed time
+    @return: endpoint conditioned expected amount of time spent in each state
+    """
+    n = len(v)
+    psi = np.sqrt(v)
+    S = (R.T * psi).T / psi
+    MatrixUtil.assert_symmetric(S)
+    w, U = scipy.linalg.eigh(S)
+    if not np.allclose(np.dot(U, U.T), np.eye(n)):
+        raise Exception('U should be orthogonal')
+    P = scipy.linalg.expm(T*R)
+    # the Mab is Holmes and Rubin 2002 notation
+    Mab = (psi[b] / psi[a]) * np.sum(U[a] * U[b] * np.exp(T*w))
+    if not np.allclose(P[a,b], Mab):
+        raise Exception('not close: %s %s' % (P[a,b], Mab))
+    coeff = (psi[b] / psi[a]) / Mab
+    K = _holmes_rubin_2002_kernel(w, T)
+    occupancy = coeff * np.array([
+        _holmes_rubin_2002_summation(U, a, b, i, K) for i in range(n)])
+    if not np.allclose(T, np.sum(occupancy)):
+        raise Exception(
+                'the expectected occupancy times should add up '
+                'to the total time')
+    return occupancy
+
+def get_hobolth_eceo(R, v, a, b, T, nmax):
+    """
+    The eceo means endpoint cnoditioned expected occupancy.
+    Most of the function arguments are the same as those of the more 
+    verbosely named function.
+    @param nmax: truncation of an infinite summation
+    """
+    accum = np.zeros(len(v))
+    mu = np.max(-np.diag(R))
+    X = np.eye(len(v)) + R / mu
+    for n in range(nmax+1):
+        coeff = (T / (n+1)) * math.exp(StatsUtil.poisson_log_pmf(n, mu*T))
+        #print 'coeff:', coeff
+        for alpha in range(len(v)):
+            conditional_sum = 0
+            for i in range(n+1):
+                prefix = np.linalg.matrix_power(X, i)[a, alpha]
+                suffix = np.linalg.matrix_power(X, n-i)[alpha, b]
+                conditional_sum += prefix * suffix
+                #print 'conditional sum:', conditional_sum
+            accum[alpha] += coeff * conditional_sum
+    return accum / scipy.linalg.expm(R*T)[a,b]
+
+
 class TestMrate(unittest.TestCase):
 
     def test_expm(self):
@@ -419,6 +519,21 @@ class TestMrate(unittest.TestCase):
         self.assertEqual(v.shape, (n,))
         self.assertTrue(np.allclose(np.sum(v), 1))
         self.assertTrue(np.all(v > 0))
+
+    def test_holmes_rubin(self):
+        v = np.array([.4, .2, .2, .2])
+        R = np.array([
+            [-3, 1, 1, 1],
+            [2, -4, 1, 1],
+            [2, 1, -4, 1],
+            [2, 1, 1, -4]], dtype=float)
+        a = 0
+        b = 1
+        T = 1.0
+        spectral = get_endpoint_conditioned_expected_occupancy(R, v, a, b, T)
+        nmax = 60
+        uniformized = get_hobolth_eceo(R, v, a, b, T, nmax)
+        self.assertTrue(np.allclose(spectral, uniformized))
 
 
 if __name__ == '__main__':
