@@ -1,5 +1,5 @@
 """
-Plot endpoint-conditioned state probabilities along the path for Wright-Fisher.
+Plot endpoint-conditioned Wright-Fisher path state probabilities.
 
 Although populations can be large-ish,
 the size of genome is always a single position with two alleles.
@@ -30,21 +30,21 @@ def get_form():
     """
     return [
             Form.Integer('npop', 'population size',
-                100, low=1, high=200),
+                40, low=1, high=200),
             Form.Integer('ngenerations', 'total number of generations',
-                100, low=2, high=200),
+                40, low=2, high=200),
             Form.Integer('nmutants_initial', 'initial number of mutants',
-                10, low=0),
+                5, low=0),
             Form.Integer('nmutants_final', 'final number of mutants',
-                20, low=0),
+                10, low=0),
             Form.Float('selection_ratio', 'selection probability ratio',
-                '2.0', low_exclusive=0),
+                '1.0', low_exclusive=0),
             Form.Float('mutation_ab',
                 'wild-type to mutant transition probability',
-                '0.01', low_inclusive=0, high_inclusive=1),
+                '0.02', low_inclusive=0, high_inclusive=1),
             Form.Float('mutation_ba',
                 'mutant to wild-type transition probability',
-                '0.01', low_inclusive=0, high_inclusive=1),
+                '0.02', low_inclusive=0, high_inclusive=1),
             Form.ImageFormat(),
             ]
 
@@ -108,6 +108,43 @@ def get_response_content(fs):
         raise RUtil.RError(r_err)
     return image_data
 
+def get_presets():
+    return [
+            Form.Preset(
+                'bimodal path distribution',
+                {
+                    'npop' : '40',
+                    'ngenerations' : '40',
+                    'nmutants_initial' : '5',
+                    'nmutants_final' : '10',
+                    'selection_ratio' : '2.0',
+                    'mutation_ab' : '0.02',
+                    'mutation_ba' : '0.02',
+                    }),
+            Form.Preset(
+                'unimodal high',
+                {
+                    'npop' : '40',
+                    'ngenerations' : '40',
+                    'nmutants_initial' : '5',
+                    'nmutants_final' : '10',
+                    'selection_ratio' : '2.0',
+                    'mutation_ab' : '0.1',
+                    'mutation_ba' : '0.1',
+                    }),
+            Form.Preset(
+                'unimodal low',
+                {
+                    'npop' : '40',
+                    'ngenerations' : '40',
+                    'nmutants_initial' : '5',
+                    'nmutants_final' : '10',
+                    'selection_ratio' : '2.0',
+                    'mutation_ab' : '0.01',
+                    'mutation_ba' : '0.01',
+                    }),
+                ]
+
 def get_ggplot():
     out = StringIO()
     print >> out, mk_call_str('require', '"reshape"')
@@ -124,17 +161,5 @@ def get_ggplot():
     print >> out, 'breaks=c(-6, -5, -4, -3, -2, -1, 0),',
     print >> out, 'limits=c(-6, 0)',
     print >> out, ')',
-    return out.getvalue()
-
-def get_ggplot_old():
-    out = StringIO()
-    print >> out, mk_call_str('require', '"reshape"')
-    print >> out, mk_call_str('require', '"ggplot2"')
-    print >> out, 'my.table.long <-',
-    print >> out, mk_call_str('melt', 'my.table', id='"generation"')
-    print >> out, 'ggplot(data=my.table.long,'
-    print >> out, mk_call_str(
-            'aes', x='generation', y='value', colour='variable')
-    print >> out, ') + geom_line()',
     return out.getvalue()
 
