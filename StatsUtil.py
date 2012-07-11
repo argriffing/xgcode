@@ -4,14 +4,20 @@ Statistics utility functions.
 
 import unittest
 from math import log
+from math import exp
 
+import numpy as np
 import scipy.stats
 from scipy.special import gammaln
 
 import iterutils
 
 def binomial_log_pmf(observed_n, max_n, p_success):
-    #TODO special cases
+    if not p_success:
+        if observed_n:
+            return float('-inf')
+        else:
+            return 0.0
     accum = 0
     accum += gammaln(max_n + 1)
     accum -= gammaln(observed_n + 1)
@@ -87,6 +93,20 @@ class TestStatsUtil(unittest.TestCase):
         scipy_result = log(scipy.stats.geom.pmf(obs, pr, loc=-1))
         util_result = geometric_log_pmf(obs, pr)
         self.assertAlmostEqual(scipy_result, util_result)
+
+    def test_binomial_log_pmf(self):
+        """
+        Test the binomial log pmf using an example from the internet.
+        Suppose a die is tossed 5 times.
+        What is the probability of getting exactly 2 fours?
+        """
+        observed_n = 2
+        max_n = 5
+        p_success = 1.0 / 6.0
+        log_p = binomial_log_pmf(observed_n, max_n, p_success)
+        p_computed = exp(log_p)
+        p_expected = 0.160751028807
+        self.assertTrue(np.allclose(p_expected, p_computed))
 
 
 if __name__ == '__main__':
