@@ -31,7 +31,6 @@ def create_drift_selection_transition_matrix(npop, selection_ratio):
             observed_n = b
             max_n = npop
             p_success = p
-            print observed_n, max_n, p_success
             P[a, b] = math.exp(StatsUtil.binomial_log_pmf(
                 observed_n, max_n, p_success))
     return P
