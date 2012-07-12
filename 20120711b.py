@@ -17,7 +17,6 @@ import numpy as np
 
 import Form
 import FormOut
-import PathSampler
 import MatrixUtil
 import pgmsinglesite
 import RUtil

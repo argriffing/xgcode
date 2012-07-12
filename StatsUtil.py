@@ -13,11 +13,16 @@ from scipy.special import gammaln
 import iterutils
 
 def binomial_log_pmf(observed_n, max_n, p_success):
-    if not p_success:
+    if p_success == 0.0:
         if observed_n:
             return float('-inf')
         else:
             return 0.0
+    elif p_success == 1.0:
+        if observed_n == max_n:
+            return 0.0
+        else:
+            return float('-inf')
     accum = 0
     accum += gammaln(max_n + 1)
     accum -= gammaln(observed_n + 1)

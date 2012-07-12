@@ -23,7 +23,7 @@ def create_drift_selection_transition_matrix(npop, selection_ratio):
     P = np.zeros((nstates, nstates))
     for a in range(nstates):
         # compute the i.i.d probability of picking a mutant
-        p = (selection_ratio * a) / (selection_ratio * a + (nstates-a))
+        p = (selection_ratio * a) / (selection_ratio * a + (npop-a))
         for b in range(nstates):
             # These are from a binomial distribution
             # with npop trials and p probability of success per trial.
@@ -31,6 +31,7 @@ def create_drift_selection_transition_matrix(npop, selection_ratio):
             observed_n = b
             max_n = npop
             p_success = p
+            print observed_n, max_n, p_success
             P[a, b] = math.exp(StatsUtil.binomial_log_pmf(
                 observed_n, max_n, p_success))
     return P
