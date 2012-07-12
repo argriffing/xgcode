@@ -148,17 +148,12 @@ def get_ggplot():
     out = StringIO()
     print >> out, mk_call_str('require', '"reshape"')
     print >> out, mk_call_str('require', '"ggplot2"')
-    #print >> out, 'my.table.long <-',
-    #print >> out, mk_call_str('melt', 'my.table', id='"generation"')
-    #print >> out, 'ggplot(data=my.table.long,'
     print >> out, 'ggplot(data=my.table,'
     print >> out, mk_call_str(
             'aes', x='generation', y='number.of.mutants', fill='log.prob')
-    print >> out, ') + geom_tile()',
-    #print >> out, '+ scale_fill_continuous(breaks=c(0,0.001,0.01,0.1,1.0))',
-    print >> out, '+ scale_fill_continuous(',
-    print >> out, 'breaks=c(-6, -5, -4, -3, -2, -1, 0),',
-    print >> out, 'limits=c(-6, 0)',
-    print >> out, ')',
-    return out.getvalue()
+    print >> out, ') + geom_tile() +',
+    print >> out, mk_call_str(
+            'scale_fill_continuous',
+            breaks='c(-6, -5, -4, -3, -2, -1, 0)', limits='c(-6, 0)')
+    return out.getvalue().rstrip()
 
