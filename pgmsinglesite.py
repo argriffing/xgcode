@@ -43,6 +43,8 @@ def create_mutation_transition_matrix(npop, mutation_ab, mutation_ba):
     @param mutation_ba: mutant to wild-type transition probability
     @return: a transition matrix
     """
+    StatsUtil.assert_probability(mutation_ab)
+    StatsUtil.assert_probability(mutation_ba)
     nstates = npop + 1
     P = np.zeros((nstates, nstates))
     for a in range(nstates):

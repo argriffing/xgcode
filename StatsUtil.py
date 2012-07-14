@@ -1,5 +1,7 @@
 """
 Statistics utility functions.
+
+Some attention is paid to edge cases and numerical stability.
 """
 
 import unittest
@@ -10,9 +12,14 @@ import numpy as np
 import scipy.stats
 from scipy.special import gammaln
 
-import iterutils
+def assert_probability(p):
+    if p < 0:
+        raise ValueError('%s (< 0) is not a probability' % p)
+    elif p > 1:
+        raise ValueError('%s (> 1) is not a probability' % p)
 
 def binomial_log_pmf(observed_n, max_n, p_success):
+    assert_probability(p_success)
     if p_success == 0.0:
         if observed_n:
             return float('-inf')
@@ -36,6 +43,7 @@ def geometric_log_pmf(observed_n, pr):
     @param observed_n: the number of completed events
     @param pr: the probability of quitting
     """
+    assert_probability(pr)
     if pr == 0.0:
         return float('-inf')
     if pr == 1.0:

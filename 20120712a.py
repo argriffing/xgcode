@@ -31,7 +31,7 @@ def get_form():
     """
     return [
             Form.Float('pop', 'population size',
-                '1e6', low_inclusive=1),
+                '1e3', low_inclusive=1),
             Form.Integer('pop_gran',
                 'diffusion approximation granularity (larger is more accurate)',
                 40, low=2, high=200),
@@ -59,6 +59,10 @@ def get_response_content(fs):
     # transform the arguments according to the diffusion approximation
     mutation_ab = (fs.pop * fs.mutation_ab) / fs.pop_gran
     mutation_ba = (fs.pop * fs.mutation_ba) / fs.pop_gran
+    if mutation_ab > 1 or mutation_ba > 1:
+        raise Exception(
+                'the mutation probability is not small enough '
+                'for the diffusion approximation to be meaningful')
     selection_ratio = 1 + (fs.pop * fs.additive_selection) / fs.pop_gran
     npop = fs.pop_gran
     ngenerations = fs.ngenerations
@@ -76,7 +80,7 @@ def get_response_content(fs):
             'generation',
             'allele.frequency',
             'probability',
-            'log.prob',
+            'log.density',
             ]
     # compute the transition matrix
     P = np.dot(P_drift_selection, P_mutation)
@@ -101,18 +105,21 @@ def get_response_content(fs):
     for g in range(ngenerations):
         for k in range(nstates):
             p = M[k, g]
-            if p:
-                logp = math.log(p)
-            else:
-                logp = float('-inf')
             allele_frequency = k / float(npop)
-            row = [g, allele_frequency, p, logp]
+            # Finer gridding needs larger scaling for the density
+            # because each interval has a smaller support.
+            density = p * nstates
+            if density:
+                log_density = math.log(density)
+            else:
+                log_density = float('-inf')
+            row = [g, allele_frequency, p, log_density]
             arr.append(row)
     # create the R table string and scripts
     # get the R table
     table_string = RUtil.get_table_string(arr, headers)
     # get the R script
-    script = get_ggplot()
+    script = get_ggplot(nstates)
     # create the R plot image
     device_name = Form.g_imageformat_to_r_function[fs.imageformat]
     retcode, r_out, r_err, image_data = RUtil.run_plotter(
@@ -160,16 +167,19 @@ def get_presets():
                 ]
 """
 
-def get_ggplot():
+def get_ggplot(granularity):
+    cap = math.log(granularity)
     out = StringIO()
     print >> out, mk_call_str('require', '"reshape"')
     print >> out, mk_call_str('require', '"ggplot2"')
     print >> out, 'ggplot(data=my.table,'
     print >> out, mk_call_str(
-            'aes', x='generation', y='allele.frequency', fill='log.prob')
+            'aes', x='generation', y='allele.frequency', fill='log.density')
     print >> out, ') + geom_tile() +',
     print >> out, mk_call_str(
             'scale_fill_continuous',
-            breaks='c(-6, -5, -4, -3, -2, -1, 0)', limits='c(-6, 0)')
+            breaks='c(-6, -5, -4, -3, -2, -1, 0, %s)' % cap,
+            limits='c(-6, %s)' % cap,
+            )
     return out.getvalue().rstrip()
 
