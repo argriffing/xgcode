@@ -45,7 +45,6 @@ def get_response_content(fs):
             log_p = StatsUtil.binomial_log_pmf(
                     nB_final, npop, nB_initial / float(npop))
             P[i, j] = math.exp(log_p)
-    print P
     # Put the puzzle into the form Ax=b
     # so that it can be solved by a generic linear solver.
     A = P - np.eye(nstates)
