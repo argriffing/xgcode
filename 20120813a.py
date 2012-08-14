@@ -114,7 +114,7 @@ def get_response_content(fs):
         x = solve(nsmall, s_small)
         f_linear = interpolate.interp1d(range(nsmall+1), x, kind='linear')
         f_cubic = interpolate.interp1d(range(nsmall+1), x, kind='cubic')
-        print >> out, 'linearly interpolated low population (N=%s)' % nsmall
+        print >> out, 'linearly interpolated %s (N=%s)' % (name, nsmall)
         print >> out, 'approximation of probability of eventual'
         print >> out, 'fixation (as opposed to extinction)'
         print >> out, 'of allele B in the population:'
