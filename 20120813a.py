@@ -21,6 +21,7 @@ from math import exp
 
 import numpy as np
 from scipy import linalg
+from scipy import interpolate
 
 import Form
 import FormOut
@@ -41,21 +42,16 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def get_response_content(fs):
-    npop = fs.nB + fs.nb
+def solve(npop, s):
+    """
+    @param npop: population
+    @param s: selection
+    @return: vector of probabilities
+    """
     nstates = npop + 1
-    fB = 1.0 + fs.s
+    fB = 1.0 + s
     fb = 1.0
-    # Check for minimum population size.
-    if npop < 1:
-        raise ValueError('there should be at least one individual')
-    # Check the complexity;
-    # solving a system of linear equations takes about n^3 effort.
-    if nstates ** 3 > 1e8:
-        raise ValueError('sorry this population size is too large')
-    # Compute the transition matrix.
-    # This assumes no mutation or selection or recombination.
-    # It is pure binomial.
+    # compute the transition matrix 
     P = np.zeros((nstates, nstates))
     for i in range(nstates):
         nB_initial = i
@@ -75,17 +71,28 @@ def get_response_content(fs):
     b[npop] = 1.0
     # Solve Ax=b for x.
     x = linalg.solve(A, b)
+    # Return the probability of fixation of the B allele.
+    return x
+
+def get_response_content(fs):
+    npop = fs.nB + fs.nb
+    nstates = npop + 1
+    # Check for minimum population size.
+    if npop < 1:
+        raise ValueError('there should be at least one individual')
+    # Check the complexity;
+    # solving a system of linear equations takes about n^3 effort.
+    if nstates ** 3 > 1e8:
+        raise ValueError('sorry this population size is too large')
+    # Compute the exact probability of fixation of B.
+    p_fixation = solve(npop, fs.s)[fs.nB]
     # Kimura approximation numerator and denominator.
     k_top = 1 - exp(-2*fs.s*fs.nB)
     k_bot = 1 - exp(-2*fs.s*npop)
-    #print P
-    #print np.sum(P, axis=1)
-    #print linalg.eigvals(P)
-    # Print the solution.
     out = StringIO()
     print >> out, 'probability of eventual fixation (as opposed to extinction)'
     print >> out, 'of allele B in the population:'
-    print >> out, x[fs.nB]
+    print >> out, p_fixation
     print >> out
     print >> out, 'Kimura would give the approximation'
     print >> out, k_top / k_bot
@@ -93,6 +100,28 @@ def get_response_content(fs):
     if fs.nB == 1:
         print >> out, 'Haldane would give the approximation'
         print >> out, 2 * fs.s
+        print >> out
+    # Compute low-population approximations of probability of fixation of B.
+    pB = fs.nB / float(fs.nB + fs.nb)
+    for nsmall, name in (
+            (10, 'low population size'),
+            (20, 'medium population size'),
+            ):
+        if nsmall >= npop:
+            continue
+        s_small = fs.s * npop / float(nsmall)
+        # Compute all low-population approximations.
+        x = solve(nsmall, s_small)
+        f_linear = interpolate.interp1d(range(nsmall+1), x, kind='linear')
+        f_cubic = interpolate.interp1d(range(nsmall+1), x, kind='cubic')
+        print >> out, 'linearly interpolated low population (N=%s)' % nsmall
+        print >> out, 'approximation of probability of eventual'
+        print >> out, 'fixation (as opposed to extinction)'
+        print >> out, 'of allele B in the population:'
+        print >> out, f_linear(pB*nsmall)
+        print >> out
+        print >> out, 'cubic interpolation:'
+        print >> out, f_cubic(pB*nsmall)
         print >> out
     return out.getvalue()
 
