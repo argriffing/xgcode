@@ -176,7 +176,7 @@ def get_response_content(fs):
         raise ValueError('there should be at least one individual')
     # Check the complexity;
     # solving a system of linear equations takes about n^3 effort.
-    if nstates ** 3 > 1e12:
+    if npop > 32:
         raise ValueError('sorry this population size is too large')
     # Compute the transition matrix.
     tm = time.time()
