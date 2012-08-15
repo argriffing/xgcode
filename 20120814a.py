@@ -1,5 +1,5 @@
 """
-Compute fixation probabilities for W-F models with selection and recombination. [UNFINISHED]
+Compute fixation probabilities for W-F models with selection and recombination.
 
 Do this by solving a Markov chain numerically.
 W-F is Wright-Fisher.

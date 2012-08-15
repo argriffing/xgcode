@@ -49,7 +49,7 @@ cdef inline int int_min(int a, int b):
 def binomial_coefficient(n, k):
     """
     Modified from a function by Andrew Dalke.
-    This is deliberately not a python function,
+    This is deliberately a python function rather than a cdef,
     because we want to allow large integers.
     """
     if 0 <= k <= n:
@@ -164,8 +164,6 @@ def expand_multinomials(
     cdef np.ndarray[np.int_t, ndim=2] compos
     compos = np.array(list(gen_population_compositions(N, k)))
     for i in range(ncols_out):
-        # get the composition as a numpy array
-        #compo = np.array(compo_list, dtype=np.int)
         # define the log of multinomial coefficient for this composition
         log_multinomial_coeff = log_factorial[N]
         for index in range(k):
