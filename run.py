@@ -345,7 +345,7 @@ if __name__ == '__main__':
         shutil.rmtree(g_live_log)
     os.makedirs(g_live_log)
     for filename in os.listdir(g_script_directory):
-        if filename.endswith('.py'):
+        if filename.endswith('.py') or filename.endswith('.so'):
             src = os.path.abspath(os.path.join(g_script_directory, filename))
             dst = os.path.abspath(os.path.join(g_live_code, filename))
             shutil.copyfile(src, dst)

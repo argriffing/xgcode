@@ -1,5 +1,5 @@
 """
-Compute fixation probabilities for W-F models with selection and recombination.
+Compute fixation probabilities for W-F models with selection and recombination. [UNFINISHED]
 
 Do this by solving a Markov chain numerically.
 W-F is Wright-Fisher.
@@ -19,6 +19,7 @@ from this range you can probably figure out how it is interpreted.
 from StringIO import StringIO
 import math
 from math import exp
+import time
 
 import numpy as np
 from scipy import linalg
@@ -28,20 +29,22 @@ import Form
 import FormOut
 import MatrixUtil
 import StatsUtil
+import StatsVectorized
 import Util
+import wfengine
 
 def get_form():
     """
     @return: the body of a form
     """
     return [
-            Form.Integer('nAB', 'number of AB alleles', 0, low=0),
-            Form.Integer('nAb', 'number of Ab alleles', 4, low=0),
-            Form.Integer('naB', 'number of aB alleles', 4, low=0),
+            Form.Integer('nAB', 'number of AB alleles', 1, low=0),
+            Form.Integer('nAb', 'number of Ab alleles', 5, low=0),
+            Form.Integer('naB', 'number of aB alleles', 6, low=0),
             Form.Integer('nab', 'number of ab alleles', 0, low=0),
             Form.Float('sAB', 'AB selection', 0.4, low_exclusive=-1),
             Form.Float('sAb', 'Ab selection', 0.2, low_exclusive=-1),
-            Form.Float('saB', 'aB selection', 0.2, low_exclusive=-1),
+            Form.Float('saB', 'aB selection', 0.1, low_exclusive=-1),
             Form.Float('r', 'recombination probability',
                 0.1, low_inclusive=0, high_inclusive=0.5),
             ]
@@ -80,7 +83,7 @@ def get_recombination(i, j):
     s_child_1 = sj[0] + si[1]
     return string_to_index[s_child_0], string_to_index[s_child_1]
 
-def get_transition_matrix(npop, sAB, sAb, saB, r):
+def get_child_distns(npop, sAB, sAb, saB, r):
     """
     Note that sab is 0 by convention.
     @param npop: constant Wright-Fisher population
@@ -88,17 +91,18 @@ def get_transition_matrix(npop, sAB, sAb, saB, r):
     @param sAb: a selection value
     @param saB: a selection value
     @param r: a recombination probability
-    @return: a transition matrix
+    @return: a list of distributions over child aggregate allele types
     """
     fitnesses = 1.0 + np.array([sAB, sAb, saB, 0])
     # precompute the index_to_composition and composition_to_index maps.
     compositions = list(gen_population_compositions(npop))
+    compos = [np.array(x) for x in compositions]
     c_to_i = dict((c, i) for i, c in enumerate(compositions))
     nstates = get_state_space_size(npop)
     if nstates != len(compositions):
         raise ValueError('internal error regarding state space size')
     #
-    P = np.zeros((nstates, nstates))
+    child_distns = []
     for parent_index, parent_composition_tuple in enumerate(compositions):
         # Given the parent composition and selections,
         # we can find the distribution over parent alleles.
@@ -109,9 +113,8 @@ def get_transition_matrix(npop, sAB, sAb, saB, r):
         # From this child allele state distribution,
         # we can use a multinomial distribution to get the distribution
         # over variant type compositions for the next generation.
-        parent_composition = np.array(parent_composition_tuple)
-        total = np.dot(fitnesses, parent_composition)
-        single_parent_distn = (fitnesses * parent_composition) / total
+        parent_compo = np.array(parent_composition_tuple)
+        single_parent_distn = parent_compo / float(np.sum(parent_compo))
         parent_distn = np.outer(single_parent_distn, single_parent_distn)
         child_distn = np.zeros(4)
         for i in range(4):
@@ -122,11 +125,19 @@ def get_transition_matrix(npop, sAB, sAb, saB, r):
                 recomb_i, recomb_j = get_recombination(i, j)
                 child_distn[recomb_i] += p_parents * 0.5 * r
                 child_distn[recomb_j] += p_parents * 0.5 * r
-        for child_index, child_composition_tuple in enumerate(compositions):
+        child_distn *= fitnesses
+        child_distn /= np.sum(child_distn)
+        child_distns.append(child_distn)
+    """
+        for child_index, child_compo in enumerate(compositions):
+            #P[parent_index, child_index] = StatsVectorized.multinomial_pmf(
+                    #npop, child_distn, child_compo)
             P[parent_index, child_index] = math.exp(
                     StatsUtil.multinomial_log_pmf(
-                        child_distn, child_composition_tuple))
+                        child_distn, child_compo))
     return P
+    """
+    return child_distns
 
 def get_absorbing_state_indices(npop):
     compositions = list(gen_population_compositions(npop))
@@ -165,15 +176,27 @@ def get_response_content(fs):
         raise ValueError('there should be at least one individual')
     # Check the complexity;
     # solving a system of linear equations takes about n^3 effort.
-    if nstates ** 3 > 1e8:
+    if nstates ** 3 > 1e12:
         raise ValueError('sorry this population size is too large')
     # Compute the transition matrix.
-    P = get_transition_matrix(npop, fs.sAB, fs.sAb, fs.saB, fs.r)
+    tm = time.time()
+    child_distns = get_child_distns(npop, fs.sAB, fs.sAb, fs.saB, fs.r)
+    log_child_distns = np.log(child_distns)
+    print time.time() - tm, 'seconds to compute the log child distributions'
+    tm = time.time()
+    log_P = wfengine.expand_multinomials(npop, log_child_distns)
+    print time.time() - tm, 'seconds to compute the log transition matrix'
+    tm = time.time()
+    P = np.exp(log_P)
+    print time.time() - tm, 'seconds to entrywise exponentiate the matrix'
     # Precompute the map from compositions to state index.
     compositions = list(gen_population_compositions(npop))
     c_to_i = dict((c, i) for i, c in enumerate(compositions))
     # Compute the exact probabilities of fixation.
+    tm = time.time()
     fixation_distribution = solve(npop, P)[c_to_i[initial_composition]]
+    print time.time() - tm, 'seconds to solve the linear system'
+    # Write the output
     out = StringIO()
     print >> out, 'distribution over eventual allele fixations:'
     for p, name in zip(fixation_distribution, ('AB', 'Ab', 'aB', 'ab')):

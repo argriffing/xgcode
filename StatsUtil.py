@@ -89,6 +89,9 @@ def multinomial_log_pmf(distribution, counts):
             accum += count * log(p)
     return accum
 
+def multinomial_log_pmf_vectorized(n, distn, counts):
+    return gammaln(n+1) - np.sum(gammaln(counts+1)) + np.sum(counts*np.log(distn))
+
 
 class TestStatsUtil(unittest.TestCase):
 
