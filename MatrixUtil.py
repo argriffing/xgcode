@@ -9,6 +9,7 @@ from StringIO import StringIO
 import random
 
 import numpy as np
+from scipy import linalg
 
 import graph
 import matrixio
@@ -318,6 +319,20 @@ def sample_pos_sym_matrix(n):
     M = np.random.exponential(1, (n, n))
     return M + M.T
 
+def get_stationary_distribution(P):
+    """
+    This uses a direct solver.
+    It does not use power iteration or an eigendecomposition.
+    @param P: a transition matrix
+    @return: the equilibrium (stationary) distribution
+    """
+    assert_transition_matrix(P)
+    nstates = len(P)
+    b = np.zeros(nstates)
+    A = P.T - np.eye(nstates)
+    A[0] = np.ones(nstates)
+    b[0] = 1
+    return linalg.solve(A, b, overwrite_a=True, overwrite_b=True)
 
 class TestMatrixUtil(unittest.TestCase):
 
