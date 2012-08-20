@@ -16,6 +16,7 @@ import FormOut
 import MatrixUtil
 import StatsUtil
 import kaizeng
+import wrightfisher
 import RUtil
 from RUtil import mk_call_str
 
@@ -44,14 +45,14 @@ def get_two_allele_distribution(N, f0, f1):
     nstates = N+1
     P = np.zeros((nstates, nstates))
     for i in range(nstates):
-        p_success = float(f0*i) / float(f0*i + f1*(N-i))
+        p0, p1 = wrightfisher.genic_diallelic(f0, f1, i, N-i)
         if i == 0:
             P[i, 1] = 1.0
         elif i == N:
             P[i, N-1] = 1.0
         else:
             for j in range(nstates):
-                logp = StatsUtil.binomial_log_pmf(j, N, p_success)
+                logp = StatsUtil.binomial_log_pmf(j, N, p0)
                 P[i, j] = math.exp(logp)
     # find the stationary distribution
     v = MatrixUtil.get_stationary_distribution(P)
@@ -68,13 +69,13 @@ def get_two_allele_distribution(N, f0, f1):
 def get_response_content(fs):
     N = 10
     k = 4
-    gamma = 1.5 / 2
+    gamma = 1.5
     params_list = [
             (0.008, 1, 1, 0, gamma, 1),
             (0.008, 2, 1, 0, gamma, 1)]
     allele_histograms = np.zeros((2, N+1))
     for i, params in enumerate(params_list):
-        mutation, selection = kaizeng.params_to_mutation_selection(N, params)
+        mutation, selection = kaizeng.params_to_mutation_fitness(N, params)
         P = kaizeng.get_transition_matrix(N, k, mutation, selection)
         v = MatrixUtil.get_stationary_distribution(P)
         for state_index, counts in enumerate(kaizeng.gen_states(N, k)):
