@@ -291,7 +291,7 @@ def run_plotter_no_table(user_script_content, device_name,
     """
     temp_plot_name = Util.get_tmp_filename()
     s = StringIO()
-    print >> s, _get_device_specific_preamble(temp_plot_name, device_name,
+    print >> s, _get_device_specific_call(temp_plot_name, device_name,
             width, height)
     print >> s, user_script_content
     print >> s, 'dev.off()'

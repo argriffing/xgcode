@@ -14,6 +14,10 @@ import MatrixUtil
 import wfengine
 
 def params_to_mutation_selection(N, params):
+    """
+    @param N: haploid population size
+    @param params: parameters estimated by max likelihood in the 2011 paper
+    """
     # define the hardcoded number of alleles
     k = 4
     # unpack the params
