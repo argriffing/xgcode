@@ -138,6 +138,12 @@ def assert_rate_matrix(M):
     if not np.allclose(np.sum(M, 1), np.zeros(n)):
         raise MatrixError('rows of a rate matrix should each sum to zero')
 
+def assert_distribution(v):
+    if not np.allclose(np.sum(v), 1):
+        raise MatrixError('sum of entries should be 1')
+    if not all(x >= 0 for x in v):
+        raise MatrixError('each entry should be nonnegative')
+
 def assert_transition_matrix(M):
     """
     @param M: a numpy array

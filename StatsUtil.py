@@ -12,6 +12,9 @@ import numpy as np
 import scipy.stats
 from scipy.special import gammaln
 
+import Util
+
+
 def assert_probability(p):
     if p < 0:
         raise ValueError('%s (< 0) is not a probability' % p)
@@ -88,6 +91,67 @@ def multinomial_log_pmf(distribution, counts):
         if count:
             accum += count * log(p)
     return accum
+
+def sample_distn_pmf_with_replacement(fdistn, n):
+    """
+    Pick a success probability at random then try n times.
+    The returned distribution is over the number of successes.
+    Each row of the finite distribution has two entries.
+    The first entry is the probability of success and the
+    second entry is the probability of that probability of success.
+    @param fdistn: a finite distribution over success probabilities
+    @param n: the total number of attempts
+    @return: distribution over success counts
+    """
+    count_distn = np.zeros(n+1)
+    for row in fdistn:
+        psuccess = row[0]
+        pfail = 1 - psuccess
+        pstate = row[1]
+        for nsuccess in range(n+1):
+            nfail = n - nsuccess
+            p = (psuccess ** nsuccess) * (pfail ** nfail)
+            count_distn[i] += pstate * Util.choose(n, nsuccess) * p
+    return count_distn
+
+def subsample_pmf_with_replacement(distn, n):
+    """
+    Pick a number of successes in the population at random then pick a sample.
+    The sample is picked with replacement.
+    @param distn: distribution over the number of successes in the population
+    @param n: the total number of attempts
+    @return: distribution over success counts
+    """
+    N = len(distn) - 1
+    count_distn = np.zeros(n+1)
+    for Ns, pstate in enumerate(distn):
+        ps = Ns / float(N)
+        pf = 1 - ps
+        for ns in range(n+1):
+            nf = n - ns
+            p = (ps ** ns) * (pf ** nf)
+            count_distn[ns] += pstate * Util.choose(n, ns) * p
+    return count_distn
+
+def subsample_pmf_without_replacement(distn, n):
+    """
+    Pick a number of successes in the population at random then pick a sample.
+    The sample is picked without replacement.
+    @param distn: distribution over the number of successes in the population
+    @param n: the total number of attempts
+    @return: distribution over success counts
+    """
+    N = len(distn) - 1
+    denominator = Util.choose(N, n)
+    count_distn = np.zeros(n+1)
+    for Ns, pstate in enumerate(distn):
+        Nf = N - Ns
+        for ns in range(n+1):
+            nf = n - ns
+            numerator = Util.choose(Ns, ns) * Util.choose(Nf, nf)
+            count_distn[ns] += (pstate * numerator) / denominator
+    return count_distn
+
 
 def multinomial_log_pmf_vectorized(n, distn, counts):
     return gammaln(n+1) - np.sum(gammaln(counts+1)) + np.sum(counts*np.log(distn))

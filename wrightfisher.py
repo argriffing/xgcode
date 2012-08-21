@@ -9,7 +9,7 @@ def genic_diallelic(fi, fj, ni, nj):
     The two returned probabilities sum to 1.
     This assumes that the fitness of the heterozygote is the mean
     of the fitness of the homozygotes,
-    and that the parent population is in exactly hardy weinberg equilibrium.
+    and that the parent population has exactly hardy weinberg proportions.
     These are the assumptions made, for example, in the paper by Kai Zeng 2010.
     Note that ni + nj = 2N where N is the diploid population size.
     @param fi: fitness of allele i
