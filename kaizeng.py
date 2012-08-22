@@ -8,11 +8,14 @@ import math
 
 import numpy as np
 from scipy import linalg
+from scipy import integrate
 
 import StatsUtil
 import MatrixUtil
+import bernoulli
 import wfengine
 import wrightfisher
+import Util
 
 def params_to_mutation_fitness(N, params):
     """
@@ -149,6 +152,81 @@ def get_transition_matrix(N, k, mutation, fit):
         # are completely ignored.  This is intentional.
         P[ibegin:iend, ibegin:iend] = pblock[1:-1, 1:-1]
     return P
+
+def get_scaled_fixation_probabilities(gammas):
+    """
+    The scaling factor is the same for each allele.
+    It is something like 2N.
+    @param gammas: scaled selections near zero, positive is better
+    @return: a matrix of fixation probabilities
+    """
+    k = len(gammas)
+    F = np.zeros((k, k))
+    for i, gi in enumerate(gammas):
+        for j, gj in enumerate(gammas):
+            if i == j:
+                continue
+            F[i, j] = bernoulli.bgf(gj - gi)
+    return F
+
+def _approx(p0, g, n0, n1, m0, m1):
+    """
+    This is a large population approximation.
+    @param p0: proportion of allele 0 at the site
+    @param g: difference of scaled selection
+    @param n0: count of allele 0 in sample from child population
+    @param n1: count of allele 1 in sample from child population
+    @param m0: proportional to an expected number of substitutions
+    @param m1: proportional to an expected number of substitutions
+    @return: probability of the (n0, n1) selection given an n0+n1 size sample
+    """
+    p1 = 1 - p0
+    # From Eq. (9) and (16) in McVean and Charlesworth 1999.
+    # Note that a+b=1 ...
+    a = math.expm1(g*p0) / math.expm1(g)
+    b = math.expm1(-g*p1) / math.expm1(-g)
+    coeff = (m0*a + m1*b) / (p0 * p1)
+    # get a binomial probability
+    p = Util.choose(n0+n1, n0) * (p0 ** n0) * (p1 ** n1)
+    # return the scaled probability
+    return coeff * p
+
+def diallelic_approximation(N_small, g, m0, m1):
+    """
+    This is a large population approximation.
+    """
+    hist = np.zeros(N_small+1)
+    for n0 in range(1, N_small):
+        n1 = N_small - n0
+        hist[n0] = integrate.quad(
+                _approx, 0, 1, args=(g, n0, n1, m0, m1))[0]
+    return hist[1:-1] / np.sum(hist[1:-1])
+
+def get_large_population_approximation(n, k, gammas, M):
+    """
+    @param n: sample size
+    @param k: number of alleles e.g. 4 for A, C, G, T
+    @param gammas: scaled selections near zero, positive is better
+    @param M: mutation rate matrix
+    @return: xxx
+    """
+    # Approximate the fixation probabilities.
+    F = get_scaled_fixation_probabilities(gammas)
+    # Compute the rate matrix as the hadamard product
+    # of mutation rates and fixation probabilities,
+    # and adjust the diagonal.
+    Q = M*F
+    Q -= np.diag(np.sum(Q, 1))
+    # This is kind of a hack,
+    # I should just get the stationary distribution directly from Q
+    # without the expm.
+    v = MatrixUtil.get_stationary_distribution(linalg.expm(Q))
+    # Get sample allele frequencies associated with the
+    # transitions between the fixed states of alleles 0 and 1.
+    m0 = v[0] * M[0,1]
+    m1 = v[1] * M[1,0]
+    g = gammas[1] - gammas[0]
+    return diallelic_approximation(n, g, m0, m1)
 
 def get_test_mutation_fitness():
     mutation = np.array([

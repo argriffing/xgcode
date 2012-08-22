@@ -118,17 +118,6 @@ def get_two_allele_distribution(N_big, N_small, f0, f1, f_subsample):
     if not np.allclose(v, np.dot(v, P)):
         raise ValueError('expected a left eigenvector with eigenvalue 1')
     # return the stationary distribution conditional on dimorphism
-    """
-    accum = np.zeros(N_small + 1)
-    denominator = Util.choose(N_big, N_small)
-    for i, p_state in enumerate(v):
-        for j in range(N_small + 1):
-            numerator = Util.choose(i, j) * Util.choose(N_big - i, N_small - j)
-            if not numerator:
-                continue
-            accum[j] += (p_state * numerator) / denominator
-    return accum[1:-1] / np.sum(accum[1:-1])
-    """
     distn = f_subsample(v, N_small)
     return distn[1:-1] / np.sum(distn[1:-1])
 
@@ -156,16 +145,6 @@ def get_response_content(fs):
         for state_index, counts in enumerate(kaizeng.gen_states(N_big, k)):
             if counts[0] and counts[1]:
                 allele_histograms[i, counts[0]] += v[state_index]
-                """
-                p_state = v[state_index]
-                for j in range(1, N_small):
-                    numerator = Util.choose(counts[0], j)
-                    if not numerator: continue
-                    numerator *= Util.choose(counts[1], N_small - j)
-                    if not numerator: continue
-                    x = (p_state * numerator) / denominator
-                    allele_histograms[i, j] += x
-                """
     # Define the r table.
     # There are nine columns each corresponding to an allele frequency.
     # There are three rows each corresponding to a configuration.
@@ -213,6 +192,13 @@ def get_response_content(fs):
         distn /= np.sum(distn)
         # Add to the table of densities.
         arr.append(distn[1:-1].tolist())
+    # Get a large population approximation
+    # when there is mutational bias.
+    params = (0.008, 2, 1, 0, gamma, 1)
+    mutation, fitness = kaizeng.params_to_mutation_fitness(N_big, params)
+    gammas = np.array([0, gamma, 1, 0])
+    h = kaizeng.get_large_population_approximation(N_small, k, gammas, mutation)
+    arr.append(h.tolist())
     # define the r script
     out = StringIO()
     print >> out, 'title.string <- "allele 1 vs allele 2, gamma = 1.5"'
@@ -222,10 +208,11 @@ def get_response_content(fs):
             'mdat',
             'legend.text=' + mk_call_str(
                 'c',
-                '"two-allele diffusion limit"',
+                '"two-allele large N limit"',
                 '"two-allele"',
                 '"four-allele without mutational bias"',
-                '"four-allele with mutational bias kappa_{1,2}=2"',
+                '"four-allele with mutational bias (kappa_{1,2}=2)"',
+                '"four-allele with mutational bias, large N limit"',
                 ),
             'args.legend = list(x="topleft", bty="n")',
             'names.arg = c(1,2,3,4,5,6,7,8,9)',
@@ -238,6 +225,7 @@ def get_response_content(fs):
                 '"white"',
                 '"black"',
                 '"gray"',
+                '"blue"',
                 ),
             beside='TRUE',
             )
