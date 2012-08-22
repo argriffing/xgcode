@@ -169,6 +169,18 @@ def get_scaled_fixation_probabilities(gammas):
             F[i, j] = bernoulli.bgf(gj - gi)
     return F
 
+def kimura_sojourn_helper(a, x):
+    """
+    Computes (exp(ax) - 1) / (exp(a) - 1) and accepts a=0.
+    @param a: a scaled selection, can take any value
+    @param x: a proportion between 0 and 1
+    @return: a nonnegative value
+    """
+    if not a:
+        return x
+    else:
+        return math.expm1(a*x) / math.expm1(a)
+
 def _approx(p0, g, n0, n1, m0, m1):
     """
     This is a large population approximation.
@@ -183,8 +195,8 @@ def _approx(p0, g, n0, n1, m0, m1):
     p1 = 1 - p0
     # From Eq. (9) and (16) in McVean and Charlesworth 1999.
     # Note that a+b=1 ...
-    a = math.expm1(g*p0) / math.expm1(g)
-    b = math.expm1(-g*p1) / math.expm1(-g)
+    a = kimura_sojourn_helper(g, p0)
+    b = kimura_sojourn_helper(-g, p1)
     coeff = (m0*a + m1*b) / (p0 * p1)
     # get a binomial probability
     p = Util.choose(n0+n1, n0) * (p0 ** n0) * (p1 ** n1)

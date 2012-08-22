@@ -4,6 +4,7 @@ Better approximate a figure from a publication by Kai Zeng 2010.
 This approximation samples 10 alleles from a
 fixed size population of diploid individuals.
 The figure (fig. 2) in the publication may be for a large population limit.
+Gamma for allele 4 is set to 0.
 """
 
 from StringIO import StringIO
@@ -30,6 +31,9 @@ def get_form():
     return [
             Form.Integer('N_big_diploid', 'diploid population size',
                 100, low=5, high=200),
+            Form.Float('gamma_0', 'gamma for allele 1', 0),
+            Form.Float('gamma_1', 'gamma for allele 2', 1.5),
+            Form.Float('gamma_2', 'gamma for allele 3', 1),
             Form.RadioGroup('options',
                 'sample haplotypes from a finite population', [
                     Form.RadioItem(
@@ -133,10 +137,10 @@ def get_response_content(fs):
     else:
         raise ValueError('subsampling option error')
     k = 4
-    gamma = 1.5
+    gamma = fs.gamma_1
     params_list = [
-            (0.008, 1, 1, 0, gamma, 1),
-            (0.008, 2, 1, 0, gamma, 1)]
+            (0.008, 1, 1, fs.gamma_0, fs.gamma_1, fs.gamma_2),
+            (0.008, 2, 1, fs.gamma_0, fs.gamma_1, fs.gamma_2)]
     allele_histograms = np.zeros((2, N_big + 1))
     for i, params in enumerate(params_list):
         mutation, selection = kaizeng.params_to_mutation_fitness(N_big, params)
@@ -152,8 +156,8 @@ def get_response_content(fs):
     # Use the two allele approximation
     # from mcvean and charlesworth 1999 referred to by zeng 2011.
     # I'm not sure if I am using the right equation.
-    g0 = 0
-    g1 = 1.5
+    g0 = fs.gamma_0
+    g1 = fs.gamma_1
     """
     s_0 = -gamma_0 / float(N_big)
     s_1 = -gamma_1 / float(N_big)
@@ -194,14 +198,14 @@ def get_response_content(fs):
         arr.append(distn[1:-1].tolist())
     # Get a large population approximation
     # when there is mutational bias.
-    params = (0.008, 2, 1, 0, gamma, 1)
+    params = (0.008, 2, 1, fs.gamma_0, fs.gamma_1, fs.gamma_2)
     mutation, fitness = kaizeng.params_to_mutation_fitness(N_big, params)
-    gammas = np.array([0, gamma, 1, 0])
+    gammas = np.array([fs.gamma_0, fs.gamma_1, fs.gamma_2, 0])
     h = kaizeng.get_large_population_approximation(N_small, k, gammas, mutation)
     arr.append(h.tolist())
     # define the r script
     out = StringIO()
-    print >> out, 'title.string <- "allele 1 vs allele 2, gamma = 1.5"'
+    print >> out, 'title.string <- "allele 1 vs allele 2"'
     print >> out, 'mdat <-', RUtil.matrix_to_R_string(arr)
     print >> out, mk_call_str(
             'barplot',
