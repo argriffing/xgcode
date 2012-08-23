@@ -214,6 +214,81 @@ def diallelic_approximation(N_small, g, m0, m1):
                 _approx, 0, 1, args=(g, n0, n1, m0, m1))[0]
     return hist[1:-1] / np.sum(hist[1:-1])
 
+def _approx_b(p0, g, n0, n1):
+    """
+    This is experimental.
+    It should be related to the original similarly named function,
+    but it is not as pedagogically useful.
+    """
+    p1 = 1 - p0
+    coeff = kimura_sojourn_helper(g, p0) / (p0 * p1)
+    p = Util.choose(n0+n1, n0) * (p0 ** n0) * (p1 ** n1)
+    return coeff * p
+
+def _approx_c(p0, g, n0m1, n1m1):
+    """
+    This is experimental.
+    It should be related to the original similarly named function,
+    but it is not as pedagogically useful.
+    """
+    p1 = 1 - p0
+    coeff = kimura_sojourn_helper(g, p0)
+    p = (p0 ** n0m1) * (p1 ** n1m1)
+    return coeff * p
+
+def diallelic_approximation_b(N_small, g, m0, m1):
+    """
+    This is experimental.
+    It should be the same as the original similarly named function,
+    but it is not as pedagogically useful.
+    It uses the idea that if xxx is a mixture model of xxxa and xxxb
+    then the compound distribution xxx-binomial is
+    a mixture of xxxa-binomial and xxxb-binomial.
+    """
+    hist = np.zeros(N_small+1)
+    for n0 in range(1, N_small):
+        n1 = N_small - n0
+        hist[n0] += m0 * integrate.quad(_approx_b, 0, 1, args=(g, n0, n1))[0]
+        hist[n0] += m1 * integrate.quad(_approx_b, 0, 1, args=(-g, n1, n0))[0]
+    return hist[1:-1] / np.sum(hist[1:-1])
+
+def diallelic_approximation_b2(N_small, g, m0, m1):
+    """
+    This is experimental.
+    It should be the same as the original similarly named function,
+    but it is not as pedagogically useful.
+    It uses the idea that if xxx is a mixture model of xxxa and xxxb
+    then the compound distribution xxx-binomial is
+    a mixture of xxxa-binomial and xxxb-binomial.
+    """
+    hist_a = np.zeros(N_small+1)
+    hist_b = np.zeros(N_small+1)
+    for n0 in range(1, N_small):
+        n1 = N_small - n0
+        hist_a[n0] += integrate.quad(_approx_b, 0, 1, args=(g, n0, n1))[0]
+        hist_b[n0] += integrate.quad(_approx_b, 0, 1, args=(-g, n0, n1))[0]
+    hist = m0 * hist_a + m1 * hist_b[::-1]
+    return hist[1:-1] / np.sum(hist[1:-1])
+
+def diallelic_approximation_c(N_small, g, m0, m1):
+    """
+    This is experimental.
+    It should be the same as the original similarly named function,
+    but it is not as pedagogically useful.
+    It uses the idea that if xxx is a mixture model of xxxa and xxxb
+    then the compound distribution xxx-binomial is
+    a mixture of xxxa-binomial and xxxb-binomial.
+    """
+    hist = np.zeros(N_small - 1)
+    for n0 in range(N_small - 1):
+        n1 = N_small - 2 - n0
+        c = Util.choose(n0+n1+2, n0+1)
+        hist[n0] += m0 * c * integrate.quad(
+                _approx_c, 0, 1, args=(g, n0, n1))[0]
+        hist[n0] += m1 * c * integrate.quad(
+                _approx_c, 0, 1, args=(-g, n1, n0))[0]
+    return hist / np.sum(hist)
+
 def get_large_population_approximation(n, k, gammas, M):
     """
     @param n: sample size
@@ -283,6 +358,34 @@ class TestTransitionMatrix(unittest.TestCase):
         P_slow = get_transition_matrix_slow(N, k, mutation, fitness)
         P_fast = get_transition_matrix(N, k, mutation, fitness)
         self.assertTrue(np.allclose(P_slow, P_fast))
+
+class TestLargePopulationApproximation(unittest.TestCase):
+    def test_diallelic_approximation_equivalence_b(self):
+        N_small = 10
+        g = 1.5
+        m0 = 2.0
+        m1 = 3.0
+        ha = diallelic_approximation(N_small, g, m0, m1)
+        hb = diallelic_approximation_b(N_small, g, m0, m1)
+        self.assertTrue(np.allclose(ha, hb))
+    def test_diallelic_approximation_equivalence_b2(self):
+        N_small = 10
+        g = 1.5
+        m0 = 2.0
+        m1 = 3.0
+        ha = diallelic_approximation(N_small, g, m0, m1)
+        hb2 = diallelic_approximation_b2(N_small, g, m0, m1)
+        self.assertTrue(np.allclose(ha, hb2))
+    def test_diallelic_approximation_equivalence_c(self):
+        N_small = 10
+        g = 1.5
+        m0 = 2.0
+        m1 = 3.0
+        ha = diallelic_approximation(N_small, g, m0, m1)
+        hc = diallelic_approximation_c(N_small, g, m0, m1)
+        print ha
+        print hc
+        self.assertTrue(np.allclose(ha, hc))
 
 if __name__ == '__main__':
     unittest.main()
