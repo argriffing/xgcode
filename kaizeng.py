@@ -305,6 +305,13 @@ def diallelic_approximation_d(N_small, g, m0, m1):
     See also
     http://functions.wolfram.com/HypergeometricFunctions/
     Hypergeometric1F1/03/01/04/01/ .
+    Also
+    www.cs.unc.edu/Research/Image/MIDAG/p01/biostat/Digital_1.pdf .
+    Also a gsl implementation gsl_sf_hyperg_1F1_int in hyperg_1F1.c
+    specifically hyperg_1F1_ab_posint for positive integers a and b.
+    Also
+    http://mathworld.wolfram.com/
+    ConfluentHypergeometricFunctionoftheFirstKind.html
     """
     hist = np.zeros(N_small + 1)
     for n0 in range(1, N_small):
