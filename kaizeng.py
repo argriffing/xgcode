@@ -7,8 +7,10 @@ from itertools import combinations
 import math
 
 import numpy as np
+import scipy
 from scipy import linalg
 from scipy import integrate
+from scipy import special
 
 import StatsUtil
 import MatrixUtil
@@ -289,6 +291,29 @@ def diallelic_approximation_c(N_small, g, m0, m1):
                 _approx_c, 0, 1, args=(-g, n1, n0))[0]
     return hist / np.sum(hist)
 
+def diallelic_d_helper(n0, n1, g):
+    if not g:
+        return n0 / float(n0 + n1)
+    else:
+        return (special.hyp1f1(n0, n0 + n1, g) - 1) / math.expm1(g)
+
+def diallelic_approximation_d(N_small, g, m0, m1):
+    """
+    This is experimental.
+    The numerical integration should be replaced
+    by a call to the confluent hypergeometric function hyp1f1.
+    See also
+    http://functions.wolfram.com/HypergeometricFunctions/
+    Hypergeometric1F1/03/01/04/01/ .
+    """
+    hist = np.zeros(N_small + 1)
+    for n0 in range(1, N_small):
+        n1 = N_small - n0
+        prefix = scipy.comb(n0+n1, n0) * special.beta(n0, n1)
+        hist[n0] += m0 * prefix * diallelic_d_helper(n0, n1, g)
+        hist[n0] += m1 * prefix * diallelic_d_helper(n1, n0, -g)
+    return hist[1:-1] / np.sum(hist[1:-1])
+
 def get_large_population_approximation(n, k, gammas, M):
     """
     @param n: sample size
@@ -383,9 +408,15 @@ class TestLargePopulationApproximation(unittest.TestCase):
         m1 = 3.0
         ha = diallelic_approximation(N_small, g, m0, m1)
         hc = diallelic_approximation_c(N_small, g, m0, m1)
-        print ha
-        print hc
         self.assertTrue(np.allclose(ha, hc))
+    def test_diallelic_approximation_equivalence_d(self):
+        for g in (-1.5, 0, 1.5):
+            N_small = 10
+            m0 = 2.0
+            m1 = 3.0
+            ha = diallelic_approximation(N_small, g, m0, m1)
+            hd = diallelic_approximation_d(N_small, g, m0, m1)
+            self.assertTrue(np.allclose(ha, hd))
 
 if __name__ == '__main__':
     unittest.main()
