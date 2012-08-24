@@ -127,8 +127,9 @@ def get_two_allele_distribution(N_big, N_small, f0, f1, f_subsample):
 
 def get_response_content(fs):
     N_small = 10
-    N_big = 2*fs.N_big_diploid
-    if N_big < N_small:
+    N_big_diploid = fs.N_big_diploid
+    N_big_haploid = N_big_diploid * 2
+    if N_big_haploid < N_small:
         raise ValueError('use a larger diploid population size')
     if fs.with_replacement:
         f_subsample = StatsUtil.subsample_pmf_with_replacement
@@ -141,12 +142,15 @@ def get_response_content(fs):
     params_list = [
             (0.008, 1, 1, fs.gamma_0, fs.gamma_1, fs.gamma_2),
             (0.008, 2, 1, fs.gamma_0, fs.gamma_1, fs.gamma_2)]
-    allele_histograms = np.zeros((2, N_big + 1))
+    allele_histograms = np.zeros((2, N_big_haploid + 1))
     for i, params in enumerate(params_list):
-        mutation, selection = kaizeng.params_to_mutation_fitness(N_big, params)
-        P = kaizeng.get_transition_matrix(N_big, k, mutation, selection)
+        mutation, selection = kaizeng.params_to_mutation_fitness(
+                N_big_haploid, params)
+        P = kaizeng.get_transition_matrix(
+                N_big_diploid, k, mutation, selection)
         v = MatrixUtil.get_stationary_distribution(P)
-        for state_index, counts in enumerate(kaizeng.gen_states(N_big, k)):
+        for state_index, counts in enumerate(kaizeng.gen_states(
+            N_big_haploid, k)):
             if counts[0] and counts[1]:
                 allele_histograms[i, counts[0]] += v[state_index]
     # Define the r table.
@@ -174,12 +178,13 @@ def get_response_content(fs):
     # Well, it is exact if I understand the right scaling
     # of the population size and fitnesses.
     f0 = 1.0
-    f1 = 1.0 - gamma / N_big
+    f1 = 1.0 - gamma / N_big_haploid
     #f0 = 1.0 + gamma / N
     #f1 = 1.0
     #f0 = 1.0 + 1.5 / (4*N)
     #f1 = 1.0 - 1.5 / (4*N)
-    h = get_two_allele_distribution(N_big, N_small, f0, f1, f_subsample)
+    h = get_two_allele_distribution(
+            N_big_haploid, N_small, f0, f1, f_subsample)
     arr.append(h.tolist())
     # Get frequencies for the other two configurations
     for hist in allele_histograms:
@@ -199,7 +204,8 @@ def get_response_content(fs):
     # Get a large population approximation
     # when there is mutational bias.
     params = (0.008, 2, 1, fs.gamma_0, fs.gamma_1, fs.gamma_2)
-    mutation, fitness = kaizeng.params_to_mutation_fitness(N_big, params)
+    mutation, fitness = kaizeng.params_to_mutation_fitness(
+            N_big_haploid, params)
     gammas = np.array([fs.gamma_0, fs.gamma_1, fs.gamma_2, 0])
     h = kaizeng.get_large_population_approximation(N_small, k, gammas, mutation)
     arr.append(h.tolist())

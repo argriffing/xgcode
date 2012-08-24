@@ -60,15 +60,16 @@ def gen_states(N, k):
             state[j] = N-h
             yield state
 
-def get_transition_matrix_slow(N, k, mutation, fit):
+def get_transition_matrix_slow(N_diploid, k, mutation, fit):
     """
     Mutation probabilities are away from a fixed state.
-    @param N: haploid population size
+    @param N_diploid: diploid population size
     @param k: number of alleles e.g. 4 for A,C,G,T
     @param mutation: k by k matrix of per-generation mutation probabilities
     @param fit: sequence of k fitness values
     @return: a transition matrix
     """
+    N = N_diploid * 2
     states = [tuple(s) for s in gen_states(N,k)]
     nstates = len(states)
     s_to_i = dict((s, i) for i, s in enumerate(states))
@@ -92,7 +93,9 @@ def get_transition_matrix_slow(N, k, mutation, fit):
             state[j] = N-h
             index = s_to_i[tuple(state)]
             # Compute each child probability of having allele j.
-            pi, pj = wrightfisher.genic_diallelic(fit[i], fit[j], h, N-h)
+            #pi, pj = wrightfisher.genic_diallelic(fit[i], fit[j], h, N-h)
+            s = fit[i] - fit[j]
+            pi, pj = wrightfisher.genic_diallelic(1.0, 1.0 - s, h, N-h)
             # Add entries corresponding to fixation of an allele.
             P[index, i] = math.exp(StatsUtil.binomial_log_pmf(N, N, pi))
             P[index, j] = math.exp(StatsUtil.binomial_log_pmf(0, N, pi))
@@ -106,15 +109,16 @@ def get_transition_matrix_slow(N, k, mutation, fit):
                 P[index, sink_index] = math.exp(logp)
     return P
 
-def get_transition_matrix(N, k, mutation, fit):
+def get_transition_matrix(N_diploid, k, mutation, fit):
     """
     Mutation probabilities are away from a fixed state.
-    @param N: haploid population size
+    @param N_diploid: diploid population size
     @param k: number of alleles e.g. 4 for A,C,G,T
     @param mutation: k by k matrix of per-generation mutation probabilities
     @param fit: sequence of k fitness values
     @return: a transition matrix
     """
+    N = N_diploid * 2
     states = [tuple(s) for s in gen_states(N,k)]
     nstates = len(states)
     s_to_i = dict((s, i) for i, s in enumerate(states))
@@ -132,14 +136,8 @@ def get_transition_matrix(N, k, mutation, fit):
             P[i, s_to_i[tuple(state)]] = mutation[i, j]
     # Define transition matrices within a single diallelic subspace.
     for bi, (i, j) in enumerate(combinations(range(k), 2)):
-        # Compute log probabilities.
-        fitv = np.array([fit[i], fit[j]])
-        log_distns = np.zeros((N+1, 2))
-        for h in range(0, N+1):
-            probs = wrightfisher.genic_diallelic(fit[i], fit[j], h, (N-h))
-            log_distns[h] = np.log(np.array(probs))
-        # Compute the diallelic absorbing transition matrix.
-        pblock = np.exp(wfengine.expand_multinomials(N, log_distns))
+        s = fit[i] - fit[j]
+        pblock = np.exp(wfengine.create_genic_diallelic(N_diploid, s))
         ibegin = k + (N-1)*bi
         iend = ibegin + N - 1
         # The first index of pblock corresponds to fixation of j,
@@ -384,11 +382,11 @@ class TestTransitionMatrix(unittest.TestCase):
         # both give the same answer.
         self.assertTrue(np.allclose(v_eig, v_solve))
     def test_fast_slow_equivalence(self):
-        N = 20
+        N_diploid = 10
         k = 4
         mutation, fitness = get_test_mutation_fitness()
-        P_slow = get_transition_matrix_slow(N, k, mutation, fitness)
-        P_fast = get_transition_matrix(N, k, mutation, fitness)
+        P_slow = get_transition_matrix_slow(N_diploid, k, mutation, fitness)
+        P_fast = get_transition_matrix(N_diploid, k, mutation, fitness)
         self.assertTrue(np.allclose(P_slow, P_fast))
 
 class TestLargePopulationApproximation(unittest.TestCase):
