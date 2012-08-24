@@ -1,8 +1,16 @@
 """
 Wright-Fisher transitions and their diffusion approximations.
+
+This also includes testing for the wfengine cython module.
 """
 
 import unittest
+
+import numpy as np
+
+import MatrixUtil
+import wfengine
+
 
 def genic_diallelic(fi, fj, ni, nj):
     """
@@ -34,8 +42,25 @@ def genic_diallelic(fi, fj, ni, nj):
     
 
 class TestWrightFisher(unittest.TestCase):
-    def test_foo(self):
-        pass
+    def test_wright_fisher(self):
+        N_diallelic = 3
+        s = 0.03
+        # compute the wright fisher transition matrix directly
+        Ma = np.exp(wfengine.create_genic_diallelic(N_diallelic, s))
+        MatrixUtil.assert_transition_matrix(Ma)
+        # compute the wright fisher transition matrix less directly
+        N = 2*N_diallelic
+        fi = 1.0
+        fj = 1.0 - s
+        log_distns = np.zeros((N+1, 2))
+        for h in range(0, N+1):
+            probs = genic_diallelic(fi, fj, h, (N-h))
+            log_distns[h] = np.log(np.array(probs))
+        Mb = np.exp(wfengine.expand_multinomials(N, log_distns))
+        MatrixUtil.assert_transition_matrix(Mb)
+        # compare the transition matrices
+        self.assertTrue(np.allclose(Ma, Mb))
+
 
 if __name__ == '__main__':
     unittest.main()

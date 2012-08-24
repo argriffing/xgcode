@@ -70,19 +70,19 @@ cdef double multinomial_log_pmf(
         int k,
         np.ndarray[np.float64_t, ndim=1] log_distn,
         np.ndarray[np.int_t, ndim=1] counts,
-        np.ndarray[np.float64_t, ndim=1] log_factorial,
+        np.ndarray[np.float64_t, ndim=1] log_fact,
         ):
     """
     @param N: population size
     @param k: number of bins
     @param log_distn: the log of distribution over bins
     @param counts: the observed counts over bins
-    @param log_factorial: precomputed logarithm of factorial values
+    @param log_fact: precomputed logarithm of factorial values
     @return: logarithm of pmf
     """
     cdef int i
     cdef int c
-    cdef double accum = log_factorial[N]
+    cdef double accum = log_fact[N]
     # check for an impossible state
     for i in range(k):
         if counts[i] and log_distn[i] == g_math_neg_inf:
@@ -91,7 +91,7 @@ cdef double multinomial_log_pmf(
     # add the contribution of probabilities
     for i in range(k):
         c = counts[i]
-        accum -= log_factorial[c]
+        accum -= log_fact[c]
         if c:
             accum += c * log_distn[i]
     return accum
@@ -113,20 +113,35 @@ def expand_multinomials_slow(N, log_distns):
     ncols_out = binomial_coefficient(N+k-1, N)
     M = np.zeros((ndistns, ncols_out))
     # Precompute some logarithms of factorials up to N.
-    log_factorial = np.zeros(N+1)
+    log_fact = np.zeros(N+1)
     accum = 0
     for i in range(2, N+1):
         accum += log(i)
-        log_factorial[i] = accum
+        log_fact[i] = accum
     # Make the array.
     for i, compo_list in enumerate(gen_population_compositions(N, k)):
         compo = np.array(compo_list, dtype=np.int)
         for j in range(ndistns):
             # Compute the log multinomial probability.
             M[j, i] = multinomial_log_pmf(
-                    N, k, log_distns[j], compo, log_factorial)
+                    N, k, log_distns[j], compo, log_fact)
     # Return the array.
     return M
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef get_log_fact_array(int N):
+    """
+    Precompute some logarithms of factorials up to N.
+    @param N: max integer whose log of factorial to compute
+    @return: a numpy array of length N+1
+    """
+    cdef np.ndarray[np.float64_t, ndim=1] log_fact = np.zeros(N+1)
+    cdef double accum = 0
+    for i in range(2, N+1):
+        accum += log(i)
+        log_fact[i] = accum
+    return log_fact
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -155,19 +170,15 @@ def expand_multinomials(
     ncols_out = binomial_coefficient(N+k-1, N)
     cdef np.ndarray[np.float64_t, ndim=2] M = np.zeros((ndistns, ncols_out))
     # Precompute some logarithms of factorials up to N.
-    cdef np.ndarray[np.float64_t, ndim=1] log_factorial = np.zeros(N+1)
-    accum = 0
-    for i in range(2, N+1):
-        accum += log(i)
-        log_factorial[i] = accum
+    cdef np.ndarray[np.float64_t, ndim=1] log_fact = get_log_fact_array(N)
     # Make the array.
     cdef np.ndarray[np.int_t, ndim=2] compos
     compos = np.array(list(gen_population_compositions(N, k)))
     for i in range(ncols_out):
         # define the log of multinomial coefficient for this composition
-        log_multinomial_coeff = log_factorial[N]
+        log_multinomial_coeff = log_fact[N]
         for index in range(k):
-            log_multinomial_coeff -= log_factorial[compos[i, index]]
+            log_multinomial_coeff -= log_fact[compos[i, index]]
         for j in range(ndistns):
             # Compute the log multinomial probability.
             accum = log_multinomial_coeff
@@ -176,5 +187,52 @@ def expand_multinomials(
                     accum += compos[i, index] * log_distns[j, index]
             M[j, i] = accum
     # Return the array.
+    return M
+
+@cython.cdivision(True)
+cdef double genic_diallelic(int N, int k, double s) nogil:
+    cdef int r = N - k
+    cdef double f00 = 1.0
+    cdef double f11 = 1.0 - s
+    cdef double f01 = 0.5 * (f00 + f11)
+    cdef double aa = f00*k*k
+    cdef double ab = f01*k*r
+    cdef double bb = f11*r*r
+    return (aa + ab) / (aa + 2*ab + bb)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def create_genic_diallelic(int N_diploid, double s):
+    """
+    Create a Wright-Fisher transition matrix.
+    Use genic selection with two alleles and a diploid population.
+    The returned transition matrix will be a square matrix as a numpy array,
+    and it will have 2N+1 states.
+    State k corresponds to the presence of k preferred alleles
+    in the population when s is positive.
+    @param N_diploid: diploid population size
+    @param s: an additive selection value that is positive by convention
+    @return: entrywise logarithms of a transition matrix
+    """
+    cdef int N = N_diploid * 2
+    # declare intermediate variables
+    cdef int i, j
+    cdef double p, log_p, log_pcompl
+    # init the transition matrix
+    cdef np.ndarray[np.float64_t, ndim=2] M = np.zeros((N+1,  N+1))
+    # Precompute some logarithms of factorials up to N.
+    cdef np.ndarray[np.float64_t, ndim=1] log_fact = get_log_fact_array(N)
+    # i and j are the number of preferred alleles
+    # in the parent and child generations respectively
+    for i in range(N+1):
+        p = genic_diallelic(N, i, s)
+        log_p = log(p)
+        log_pcompl = log(1-p)
+        for j in range(N+1):
+            M[i, j] = log_fact[N] - log_fact[j] - log_fact[N-j]
+            if j:
+                M[i, j] += j * log_p
+            if N-j:
+                M[i, j] += (N-j) * log_pcompl
     return M
 
