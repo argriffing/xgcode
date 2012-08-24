@@ -21,6 +21,7 @@ import kaizeng
 import wrightfisher
 import RUtil
 from RUtil import mk_call_str
+import wfengine
 
 def get_form():
     """
@@ -33,54 +34,65 @@ def get_form():
 def get_form_out():
     return FormOut.Image('plot')
 
-def get_two_allele_distribution(N, f0, f1):
+def get_two_allele_distribution(N_diploid, f0, f1):
     """
     Assumes small genic selection.
     Assumes small mutation.
     The mutational bias does not affect the distribution.
-    @param N: haploid population size
+    @param N_diploid: diploid population size
     @param f0: fitness of allele 0
     @param f1: fitness of allele 1
     @return: distribution over all non-fixed population states
     """
+    #"""
+    # get the transition matrix without mutation
+    s = f0 - f1
+    P = np.exp(wfengine.create_genic_diallelic(N_diploid, s))
+    # add mutation
+    P[0, 0] = 0
+    P[0, 1] = 1
+    P[2*N_diploid, 2*N_diploid] = 0
+    P[2*N_diploid, 2*N_diploid-1] = 1
+    #"""
+    """
     # construct something like a transition matrix
-    nstates = N+1
+    N_haploid = N_diploid * 2
+    nstates = N_haploid + 1
     P = np.zeros((nstates, nstates))
     for i in range(nstates):
-        p0, p1 = wrightfisher.genic_diallelic(f0, f1, i, N-i)
+        p0, p1 = wrightfisher.genic_diallelic(f0, f1, i, N_haploid-i)
         if i == 0:
             P[i, 1] = 1.0
-        elif i == N:
-            P[i, N-1] = 1.0
+        elif i == N_haploid:
+            P[i, N_haploid-1] = 1.0
         else:
             for j in range(nstates):
-                logp = StatsUtil.binomial_log_pmf(j, N, p0)
+                logp = StatsUtil.binomial_log_pmf(j, N_haploid, p0)
                 P[i, j] = math.exp(logp)
+    """
     # find the stationary distribution
     v = MatrixUtil.get_stationary_distribution(P)
-    # debugging
-    if not np.allclose(np.sum(v), 1):
-        raise ValueError
-    if not all(x >= 0 for x in v):
-        raise ValueError
     if not np.allclose(v, np.dot(v, P)):
         raise ValueError
     # return the stationary distribution conditional on dimorphism
     return v[1:-1] / np.sum(v[1:-1])
 
 def get_response_content(fs):
-    N = 10
+    N_diploid = 5
+    N_haploid = N_diploid * 2
     k = 4
     gamma = 1.5
     params_list = [
             (0.008, 1, 1, 0, gamma, 1),
             (0.008, 2, 1, 0, gamma, 1)]
-    allele_histograms = np.zeros((2, N+1))
+    allele_histograms = np.zeros((2, N_haploid+1))
     for i, params in enumerate(params_list):
-        mutation, selection = kaizeng.params_to_mutation_fitness(N, params)
-        P = kaizeng.get_transition_matrix(N, k, mutation, selection)
+        mutation, fitnesses = kaizeng.params_to_mutation_fitness(
+                N_haploid, params)
+        P = kaizeng.get_transition_matrix(
+                N_diploid, k, mutation, fitnesses)
         v = MatrixUtil.get_stationary_distribution(P)
-        for state_index, counts in enumerate(kaizeng.gen_states(N, k)):
+        for state_index, counts in enumerate(kaizeng.gen_states(N_haploid, k)):
             if counts[0] and counts[1]:
                 allele_histograms[i, counts[0]] += v[state_index]
     # Define the r table.
@@ -91,12 +103,12 @@ def get_response_content(fs):
     # Well, it is exact if I understand the right scaling
     # of the population size and fitnesses.
     f0 = 1.0
-    f1 = 1.0 - gamma / N
+    f1 = 1.0 - gamma / N_haploid
     #f0 = 1.0 + gamma / N
     #f1 = 1.0
     #f0 = 1.0 + 1.5 / (4*N)
     #f1 = 1.0 - 1.5 / (4*N)
-    h = get_two_allele_distribution(N, f0, f1)
+    h = get_two_allele_distribution(N_diploid, f0, f1)
     arr.append(h.tolist())
     # Use the two allele approximation
     # from mcvean and charlesworth 1999 referred to by zeng 2011.

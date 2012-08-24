@@ -141,7 +141,7 @@ def assert_rate_matrix(M):
 def assert_distribution(v):
     if not np.allclose(np.sum(v), 1):
         raise MatrixError('sum of entries should be 1')
-    if not all(x >= 0 for x in v):
+    if not np.allclose(v - np.abs(v), 0):
         raise MatrixError('each entry should be nonnegative')
 
 def assert_transition_matrix(M):
@@ -338,7 +338,14 @@ def get_stationary_distribution(P):
     A = P.T - np.eye(nstates)
     A[0] = np.ones(nstates)
     b[0] = 1
-    return linalg.solve(A, b, overwrite_a=True, overwrite_b=True)
+    v = linalg.solve(A, b, overwrite_a=True, overwrite_b=True)
+    assert_distribution(v)
+    # take extra care to clean up entries that are
+    # technically negative but negligibly tiny.
+    v = (v + np.abs(v)) / 2
+    v = v / np.sum(v)
+    assert_distribution(v)
+    return v 
 
 class TestMatrixUtil(unittest.TestCase):
 
