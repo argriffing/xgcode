@@ -94,7 +94,8 @@ def get_transition_matrix_slow(N_diploid, k, mutation, fit):
             index = s_to_i[tuple(state)]
             # Compute each child probability of having allele j.
             #pi, pj = wrightfisher.genic_diallelic(fit[i], fit[j], h, N-h)
-            s = fit[i] - fit[j]
+            #s = fit[i] - fit[j]
+            s = 1 - fit[j] / fit[i]
             pi, pj = wrightfisher.genic_diallelic(1.0, 1.0 - s, h, N-h)
             # Add entries corresponding to fixation of an allele.
             P[index, i] = math.exp(StatsUtil.binomial_log_pmf(N, N, pi))
@@ -136,7 +137,7 @@ def get_transition_matrix(N_diploid, k, mutation, fit):
             P[i, s_to_i[tuple(state)]] = mutation[i, j]
     # Define transition matrices within a single diallelic subspace.
     for bi, (i, j) in enumerate(combinations(range(k), 2)):
-        s = fit[i] - fit[j]
+        s = 1 - fit[j] / fit[i]
         pblock = np.exp(wfengine.create_genic_diallelic(N_diploid, s))
         ibegin = k + (N-1)*bi
         iend = ibegin + N - 1

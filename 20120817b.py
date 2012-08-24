@@ -46,7 +46,7 @@ def get_two_allele_distribution(N_diploid, f0, f1):
     """
     #"""
     # get the transition matrix without mutation
-    s = f0 - f1
+    s = 1 - f1 / f0
     P = np.exp(wfengine.create_genic_diallelic(N_diploid, s))
     # add mutation
     P[0, 0] = 0
