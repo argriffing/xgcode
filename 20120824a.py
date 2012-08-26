@@ -43,21 +43,29 @@ def get_form_out():
 
 def sojourn_indefinite(x, g):
     """
+    Integral of equation (9) of McVean and Charlesworth 1999.
     integral of 2*expm1(-a*(1-x)) / (expm1(-a)*x*(1-x))
     limit x -> 1 of (-2/expm1(a))*(-exp(a)*Ei(a*(x-1)) + Ei(a*x) + exp(a)*log((1-x)/x))
     """
+    if not 0 < x <= 1:
+        raise ValueError('x should be in the half open interval (0, 1]')
     if g:
-        prefix = -2 / math.expm1(g)
-        suffix = 0
-        suffix += -math.exp(g)*special.expi(g*(x-1))
-        suffix += special.expi(g*x)
-        suffix += math.exp(g)*math.log((1-x)/x)
+        prefix = 2 / math.expm1(g)
+        suffix = -special.expi(g*x)
+        if x == 1:
+            eulergamma = -special.digamma(1)
+            suffix += math.exp(g)*(math.log(g) + eulergamma)
+        else:
+            suffix += math.exp(g)*(special.expi(g*(x-1)) - math.log((1-x)/x))
         return prefix * suffix
     else:
         return 2*math.log(x)
 
 def sojourn_definite(x0, x1, g):
     return sojourn_indefinite(x1, g) - sojourn_indefinite(x0, g)
+
+def sojourn_kernel(x, g):
+    return 2 * math.expm1(-g*(1-x)) / (math.expm1(-g) * x * (1-x))
 
 def get_response_content(fs):
     N_diploid = fs.N_diploid
@@ -92,18 +100,11 @@ def get_response_content(fs):
     # look at continuous approximations
     w = np.zeros(N+1)
     for i in range(1, N):
-        """
         x = i / float(N)
-        top = 2 * math.expm1(-gamma*(1-x))
-        bottom = math.expm1(-gamma) * x * (1-x)
-        value = top / bottom
-        """
-        #"""
-        x0 = (i - 0.5) / float(N)
-        #x0 = (i - 0.0) / float(N)
-        x1 = (i + 0.5) / float(N)
-        value = sojourn_definite(x0, x1, gamma)
-        #"""
+        #x0 = i / float(N)
+        #x1 = (i + 1) / float(N)
+        #value = sojourn_definite(x0, x1, gamma)
+        value = sojourn_kernel(x, gamma)
         w[i] = value
     w = w[1:-1]
     w /= np.sum(w)
