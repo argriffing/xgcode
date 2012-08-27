@@ -48,7 +48,39 @@ def get_pfix_approx(N_diploid, s):
     else:
         return 1.0 / N
 
+def get_fixation_probabilities(P):
+    """
+    @param P: a wright fisher transition matrix
+    """
+    N_haploid = len(P) - 1
+    A = P - np.eye(N_haploid + 1)
+    b = np.zeros(N_haploid + 1)
+    A[0, 0] = 1
+    A[N_haploid, N_haploid] = 1
+    b[0] = 0
+    b[N_haploid] = 1
+    return linalg.solve(A, b)
+
+def get_fixation_conditioned_matrix(P, x):
+    """
+    UNFINISHED
+    @param P: unconditioned transition matrix
+    @param x: fixation probabilities
+    @return: a smaller transition matrix
+    """
+    MatrixUtil.assert_transition_matrix(P)
+    N_haploid = len(P) - 1
+    B = A - np.eye(N_haploid)
+    b = -np.ones(N_haploid)
+    B[-1] = np.zeros(N_haploid)
+    B[-1, -1] = 1
+    b[-1] = 0
+    y = linalg.solve(B, b)
+    print y[0]
+
+
 class TestKimura(unittest.TestCase):
+
     def test_exact_fixation_probability(self):
         s = 0.03
         N_diploid = 3
@@ -78,9 +110,107 @@ class TestKimura(unittest.TestCase):
         x = linalg.solve(A, b)
         fpb = x[1]
         # Compare the transition probabilities.
-        print fpa
-        print get_pfix_approx(N_diploid, s)
+        #print fpa
+        #print get_pfix_approx(N_diploid, s)
         self.assertTrue(np.allclose(fpa, fpb))
+
+    def test_time_until_fixation_no_selection(self):
+        s = 0
+        N_diploid = 100
+        N_haploid = N_diploid * 2
+        print 'diploid population:', N_diploid
+        P = np.exp(wfengine.create_genic_diallelic(N_diploid, s))
+        # Create a transition matrix modified so that it is conditional
+        # on eventual fixation.
+        x = get_fixation_probabilities(P)
+        print 'fixation probabilities:'
+        print x
+        A = (P * x)[1:, 1:]
+        for i in range(N_haploid):
+            A[i] /= np.sum(A[i])
+        A[-1, -1] = 0
+        A[-1, 0] = 1
+        #
+        #v = MatrixUtil.get_stationary_distribution(A)
+        ## condition on a single mutation having already happened
+        #v[0] -= v[-1]
+        #v /= np.sum(v)
+        #print 'expected generations until fixed, given eventual fixation:', (
+                #(1 - v[-1]) / (v[-1]))
+        #
+        # Now use this conditional transition matrix
+        # to set up a system of equations that will give
+        # the expected number of generations until fixation
+        # conditioned upon eventual fixation
+        #
+        B = A - np.eye(N_haploid)
+        b = -np.ones(N_haploid)
+        B[-1] = np.zeros(N_haploid)
+        B[-1, -1] = 1
+        b[-1] = 0
+        y = linalg.solve(B, b)
+        print 'expected time until fixation given some number of alleles:'
+        print y
+        #
+        # Get the expected time until fixation given eventual fixation
+        # when the population begins with proportion p mutants.
+        #p = 5.0 * (1 / float(N_haploid))
+        p = 0.1
+        t0 = -2*N_haploid*(p/(1-p))*math.log(p)
+        t1 = -(1/p)*2*N_haploid*(1-p)*math.log(1-p)
+        print 'kimura initial p =', p
+        print 'kimura expected to fixation:', t1
+        print 'kimura expected to loss:', t0
+        """
+        # Create a transition matrix modified so that it is conditional
+        # on eventual loss.
+        A = (P * (1-x))[:-1, :-1]
+        for i in range(N_haploid):
+            A[i] /= np.sum(A[i])
+        A[0, 0] = 0
+        A[0, 1] = 1
+        v = MatrixUtil.get_stationary_distribution(A)
+        print 'expected generations until loss, given eventual loss:', (
+                (1 - v[0]) / v[0])
+        # Get the diffusion approximation
+        p = 1 / float(N_haploid)
+        t0 = -2*N_haploid*(p/(1-p))*math.log(p)
+        print 'diffusion approximation:', t0
+        """
+
+    def test_expected_generations_until_absorption_no_selection(self):
+        s = 0
+        N_diploid = 100
+        N_haploid = N_diploid * 2
+        # Define a transition matrix with boundary conditions.
+        # This approach is nice because the computationally intensive part
+        # is just finding the equilibrium distribution of a process,
+        # and you also get the conditional equilibrium distribution
+        # of the dimorphic states.
+        P = np.exp(wfengine.create_genic_diallelic(N_diploid, s))
+        P[0, 0] = 0
+        P[0, 1] = 1
+        P[N_haploid, N_haploid] = 0
+        P[N_haploid, 1] = 1
+        v = MatrixUtil.get_stationary_distribution(P)
+        fpa = v[-1] / (v[0] + v[-1])
+        # Use the Kimura approximation to get the expected
+        # number of generations until absorption for a neutral allele.
+        p = 1 / float(N_haploid)
+        #p_fixation = v[-1] / (v[0] + v[-1])
+        #p_loss = v[0] / (v[0] + v[-1])
+        # expected number of generations until fixation excluding loss
+        t1 = -(1/p)*2*N_haploid*(1-p)*math.log(1-p)
+        # expected number of generations until loss excluding fixation
+        p_fixation = get_pfix_approx(N_diploid, s)
+        p_loss = 1 - p_fixation
+        t0 = -2*N_haploid*(p/(1-p))*math.log(p)
+        t = p_loss * t0 + p_fixation * t1
+        # foo
+        #print t0
+        #print t1
+        #print t
+        #print (1 - v[0] - v[-1]) / (v[0] + v[-1])
 
 if __name__ == '__main__':
     unittest.main()
