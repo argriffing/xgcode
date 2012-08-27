@@ -3,8 +3,9 @@ Compute fixation probability for a simple W-F model with selection.
 
 Do this by solving a Markov chain numerically.
 W-F is Wright-Fisher.
-The fitness of B is 1+s, where s is determined by the user,
-and the fitness of b is 1.
+It assumes random mating and selection acting on the children.
+The relative fitness of BB is 1
+and the relative fitness of bb is 1-s where s is determined by the user.
 According to Haldane in 1927,
 the fixation probability of a new advantageous allele is about 2s.
 According to Kimura,
@@ -27,6 +28,7 @@ import Form
 import FormOut
 import MatrixUtil
 import StatsUtil
+import wfengine
 
 def get_form():
     """
@@ -42,34 +44,34 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
-def solve(npop, s):
+def solve(N_haploid, s):
     """
-    @param npop: population
+    @param N_haploid: population
     @param s: selection
     @return: vector of probabilities
     """
-    nstates = npop + 1
-    fB = 1.0 + s
-    fb = 1.0
+    if N_haploid % 2:
+        raise ValueError('expected an even haploid population')
+    N_diploid = N_haploid / 2
+    #fB = 1.0 + s
+    #fb = 1.0
     # compute the transition matrix 
-    P = np.zeros((nstates, nstates))
-    for i in range(nstates):
-        nB_initial = i
-        pB = (nB_initial * fB) / (nB_initial * fB + (npop - nB_initial) * fb)
-        for j in range(nstates):
-            nB_final = j
-            log_p = StatsUtil.binomial_log_pmf(nB_final, npop, pB)
-            P[i, j] = math.exp(log_p)
+    P = np.exp(wfengine.create_genic_diallelic(N_diploid, s*2))
+    # define some boundary conditions
+    #P[0, 0] = 0
+    #P[0, 1] = 1
+    #P[N_diploid, N_diploid] = 0
+    #P[N_diploid, 1] = 1
+    #
     # Put the puzzle into the form Ax=b
     # so that it can be solved by a generic linear solver.
-    A = P - np.eye(nstates)
-    b = np.zeros(nstates)
+    A = P - np.eye(N_haploid + 1)
+    b = np.zeros(N_haploid + 1)
     # Adjust the matrix to disambiguate absorbing states.
-    A[0, 0] = 1.0
-    A[npop, npop] = 1.0
-    b[0] = 0.0
-    b[npop] = 1.0
-    # Solve Ax=b for x.
+    A[0, 0] = 1
+    A[N_haploid, N_haploid] = 1
+    b[0] = 0
+    b[N_haploid] = 1
     x = linalg.solve(A, b)
     # Return the probability of fixation of the B allele.
     return x
