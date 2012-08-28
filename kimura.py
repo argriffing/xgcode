@@ -26,6 +26,7 @@ import math
 
 import numpy as np
 from scipy import linalg
+from scipy import special
 
 import MatrixUtil
 import wfengine
@@ -78,6 +79,28 @@ def get_fixation_conditioned_matrix(P, x):
     y = linalg.solve(B, b)
     print y[0]
 
+def J1_indefinite_integral(x, a):
+    """
+    Here is a wolfram alpha command that finds a limit of the indefinite
+    integral of the integrand in J1 in equation (17) of Kimura and Ohto.
+    limit x->1- of
+    Ei(ax-a) - Ei(-ax) + log(x/(1-x)) -
+    exp(-a)*( Ei(ax) - Ei(a-ax) + log((1-x)/x) )
+    """
+    eulergamma = -special.digamma(1)
+    if x == 1:
+        if a == 0:
+            return 0
+        else:
+            x1 = math.exp(-a)
+            x2 = math.log(abs(a)) + eulergamma
+            x3 = math.exp(a) + 1
+            x4 = special.expi(-a) + math.exp(-a) * special.expi(a)
+            return x1 * x2 * x3 - x4
+    else:
+        x1 = special.expi(a*(x-1)) - special.expi(-a*x) + math.log(x/(1-x))
+        x2 = special.expi(-a*(x-1)) - special.expi(a*x) + math.log(x/(1-x))
+        return x1 + math.exp(-a)*x2
 
 class TestKimura(unittest.TestCase):
 
