@@ -127,10 +127,12 @@ def get_t1_approx(p, N_diploid, s):
     #a = integrate.quad(J1_integrand, p, 1, args=(S,))[0]
     a0 = kimura.J1_indefinite_integral(p, 2*S)
     a1 = kimura.J1_indefinite_integral(1, 2*S)
-    b = integrate.quad(J2_integrand, 0, p, args=(S,))[0]
+    #b = integrate.quad(J2_integrand, 0, p, args=(S,))[0]
+    b0 = kimura.J2_indefinite_integral(0, 2*S)
+    b1 = kimura.J2_indefinite_integral(p, 2*S)
     coeff = -2 / (s * math.expm1(-2*S))
     u = J_fix(p, S)
-    return coeff * ((a1 - a0) + (u/(1-u)) * b)
+    return coeff * ((a1 - a0) + (u/(1-u)) * (b1 - b0))
 
 def get_form_out():
     return FormOut.Image('plot')

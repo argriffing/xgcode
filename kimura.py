@@ -102,6 +102,29 @@ def J1_indefinite_integral(x, a):
         x2 = special.expi(-a*(x-1)) - special.expi(a*x) + math.log(x/(1-x))
         return x1 + math.exp(-a)*x2
 
+def J2_indefinite_integral(x, a):
+    """
+    limit x->0+ of
+    Ei(ax) + Ei(-ax) - exp(a)*Ei(ax-a) - exp(-a)*Ei(a-ax) - 2*log(x/(1-x))
+    """
+    eulergamma = -special.digamma(1)
+    if x == 0:
+        if a == 0:
+            # limit a->0 of
+            # 2*(log|a| + eulergamma) - exp(a)*Ei(-a) - exp(-a)*Ei(a)
+            return 0
+        else:
+            x1 = math.log(abs(a)) + eulergamma
+            x2 = math.exp(a)*special.expi(-a)
+            x3 = math.exp(-a)*special.expi(a)
+            return 2*x1 - x2 - x3
+    else:
+        x1 = special.expi(a*x) + special.expi(-a*x)
+        x2 = math.exp(a)*special.expi(a*(x-1))
+        x3 = math.exp(-a)*special.expi(-a*(x-1))
+        x4 = 2*math.log(x/(1-x))
+        return x1 - x2 - x3 - x4
+
 class TestKimura(unittest.TestCase):
 
     def test_exact_fixation_probability(self):
