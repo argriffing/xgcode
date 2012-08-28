@@ -36,6 +36,43 @@ from scipy import special
 import MatrixUtil
 import wfengine
 
+def erfi(x):
+    """
+    Why does scipy.special not include this?
+    """
+    return 2 * x * special.hyp1f1(0.5, 1.5, x*x) / math.sqrt(math.pi)
+
+def get_fixation_probability_chen(p, s, h):
+    """
+    This uses the parameter conventions from Christina Chen et al. 2008.
+    @param p: initial allele frequency
+    @param s: positive when the mutant allele is fitter
+    @param h: dominance
+    @return: fixation probability
+    """
+    # TODO add a special case for selective additivity.
+    beta = 2.0 * h - 1.0
+    if not s:
+        return p
+    if not beta:
+        raise ValueError('additive selection is not implemented')
+    alpha = h / beta
+    if beta * s > 0:
+        # overdominant if 0 < alpha < 1
+        f = erfi
+    elif beta * s < 0:
+        # underdominant if 0 < alpha < 1
+        f = special.erf
+    else:
+        raise ValueError
+    L = math.sqrt(abs(beta * s))
+    a0 = f(L*(0 - alpha))
+    a1 = f(L*(p - alpha))
+    b0 = f(L*(0 - alpha))
+    b1 = f(L*(1 - alpha))
+    pfix = (a1 - a0) / (b1 - b0)
+    return pfix
+
 def G(N_diploid, s):
     N = N_diploid * 2
     return math.exp(-N*s)
