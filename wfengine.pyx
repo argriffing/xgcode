@@ -202,6 +202,9 @@ cdef double genic_diallelic(int N, int k, double s) nogil:
 
 @cython.cdivision(True)
 cdef double genic_diallelic_ohta(int N, int k, double s) nogil:
+    """
+    This corresponds to using 1+s and 1 as opposed to using 1 and 1-s.
+    """
     cdef double p = k / (1.0 * N)
     cdef double delta = (0.5 * s) * p * (1 - p) / (1 + s*p)
     return p + delta
