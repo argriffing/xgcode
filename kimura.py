@@ -19,6 +19,11 @@ We will also refer the the 1968 paper
 THE AVERAGE NUMBER OF GENERATIONS UNTIL FIXATION OF
 A MUTANT GENE IN A FINITE POPULATION
 by Motoo Kimura and Tomoko Ohta.
+The Kimura approximation of Fixation probability
+with recessiveness/dominance h parameter can be done 
+using wolfram alpha.
+( integral from 0 to p of exp( a*x*(1 + h*(1-x)) ) ) ) /
+( integral from 0 to 1 of exp( a*x*(1 + h*(1-x)) ) ) )
 """
 
 import unittest
@@ -279,6 +284,13 @@ class TestKimura(unittest.TestCase):
                 #print p_alpha
                 #print p_beta
                 self.assertTrue(np.allclose(p_alpha, p_beta))
+
+    def test_fixation_time_expectation_symmetry(self):
+        """
+        The expected time to fixation given eventual fixation has a symmetry.
+        If this is fix(p, s) then loss(p, s) = fix(1-p, -s).
+        """
+        pass
 
 if __name__ == '__main__':
     unittest.main()
