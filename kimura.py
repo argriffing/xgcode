@@ -212,6 +212,28 @@ class TestKimura(unittest.TestCase):
         #print t
         #print (1 - v[0] - v[-1]) / (v[0] + v[-1])
 
+    def test_selection_coefficient_interpretations(self):
+        for p in (0.1, 0.3, 0.6):
+            for s in (-1.2, 0, 0.1, 1.5):
+                # Compute the new genic probability
+                # using the Zeng and Charlesworth model.
+                f00 = 1.0
+                f11 = 1.0 - s
+                f01 = 0.5 * (f00 + f11)
+                aa = f00 * p * p
+                ab = f01 * p * (1-p)
+                bb = f11 * (1-p) * (1-p)
+                p_alpha = (aa + ab) / (aa + 2*ab + bb)
+                # Compute using a difference
+                # derived using wolfram alpha from the above model.
+                delta = (0.5 * s) * p * (1 - p) / (1 + s*p - s)
+                p_beta = p + delta
+                # Check that the genic probabilities for the next generation
+                # are the same using both formulas
+                #print p_alpha
+                #print p_beta
+                self.assertTrue(np.allclose(p_alpha, p_beta))
+
 if __name__ == '__main__':
     unittest.main()
 

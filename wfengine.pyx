@@ -200,6 +200,12 @@ cdef double genic_diallelic(int N, int k, double s) nogil:
     cdef double bb = f11*r*r
     return (aa + ab) / (aa + 2*ab + bb)
 
+@cython.cdivision(True)
+cdef double genic_diallelic_ohta(int N, int k, double s) nogil:
+    cdef double p = k / (1.0 * N)
+    cdef double delta = (0.5 * s) * p * (1 - p) / (1 + s*p)
+    return p + delta
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def create_genic_diallelic(int N_diploid, double s):
@@ -226,6 +232,32 @@ def create_genic_diallelic(int N_diploid, double s):
     # in the parent and child generations respectively
     for i in range(N+1):
         p = genic_diallelic(N, i, s)
+        log_p = log(p)
+        log_pcompl = log(1-p)
+        for j in range(N+1):
+            M[i, j] = log_fact[N] - log_fact[j] - log_fact[N-j]
+            if j:
+                M[i, j] += j * log_p
+            if N-j:
+                M[i, j] += (N-j) * log_pcompl
+    return M
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def create_genic_diallelic_ohta(int N_diploid, double s):
+    # TODO this is mostly copy and paste
+    cdef int N = N_diploid * 2
+    # declare intermediate variables
+    cdef int i, j
+    cdef double p, log_p, log_pcompl
+    # init the transition matrix
+    cdef np.ndarray[np.float64_t, ndim=2] M = np.zeros((N+1,  N+1))
+    # Precompute some logarithms of factorials up to N.
+    cdef np.ndarray[np.float64_t, ndim=1] log_fact = get_log_fact_array(N)
+    # i and j are the number of preferred alleles
+    # in the parent and child generations respectively
+    for i in range(N+1):
+        p = genic_diallelic_ohta(N, i, s)
         log_p = log(p)
         log_pcompl = log(1-p)
         for j in range(N+1):
