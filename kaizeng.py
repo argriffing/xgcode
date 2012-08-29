@@ -154,6 +154,95 @@ def get_transition_matrix(N_diploid, k, mutation, fit):
         P[ibegin:iend, ibegin:iend] = pblock[1:-1, 1:-1]
     return P
 
+def get_stationary_distribution_tricky(N_diploid, k, mutation, fit):
+    """
+    This uses a decomposition that is too clever.
+    The idea is to proceed in three steps.
+    Assume that there are k=4 different alleles and you are
+    using the Kai Zeng model.
+    First do an O(N^3) solve of each of the choose(k, 2) = 6 blocks.
+    If this is done cleverly this gives vectors that directly
+    yield the directional fixation probabilities
+    and the directional stationary distribution conditional on dimorphism.
+    This step takes roughly (1/6)^2 the time of a naive solve of
+    the full Kai Zeng matrix.
+    Second compute the fixed-state-only 4x4 transition matrix
+    and get its stationary distribution.
+    This uses the fixation probabilities computed in the first step.
+    Third compute the stationary distributions of the dimorphic states
+    using the stationary distributions of the fixed states
+    computed in the second step.
+    """
+    solves = []
+    # Define transition matrices within a single diallelic subspace.
+    for bi, (i, j) in enumerate(combinations(range(k), 2)):
+        s = 1 - fit[j] / fit[i]
+        P = np.exp(wfengine.create_genic_diallelic(N_diploid, s))
+        A = np.zeros((N_diploid*2+1+2, N_diploid*2+1+2))
+        # Adjust P and put it into A.
+        # Setting these values to zero causes them to act as sinks.
+        P[0, 0] = 0
+        P[-1, -1] = 0
+        P -= np.eye(N_diploid*2+1)
+        A[1:-1, 1:-1] = P
+        # Add some probability sources.
+        A[0, 0] = 1
+        A[0, 2] = 1
+        A[-1, -1] = 1
+        A[-1, -3] = 1
+        # Define the B matrix which will hold the solve.
+        # The two columns are the two directions per diallelic block.
+        B = np.zeros((N_diploid*2+1+2, 2))
+        B[0,0] = 1
+        B[-1,-1] = 1
+        X = linalg.solve(A.T, B)
+        solves.append(X)
+    # Compute the fixation probabilities from the block solutions.
+    F = np.zeros((k, k))
+    for bi, (i, j) in enumerate(combinations(range(k), 2)):
+        X = solves[bi]
+        #print X
+        #print
+        # Second row of X is background allele frequency.
+        # Second to last row of X is mutant allele frequency.
+        # First column of X is forward, second column is reverse.
+        F[i, j] = X[-2, 0]
+        F[j, i] = X[1, 1]
+    # Compute the transition matrix among fixed states.
+    # This is nearly the hadamard product of mutation and fixation.
+    T = mutation * F
+    T += np.eye(k) - np.diag(np.sum(T, axis=1))
+    # Compute the stationary distribution among fixed states.
+    v_small = MatrixUtil.get_stationary_distribution(T)
+    print v_small
+    # Compute dimorphic distributions using the block solutions
+    # and the previously computed stuff like fixed state stationary
+    # distributions, and also using the mutation probabilities.
+    dtotal = v_small.tolist()
+    distns = []
+    for bi, (i, j) in enumerate(combinations(range(k), 2)):
+        X = solves[bi]
+        distn = np.zeros(N_diploid*2 - 1)
+        d = X.T[0][2:-2]
+        #print sum(d)
+        distn += v_small[i] * mutation[i, j] * d
+        d = X.T[1][2:-2]
+        #print sum(d)
+        distn += v_small[j] * mutation[j, i] * d
+        #print sum(distn)
+        distns.append(distn)
+        dtotal.extend(distn)
+    # 
+    #print sum(sum(d) for d in distns)
+    dtotal = np.array(dtotal)
+    #print dtotal
+    #print dtotal / np.sum(dtotal)
+    for s in solves:
+        #print s[1], s[-2]
+        #print
+        pass
+    return dtotal
+
 def get_scaled_fixation_probabilities(gammas):
     """
     The scaling factor is the same for each allele.
@@ -389,6 +478,18 @@ class TestTransitionMatrix(unittest.TestCase):
         P_slow = get_transition_matrix_slow(N_diploid, k, mutation, fitness)
         P_fast = get_transition_matrix(N_diploid, k, mutation, fitness)
         self.assertTrue(np.allclose(P_slow, P_fast))
+    def test_tricky_distribution(self):
+        N_diploid = 10
+        k = 4
+        mutation, fitness = get_test_mutation_fitness()
+        v_tricky = get_stationary_distribution_tricky(
+                N_diploid, k, mutation, fitness)
+        P = get_transition_matrix(
+                N_diploid, k, mutation, fitness)
+        v_plain = MatrixUtil.get_stationary_distribution(P)
+        print v_tricky[:4]
+        print v_plain[:4]
+        self.assertTrue(np.allclose(v_tricky, v_plain))
 
 class TestLargePopulationApproximation(unittest.TestCase):
     def test_diallelic_approximation_equivalence_b(self):
