@@ -206,12 +206,16 @@ def get_stationary_distribution_tricky(N_diploid, k, mutation, fit):
         # Second row of X is background allele frequency.
         # Second to last row of X is mutant allele frequency.
         # First column of X is forward, second column is reverse.
-        F[i, j] = X[-2, 0]
-        F[j, i] = X[1, 1]
+        # F[i, j] is the probability of fixation of allele j
+        # against the background of allele i.
+        F[i, j] = X[1, 1]
+        F[j, i] = X[-2, 0]
+    print F
     # Compute the transition matrix among fixed states.
     # This is nearly the hadamard product of mutation and fixation.
     T = mutation * F
     T += np.eye(k) - np.diag(np.sum(T, axis=1))
+    print T
     # Compute the stationary distribution among fixed states.
     v_small = MatrixUtil.get_stationary_distribution(T)
     print v_small
@@ -219,29 +223,20 @@ def get_stationary_distribution_tricky(N_diploid, k, mutation, fit):
     # and the previously computed stuff like fixed state stationary
     # distributions, and also using the mutation probabilities.
     dtotal = v_small.tolist()
-    distns = []
     for bi, (i, j) in enumerate(combinations(range(k), 2)):
         X = solves[bi]
         distn = np.zeros(N_diploid*2 - 1)
-        d = X.T[0][2:-2]
-        #print sum(d)
-        distn += v_small[i] * mutation[i, j] * d
         d = X.T[1][2:-2]
-        #print sum(d)
+        distn += v_small[i] * mutation[i, j] * d
+        d = X.T[0][2:-2]
         distn += v_small[j] * mutation[j, i] * d
-        #print sum(distn)
-        distns.append(distn)
         dtotal.extend(distn)
     # 
     #print sum(sum(d) for d in distns)
     dtotal = np.array(dtotal)
     #print dtotal
     #print dtotal / np.sum(dtotal)
-    for s in solves:
-        #print s[1], s[-2]
-        #print
-        pass
-    return dtotal
+    return dtotal / np.sum(dtotal)
 
 def get_scaled_fixation_probabilities(gammas):
     """
@@ -444,6 +439,16 @@ def get_test_mutation_fitness():
     fitness = 1.0 - np.array([0.1, 0.2, 0.3, 0.4])
     return mutation, fitness
 
+def get_test_mutation_fitness_b():
+    mutation = np.array([
+        [0.7, 0.1, 0.1, 0.1],
+        [0.1, 0.7, 0.1, 0.1],
+        [0.1, 0.1, 0.7, 0.1],
+        [0.1, 0.1, 0.1, 0.7]])
+    #fitness = 1.0 - np.array([0.0, 0.0, 0.0, 0.0])
+    fitness = 1.0 - np.array([0.1, 0.2, 0.3, 0.4])
+    return mutation, fitness
+
 class TestTransitionMatrix(unittest.TestCase):
     def test_row_sums(self):
         N = 20
@@ -479,7 +484,7 @@ class TestTransitionMatrix(unittest.TestCase):
         P_fast = get_transition_matrix(N_diploid, k, mutation, fitness)
         self.assertTrue(np.allclose(P_slow, P_fast))
     def test_tricky_distribution(self):
-        N_diploid = 10
+        N_diploid = 5
         k = 4
         mutation, fitness = get_test_mutation_fitness()
         v_tricky = get_stationary_distribution_tricky(
@@ -487,8 +492,33 @@ class TestTransitionMatrix(unittest.TestCase):
         P = get_transition_matrix(
                 N_diploid, k, mutation, fitness)
         v_plain = MatrixUtil.get_stationary_distribution(P)
+        print 'initial blocks of the stationary distribution:'
         print v_tricky[:4]
         print v_plain[:4]
+        print
+        print 'normalized initial blocks of the stationary distribution:'
+        print v_tricky[:4] / np.sum(v_tricky[:4])
+        print v_plain[:4] / np.sum(v_plain[:4])
+        print
+        print 'next block of the stationary distribution:'
+        print v_tricky[4:4+N_diploid*2-1]
+        print v_plain[4:4+N_diploid*2-1]
+        print
+        print 'normalized next block of the stationary distribution:'
+        print v_tricky[4:4+N_diploid*2-1] / np.sum(v_tricky[4:4+N_diploid*2-1])
+        print v_plain[4:4+N_diploid*2-1] / np.sum(v_plain[4:4+N_diploid*2-1])
+        print
+        #print 'subsequent blocks of the stationary distribution:'
+        #print v_tricky[4:]
+        #print v_plain[4:]
+        #print
+        #print 'normalized subsequent blocks of the stationary distribution:'
+        #print v_tricky[4:] / np.sum(v_tricky[4:])
+        #print v_plain[4:] / np.sum(v_plain[4:])
+        #print
+        #print 'ratio of normalizers:'
+        #print np.sum(v_tricky[:4]) / np.sum(v_plain[:4])
+        #print
         self.assertTrue(np.allclose(v_tricky, v_plain))
 
 class TestLargePopulationApproximation(unittest.TestCase):
