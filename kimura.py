@@ -50,12 +50,11 @@ def get_fixation_probability_chen(p, s, h):
     @param h: dominance
     @return: fixation probability
     """
-    # TODO add a special case for selective additivity.
     beta = 2.0 * h - 1.0
     if not s:
         return p
     if not beta:
-        raise ValueError('additive selection is not implemented')
+        return math.expm1(-s*p) / math.expm1(-s)
     alpha = h / beta
     if beta * s > 0:
         # overdominant if 0 < alpha < 1
