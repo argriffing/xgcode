@@ -1,3 +1,7 @@
 
 # ignore bytecode files compiled from python scripts or modules
 *.pyc
+
+# ignore the shared object files created by compiling cython modules
+*.so
+
