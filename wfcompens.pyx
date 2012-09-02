@@ -19,12 +19,13 @@ $ gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing \
 import numpy as np
 cimport numpy as np
 cimport cython
+from libc.math cimport log
 
 np.import_array()
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def create_mutation_matrix(
+def create_mutation(
         np.ndarray[np.int_t, ndim=2] M,
         np.ndarray[np.int_t, ndim=4] T,
         ):
@@ -58,11 +59,12 @@ def create_mutation_matrix(
         if ab > 0:
             R[i, T[AB,   Ab+1, aB,   ab-1]] = ab
             R[i, T[AB,   Ab,   aB+1, ab-1]] = ab
+        R[i, i] = -2*(AB + Ab + aB + ab)
     return R
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def create_recomb_matrix(
+def create_recomb(
         np.ndarray[np.int_t, ndim=2] M,
         np.ndarray[np.int_t, ndim=4] T,
         ):
@@ -90,9 +92,33 @@ def create_recomb_matrix(
         #
         if AB_ab > 0:
             R[i, T[AB-1, Ab+1, aB+1, ab-1]] = AB_ab
-            R[i, T[AB-1, Ab+1, aB+1, ab-1]] = AB_ab
         if Ab_aB > 0:
             R[i, T[AB+1, Ab-1, aB-1, ab+1]] = Ab_aB
-            R[i, T[AB+1, Ab-1, aB-1, ab+1]] = Ab_aB
+        R[i, i] = -(AB_ab + Ab_aB)
     return R
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def create_selection(
+        double s,
+        np.ndarray[np.int_t, ndim=2] M,
+        ):
+    #
+    cdef double AB, Ab, aB, ab
+    #
+    cdef int nstates = M.shape[0]
+    cdef int k = M.shape[1]
+    cdef double neg_logp
+    cdef np.ndarray[np.float64_t, ndim=2] L = np.empty((nstates, k))
+    for i in range(nstates):
+        AB = M[i, 0]
+        Ab = M[i, 1]
+        aB = M[i, 2]
+        ab = M[i, 3]
+        neg_logp = -log(AB + ab + (1-s)*(Ab + aB))
+        L[i, 0] = neg_logp + log(AB)
+        L[i, 1] = neg_logp + log(Ab*(1-s))
+        L[i, 2] = neg_logp + log(aB*(1-s))
+        L[i, 3] = neg_logp + log(ab)
+    return L
 

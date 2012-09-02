@@ -65,16 +65,18 @@ def get_sorted_states(N, k):
     @param k: number of alleles, for example 2 or 4
     @return: M where M[i,j] is count of allele j for pop state index i
     """
-    return sorted(gen_reversed_states(N, k), reverse=True, key=max)
+    return np.array(sorted(
+        gen_reversed_states(N, k), reverse=True, key=max))
 
-def get_inverse_map(N, k, M):
+def get_inverse_map(M):
     """
     The input M[i,j] is count of allele j for pop state index i.
     The output T[(i,j,...)] maps allele count tuple to pop state index
-    @param N: haploid pop size
-    @param k: number of alleles
     @param M: multinomial state map
+    @return: T
     """
+    nstates, k = M.shape
+    N = np.sum(M[0])
     inverse_map_shape = tuple([N+1]*k)
     T = -1 * np.ones(inverse_map_shape, dtype=int)
     for i, state in enumerate(M):
@@ -105,14 +107,14 @@ class TestMultinomialState(unittest.TestCase):
         k=2
         expected = [ [3, 0], [0, 3], [2, 1], [1, 2] ]
         observed = get_sorted_states(N, k)
-        self.assertEqual(expected, observed)
+        self.assertEqual(expected, observed.tolist())
     def test_inverse_state_map(self):
         N=3
         k=2
         M = get_sorted_states(N, k)
         M_expected = [ [3, 0], [0, 3], [2, 1], [1, 2] ]
-        self.assertEqual(M_expected, M)
-        T = get_inverse_map(N, k, M)
+        self.assertEqual(M_expected, M.tolist())
+        T = get_inverse_map(np.array(M))
         self.assertEqual(T[3, 0], 0)
         self.assertEqual(T[0, 3], 1)
         self.assertEqual(T[2, 1], 2)

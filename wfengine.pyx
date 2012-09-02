@@ -7,6 +7,7 @@ given a population size.
 It is vectorized so that it turns multiple probability distributions
 into their corresponding multinomial distributions
 given a single population size.
+.
 The implementation is in Cython for speed
 and uses python numpy arrays for speed and convenience.
 For compilation instructions see
@@ -17,6 +18,7 @@ $ gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing \
       -I/usr/include/python2.7 -o wfengine.so wfengine.c
 """
 
+import math
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -26,6 +28,62 @@ np.import_array()
 
 cdef double g_math_neg_inf = float('-inf')
 
+def binomial_coefficient(n, k):
+    """
+    Modified from a function by Andrew Dalke.
+    This is deliberately a python function rather than a cdef,
+    because we want to allow large integers.
+    """
+    if 0 <= k <= n:
+        ntok = 1
+        ktok = 1
+        for t in range(1, min(k, n - k) + 1):
+            ntok *= n
+            ktok *= t
+            n -= 1
+        return ntok // ktok
+    else:
+        return 0
+
+#XXX useful but unused
+def invert_binomial_coefficient(n_choose_k, k):
+    """
+    This is a plain python function and works with large integers.
+    It extracts n given n_choose_k and k.
+    The complexity is linear with k.
+    """
+    if k < 1:
+        raise ValueError('k should be at least 1')
+    n_low = (math.factorial(k) * n_choose_k)**(1.0 / k)
+    n_high = n_low + k
+    for n in range(int(math.floor(a_low)), int(math.ceil(a_high)) + 1):
+        if binomial_coefficient(n, k) == n_choose_k:
+            return n
+    raise ValueError('failed to invert binomial coefficient')
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def get_lmcs(
+        np.ndarray[np.int_t, ndim=2] M,
+        ):
+    """
+    Logs of multinomial coefficients.
+    @param M: M[i,j] is count of bin j in state i
+    @return: a one dimensional array of log multinomial coefficients
+    """
+    cdef int nstates = M.shape[0]
+    cdef int k = M.shape[1]
+    cdef int N = np.sum(M[0])
+    cdef int i
+    cdef np.ndarray[np.float64_t, ndim=1] log_fact = get_log_fact_array(N)
+    cdef np.ndarray[np.float64_t, ndim=1] v = np.empty(nstates)
+    for i in range(nstates):
+        v[i] = log_fact[N]
+        for index in range(k):
+            v[i] -= log_fact[M[i, index]]
+    return v
+
+#XXX deprecated
 def gen_population_compositions(int N, int k):
     """
     Yield (N+k-1 choose N) compositions of length k.
@@ -45,23 +103,6 @@ def gen_population_compositions(int N, int k):
 # This is from a cython tutorial.
 cdef inline int int_min(int a, int b):
     return a if a >= b else b
-
-def binomial_coefficient(n, k):
-    """
-    Modified from a function by Andrew Dalke.
-    This is deliberately a python function rather than a cdef,
-    because we want to allow large integers.
-    """
-    if 0 <= k <= n:
-        ntok = 1
-        ktok = 1
-        for t in range(1, min(k, n - k) + 1):
-            ntok *= n
-            ktok *= t
-            n -= 1
-        return ntok // ktok
-    else:
-        return 0
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -270,4 +311,32 @@ def create_genic_diallelic_ohta(int N_diploid, double s):
             if N-j:
                 M[i, j] += (N-j) * log_pcompl
     return M
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def create_genic(
+        np.ndarray[np.float64_t, ndim=1] lmcs,
+        np.ndarray[np.float64_t, ndim=2] lps,
+        np.ndarray[np.int_t, ndim=2] M,
+        ):
+    """
+    This is a more flexible way to create a multinomial transition matrix.
+    It is also fast.
+    The output may have -inf but it should not have nan.
+    @param lmcs: log multinomial count per state
+    @param lps: log probability per haplotype per state
+    @param M: allele count per haplotype per state
+    @return: entrywise log of transition matrix
+    """
+    cdef int nstates = M.shape[0]
+    cdef int k = M.shape[1]
+    cdef int i, j, index
+    cdef np.ndarray[np.float64_t, ndim=2] L = np.zeros((nstates, nstates))
+    for i in range(nstates):
+        for j in range(nstates):
+            L[i, j] = lmcs[j]
+            for index in range(k):
+                if M[j, index]:
+                    L[i, j] += M[j, index] * D[i, index]
+    return L
 
