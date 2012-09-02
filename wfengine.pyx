@@ -56,7 +56,7 @@ def invert_binomial_coefficient(n_choose_k, k):
         raise ValueError('k should be at least 1')
     n_low = (math.factorial(k) * n_choose_k)**(1.0 / k)
     n_high = n_low + k
-    for n in range(int(math.floor(a_low)), int(math.ceil(a_high)) + 1):
+    for n in range(int(math.floor(n_low)), int(math.ceil(n_high)) + 1):
         if binomial_coefficient(n, k) == n_choose_k:
             return n
     raise ValueError('failed to invert binomial coefficient')
@@ -337,6 +337,6 @@ def create_genic(
             L[i, j] = lmcs[j]
             for index in range(k):
                 if M[j, index]:
-                    L[i, j] += M[j, index] * D[i, index]
+                    L[i, j] += M[j, index] * lps[i, index]
     return L
 
