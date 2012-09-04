@@ -23,6 +23,11 @@ from libc.math cimport log
 
 np.import_array()
 
+cdef int AB_type = 0
+cdef int Ab_type = 1
+cdef int aB_type = 2
+cdef int ab_type = 3
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def create_mutation(
@@ -121,4 +126,137 @@ def create_selection(
         L[i, 2] = neg_logp + log(aB*(1-s))
         L[i, 3] = neg_logp + log(ab)
     return L
+
+
+
+###########################################################################
+# Forward simulation helper functions.
+# These are intended for speed but may be premature optimization.
+# Faster speeds could be achieved through gsl random sample generation.
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def multiple_mutation(
+        np.ndarray[np.int_t, ndim=1] mutable_state,
+        np.ndarray[np.int_t, ndim=1] mutable_counts,
+        np.ndarray[np.int_t, ndim=1] sampled_individuals,
+        np.ndarray[np.int_t, ndim=1] sampled_loci,
+        ):
+    """
+    All of the random sampling has already occurred.
+    """
+    cdef int nsamples = sampled_individuals.shape[0]
+    cdef int i, index
+    cdef int old_type, new_type
+    cdef int locus
+    for i in range(nsamples):
+        index = sampled_individuals[i]
+        locus = sampled_loci[i]
+        old_type = mutable_state[index]
+        if old_type == AB_type:
+            if not locus:
+                new_type = aB_type
+            else:
+                new_type = Ab_type
+        elif old_type == Ab_type:
+            if not locus:
+                new_type = ab_type
+            else:
+                new_type = AB_type
+        elif old_type == aB_type:
+            if not locus:
+                new_type = AB_type
+            else:
+                new_type = ab_type
+        elif old_type == ab_type:
+            if not locus:
+                new_type = Ab_type
+            else:
+                new_type = aB_type
+        mutable_state[index] = new_type
+        mutable_counts[old_type] -= 1
+        mutable_counts[new_type] += 1
+    return None
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+def multiple_recombination(
+        np.ndarray[np.int_t, ndim=1] mutable_state,
+        np.ndarray[np.int_t, ndim=1] mutable_counts,
+        np.ndarray[np.int_t, ndim=1] sampled_individuals,
+        ):
+    """
+    All of the random sampling has already occurred.
+    @param sampled_individuals: should be of even length
+    """
+    cdef int nsamples = sampled_individuals.shape[0] / 2
+    cdef int i
+    cdef int index_0, index_1
+    cdef int t0, t1
+    for i in range(nsamples):
+        index_0 = sampled_individuals[i*2]
+        index_1 = sampled_individuals[i*2 + 1]
+        t0 = mutable_state[index_0]
+        t1 = mutable_state[index_1]
+        if (t0 == AB_type and t1 == ab_type) or (
+                t0 == ab_type and t1 == AB_type):
+            mutable_state[index_0] = aB_type
+            mutable_state[index_1] = Ab_type
+            mutable_counts[AB_type] -= 1
+            mutable_counts[ab_type] -= 1
+            mutable_counts[Ab_type] += 1
+            mutable_counts[aB_type] += 1
+        elif (t0 == Ab_type and t1 == aB_type) or (
+                t0 == aB_type and t1 == Ab_type):
+            mutable_state[index_0] = AB_type
+            mutable_state[index_1] = ab_type
+            mutable_counts[AB_type] += 1
+            mutable_counts[ab_type] += 1
+            mutable_counts[Ab_type] -= 1
+            mutable_counts[aB_type] -= 1
+    return None
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def expand_counts(
+        np.ndarray[np.int_t, ndim=1] mutable_state,
+        np.ndarray[np.int_t, ndim=1] counts,
+        ):
+    cdef int k = counts.shape[0]
+    cdef int offset = 0
+    cdef int i, j
+    for i in range(k):
+        for j in range(counts[i]):
+            mutable_state[offset] = i
+            offset += 1
+    return None
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def reselection(
+        np.ndarray[np.float64_t, ndim=1] probs_out,
+        np.ndarray[np.float64_t, ndim=1] fitnesses_in,
+        np.ndarray[np.int_t, ndim=1] counts_in,
+        ):
+    """
+    Use haploid selection.
+    This corresponds to multiplicative diploid selection
+    when the haplotypes are assumed to come from a diploid population.
+    @param probs_out: iid child haplotype probabilities to be computed
+    @param fitnesses_in: relative fitnesses of haplotypes
+    @param counts_in: allele counts of the parent generation
+    """
+    cdef int k = counts_in.shape[0]
+    cdef double x
+    cdef double accum = 0
+    for i in range(k):
+        x = fitnesses_in[i] * counts_in[i]
+        probs_out[i] = x
+        accum += x
+    for i in range(k):
+        probs_out[i] /= accum
+    return None
 

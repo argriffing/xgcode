@@ -149,3 +149,13 @@ def get_response_content(fs):
         raise RUtil.RError(r_err)
     return image_data
 
+
+def main():
+    """
+    Check some stuff that takes longer to compute.
+    """
+    pass
+
+if __name__ == '__main__':
+    main()
+
