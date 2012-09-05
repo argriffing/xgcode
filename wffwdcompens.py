@@ -218,41 +218,84 @@ def sample_hitting_time(N_hap, mu, r, fitnesses):
         ntransitions += 1
     return ntransitions
 
-def test_hitting_time():
-    # define the diploid population size
-    N = 100
-    # define the haploid population size
-    N_hap = N * 2
-    Nr = 0
-    #Ns = 0
-    theta = 0.1
-    #Nr = 5.0
-    Ns = 1.0
-    #
-    mu = theta / float(4 * N)
-    r = Nr / float(N)
-    s = Ns / float(N)
-    #
+def hitting_time_helper(N_hap, mu, r, s, nsamples):
+    """
+    @param N_hap: haploid population size
+    @param mu: expected number of mutation events per generation
+    @param r: expected number of recombination events per generation
+    @param s: selection
+    @param nsamples: average over this many samples
+    """
     fitnesses = np.array([1, 1-s, 1-s, 1], dtype=float)
-    #
-    nsamples = 100
     total = 0
     for i in range(nsamples):
-        #g = sample_hitting_time(N_hap, mu, r, fitnesses)
-        #g = sample_hitting_time(N_hap, N*mu, N*r, fitnesses)
-        g = sample_hitting_time(N_hap, 0.2, 0, fitnesses)
+        g = sample_hitting_time(N_hap, mu, r, fitnesses)
         total += g
-        print 'generations:', g
-    generations = total / float(nsamples)
-    print 'mean generations:', generations
-    t = generations / theta
-    print 'scaled time t:', t
+        print g
+    return total / float(nsamples)
+
+def test_hitting_time():
+    """
+    """
+    N_diploid = 100
+    N_hap = 2 * N_diploid
+    theta = 0.01
+    r = 0
+    Ns = 0
+    s = Ns / float(N_diploid)
+    nsamples = 100
+    mutation_rate = theta / 2
+    generations = hitting_time_helper(N_hap, mutation_rate, r, s, nsamples)
+    print 'theta:', theta
+    print 'Ns:', Ns
+    print 'generations:', generations
+    print 'generations * theta:', generations * theta
+
+def test_hitting_time_b():
+    """
+    I get 18,000 generations with mu = 0.8
+    I get 8,400 generations with mu = 0.6
+    I get 6,700 generations with mu = 0.5
+    I get 5,800 generations with mu = 0.4
+    I get 5,400 generations with mu = 0.3
+    I get 5,800 generations with mu = 0.25
+    I get 6,400 generations with mu = 0.2
+    I get 8,700 generations with mu = 0.1
+    I get 18,000 generations with mu = 0.05
+    """
+    N_diploid = 100
+    N_hap = 2 * N_diploid
+    mu = 0.25
+    r = 0
+    s = 0
+    nsamples = 100
+    ehit = hitting_time_helper(N_hap, mu, r, s, nsamples)
+    print 'mu:', mu
+    print 'expected hitting time:', ehit
+
+def test_hitting_time_c():
+    """
+    This is about 7,000 generations mu = 0.5, Ns = 0.0
+    This is about 4,600 generations mu = 0.5, Ns = 0.5
+    This is about 4,500 generations mu = 0.5, Ns = 1.0
+    This is about 5,300 generations mu = 0.5, Ns = 1.5
+    This is about 7,200 generations mu = 0.5, Ns = 2.5
+    """
+    N_diploid = 100
+    N_hap = 2 * N_diploid
+    mu = 0.5
+    r = 0
+    Ns = 0
+    s = Ns / float(N_diploid)
+    nsamples = 100
+    ehit = hitting_time_helper(N_hap, mu, r, s, nsamples)
+    print 'mu:', mu
+    print 'expected hitting time:', ehit
 
 class TestForwardSampling(unittest.TestCase):
     def test_hitting_time(self):
         test_hitting_time()
 
 if __name__ == '__main__':
-    #unittest.main()
-    test_hitting_time()
+    unittest.main()
 

@@ -60,13 +60,15 @@ def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
     #
     arr = []
     for theta in theta_values:
-        mu = theta / float(4*N_diploid)
+        # Compute the expected number of mutation events per generation.
+        mu = theta / 2
+        #
         row = []
         for Ns in Ns_values:
             s = Ns / float(N_diploid)
             lps = wfcompens.create_selection(s, M)
             S_prob = np.exp(wfengine.create_genic(lmcs, lps, M))
-            M_prob = linalg.expm(theta * M_rate / float(2*2*N_diploid))
+            M_prob = linalg.expm(mu * M_rate / float(2*2*N_diploid))
             #M_prob = linalg.expm(theta * M_rate / float(2))
             R_prob = linalg.expm(Nr * R_rate / float((2*N_diploid)**2))
             MR_prob = np.dot(M_prob, R_prob)
@@ -81,14 +83,14 @@ def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
             i = 0
             j = 3
             hitting_time_generations = (Z[j,j] - Z[i,j]) / v[j]
-            hitting_time = hitting_time_generations / theta
+            hitting_time = hitting_time_generations * theta
             row.append(hitting_time)
         arr.append(row)
     return arr
 
 def get_response_content(fs):
     # define some fixed values
-    N_diploid = 4
+    N_diploid = 8
     Nr = fs.Nr
     #plot_density = 10
     plot_density = 2
@@ -108,7 +110,7 @@ def get_response_content(fs):
     else:
         ylogstr = '""'
     # colors
-    colors = ['darkviolet', 'blue', 'green', 'yellow']
+    colors = ['blue', 'pink', 'green', 'red']
     # define the r script
     out = StringIO()
     print >> out, 'Ns.values <- c', str(tuple(Ns_values))
@@ -119,7 +121,7 @@ def get_response_content(fs):
     print >> out, mk_call_str('plot', 'Ns.values', 'ha',
             type='"l"',
             xlab='"Ns"',
-            ylab='"generations / theta"',
+            ylab='"generations * theta"',
             log=ylogstr,
             main='"mean hitting time, 2N=%s"' % (2 * N_diploid),
             xlim='c' + str(xlim),
