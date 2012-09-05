@@ -96,8 +96,8 @@ def validate_headers(headers):
 
 
 def mk_call_str(name, *args, **kwargs):
-    args_v = [str(v) for v in args]
-    kwargs_v = ['%s=%s' % kv for kv in kwargs.items()]
+    args_v = [str(v) for v in args if v is not None]
+    kwargs_v = ['%s=%s' % kv for kv in kwargs.items() if None not in kv]
     arr = args_v + kwargs_v
     return '%s(%s)' % (name, ', '.join(arr))
 

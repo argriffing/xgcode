@@ -22,8 +22,9 @@ def get_form():
     @return: the body of a form
     """
     return [
-            Form.CheckGroup('axis_options', 'axis options', [
+            Form.CheckGroup('misc_options', 'misc options', [
                 Form.CheckItem('ylogscale', 'y axis log scale'),
+                Form.CheckItem('scale_to_2N_200', 'scale to match 2N=200'),
                 ]),
             Form.Float('Nr', 'recombination parameter Nr',
                 5.0, low_inclusive=0.0, high_inclusive=5.0),
@@ -88,30 +89,12 @@ def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
         arr.append(row)
     return arr
 
-def get_response_content(fs):
-    # define some fixed values
-    N_diploid = 6
-    Nr = fs.Nr
-    #plot_density = 10
-    plot_density = 4
-    # define some mutation rates
-    theta_values = [0.001, 0.01, 0.1, 1.0]
-    # define some selection coefficients to plot
-    Ns_low = 0.0
-    Ns_high = 3.0
-    Ns_values = np.linspace(Ns_low, Ns_high, 3*plot_density + 1)
-    # get the values for each h
-    arr = get_plot_array(N_diploid, Nr, theta_values, Ns_values)
-    # define x and y plot limits
-    xlim = (Ns_low, Ns_high)
-    ylim = (np.min(arr), np.max(arr))
-    if fs.ylogscale:
-        ylogstr = '"y"'
-    else:
-        ylogstr = '""'
-    # colors
+def get_plot(
+        side, Nr, arr, theta_values, Ns_values, xlim, ylim, ylogstr, ylab):
+    """
+    @param side: 'left' or 'right'
+    """
     colors = ['blue', 'pink', 'green', 'red']
-    # define the r script
     out = StringIO()
     print >> out, 'Ns.values <- c', str(tuple(Ns_values))
     print >> out, 'ha <- c', str(tuple(arr[0]))
@@ -121,9 +104,9 @@ def get_response_content(fs):
     print >> out, mk_call_str('plot', 'Ns.values', 'ha',
             type='"l"',
             xlab='"Ns"',
-            ylab='"generations * theta"',
+            ylab=ylab,
             log=ylogstr,
-            main='"mean hitting time, 2N=%s"' % (2 * N_diploid),
+            main='"Nr=%s"' % Nr,
             xlim='c' + str(xlim),
             ylim='c' + str(ylim),
             col='"%s"' % colors[0],
@@ -134,13 +117,66 @@ def get_response_content(fs):
             'lines', 'Ns.values', 'hc', col='"%s"' % colors[2])
     print >> out, mk_call_str(
             'lines', 'Ns.values', 'hd', col='"%s"' % colors[3])
+    if side == 'left':
+        print >> out, mk_call_str(
+                'legend',
+                '"topleft"',
+                'c' + str(tuple('%s' % x for x in theta_values)),
+                title='"theta"',
+                lty='c' + str(tuple([1]*4)),
+                lwd='c' + str(tuple([2.5]*4)),
+                col='c' + str(tuple(colors)),
+                )
+    return out.getvalue().rstrip()
+
+def get_response_content(fs):
+    # define some fixed values
+    N_diploid = 10
+    N_hap = 2 * N_diploid
+    #Nr = fs.Nr
+    plot_density = 2
+    # define some mutation rates
+    theta_values = [0.001, 0.01, 0.1, 1.0]
+    # define some selection coefficients to plot
+    Ns_low = 0.0
+    Ns_high = 3.0
+    Ns_values = np.linspace(Ns_low, Ns_high, 3*plot_density + 1)
+    # get the values for each h
+    Nr_values = (0, 5)
+    arr_0 = get_plot_array(
+            N_diploid, Nr_values[0], theta_values, Ns_values)
+    arr_1 = get_plot_array(
+            N_diploid, Nr_values[1], theta_values, Ns_values)
+    if fs.scale_to_2N_200:
+        arr_0 = (200 / float(N_hap)) * np.array(arr_0)
+        arr_1 = (200 / float(N_hap)) * np.array(arr_1)
+        ylab = '"generations * theta * (200 / 2N)"'
+    else:
+        ylab='"generations * theta"'
+    # define x and y plot limits
+    xlim = (Ns_low, Ns_high)
+    ylim = (np.min((arr_0, arr_1)), np.max((arr_0, arr_1)))
+    if fs.ylogscale:
+        ylogstr = '"y"'
+    else:
+        ylogstr = '""'
+    # http://sphaerula.com/legacy/R/multiplePlotFigure.html
+    out = StringIO()
     print >> out, mk_call_str(
-            'legend',
-            '"topleft"',
-            'c' + str(tuple('theta = %s' % x for x in theta_values)),
-            lty='c' + str(tuple([1]*4)),
-            lwd='c' + str(tuple([2.5]*4)),
-            col='c' + str(tuple(colors)),
+            'par',
+            mfrow='c(1,2)',
+            oma='c(0,0,2,0)',
+            )
+    print >> out, get_plot(
+            'left', Nr_values[0], arr_0, theta_values, Ns_values,
+            xlim, ylim, ylogstr, ylab)
+    print >> out, get_plot(
+            'right', Nr_values[1], arr_1, theta_values, Ns_values,
+            xlim, ylim, ylogstr, '""')
+    print >> out, mk_call_str(
+            'title',
+            '"mean hitting time, 2N=%s"' % N_hap,
+            outer='TRUE',
             )
     script = out.getvalue().rstrip()
     # create the R plot image
