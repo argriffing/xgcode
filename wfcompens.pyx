@@ -108,6 +108,10 @@ def create_selection(
         double s,
         np.ndarray[np.int_t, ndim=2] M,
         ):
+    if s >= 1:
+        raise ValueError(
+                'selection s must be less than 1 '
+                'but observed: %s' % s)
     #
     cdef double AB, Ab, aB, ab
     #

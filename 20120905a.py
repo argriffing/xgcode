@@ -1,5 +1,5 @@
 """
-Try to reproduce fig (4) from a manuscript by Nasrallah.
+Try to reproduce fig (8) from a manuscript by Nasrallah.
 """
 
 from StringIO import StringIO
@@ -22,14 +22,6 @@ def get_form():
     @return: the body of a form
     """
     return [
-            Form.CheckGroup('misc_options', 'misc options', [
-                Form.CheckItem(
-                    'ylogscale', 'y axis log scale', True),
-                Form.CheckItem(
-                    'scale_to_2N_200', 'scale to match 2N=200', True),
-                ]),
-            Form.Float('Nr', 'recombination parameter Nr',
-                5.0, low_inclusive=0.0, high_inclusive=5.0),
             Form.ImageFormat(),
             ]
 
@@ -41,8 +33,6 @@ def rev(x):
 
 def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
     """
-    Compute expected hitting times.
-    Theta is 4*N*mu, and the units of time are 4*N*mu generations.
     @param N_diploid: diploid population size
     @param Nr: recombination rate
     @param theta_values: mutation rates
@@ -76,21 +66,13 @@ def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
             lps = wfcompens.create_selection(s, M)
             S_prob = np.exp(wfengine.create_genic(lmcs, lps, M))
             P = np.dot(MR_prob, S_prob)
-            # compute the stationary distribution
-            v = MatrixUtil.get_stationary_distribution(P)
-            # compute the transition matrix limit at time infinity
-            #P_inf = np.outer(np.ones_like(v), v)
-            # compute the fundamental matrix Z
-            #Z = linalg.inv(np.eye(nstates) - (P - P_inf)) - P_inf
-            # 
-            # Use broadcasting instead of constructing P_inf.
-            Z = linalg.inv(np.eye(nstates) - (P - v)) - v
-            # compute the hitting time from state AB to state ab.
+            # compute the stochastic complement
+            X = linalg.solve(np.eye(nstates - k) - P[k:, k:], P[k:, :k])
+            H = P[:k, :k] + np.dot(P[:k, k:], X)
+            # compute a conditional transition probability
             i = 0
             j = 3
-            hitting_time_generations = (Z[j,j] - Z[i,j]) / v[j]
-            hitting_time = hitting_time_generations * theta
-            row.append(hitting_time)
+            row.append(H[i, j] / (1-H[i,i]))
         arr.append(row)
     return arr
 
@@ -136,10 +118,9 @@ def get_plot(
 
 def get_response_content(fs):
     # define some fixed values
-    N_diploid = 10
+    N_diploid = 6
     N_hap = 2 * N_diploid
-    #Nr = fs.Nr
-    plot_density = 2
+    plot_density = 8
     # define some mutation rates
     theta_values = [0.001, 0.01, 0.1, 1.0]
     # define some selection coefficients to plot
@@ -152,19 +133,11 @@ def get_response_content(fs):
             N_diploid, Nr_values[0], theta_values, Ns_values)
     arr_1 = get_plot_array(
             N_diploid, Nr_values[1], theta_values, Ns_values)
-    if fs.scale_to_2N_200:
-        arr_0 = (200 / float(N_hap)) * np.array(arr_0)
-        arr_1 = (200 / float(N_hap)) * np.array(arr_1)
-        ylab = '"generations * theta * (200 / 2N)"'
-    else:
-        ylab='"generations * theta"'
+    ylab='"p"'
     # define x and y plot limits
     xlim = (Ns_low, Ns_high)
     ylim = (np.min((arr_0, arr_1)), np.max((arr_0, arr_1)))
-    if fs.ylogscale:
-        ylogstr = '"y"'
-    else:
-        ylogstr = '""'
+    ylogstr = '""'
     # http://sphaerula.com/legacy/R/multiplePlotFigure.html
     out = StringIO()
     print >> out, mk_call_str(
@@ -180,7 +153,7 @@ def get_response_content(fs):
             xlim, ylim, ylogstr, '""')
     print >> out, mk_call_str(
             'title',
-            '"mean hitting time, 2N=%s"' % N_hap,
+            '"a conditional transition probability, 2N=%s"' % N_hap,
             outer='TRUE',
             )
     script = out.getvalue().rstrip()
