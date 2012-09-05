@@ -237,11 +237,11 @@ def hitting_time_helper(N_hap, mu, r, s, nsamples):
 def test_hitting_time():
     """
     """
-    N_diploid = 100
+    N_diploid = 10
     N_hap = 2 * N_diploid
-    theta = 0.01
+    theta = 0.1
     r = 0
-    Ns = 0
+    Ns = 1.5
     s = Ns / float(N_diploid)
     nsamples = 100
     mutation_rate = theta / 2

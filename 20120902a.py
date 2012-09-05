@@ -55,23 +55,23 @@ def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
     # precompute rate matrices
     R_rate = wfcompens.create_recomb(M, T)
     M_rate = wfcompens.create_mutation(M, T)
-    #
-    r = Nr / float(N_diploid)
+    # precompute a recombination probability matrix
+    R_prob = linalg.expm(Nr * R_rate / float((2*N_diploid)**2))
     #
     arr = []
     for theta in theta_values:
         # Compute the expected number of mutation events per generation.
         mu = theta / 2
+        # Precompute the mutation matrix
+        # and the product of mutation and recombination.
+        M_prob = linalg.expm(mu * M_rate / float(2*2*N_diploid))
+        MR_prob = np.dot(M_prob, R_prob)
         #
         row = []
         for Ns in Ns_values:
             s = Ns / float(N_diploid)
             lps = wfcompens.create_selection(s, M)
             S_prob = np.exp(wfengine.create_genic(lmcs, lps, M))
-            M_prob = linalg.expm(mu * M_rate / float(2*2*N_diploid))
-            #M_prob = linalg.expm(theta * M_rate / float(2))
-            R_prob = linalg.expm(Nr * R_rate / float((2*N_diploid)**2))
-            MR_prob = np.dot(M_prob, R_prob)
             P = np.dot(MR_prob, S_prob)
             # compute the stationary distribution
             v = MatrixUtil.get_stationary_distribution(P)
@@ -90,10 +90,10 @@ def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
 
 def get_response_content(fs):
     # define some fixed values
-    N_diploid = 8
+    N_diploid = 6
     Nr = fs.Nr
     #plot_density = 10
-    plot_density = 2
+    plot_density = 4
     # define some mutation rates
     theta_values = [0.001, 0.01, 0.1, 1.0]
     # define some selection coefficients to plot
