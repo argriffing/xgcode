@@ -33,6 +33,37 @@ def get_form():
 def get_form_out():
     return FormOut.Image('plot')
 
+def get_conditional_hitting_times(P, n):
+    """
+    The returned value is an array of conditional hitting times.
+    The ith entry of the array is the expected number of transitions
+    before first hitting state -1 (the last state),
+    conditional on not first hitting any other special state.
+    The transition matrix P assumes a state ordering
+    in which the first states are non-special states,
+    and the last few states are special states.
+    The last special state is the target.
+    @param P: transition matrix
+    @param n: number of special states at the end of the state list
+    @return: array of nstates-1 expected hitting times
+    """
+    # For each state nonspecial state,
+    # compute the distribution over which special state will be hit first.
+    # This is accomplished using the ideas of transience and absorption.
+    nstates = P.shape[0]
+    # Q is the part of the transition matrix that gives
+    # transition probabilities from transient to transient states.
+    # In general it is not row stochastic.
+    Q = P[:-n, :-n]
+    # R is the part of the transition matrix that gives
+    # transition probabilities from transient to absorbing states.
+    # In general it is not row stochastic.
+    R = P[:-n, -n:]
+    # Note that Q and R completely define an absorbing process,
+    # because there are no transitions away from absorbing states.
+    return linalg.solve(np.eye(nstates-n) - Q, R)
+
+#XXX unused
 def get_absorption_time(P_absorbing):
     """
     This function assumes that exactly one state is absorbing.
@@ -46,6 +77,7 @@ def get_absorption_time(P_absorbing):
     t = linalg.solve(np.eye(nstates-1) - Q, np.ones(nstates-1))
     return t[0]
 
+#XXX wrong
 def get_type_2_absorption_time(P):
     """
     The indices of the transition matrix are ordered as follows.
@@ -74,6 +106,7 @@ def get_type_2_absorption_time(P):
     t = linalg.solve(np.eye(nstates-3) - Q, c)
     return t[0]
 
+#XXX wrong
 def get_type_1_absorption_time(P):
     """
     Ordering of indices is the same as in type 2.
