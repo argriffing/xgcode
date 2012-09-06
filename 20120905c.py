@@ -1,7 +1,5 @@
 """
 Try to reproduce fig (9) from a manuscript by Nasrallah.
-
-The premise of this script is flawed.
 """
 
 from StringIO import StringIO
@@ -114,12 +112,13 @@ def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
     N_hap = 2 * N_diploid
     k = 4
     M = multinomstate.get_sorted_states(N_hap, k)
-    # swap three fixed states with the end states
-    M[1:4], M[-3:] = M[-3:], M[1:4]
+    nstates = M.shape[0]
+    # Swap the fixed states to the end
+    # to more closely match standard forms.
+    M[:4], M[-4:] = M[-4:], M[:4]
     # compute the inverse map
     T = multinomstate.get_inverse_map(M)
     #
-    nstates = M.shape[0]
     lmcs = wfengine.get_lmcs(M)
     # precompute rate matrices
     R_rate = wfcompens.create_recomb(M, T)
@@ -142,8 +141,40 @@ def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
             lps = wfcompens.create_selection(s, M)
             S_prob = np.exp(wfengine.create_genic(lmcs, lps, M))
             P = np.dot(MR_prob, S_prob)
-            t1 = get_type_1_absorption_time(P.copy())
-            t2 = get_type_2_absorption_time(P.copy())
+            # What is the distribution over next fixed states
+            # from the current state?
+            # This question can be answered
+            # by hacking with transience and absorption.
+            Q = P[:-k, :-k]
+            R = P[:-k, -k:]
+            B = linalg.solve(np.eye(nstates-k) - Q, R)
+            # At this point B is the matrix whose nstates-k rows give
+            # distributions over the k fixed states.
+            # Next construct the transition matrix that is conditional
+            # upon first hitting the ab fixed state.
+            w = np.zeros(nstates)
+            w[:-k] = R[:, -1]
+            w[-k:] = np.array([0, 0, 0, 1])
+            P_t2 = P * w
+            # normalize after scaling by the weights
+            v = P_t2.sum(axis=1)
+            P_t2 /= v[:, np.newaxis]
+            # Get the hitting time from state AB to state ab.
+            # Because of the conditioning, this should be the same
+            # as the expected time to reach state ab given that state ab
+            # is the first reached fixed state.
+            # Note that this means that the first step is away from AB.
+            # Or actually we can just use expected time to absorption.
+            Q = P_t2[:-1, :-1]
+            c = np.ones(nstates-1)
+            t = linalg.lstsq(np.eye(nstates-1) - Q, c)
+            t2 = t[-4]
+            # Now do type 1 events.
+            w = np.zeros(nstates)
+            w[:-k] = 1 - R[:, 0]
+            w[-k:] = np.array([0, 0, 0, 1])
+            P_t2 = P * w
+            #
             row.append(math.log(t1) - math.log(t2))
         arr.append(row)
     return arr
@@ -180,7 +211,7 @@ def get_plot(
 
 def get_response_content(fs):
     # define some fixed values
-    N_diploid = 10
+    N_diploid = 5
     N_hap = 2 * N_diploid
     plot_density = 8
     # get the user-defined theta
