@@ -194,21 +194,41 @@ def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
             """
             # Get the probability of type 2.
             # This uses the stochastic complement.
+            # Wait this is wrong.
+            # This is the probability of a direct transition.
             X = linalg.solve(np.eye(nstates - k) - P[k:, k:], P[k:, :k])
             H = P[:k, :k] + np.dot(P[:k, k:], X)
-            p = H[0, 3] / (1 - H[0,0])
-            expectation_of_variance = p*v2 + (1-p)*v1
-            variance_of_expectation = p*(1-p)*(t1 - t2)*(t1 - t2)
-            variance = expectation_of_variance + variance_of_expectation
+            p_direct = H[0, 3] / (1 - H[0,0])
+            # The following line is Equation (1) of the Nasrallah manuscript.
+            p_t2 = (2*p_direct) / (1 + p_direct)
+            p_t1 = 1 - p_t2
+            """
+            expectation_of_variance = p_t2*v2 + p_t1*v1
+            variance_of_expectation = p_t2*p_t1*(t1 - t2)*(t1 - t2)
+            pooled_variance = (
+                    expectation_of_variance + variance_of_expectation)
+            """
+            #
+            # Just do a simulation,
+            # assuming that the wait times are normally distributed.
+            nsamples = 500
+            n1 = np.random.binomial(nsamples, p_t1)
+            n2 = nsamples - n1
+            X1 = np.random.normal(t1, math.sqrt(v1), n1)
+            X2 = np.random.normal(t2, math.sqrt(v2), n2)
+            X_pooled = np.hstack((X1, X2))
+            x = np.mean(X1) - np.mean(X2)
+            s_pooled = math.sqrt(np.var(X_pooled) / nsamples)
+            t_statistic = x / s_pooled
+            row.append(t_statistic)
             #
             #x = (t1 - t2) / math.sqrt(variance / 200.0)
-            x = (t1 - t2) / math.sqrt((v1 + v2) / 200.0)
-            #x = (t1 - t2) / variance
-            #x = (t1 - t2) / math.sqrt(variance)
+            #x = (t1 - t2) / math.sqrt((v1 + v2) / 200.0)
+            #x = (t1 - t2) / math.sqrt(pooled_variance)
             #x = (t1 - t2)
             #row.append(math.log(t1) - math.log(t2))
             #row.append(x)
-            row.append(v2)
+            #row.append(v2)
         arr.append(row)
     return arr
 
@@ -220,7 +240,7 @@ def get_plot(
     print >> out, 'ha <- c', str(tuple(arr[0]))
     print >> out, 'hb <- c', str(tuple(arr[1]))
     print >> out, mk_call_str('plot', 'Ns.values', 'ha',
-            type='"l"',
+            type='"p"',
             xlab='"Ns"',
             ylab=ylab,
             log=ylogstr,
@@ -230,7 +250,7 @@ def get_plot(
             col='"%s"' % colors[0],
             )
     print >> out, mk_call_str(
-            'lines', 'Ns.values', 'hb', col='"%s"' % colors[1])
+            'points', 'Ns.values', 'hb', col='"%s"' % colors[1])
     print >> out, mk_call_str(
             'legend',
             '"topright"',
@@ -244,9 +264,9 @@ def get_plot(
 
 def get_response_content(fs):
     # define some fixed values
-    N_diploid = 6
+    N_diploid = 8
     N_hap = 2 * N_diploid
-    plot_density = 3
+    plot_density = 8
     # get the user-defined theta
     if fs.theta_1em0:
         theta = 1.0
