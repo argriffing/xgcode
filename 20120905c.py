@@ -1,6 +1,18 @@
 """
-Try to reproduce fig (9) from a manuscript by Nasrallah.
+Try to reproduce fig (9) from a manuscript by Nasrallah. [UNFINISHED]
 """
+
+#TODO this needs to be changed because the variance is wrong.
+# The actual variance is of a mixture model
+# whose properties we know.
+# we know the mixture parameter that is the probability of type 1 transition,
+# and we know the variance and expectation of the number of transitions
+# for type 1 and type 2 substitutions.
+# the variance of the mixture can be computed using the
+# principle of total variance.
+#
+# well now I'm not sure what is the problem
+# but this does not work right now.
 
 from StringIO import StringIO
 import math
@@ -16,6 +28,7 @@ import MatrixUtil
 import wfengine
 import wfcompens
 import multinomstate
+import hittingtime
 
 def get_form():
     """
@@ -33,103 +46,71 @@ def get_form():
 def get_form_out():
     return FormOut.Image('plot')
 
-def get_conditional_hitting_times(P, n):
+def get_type_2_info(P):
     """
-    The returned value is an array of conditional hitting times.
-    The ith entry of the array is the expected number of transitions
-    before first hitting state -1 (the last state),
-    conditional on not first hitting any other special state.
-    The transition matrix P assumes a state ordering
-    in which the first states are non-special states,
-    and the last few states are special states.
-    The last special state is the target.
-    @param P: transition matrix
-    @param n: number of special states at the end of the state list
-    @return: array of nstates-1 expected hitting times
+    The expected time for a type 2 event is computed as follows.
+    It is the expected number of steps from AB to ab
+    conditional on not entering the states AB, Ab, or aB.
+    @param P: a huge transition matrix which is not modified
+    @return: expectation and variance of compensatory substitution time
     """
-    # For each state nonspecial state,
-    # compute the distribution over which special state will be hit first.
-    # This is accomplished using the ideas of transience and absorption.
-    nstates = P.shape[0]
-    # Q is the part of the transition matrix that gives
-    # transition probabilities from transient to transient states.
-    # In general it is not row stochastic.
-    Q = P[:-n, :-n]
-    # R is the part of the transition matrix that gives
-    # transition probabilities from transient to absorbing states.
-    # In general it is not row stochastic.
-    R = P[:-n, -n:]
-    # Note that Q and R completely define an absorbing process,
-    # because there are no transitions away from absorbing states.
-    return linalg.solve(np.eye(nstates-n) - Q, R)
+    MatrixUtil.assert_transition_matrix(P)
+    nstates = len(P)
+    # define index sequences
+    plain = range(4, nstates)
+    forbidden = [0, 1, 2]
+    target = [3]
+    #
+    H = hittingtime.get_conditional_transition_matrix(
+            P, plain, forbidden, target)
+    t = hittingtime.get_absorption_time(
+            H, plain+forbidden, target)
+    v = hittingtime.get_absorption_variance(
+            H, plain+forbidden, target)
+    return t[0], v[0]
 
-#XXX unused
-def get_absorption_time(P_absorbing):
+def get_type_1_info(P):
     """
-    This function assumes that exactly one state is absorbing.
-    It returns the time to absorption from state 0 to state -1.
-    The final state is assumed to be the absorbing state
-    @param P_absorbing: an absorbing Markov chain
-    @return: time to absorption from state 0
+    The expected time for a type 1 event is computed as follows.
+    It is the sum of two expected times.
+    The first time is the expected number of steps from AB to either Ab or aB
+    conditional on not entering the states AB or ab.
+    The second time is the expected number of steps from Ab to ab
+    conditional on not entering AB.
+    Note that this formulation depends on the assumption
+    that the process associated with the first
+    step is equally likely to end up in Ab as in aB.
+    @param P: a huge transition matrix which is not modified
+    @return: expectation and variance of compensatory substitution time
     """
-    nstates = P_absorbing.shape[0]
-    Q = P_absorbing[:-1, :-1]
-    t = linalg.solve(np.eye(nstates-1) - Q, np.ones(nstates-1))
-    return t[0]
-
-#XXX wrong
-def get_type_2_absorption_time(P):
-    """
-    The indices of the transition matrix are ordered as follows.
-    The last three states are fixed Ab, fixed aB, and fixed ab.
-    In type 2 events we have the following conditions.
-    Nothing transitions to fixed AB except for fixed AB itself.
-    Nothing transitions to fixed Ab or fixed aB.
-    Fixed ab is an absorbing state.
-    @param P: a mutable copy of the huge transition matrix
-    @return: expected time to absorption from fixed state AB
-    """
-    nstates = P.shape[0]
-    # do not allow transitions to the AB state except from itself
-    P[1:, 0] = 0
-    # do not allow transitions to the low fitness fixed states
-    P[:, -3:-1] = 0
-    # force the last three states to be absorbing
-    P[-3:] = 0
-    P[-3:, -3:] = np.eye(3)
-    # normalize the rows
-    v = P.sum(axis=1)
-    P /= v[:, np.newaxis]
-    # Compute the time to absorption using standard notation.
-    Q = P[:-3, :-3]
-    c = np.ones(nstates-3)
-    t = linalg.solve(np.eye(nstates-3) - Q, c)
-    return t[0]
-
-#XXX wrong
-def get_type_1_absorption_time(P):
-    """
-    Ordering of indices is the same as in type 2.
-    In type 1 events we have the following conditions.
-    Nothing transitions to fixed AB except for fixed AB itself.
-    Fixed ab is an absorbing state.
-    @param P: a mutable copy of the huge transition matrix
-    @return: expected time to absorption from fixed state AB
-    """
-    nstates = P.shape[0]
-    # do not allow transitions to the AB state except from itself
-    P[1:, 0] = 0
-    # force the ab state to be absorbing
-    P[-1] = 0
-    P[-1, -1] = 1
-    # normalize the rows
-    v = P.sum(axis=1)
-    P /= v[:, np.newaxis]
-    # Compute the time to absorption using standard notation.
-    Q = P[:-1, :-1]
-    c = np.ones(nstates-1)
-    t = linalg.solve(np.eye(nstates-1) - Q, c)
-    return t[0]
+    MatrixUtil.assert_transition_matrix(P)
+    nstates = len(P)
+    # get the expected time for the first stage
+    plain = range(4, nstates)
+    forbidden = [0, 3]
+    target = [1, 2]
+    H = hittingtime.get_conditional_transition_matrix(
+            P, plain, forbidden, target)
+    t = hittingtime.get_absorption_time(
+            H, plain+forbidden, target)
+    v = hittingtime.get_absorption_variance(
+            H, plain+forbidden, target)
+    t_first = t[0]
+    v_first = v[0]
+    # get the expected time for the second stage
+    plain = [1, 2] + range(4, nstates)
+    forbidden = [0]
+    target = [3]
+    H = hittingtime.get_conditional_transition_matrix(
+            P, plain, forbidden, target)
+    t = hittingtime.get_absorption_time(
+            H, plain+forbidden, target)
+    v = hittingtime.get_absorption_variance(
+            H, plain+forbidden, target)
+    t_second = t[1]
+    v_second = v[1]
+    # return the moments of the distribution accounting for both stages
+    return t_first + t_second, v_first + v_second
 
 def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
     """
@@ -146,9 +127,6 @@ def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
     k = 4
     M = multinomstate.get_sorted_states(N_hap, k)
     nstates = M.shape[0]
-    # Swap the fixed states to the end
-    # to more closely match standard forms.
-    M[:4], M[-4:] = M[-4:], M[:4]
     # compute the inverse map
     T = multinomstate.get_inverse_map(M)
     #
@@ -174,6 +152,11 @@ def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
             lps = wfcompens.create_selection(s, M)
             S_prob = np.exp(wfengine.create_genic(lmcs, lps, M))
             P = np.dot(MR_prob, S_prob)
+            #
+            t1, v1 = get_type_1_info(P)
+            t2, v2 = get_type_2_info(P)
+            #
+            """
             # What is the distribution over next fixed states
             # from the current state?
             # This question can be answered
@@ -208,7 +191,24 @@ def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
             w[-k:] = np.array([0, 0, 0, 1])
             P_t2 = P * w
             #
-            row.append(math.log(t1) - math.log(t2))
+            """
+            # Get the probability of type 2.
+            # This uses the stochastic complement.
+            X = linalg.solve(np.eye(nstates - k) - P[k:, k:], P[k:, :k])
+            H = P[:k, :k] + np.dot(P[:k, k:], X)
+            p = H[0, 3] / (1 - H[0,0])
+            expectation_of_variance = p*v2 + (1-p)*v1
+            variance_of_expectation = p*(1-p)*(t1 - t2)*(t1 - t2)
+            variance = expectation_of_variance + variance_of_expectation
+            #
+            #x = (t1 - t2) / math.sqrt(variance / 200.0)
+            x = (t1 - t2) / math.sqrt((v1 + v2) / 200.0)
+            #x = (t1 - t2) / variance
+            #x = (t1 - t2) / math.sqrt(variance)
+            #x = (t1 - t2)
+            #row.append(math.log(t1) - math.log(t2))
+            #row.append(x)
+            row.append(v2)
         arr.append(row)
     return arr
 
@@ -233,7 +233,7 @@ def get_plot(
             'lines', 'Ns.values', 'hb', col='"%s"' % colors[1])
     print >> out, mk_call_str(
             'legend',
-            '"topleft"',
+            '"topright"',
             'c' + str(tuple('%s' % x for x in Nr_values)),
             title='"Nr"',
             lty='c' + str(tuple([1]*2)),
@@ -244,9 +244,9 @@ def get_plot(
 
 def get_response_content(fs):
     # define some fixed values
-    N_diploid = 5
+    N_diploid = 6
     N_hap = 2 * N_diploid
-    plot_density = 8
+    plot_density = 3
     # get the user-defined theta
     if fs.theta_1em0:
         theta = 1.0
@@ -258,11 +258,12 @@ def get_response_content(fs):
     Nr_values = [0.0, 5.0]
     # define some selection coefficients to plot
     Ns_low = 0.0
-    Ns_high = 3.0
+    Ns_high = 2.5
     Ns_values = np.linspace(Ns_low, Ns_high, 3*plot_density + 1)
     # get the values for each h
     arr = get_plot_array(N_diploid, theta, Nr_values, Ns_values)
-    ylab='"log(Type1 / Type2)"'
+    #ylab='"log(Type1 / Type2)"'
+    ylab='"normalized time (Type1 - Type2)"'
     # define x and y plot limits
     xlim = (Ns_low, Ns_high)
     ylim = (np.min(arr), np.max(arr))
