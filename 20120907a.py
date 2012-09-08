@@ -14,6 +14,8 @@ The two different compensatory substitution pathways
 from the high-fitness state AB to the high-fitness state ab are distinguished
 by whether the most recently fixed haplotype before first reaching state ab
 is AB or is a low-fitness haplotype.
+Haploid selection for this compensatory model
+gives fitness 1 to AA and ab and fitness 1-s to Ab and aB.
 """
 
 from StringIO import StringIO
@@ -30,6 +32,7 @@ import MatrixUtil
 import wfengine
 import wfcompens
 import multinomstate
+import wffwdckcompens
 import wfbckcompens
 
 def get_form():
@@ -45,24 +48,24 @@ def get_form():
                 low_inclusive=0),
             Form.Float('Ns', 'selection N*s', '1.0',
                 low_inclusive=0),
+            Form.Integer(
+                'nsamples',
+                'max number of sampled paths (-1 for unlimited)', 500),
             ]
 
 def get_form_out():
     return FormOut.Report()
 
-def get_type_1_info():
+def get_backward_info(N_diploid, theta, Nr, Ns):
     """
-    Get the expectation and variance for each of the types.
-    """
-    pass
-
-def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
-    """
+    Compute expectations and variances for the two substitution pathways.
+    Here backward is somewhat of a misnomer; it is meant as a contrast
+    to forward simulation.
     @param N_diploid: diploid population size
-    @param Nr: recombination rate
-    @param theta_values: mutation rates
-    @param Ns_values: selection values
-    @return: arr[i][j] gives time for Ns_values[i] and theta_values[j]
+    @param theta: a mutation rate
+    @param Nr: a recombination rate
+    @param Ns: a selection value
+    @return: (t1, v1), (t2, v2)
     """
     # set up the state space
     k = 4
@@ -70,43 +73,26 @@ def get_plot_array(N_diploid, Nr, theta_values, Ns_values):
     T = multinomstate.get_inverse_map(M)
     nstates = M.shape[0]
     lmcs = wfengine.get_lmcs(M)
-    # precompute rate matrices
+    # compute rate matrices
     R_rate = wfcompens.create_recomb(M, T)
     M_rate = wfcompens.create_mutation(M, T)
-    # precompute a recombination probability matrix
+    # compute a recombination probability matrix
     R_prob = linalg.expm(Nr * R_rate / float((2*N_diploid)**2))
+    # compute the expected number of mutation events per generation
+    mu = theta / 2
+    # compute the mutation matrix
+    # and the product of mutation and recombination.
+    M_prob = linalg.expm(mu * M_rate / float(2*2*N_diploid))
+    MR_prob = np.dot(M_prob, R_prob)
+    # compute the selection coefficient
+    s = Ns / float(N_diploid)
+    lps = wfcompens.create_selection(s, M)
+    S_prob = np.exp(wfengine.create_genic(lmcs, lps, M))
+    P = np.dot(MR_prob, S_prob)
     #
-    arr = []
-    for theta in theta_values:
-        # Compute the expected number of mutation events per generation.
-        mu = theta / 2
-        # Precompute the mutation matrix
-        # and the product of mutation and recombination.
-        M_prob = linalg.expm(mu * M_rate / float(2*2*N_diploid))
-        MR_prob = np.dot(M_prob, R_prob)
-        #
-        row = []
-        for Ns in Ns_values:
-            s = Ns / float(N_diploid)
-            lps = wfcompens.create_selection(s, M)
-            S_prob = np.exp(wfengine.create_genic(lmcs, lps, M))
-            P = np.dot(MR_prob, S_prob)
-            # compute the stochastic complement
-            X = linalg.solve(np.eye(nstates - k) - P[k:, k:], P[k:, :k])
-            H = P[:k, :k] + np.dot(P[:k, k:], X)
-            # condition on not looping
-            np.fill_diagonal(H, 0)
-            v = np.sum(H, axis=1)
-            H /= v[:, np.newaxis]
-            # let ab be an absorbing state
-            # and compute the expected number of returns to AB
-            Q = H[:3, :3]
-            I = np.eye(3)
-            N = linalg.inv(I - Q)
-            #
-            row.append(N[0, 0] - 1)
-        arr.append(row)
-    return arr
+    t1, v1 = wfbckcompens.get_type_1_info(P)
+    t2, v2 = wfbckcompens.get_type_2_info(P)
+    return (t1, v1), (t2, v2)
 
 def get_plot(
         side, Nr, arr, theta_values, Ns_values, xlim, ylim, ylogstr, ylab):
@@ -149,6 +135,12 @@ def get_plot(
     return out.getvalue().rstrip()
 
 def get_response_content(fs):
+    # TODO check s vs N_diploid so that selection is not too big
+    # as to make fitnesses negative or zero
+    #
+    (t1, v1), (t2, v2) = get_backward_info(
+            fs.N_diploid, fs.theta, fs.Nr, fs.Ns)
+    #
     # define some fixed values
     N_diploid = 6
     N_hap = 2 * N_diploid
