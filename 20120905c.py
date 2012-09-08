@@ -28,7 +28,7 @@ import MatrixUtil
 import wfengine
 import wfcompens
 import multinomstate
-import hittingtime
+import wfbckcompens
 
 def get_form():
     """
@@ -45,72 +45,6 @@ def get_form():
 
 def get_form_out():
     return FormOut.Image('plot')
-
-def get_type_2_info(P):
-    """
-    The expected time for a type 2 event is computed as follows.
-    It is the expected number of steps from AB to ab
-    conditional on not entering the states AB, Ab, or aB.
-    @param P: a huge transition matrix which is not modified
-    @return: expectation and variance of compensatory substitution time
-    """
-    MatrixUtil.assert_transition_matrix(P)
-    nstates = len(P)
-    # define index sequences
-    plain = range(4, nstates)
-    forbidden = [0, 1, 2]
-    target = [3]
-    #
-    H = hittingtime.get_conditional_transition_matrix(
-            P, plain, forbidden, target)
-    t = hittingtime.get_absorption_time(
-            H, plain+forbidden, target)
-    v = hittingtime.get_absorption_variance(
-            H, plain+forbidden, target)
-    return t[0], v[0]
-
-def get_type_1_info(P):
-    """
-    The expected time for a type 1 event is computed as follows.
-    It is the sum of two expected times.
-    The first time is the expected number of steps from AB to either Ab or aB
-    conditional on not entering the states AB or ab.
-    The second time is the expected number of steps from Ab to ab
-    conditional on not entering AB.
-    Note that this formulation depends on the assumption
-    that the process associated with the first
-    step is equally likely to end up in Ab as in aB.
-    @param P: a huge transition matrix which is not modified
-    @return: expectation and variance of compensatory substitution time
-    """
-    MatrixUtil.assert_transition_matrix(P)
-    nstates = len(P)
-    # get the expected time for the first stage
-    plain = range(4, nstates)
-    forbidden = [0, 3]
-    target = [1, 2]
-    H = hittingtime.get_conditional_transition_matrix(
-            P, plain, forbidden, target)
-    t = hittingtime.get_absorption_time(
-            H, plain+forbidden, target)
-    v = hittingtime.get_absorption_variance(
-            H, plain+forbidden, target)
-    t_first = t[0]
-    v_first = v[0]
-    # get the expected time for the second stage
-    plain = [1, 2] + range(4, nstates)
-    forbidden = [0]
-    target = [3]
-    H = hittingtime.get_conditional_transition_matrix(
-            P, plain, forbidden, target)
-    t = hittingtime.get_absorption_time(
-            H, plain+forbidden, target)
-    v = hittingtime.get_absorption_variance(
-            H, plain+forbidden, target)
-    t_second = t[1]
-    v_second = v[1]
-    # return the moments of the distribution accounting for both stages
-    return t_first + t_second, v_first + v_second
 
 def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
     """
@@ -153,8 +87,8 @@ def get_plot_array(N_diploid, theta, Nr_values, Ns_values):
             S_prob = np.exp(wfengine.create_genic(lmcs, lps, M))
             P = np.dot(MR_prob, S_prob)
             #
-            t1, v1 = get_type_1_info(P)
-            t2, v2 = get_type_2_info(P)
+            t1, v1 = wfbckcompens.get_type_1_info(P)
+            t2, v2 = wfbckcompens.get_type_2_info(P)
             #
             """
             # What is the distribution over next fixed states
