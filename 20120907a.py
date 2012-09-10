@@ -1,5 +1,5 @@
 """
-Check Wright-Fisher compensatory time expectations and variances.
+Check W-F mean and variance for the two compensatory substitution pathways. [UNFINISHED]
 
 Compare estimates obtained by forward simulation
 to estimates obtained through numerical solutions of systems of equations
@@ -32,8 +32,9 @@ import MatrixUtil
 import wfengine
 import wfcompens
 import multinomstate
-import wffwdckcompens
+import wffwdcompens
 import wfbckcompens
+import combobreaker
 
 def get_form():
     """
@@ -43,14 +44,14 @@ def get_form():
             Form.Integer('N_diploid', 'diploid population size N', 6,
                 low=1, high=10),
             Form.Float('theta', 'mutation rate 4*N*mu', '1.0',
-                low_inclusive=0),
+                low_inclusive=0.001),
             Form.Float('Nr', 'recombination rate N*r', '5.0',
                 low_inclusive=0),
             Form.Float('Ns', 'selection N*s', '1.0',
                 low_inclusive=0),
             Form.Integer(
-                'nsamples',
-                'max number of sampled paths (-1 for unlimited)', 500),
+                'nsamples_max',
+                'max number of sampled paths', 500),
             ]
 
 def get_form_out():
@@ -94,100 +95,141 @@ def get_backward_info(N_diploid, theta, Nr, Ns):
     t2, v2 = wfbckcompens.get_type_2_info(P)
     return (t1, v1), (t2, v2)
 
-def get_plot(
-        side, Nr, arr, theta_values, Ns_values, xlim, ylim, ylogstr, ylab):
+def sample_forward(N_hap, mu, r, fitnesses):
     """
-    @param side: 'left' or 'right'
+    This uses the cython extension.
+    @param N_hap: haploid population size or twice diploid population size
+    @param mu: expected number of mutations per generation
+    @param r: expected number of recombinations per generation
+    @param fitnesses: relative haploid fitnesses of haplotypes
+    @return: a list of meta states and dwell times
     """
-    colors = ['blue', 'pink', 'green', 'red']
-    out = StringIO()
-    print >> out, 'Ns.values <- c', str(tuple(Ns_values))
-    print >> out, 'ha <- c', str(tuple(arr[0]))
-    print >> out, 'hb <- c', str(tuple(arr[1]))
-    print >> out, 'hc <- c', str(tuple(arr[2]))
-    print >> out, 'hd <- c', str(tuple(arr[3]))
-    print >> out, mk_call_str('plot', 'Ns.values', 'ha',
-            type='"l"',
-            xlab='"Ns"',
-            ylab=ylab,
-            log=ylogstr,
-            main='"Nr=%s"' % Nr,
-            xlim='c' + str(xlim),
-            ylim='c' + str(ylim),
-            col='"%s"' % colors[0],
-            )
-    print >> out, mk_call_str(
-            'lines', 'Ns.values', 'hb', col='"%s"' % colors[1])
-    print >> out, mk_call_str(
-            'lines', 'Ns.values', 'hc', col='"%s"' % colors[2])
-    print >> out, mk_call_str(
-            'lines', 'Ns.values', 'hd', col='"%s"' % colors[3])
-    if side == 'left':
-        print >> out, mk_call_str(
-                'legend',
-                '"topleft"',
-                'c' + str(tuple('%s' % x for x in theta_values)),
-                title='"theta"',
-                lty='c' + str(tuple([1]*4)),
-                lwd='c' + str(tuple([2.5]*4)),
-                col='c' + str(tuple(colors)),
-                )
-    return out.getvalue().rstrip()
+    ntransitions = 0
+    haplotype_probs = np.zeros(4, dtype=float)
+    counts = np.array([N_hap, 0, 0, 0], dtype=int)
+    state = np.empty(N_hap, dtype=int)
+    #
+    fixation_state = 0
+    fixation_dwell = 0
+    history = []
+    #
+    while True:
+        # get the current population meta state
+        current_fixation_state = -1
+        for i in range(4):
+            if counts[i] == N_hap:
+                current_fixation_state = i
+        # update the history list, fixation state, and dwell time
+        if fixation_state == current_fixation_state:
+            fixation_dwell += 1
+        else:
+            history.append((fixation_state, fixation_dwell))
+            fixation_state = current_fixation_state
+            fixation_dwell = 1
+        # check if the compensatory substitution has occurred
+        if fixation_state == 3:
+            history.append((fixation_state, fixation_dwell))
+            return history
+        # expand the counts into the unary state
+        wfcompens.expand_counts(state, counts)
+        # do the mutation step
+        nevents = np.random.poisson(mu)
+        #if nevents > N_hap:
+            #raise ValueError('sampling too many things without replacement')
+        if nevents:
+            individuals = np.random.randint(N_hap, size=nevents)
+            loci = np.random.randint(2, size=nevents)
+            wfcompens.multiple_mutation(state, counts, individuals, loci)
+        # do the recombination step
+        nevents = np.random.poisson(r)
+        #if nevents*2 > N_hap:
+            #raise ValueError('sampling too many things without replacement')
+        if nevents:
+            individuals = np.random.randint(N_hap, size=2*nevents)
+            wfcompens.multiple_recombination(state, counts, individuals)
+        # do the selection step
+        wfcompens.reselection(haplotype_probs, fitnesses, counts)
+        counts = np.random.multinomial(N_hap, haplotype_probs)
+        # increment the number of observed generational transitions
+        ntransitions += 1
+    return ntransitions
+
+class Accum:
+    def __init__(self, N_hap, mu, r, s):
+        self.N_hap = N_hap
+        self.mu = mu
+        self.r = r
+        self.fitnesses = np.array([1, 1-s, 1-s, 1], dtype=float)
+        self.type_1_times = []
+        self.type_2_times = []
+    def __call__(self):
+        history = sample_forward(
+                self.N_hap, self.mu, self.r, self.fitnesses)
+        # Check history invariants.
+        if history[0][0] != 0:
+            raise ValueError('expected first state in the path to be fixed AB')
+        if history[-1][0] != 3:
+            raise ValueError('expected last state in the path to be fixed ab')
+        # Compute the type 1 or type 2 wait time from the history.
+        total_dwell = 0
+        low_fitness_fixation = False
+        for meta, dwell in reversed(history):
+            total_dwell += dwell
+            if meta in (1, 2):
+                low_fitness_fixation = True
+            if meta == 0:
+                break
+        if low_fitness_fixation:
+            self.type_1_times.append(total_dwell)
+        else:
+            self.type_2_times.append(total_dwell)
+        return False
 
 def get_response_content(fs):
+    #
+    N_hap = fs.N_diploid
     # TODO check s vs N_diploid so that selection is not too big
     # as to make fitnesses negative or zero
     #
     (t1, v1), (t2, v2) = get_backward_info(
             fs.N_diploid, fs.theta, fs.Nr, fs.Ns)
     #
-    # define some fixed values
-    N_diploid = 6
-    N_hap = 2 * N_diploid
-    plot_density = 8
-    # define some mutation rates
-    theta_values = [0.001, 0.01, 0.1, 1.0]
-    # define some selection coefficients to plot
-    Ns_low = 0.0
-    Ns_high = 3.0
-    Ns_values = np.linspace(Ns_low, Ns_high, 3*plot_density + 1)
-    # get the values for each h
-    Nr_values = (0, 5)
-    arr_0 = get_plot_array(
-            N_diploid, Nr_values[0], theta_values, Ns_values)
-    arr_1 = get_plot_array(
-            N_diploid, Nr_values[1], theta_values, Ns_values)
-    ylab='"expected returns to AB"'
-    # define x and y plot limits
-    xlim = (Ns_low, Ns_high)
-    ylim = (np.min((arr_0, arr_1)), np.max((arr_0, arr_1)))
-    ylogstr = '""'
-    # http://sphaerula.com/legacy/R/multiplePlotFigure.html
+    f = Accum(N_hap, fs.theta / 2, fs.Nr, fs.Ns / fs.N_diploid)
+    #
+    nseconds_max = 5.0
+    info = combobreaker.run_callable(f, nseconds_max, fs.nsamples_max)
+    #
     out = StringIO()
-    print >> out, mk_call_str(
-            'par',
-            mfrow='c(1,2)',
-            oma='c(0,0,2,0)',
-            )
-    print >> out, get_plot(
-            'left', Nr_values[0], arr_0, theta_values, Ns_values,
-            xlim, ylim, ylogstr, ylab)
-    print >> out, get_plot(
-            'right', Nr_values[1], arr_1, theta_values, Ns_values,
-            xlim, ylim, ylogstr, '""')
-    print >> out, mk_call_str(
-            'title',
-            '"expected number of returns to AB, 2N=%s"' % N_hap,
-            outer='TRUE',
-            )
-    script = out.getvalue().rstrip()
-    # create the R plot image
-    device_name = Form.g_imageformat_to_r_function[fs.imageformat]
-    retcode, r_out, r_err, image_data = RUtil.run_plotter_no_table(
-            script, device_name)
-    if retcode:
-        raise RUtil.RError(r_err)
-    return image_data
+    print >> out, 'exact results:'
+    print >> out
+    print >> out, 'Type 1 compensatory substitution time expectation:'
+    print >> out, t1
+    print >> out
+    print >> out, 'Type 1 compensatory substitution time variance:'
+    print >> out, v1
+    print >> out
+    print >> out, 'Type 2 compensatory substitution time expectation:'
+    print >> out, t2
+    print >> out
+    print >> out, 'Type 2 compensatory substitution time variance:'
+    print >> out, v2
+    print >> out
+    print >> out
+    print >> out, 'forward sampling results:'
+    print >> out
+    print >> out, 'Type 1 compensatory substitution time expectation:'
+    print >> out, np.mean(f.type_1_times)
+    print >> out
+    print >> out, 'Type 1 compensatory substitution time variance:'
+    print >> out, np.var(f.type_1_times)
+    print >> out
+    print >> out, 'Type 2 compensatory substitution time expectation:'
+    print >> out, np.mean(f.type_2_times)
+    print >> out
+    print >> out, 'Type 2 compensatory substitution time variance:'
+    print >> out, np.var(f.type_2_times)
+    print >> out
+    return out.getvalue()
 
 
 def main():
