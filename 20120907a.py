@@ -1,5 +1,5 @@
 """
-Check W-F mean and variance for the two compensatory substitution pathways. [UNFINISHED]
+Check W-F mean and variance for the two compensatory substitution pathways.
 
 Compare estimates obtained by forward simulation
 to estimates obtained through numerical solutions of systems of equations
