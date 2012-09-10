@@ -9,8 +9,27 @@ linear algebra operations on matrices whereas the other module
 uses forward simulation on state vectors.
 """
 
+import numpy as np
+from scipy import linalg
+
 import MatrixUtil
 import hittingtime
+
+def get_substitution_info(P):
+    """
+    Get properties of an entire compensatory substitution.
+    Unlike the type 1 and type 2 info functions,
+    returns to AB fixation are counted towards the substitution path length.
+    @param P: a huge transition matrix which is not modified
+    @return: expectation and variance of compensatory substitution time
+    """
+    nstates = len(P)
+    p = [i for i in range(nstates) if i != 3]
+    Q = P[p, :][:, p]
+    n = nstates - 1
+    t = linalg.solve(np.eye(n) - Q, np.ones(n))
+    v = 2*linalg.solve(np.eye(n) - Q, t) - t * (t + 1)
+    return t[0], v[0]
 
 def get_type_2_info(P):
     """
