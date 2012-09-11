@@ -156,7 +156,6 @@ def subsample_pmf_without_replacement(distn, n):
 def multinomial_log_pmf_vectorized(n, distn, counts):
     return gammaln(n+1) - np.sum(gammaln(counts+1)) + np.sum(counts*np.log(distn))
 
-
 class TestStatsUtil(unittest.TestCase):
 
     def test_poisson_log_pmf(self):
