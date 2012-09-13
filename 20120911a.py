@@ -32,6 +32,7 @@ import multinomstate
 import wffwdcompens
 import wffwdkline
 import combobreaker
+import iterutils
 
 def get_form():
     """
@@ -208,11 +209,23 @@ def extract_type_counts(ancestral_lineage):
     # return the counts of the compensatory substitution types
     return nt1, nt2
 
+def get_ancestral_excess_fitness(ancestral_lineage, fitnesses, fitness_history):
+    excess_total = 0
+    for ma, mb in iterutils.pairwise(ancestral_lineage):
+        for generation in range(ma.generation, mb.generation):
+            excess_total += fitnesses[ma.state] - fitness_history[generation]
+    #
+    ngenerations_total = 0
+    ngenerations_total += ancestral_lineage[-1].generation
+    ngenerations_total -= ancestral_lineage[0].generation
+    #
+    return excess_total / ngenerations_total
+
 def get_response_content(fs):
     # hardcode some values
     N_diploid = 100
     N_hap = N_diploid * 2
-    nseconds = 10
+    nseconds = 3
     Nr = 0
     #
     out = StringIO()
@@ -236,9 +249,11 @@ def get_response_content(fs):
     f = AccumAncestral(N_hap, fs.theta / 2, fs.Ns / N_diploid)
     info = combobreaker.run_callable(f, nseconds=nseconds)
     ancestral_lineage = extract_ancestral_lineage(f.background)
+    """
     for m in ancestral_lineage:
         print m.generation, m.state
     print
+    """
     nt1, nt2 = extract_type_counts(ancestral_lineage)
     print >> out, 'state of the ancestral lineage:'
     print >> out, 'number of type 1 substitutions:', nt1
@@ -247,6 +262,13 @@ def get_response_content(fs):
     pt2 = nt2 / float(nt1 + nt2)
     print >> out, 'proportion of type 1 substitutions:', pt1
     print >> out, 'proportion of type 2 substitutions:', pt2
+    print >> out
+    s = fs.Ns / N_diploid
+    fitnesses = np.array([1, 1-s, 1-s, 1], dtype=float)
+    print >> out, 'excess fitness of fitter allele:', s
+    print >> out, 'excess fitness of ancestral lineage:',
+    print >> out, get_ancestral_excess_fitness(
+            ancestral_lineage, fitnesses, f.fitness_history)
     print >> out
     return out.getvalue()
 
