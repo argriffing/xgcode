@@ -36,6 +36,8 @@ def get_type_2_info(P):
     The expected time for a type 2 event is computed as follows.
     It is the expected number of steps from AB to ab
     conditional on not entering the states AB, Ab, or aB.
+    It should also include a bit of exponential delay that it takes
+    to leave the final fixed AB state before embark.
     @param P: a huge transition matrix which is not modified
     @return: expectation and variance of compensatory substitution time
     """
@@ -52,7 +54,15 @@ def get_type_2_info(P):
             H, plain+forbidden, target)
     v = hittingtime.get_absorption_variance(
             H, plain+forbidden, target)
-    return t[0], v[0]
+    #
+    t0 = t[0]
+    v0 = v[0]
+    # add a geometric rv that depends on probability of leaving fixed AB
+    p = 1 - P[0, 0]
+    t0 += (1 - p) / p
+    v0 += (1 - p) / (p*p)
+    #
+    return t0, v0
 
 def get_type_1_info(P):
     """
@@ -65,6 +75,8 @@ def get_type_1_info(P):
     Note that this formulation depends on the assumption
     that the process associated with the first
     step is equally likely to end up in Ab as in aB.
+    It should also include a bit of exponential delay that it takes
+    to leave the final fixed AB state before embark.
     @param P: a huge transition matrix which is not modified
     @return: expectation and variance of compensatory substitution time
     """
@@ -94,6 +106,10 @@ def get_type_1_info(P):
             H, plain+forbidden, target)
     t_second = t[1]
     v_second = v[1]
+    # add a geometric rv that depends on probability of leaving fixed AB
+    p = 1 - P[0, 0]
+    t_third = (1 - p) / p
+    v_third = (1 - p) / (p*p)
     # return the moments of the distribution accounting for both stages
-    return t_first + t_second, v_first + v_second
+    return t_first + t_second + t_third, v_first + v_second + v_third
 

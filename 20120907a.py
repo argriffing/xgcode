@@ -51,8 +51,17 @@ def get_form():
                 low_inclusive=0),
             Form.Integer(
                 'nsamples_max',
-                'max number of sampled paths', 500),
+                'max number of sampled paths', 2000),
             ]
+
+"""
+Form.CheckGroup('prune_options', 'misc options', [
+    Form.CheckItem(
+        'prune_junk',
+        'do not count time spent waiting '
+        'in the final fixed AB state',
+        True)]),
+"""
 
 def get_form_out():
     return FormOut.Report()
@@ -170,15 +179,23 @@ class Accum:
             raise ValueError('expected first state in the path to be fixed AB')
         if history[-1][0] != 3:
             raise ValueError('expected last state in the path to be fixed ab')
+        #print history[0][1]
+        #print history[-1][1]
+        #print
         # Compute the type 1 or type 2 wait time from the history.
-        total_dwell = 0
         low_fitness_fixation = False
-        for meta, dwell in reversed(history):
-            total_dwell += dwell
+        reversed_tail_history = []
+        for pair in reversed(history):
+            meta, dwell = pair
+            reversed_tail_history.append(pair)
             if meta in (1, 2):
                 low_fitness_fixation = True
             if meta == 0:
                 break
+        total_dwell = sum(dwell for meta, dwell in reversed_tail_history)
+        # the number of steps is one less than the number of visited states
+        total_dwell -= 1
+        #
         if low_fitness_fixation:
             self.type_1_times.append(total_dwell)
         else:
@@ -202,32 +219,33 @@ def get_response_content(fs):
     out = StringIO()
     print >> out, 'exact results:'
     print >> out
-    print >> out, 'Type 1 compensatory substitution time expectation:'
+    print >> out, 'Type-1 compensatory substitution time expectation:'
     print >> out, t1
     print >> out
-    print >> out, 'Type 1 compensatory substitution time variance:'
-    print >> out, v1
+    print >> out, 'Type-1 compensatory substitution time stdev:'
+    print >> out, math.sqrt(v1)
     print >> out
-    print >> out, 'Type 2 compensatory substitution time expectation:'
+    print >> out, 'Type-2 compensatory substitution time expectation:'
     print >> out, t2
     print >> out
-    print >> out, 'Type 2 compensatory substitution time variance:'
-    print >> out, v2
+    print >> out, 'Type-2 compensatory substitution stdev:'
+    print >> out, math.sqrt(v2)
     print >> out
     print >> out
-    print >> out, 'forward sampling results:'
+    print >> out, 'forward sampling results (%s Type-1, %s Type-2):' % (
+            len(f.type_1_times), len(f.type_2_times))
     print >> out
-    print >> out, 'Type 1 compensatory substitution time expectation:'
+    print >> out, 'Type-1 compensatory substitution time expectation:'
     print >> out, np.mean(f.type_1_times)
     print >> out
-    print >> out, 'Type 1 compensatory substitution time variance:'
-    print >> out, np.var(f.type_1_times)
+    print >> out, 'Type-1 compensatory substitution time stdev:'
+    print >> out, np.std(f.type_1_times)
     print >> out
-    print >> out, 'Type 2 compensatory substitution time expectation:'
+    print >> out, 'Type-2 compensatory substitution time expectation:'
     print >> out, np.mean(f.type_2_times)
     print >> out
-    print >> out, 'Type 2 compensatory substitution time variance:'
-    print >> out, np.var(f.type_2_times)
+    print >> out, 'Type-2 compensatory substitution time stdev:'
+    print >> out, np.std(f.type_2_times)
     print >> out
     return out.getvalue()
 
