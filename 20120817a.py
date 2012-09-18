@@ -63,9 +63,10 @@ class G:
         theta, ka, kb, g0, g1, g2 = params
         if any(x < 0 for x in (theta, ka, kb)):
             return float('inf')
-        mutation, selection = params_to_mutation_selection(self.N, params)
+        mutation, fitnesses = kaizeng.params_to_mutation_fitness(
+                self.N, params)
         # get the transition matrix
-        P = kaizeng.get_transition_matrix(self.N, k, mutation, selection)
+        P = kaizeng.get_transition_matrix(self.N, k, mutation, fitnesses)
         v = MatrixUtil.get_stationary_distribution(P)
         return -StatsUtil.multinomial_log_pmf(v, self.observed_counts)
 
@@ -80,10 +81,10 @@ def get_response_content(fs):
     k = 4
     params = (0.002, 1, 1, 0, 0, 0)
     #params = (0.008, 1, 1, 0.5, 1, 1.5)
-    mutation, selection = params_to_mutation_selection(N, params)
+    mutation, fitnesses = kaizeng.params_to_mutation_fitness(N, params)
     #
     tm = time.time()
-    P = kaizeng.get_transition_matrix(N, k, mutation, selection)
+    P = kaizeng.get_transition_matrix(N, k, mutation, fitnesses)
     print 'time to construct transition matrix:', time.time() - tm
     #
     tm = time.time()
@@ -120,8 +121,8 @@ if __name__ == '__main__':
         print 'diploid population size = %s, sequence length = %s' % (
                 N_diploid, nsites)
         print '\t'.join(str(x) for x in ['Input'] + params)
-        mutation, selection = params_to_mutation_selection(N, params)
-        P = kaizeng.get_transition_matrix(N, k, mutation, selection)
+        mutation, fitnesses = kaizeng.params_to_mutation_fitness(N, params)
+        P = kaizeng.get_transition_matrix(N, k, mutation, fitnesses)
         v = MatrixUtil.get_stationary_distribution(P)
         arr = []
         for i in range(nsamples):

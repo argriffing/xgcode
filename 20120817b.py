@@ -7,11 +7,9 @@ samples 10 alleles at random from a large population.
 """
 
 from StringIO import StringIO
-import time
 import math
 
 import numpy as np
-from scipy import optimize
 
 import Form
 import FormOut
