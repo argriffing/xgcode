@@ -25,6 +25,8 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
+# TODO compare vs the version in kaizeng.py module
+"""
 def params_to_mutation_selection(N, params):
     # define the hardcoded number of alleles
     k = 4
@@ -43,6 +45,7 @@ def params_to_mutation_selection(N, params):
     mutation += np.eye(k) - np.diag(np.sum(mutation, axis=1))
     selection = -np.array([g0, g1, g2, 0]) / float(N)
     return mutation, selection
+"""
 
 class G:
     def __init__(self, N, observed_counts):

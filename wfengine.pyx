@@ -18,11 +18,13 @@ $ gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing \
       -I/usr/include/python2.7 -o wfengine.so wfengine.c
 """
 
+# TODO generalize the diallelic transition matrix creation functions
+
 import math
 import numpy as np
 cimport numpy as np
 cimport cython
-from libc.math cimport log
+from libc.math cimport log, exp
 
 np.import_array()
 
@@ -230,8 +232,96 @@ def expand_multinomials(
     # Return the array.
     return M
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef mvhyperg(
+        np.ndarray[np.int_t, ndim=1] s_large,
+        np.ndarray[np.int_t, ndim=1] s_small,
+        np.ndarray[np.float64_t, ndim=1] log_fact,
+        ):
+    """
+    Multivariate hypergeometric log likelihood.
+    This is named similarly to the fortran function in flib.
+    @return: log likelihood
+    """
+    # get the number of bins
+    cdef int k = s_large.shape[0]
+    cdef int i
+    # check for impossible selections
+    for i in range(k):
+        if s_small[i] > s_large[i]:
+            return g_math_neg_inf
+    # get the number of balls
+    cdef int N = 0
+    cdef int n = 0
+    cdef int v_N, v_n
+    cdef double log_num = 0
+    cdef double log_den = 0
+    for i in range(k):
+        v_N = s_large[i]
+        v_n = s_small[i]
+        N += v_N
+        n += v_n
+        log_num += log_fact[v_N] - log_fact[v_n] - log_fact[v_N - v_n]
+    log_den += log_fact[N] - log_fact[n] - log_fact[N-n]
+    return log_num - log_den
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def reduce_hypergeometric(
+        np.ndarray[np.int_t, ndim=2] M_large,
+        np.ndarray[np.int_t, ndim=2] M_small,
+        np.ndarray[np.float64_t, ndim=1] w_large,
+        ):
+    """
+    @param M_large: states defined by N balls in k bins
+    @param M_small: states defined by n balls in k bins
+    @param w_large: weight per large state
+    @return: weight per small state
+    """
+    # nstates_large is the number of larger samples
+    # nstates_small is the number of smaller samples
+    # k is the number of unique microstates.
+    # N is the size of the larger sample.
+    # n is the size of the smaller sample.
+    cdef int nstates_large = M_large.shape[0]
+    cdef int nstates_small = M_small.shape[0]
+    cdef int k = M_large.shape[1]
+    cdef int N = M_large[0].sum()
+    cdef int n = M_small[0].sum()
+    cdef int i, j
+    cdef double loglik
+    cdef np.ndarray[np.float64_t, ndim=1] w_small = np.zeros(nstates_small)
+    cdef np.ndarray[np.float64_t, ndim=1] log_fact = get_log_fact_array(N)
+    for i in range(nstates_small):
+        for j in range(nstates_large):
+            loglik = mvhyperg(M_large[j], M_small[i], log_fact)
+            w_small[i] += w_large[j] * exp(loglik)
+    return w_small
+
+@cython.cdivision(True)
+cdef double diallelic_recessive(int N, int k, double s, double h) nogil:
+    """
+    This uses selection notation analogous to Kai Zeng 2010.
+    When 0 < s <= 1 the first allele is more fit.
+    When 0 <= h < 1/2 the first allele is recessive.
+    When h = 1/2 the selection is genic additive.
+    When 1/2 < h <= 1 the first allele is dominant.
+    """
+    cdef int r = N - k
+    cdef double f00 = 1.0
+    cdef double f11 = 1.0 - s
+    cdef double f01 = h * f00 + (1-h) * f11
+    cdef double aa = f00*k*k
+    cdef double ab = f01*k*r
+    cdef double bb = f11*r*r
+    return (aa + ab) / (aa + 2*ab + bb)
+
 @cython.cdivision(True)
 cdef double genic_diallelic(int N, int k, double s) nogil:
+    """
+    This uses the notation in Kai Zeng 2010.
+    """
     cdef int r = N - k
     cdef double f00 = 1.0
     cdef double f11 = 1.0 - s
@@ -302,6 +392,32 @@ def create_genic_diallelic_ohta(int N_diploid, double s):
     # in the parent and child generations respectively
     for i in range(N+1):
         p = genic_diallelic_ohta(N, i, s)
+        log_p = log(p)
+        log_pcompl = log(1-p)
+        for j in range(N+1):
+            M[i, j] = log_fact[N] - log_fact[j] - log_fact[N-j]
+            if j:
+                M[i, j] += j * log_p
+            if N-j:
+                M[i, j] += (N-j) * log_pcompl
+    return M
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def create_diallelic_recessive(int N_diploid, double s, double h):
+    # TODO this is mostly copy and paste
+    cdef int N = N_diploid * 2
+    # declare intermediate variables
+    cdef int i, j
+    cdef double p, log_p, log_pcompl
+    # init the transition matrix
+    cdef np.ndarray[np.float64_t, ndim=2] M = np.zeros((N+1,  N+1))
+    # Precompute some logarithms of factorials up to N.
+    cdef np.ndarray[np.float64_t, ndim=1] log_fact = get_log_fact_array(N)
+    # i and j are the number of preferred alleles
+    # in the parent and child generations respectively
+    for i in range(N+1):
+        p = diallelic_recessive(N, i, s, h)
         log_p = log(p)
         log_pcompl = log(1-p)
         for j in range(N+1):
