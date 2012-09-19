@@ -19,6 +19,7 @@ to define the recessiveness.
 
 from StringIO import StringIO
 import time
+import math
 
 import numpy as np
 from scipy import optimize
@@ -30,6 +31,7 @@ import MatrixUtil
 import StatsUtil
 import kaizeng
 import wfengine
+import wrightfisher
 
 def get_form():
     """
@@ -103,6 +105,42 @@ class G:
         v = MatrixUtil.get_stationary_distribution(P)
         return -StatsUtil.multinomial_log_pmf(v, self.observed_counts)
 
+# XXX for testing
+def get_two_allele_distribution(N_big, N_small, f0, f1, f_subsample):
+    """
+    Assumes small genic selection.
+    Assumes small mutation.
+    The mutational bias does not affect the distribution.
+    @param N_big: total number of alleles in the population
+    @param N_small: number of alleles sampled from the population
+    @param f0: fitness of allele 0
+    @param f1: fitness of allele 1
+    @param f_subsample: subsampling function
+    @return: distribution over all non-fixed population states
+    """
+    # construct a transition matrix
+    nstates = N_big + 1
+    P = np.zeros((nstates, nstates))
+    for i in range(nstates):
+        p0, p1 = wrightfisher.genic_diallelic(f0, f1, i, N_big - i)
+        if i == 0:
+            P[i, 1] = 1.0
+        elif i == N_big:
+            P[i, N_big - 1] = 1.0
+        else:
+            for j in range(nstates):
+                logp = StatsUtil.binomial_log_pmf(j, N_big, p0)
+                P[i, j] = math.exp(logp)
+    # find the stationary distribution
+    v = MatrixUtil.get_stationary_distribution(P)
+    MatrixUtil.assert_distribution(v)
+    if not np.allclose(v, np.dot(v, P)):
+        raise ValueError('expected a left eigenvector with eigenvalue 1')
+    # return the stationary distribution conditional on dimorphism
+    print v
+    distn = f_subsample(v, N_small)
+    return distn[1:-1] / np.sum(distn[1:-1])
+
 def get_response_content(fs):
     np.set_printoptions(linewidth=200)
     out = StringIO()
@@ -133,8 +171,7 @@ def get_response_content(fs):
     B = np.zeros((N_hap - 1, 2))
     B[0,0] = 1
     B[-1,-1] = 1
-    X = linalg.solve(I - Q, B)
-    print >> out, X
+    X = linalg.solve((I - Q).T, B)
     # At this point X has two columns, each giving an array of expectations.
     # The first column gives expectations starting from a single A allele.
     # The second column gives expectations starting from a single a allele.
@@ -162,6 +199,11 @@ def get_response_content(fs):
     # print stuff
     print >> out, v_large
     print >> out, v_small
+    """
+    print >> out, get_two_allele_distribution(
+            N_hap, nalleles, 1.0, 1.0, 
+            StatsUtil.subsample_pmf_without_replacement)
+    """
     """
     for i in range(nsamples):
         counts = np.random.multinomial(nsites, v)
