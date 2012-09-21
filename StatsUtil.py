@@ -156,6 +156,24 @@ def subsample_pmf_without_replacement(distn, n):
 def multinomial_log_pmf_vectorized(n, distn, counts):
     return gammaln(n+1) - np.sum(gammaln(counts+1)) + np.sum(counts*np.log(distn))
 
+
+# TODO this is available as scipy.special.logit in scipy devel
+def logit(p):
+    """
+    @param p: a probability
+    @return: an unrestricted floating point number
+    """
+    return log(p) - log(1.0 - p)
+
+# TODO this is available as scipy.special.expit in scipy devel
+def expit(alpha):
+    """
+    @param alpha: an unrestricted floating point number
+    @return: a probability
+    """
+    return exp(alpha) / (exp(alpha) + 1)
+
+
 class TestStatsUtil(unittest.TestCase):
 
     def test_poisson_log_pmf(self):

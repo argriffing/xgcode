@@ -1,5 +1,5 @@
 """
-Check power to detect recessiveness. [UNFINISHED]
+Check power to detect recessiveness with mutational bias.
 
 Assume diploids (required for recessiveness to be meaningful)
 with genomic sites which are evolving
