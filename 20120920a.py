@@ -45,11 +45,11 @@ def get_form():
             Form.Integer('nalleles', 'number of sampled alleles per site',
                 10, low=1),
             Form.Float('mutation_rate', 'expected mutations per generation',
-                0.01, low_exclusive=0, high_inclusive=1),
+                0.01, low_exclusive=0, high_exclusive=1),
             Form.Float('Ns', 'selection coefficient Ns',
                 1.00, low_exclusive=0),
             Form.Float('h', 'dominance h (0.5 if additive)', 0.5,
-                low_inclusive=0, high_inclusive=1),
+                low_exclusive=0, high_exclusive=1),
             ]
 
 def get_form_out():
@@ -193,7 +193,11 @@ def get_response_content(fs):
     print >> out
     #
     # try to estimate the parameters
-    X0 = np.array([-2, 0, 0], dtype=float)
+    X0 = np.array([
+        StatsUtil.logit(mutation_rate),
+        math.log(fitness_ratio),
+        StatsUtil.logit(h),
+        ], dtype=float)
     g = G(N, n, counts)
     Xopt = optimize.fmin(g, X0)
     #
@@ -205,16 +209,21 @@ def get_response_content(fs):
             N, n,
             mutation_rate_hat, fitness_ratio_hat, h_hat)
     #
+    negloglik_alt = g(Xopt)
+    #
     print >> out, 'estim. mutation rate:', mutation_rate_hat
     print >> out, 'estim. fitness ratio:', fitness_ratio_hat
     print >> out, 'estim. h:', h_hat
     print >> out, 'implied finite polymorphic diallelic distribution:'
     print >> out, v_small_hat
-    print >> out, 'negative log likelihood:', g(Xopt)
+    print >> out, 'negative log likelihood:', negloglik_alt
     print >> out
     #
     # constrain to additive selection
-    X0 = np.array([-2, 0], dtype=float)
+    X0 = np.array([
+        StatsUtil.logit(mutation_rate),
+        math.log(fitness_ratio),
+        ], dtype=float)
     g = G_additive(N, n, counts)
     Xopt = optimize.fmin(g, X0)
     a, b = Xopt.tolist()
@@ -224,13 +233,21 @@ def get_response_content(fs):
     v_small_hat = get_sample_distn(
             N, n,
             mutation_rate_hat, fitness_ratio_hat, h_hat)
+    #
+    negloglik_null = g(Xopt)
+    #
     print >> out, '-- inference assuming additive selection (h = 0.5) --'
     print >> out, 'estim. mutation rate:', mutation_rate_hat
     print >> out, 'estim. fitness ratio:', fitness_ratio_hat
     print >> out, 'estim. h:', h_hat
     print >> out, 'implied finite polymorphic diallelic distribution:'
     print >> out, v_small_hat
-    print >> out, 'negative log likelihood:', g(Xopt)
+    print >> out, 'negative log likelihood:', negloglik_null
+    print >> out
+    #
+    D = 2*(negloglik_null - negloglik_alt)
+    print >> out, 'likelihood ratio test statistic:', D
+    print >> out, 'chi squared 1-df 0.05 significance threshold:', 3.84
     print >> out
     #
     """
