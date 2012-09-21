@@ -50,21 +50,22 @@ def get_fixation_probability_chen(p, s, h):
     @param h: dominance
     @return: fixation probability
     """
+    s_eff = 2.0 * s
     beta = 2.0 * h - 1.0
-    if not s:
+    if not s_eff:
         return p
     if not beta:
-        return math.expm1(-s*p) / math.expm1(-s)
+        return math.expm1(-s_eff*p) / math.expm1(-s_eff)
     alpha = h / beta
-    if beta * s > 0:
+    if beta * s_eff > 0:
         # overdominant if 0 < alpha < 1
         f = erfi
-    elif beta * s < 0:
+    elif beta * s_eff < 0:
         # underdominant if 0 < alpha < 1
         f = special.erf
     else:
         raise ValueError
-    L = math.sqrt(abs(beta * s))
+    L = math.sqrt(abs(beta * s_eff))
     a0 = f(L*(0 - alpha))
     a1 = f(L*(p - alpha))
     b0 = f(L*(0 - alpha))

@@ -39,9 +39,9 @@ def get_form():
     """
     return [
             Form.Integer('N_diploid', 'diploid population size',
-                100, low=3, high=200),
+                100, low=3, high=400),
             Form.Integer('nmutants', 'initial number of mutant alleles',
-                80, low=1, high=400),
+                80, low=1, high=800),
             Form.Sequence('s_values', 'selection values',
                 ('10', '20', '30')),
             Form.Sequence('h_values', 'dominance values',
@@ -65,6 +65,14 @@ def get_presets():
                     'nmutants' : '160',
                     's_values' : ('-1', '0', '1'),
                     'h_values' : ('2', '3', '5', '7'),
+                    }),
+            Form.Preset(
+                'check confounding',
+                {
+                    'N_diploid' : '200',
+                    'nmutants' : '1',
+                    's_values' : ('1', '2', '4'),
+                    'h_values' : ('0.5', '0.25'),
                     }),
                 ]
 
@@ -116,7 +124,7 @@ def get_response_content(fs):
     for h in h_values:
         for s in s_values:
             for method_name in ('finite', 'diffusion'):
-                sigma = s / float(N_hap)
+                sigma = s / float(fs.N_diploid)
                 #
                 fAA = 1.0 + sigma
                 faA = 1.0 + h * sigma
@@ -129,7 +137,7 @@ def get_response_content(fs):
                         fs.N_diploid, fAA, faA, faa))
                     MatrixUtil.assert_transition_matrix(P)
                     v = get_pfix_finite(P)
-                    pfix = v[fs.nmutants]
+                    pfix = v[fs.nmutants - 1]
                 else:
                     raise Exception('internal error')
                 values = (
