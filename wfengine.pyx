@@ -300,6 +300,20 @@ def reduce_hypergeometric(
     return w_small
 
 @cython.cdivision(True)
+cdef double diallelic_chen(
+        int N, int k, double fAA, double faA, double faa) nogil:
+    """
+    Use the notation of Christina Chen et al.
+    The title of the paper is
+    Effects of dominance on the probability of fixation of a mutant allele.
+    """
+    cdef int r = N - k
+    cdef double AA = fAA*k*k
+    cdef double aA = faA*k*r
+    cdef double aa = faa*r*r
+    return (AA + aA) / (AA + 2*aA + aa)
+
+@cython.cdivision(True)
 cdef double diallelic_recessive(int N, int k, double s, double h) nogil:
     """
     This uses selection notation analogous to Kai Zeng 2010.
@@ -418,6 +432,32 @@ def create_diallelic_recessive(int N_diploid, double s, double h):
     # in the parent and child generations respectively
     for i in range(N+1):
         p = diallelic_recessive(N, i, s, h)
+        log_p = log(p)
+        log_pcompl = log(1-p)
+        for j in range(N+1):
+            M[i, j] = log_fact[N] - log_fact[j] - log_fact[N-j]
+            if j:
+                M[i, j] += j * log_p
+            if N-j:
+                M[i, j] += (N-j) * log_pcompl
+    return M
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def create_diallelic_chen(int N_diploid, double fAA, double faA, double faa):
+    # TODO this is mostly copy and paste
+    cdef int N = N_diploid * 2
+    # declare intermediate variables
+    cdef int i, j
+    cdef double p, log_p, log_pcompl
+    # init the transition matrix
+    cdef np.ndarray[np.float64_t, ndim=2] M = np.zeros((N+1,  N+1))
+    # Precompute some logarithms of factorials up to N.
+    cdef np.ndarray[np.float64_t, ndim=1] log_fact = get_log_fact_array(N)
+    # i and j are the number of preferred alleles
+    # in the parent and child generations respectively
+    for i in range(N+1):
+        p = diallelic_chen(N, i, fAA, faA, faa)
         log_p = log(p)
         log_pcompl = log(1-p)
         for j in range(N+1):
