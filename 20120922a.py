@@ -85,9 +85,17 @@ def get_pfix_transformed(p0, s_in, h):
 def get_pfix_transformed_limit(s_in, h):
     s = s_in * 2
     b = 2.0 * h - 1.0
-    #XXX
+    #
+    if not s:
+        #XXX is this right
+        # limit s->0 of
+        # (1/sqrt(pi)) * ( 2*sqrt(b)*sqrt(s)*exp(a*a*b*s) ) /
+        # ( erfi(sqrt(b)*sqrt(s)*(1-a)) + erfi(sqrt(b)*sqrt(s)*a) )
+        return 1.0
     if not b:
-        return float('nan')
+        #XXX is this right
+        # limit as p->0 of (1/p) * ( expm1(-s*p) / expm1(-s) )
+        return s*math.exp(s) / math.expm1(s)
     # transform h to alpha and beta, represented here by a and b
     a = h / (2.0 * h - 1.0)
     # intermediate parameter
@@ -108,8 +116,11 @@ def get_pfix(p0, s, h):
     bot_b = special.erf(q*(b-1))
     return (top_a + top_b) / (bot_a + bot_b)
 
-def scaled_limit(s, h):
+#XXX This function is wrong.
+def scaled_limit(s_in, h):
     """
+    This was just wrong because I used the wrong equation.
+    The next line should have ...(x + b*... instead.
     ( integral from 0 to p of exp( a*x*(1 + b*(1-x)) ) ) ) /
     ( integral from 0 to 1 of exp( a*x*(1 + b*(1-x)) ) ) )
     The first term of the series expansion of the integral
@@ -118,15 +129,16 @@ def scaled_limit(s, h):
     Dividing by p in this first term of the integral expansion
     removes the dependence on p.
     """
+    s = 2*s_in
     a = -s
     b = 2*h
     q = cmath.sqrt(a) / (2 * cmath.sqrt(b))
-    top = 2*cmath.sqrt(a)*cmath.sqrt(b)*cmath.exp(-(b+1)*(b+1)*q*q)
+    top = 2*cmath.sqrt(a)*cmath.sqrt(b)*cmath.exp(-(b+1)*(b+1)*a/(4*b))
     bot_a = special.erf(q*(b+1))
     bot_b = special.erf(q*(b-1))
-    bot = cmath.sqrt(math.pi)*(bot_a + bot_b)
-    return top / bot
+    return top / ( cmath.sqrt(math.pi) * (bot_a + bot_b) )
 
+#XXX This is probably also wrong.
 def second_order_approx(p0, s, h):
     a = -s
     b = 2*h
@@ -152,8 +164,6 @@ def get_response_content(fs):
             'fAA', 'faA', 'faa',
             'pfix',
             'first order',
-            'second order',
-            'inf order',
             )
     print >> out, get_html_table_row(headers)
     #
@@ -166,16 +176,12 @@ def get_response_content(fs):
             faa = 1.0
             #
             pfix = kimura.get_fixation_probability_chen(p0, s, h)
-            #lim = p0 * scaled_limit(s, h)
             lim = p0 * get_pfix_transformed_limit(s, h)
             values = (
                     h, s,
                     fAA, faA, faa,
                     pfix,
-                    lim,
-                    float('nan'),
-                    #second_order_approx(p0, s, h),
-                    get_pfix_transformed(p0, s, h),
+                    lim.real,
                     )
             print >> out, get_html_table_row(values)
     print >> out, '</table></body></html>'
