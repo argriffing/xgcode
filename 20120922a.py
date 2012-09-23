@@ -101,7 +101,7 @@ def get_pfix_transformed_limit(s_in, h):
     # intermediate parameter
     q = cmath.sqrt(b) * cmath.sqrt(s)
     #
-    top = 2*q*cmath.exp(a*a*b*s)
+    top = 2*q*cmath.exp((q*a)**2)
     bot_a = kimura.erfi(q*a)
     bot_b = kimura.erfi(q*(1-a))
     return top / ( cmath.sqrt(math.pi) * (bot_a + bot_b) )
