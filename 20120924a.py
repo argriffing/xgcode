@@ -100,6 +100,30 @@ def get_pfix_transformed_limit(x4Ns, h):
     bot_b = kimura.erfi(q*(1-a))
     return top / ( cmath.sqrt(math.pi) * (bot_a + bot_b) )
 
+def get_pfix_transformed_limit_directed_h(x4Ns, h):
+    """
+    This is an approximation analogous to an approximation by Kimura.
+    @param x4Ns: 4Ns
+    @param h: directed dominance parameter
+    @return: 2N times fixation probability
+    """
+    if not x4Ns:
+        # This is the neutral case.
+        return 1.0
+    if h == 0.5:
+        # This is the genic case.
+        # Checking for exact equality of 0.5 is OK.
+        return - x4Ns / math.expm1(-x4Ns)
+    a = h / (2.0 * h - 1.0)
+    b = 2.0 * h - 1.0
+    #q = cmath.sqrt(b) * cmath.sqrt(x4Ns)
+    d = cmath.sqrt(b * x4Ns)
+    #
+    top = 2*d*cmath.exp((d*a)**2)
+    bot_a = kimura.erfi(d*a)
+    bot_b = kimura.erfi(d*(1-a))
+    return top / ( math.sqrt(math.pi) * (bot_a + bot_b) )
+
 #XXX dont know what is up with this function
 def get_pfix(p0, s, h):
     a = -s
@@ -157,6 +181,7 @@ def get_response_content(fs):
             'w11', 'w12', 'w22',
             'diffusion exact',
             'diffusion approx',
+            'directed h approx',
             )
     print >> out, get_html_table_row(headers)
     #
@@ -170,11 +195,14 @@ def get_response_content(fs):
             #
             diffusion_exact = get_pfix_transformed(p0, x4Ns, h)
             diffusion_approx = p0 * get_pfix_transformed_limit(x4Ns, h)
+            diffusion_approx_d = p0 * get_pfix_transformed_limit_directed_h(
+                    x4Ns, h)
             values = (
                     h, x4Ns, s,
                     w11, w12, w22,
                     diffusion_exact.real,
                     diffusion_approx.real,
+                    diffusion_approx_d.real,
                     )
             print >> out, get_html_table_row(values)
     print >> out, '</table></body></html>'
