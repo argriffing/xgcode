@@ -88,11 +88,68 @@ def get_ts_tv(codons):
                 tv[i, j] = 1
     return ts, tv
 
-def get_syn(codons):
+def get_syn_nonsyn(codons):
     """
-    @return: binary matrix for synonymity
+    Get binary matrices defining synonymous or nonynonymous codon pairs.
+    Speed is not important.
+    @return: two binary matrices
     """
+    ncodons = len(codons)
+    inverse_table = dict((c, i) for i, cs in enumerate(g_code) for c in cs)
+    syn = np.zeros((ncodons, ncodons), dtype=int)
+    for i, ci in enumerate(codons):
+        for j, cj in enumerate(codons):
+            if inverse_table[ci] == inverse_table[cj]:
+                syn[i, j] = 1
+    return syn, 1-syn
 
+def get_compo(codons):
+    """
+    Get a matrix defining site-independent nucleotide composition of codons.
+    Speed is not important.
+    @return: integer matrix
+    """
+    compo = np.zeros((ncodons, 4), dtype=int)
+    for i, c in enumerate(codons):
+        for j, nt in enumerate('acgt'):
+            compo[i, j] = c.count(nt)
+    return compo
+
+def get_asym_compo(codons):
+    """
+    This is an ugly function.
+    Its purpose is to help determine which is the mutant nucleotide type
+    given an ordered pair of background and mutant codons.
+    This determination is necessary if we want to follow
+    the mutation model of Yang and Nielsen 2008.
+    Entry [i, j, k] of the returned matrix gives the number of positions
+    for which the nucleotides are different between codons i and j and
+    the nucleotide type of codon j is 'acgt'[k].
+    Speed is not important.
+    @return: a three dimensional matrix
+    """
+    asym_compo = np.zeros((ncodons, ncodons, 4), dtype=int)
+    for i, ci in enumerate(codons):
+        for j, cj in enumerate(codons):
+            for k, nt in enumerate('acgt'):
+                asym_compo[i, j, k] = sum(1 for a, b in zip(ci, cj) if (
+                    a != b and b == nt))
+    return asym_compo
+
+def get_selection(log_counts, compo, log_nt_weights):
+    """
+    Note that three of the four log nt weights are free parameters.
+    One of the four log weights is zero and the other three
+    are free parameters to be estimated jointly in the
+    maximimum likelihood search,
+    so this function is inside the optimization loop.
+    @param log_counts: logs of empirical codon counts
+    @param compo: codon composition as defined in the get_compo function
+    @param log_nt_weights: un-normalized log mutation process probabilities
+    @return: a matrix map from codon pair to selection difference
+    """
+    #FIXME
+    pass
 
 def main(args):
     #
