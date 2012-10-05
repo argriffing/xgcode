@@ -8,6 +8,7 @@ because for some reason I am adopting a more matlab-like style.
 All matrices in this script are ndarrays as opposed to actual python matrices.
 """
 
+import string
 import math
 import argparse
 from itertools import product
@@ -17,6 +18,9 @@ from scipy import optimize, special, linalg
 
 # http://en.wikipedia.org/wiki/Stop_codon
 g_stop = {'tag', 'taa', 'tga'}
+
+# http://en.wikipedia.org/wiki/Human_mitochondrial_genetics
+g_stop_mito = {'tag', 'taa', 'aga', 'agg'}
 
 # http://en.wikipedia.org/wiki/File:Transitions-transversions-v3.png
 g_ts = {'ag', 'ga', 'ct', 'tc'}
@@ -47,6 +51,36 @@ g_code = {
         ('taa', 'tga', 'tag'),
         }
 
+# http://en.wikipedia.org/wiki/Human_mitochondrial_genetics
+g_code_mito = {
+        ('gct', 'gcc', 'gca', 'gcg'),
+        #('cgt', 'cgc', 'cga', 'cgg', 'aga', 'agg'),
+        ('cgt', 'cgc', 'cga', 'cgg'),
+        ('aat', 'aac'),
+        ('gat', 'gac'),
+        ('tgt', 'tgc'),
+        ('caa', 'cag'),
+        ('gaa', 'gag'),
+        ('ggt', 'ggc', 'gga', 'ggg'),
+        ('cat', 'cac'),
+        #('att', 'atc', 'ata'),
+        ('att', 'atc'),
+        ('tta', 'ttg', 'ctt', 'ctc', 'cta', 'ctg'),
+        ('aaa', 'aag'),
+        #('atg',),
+        ('atg', 'ata'),
+        ('ttt', 'ttc'),
+        ('cct', 'ccc', 'cca', 'ccg'),
+        ('tct', 'tcc', 'tca', 'tcg', 'agt', 'agc'),
+        ('act', 'acc', 'aca', 'acg'),
+        #('tgg',),
+        ('tgg', 'tga'),
+        ('tat', 'tac'),
+        ('gtt', 'gtc', 'gta', 'gtg'),
+        #('taa', 'tga', 'tag'),
+        ('tag', 'taa', 'aga', 'agg'),
+        }
+
 g_mtdna_names = {'human_horai', 'chimp_horai'}
 
 
@@ -70,14 +104,26 @@ def get_fixation_recessive_disease(x):
     b = 1.0 / special.hyp1f1(1.0, 1.5, -xpos).real
     return a + b - 1.0
 
-def enum_codons():
+def get_fixation_dominant_disease(x):
+    """
+    This is an h function in the notation of Yang and Nielsen.
+    This should be applicable entrywise to an ndarray.
+    Speed is important.
+    """
+    xneg = np.clip(x, -np.inf, 0)
+    xpos = np.clip(x, 0, np.inf)
+    a = 1.0 / special.hyp1f1(1.0, 1.5, -xneg).real
+    b = 1.0 / special.hyp1f1(0.5, 1.5, -xpos).real
+    return a + b - 1.0
+
+def enum_codons(stop):
     """
     Enumerate lower case codon strings with all three stop codons at the end.
     Speed does not matter.
     @return: a list of 64 codons
     """
     codons = [''.join(triple) for triple in product('acgt', repeat=3)]
-    return sorted(set(codons) - set(g_stop)) + sorted(g_stop)
+    return sorted(set(codons) - set(stop)) + sorted(stop)
 
 def get_ts_tv(codons):
     """
@@ -99,14 +145,14 @@ def get_ts_tv(codons):
                 tv[i, j] = 1
     return ts, tv
 
-def get_syn_nonsyn(codons):
+def get_syn_nonsyn(code, codons):
     """
     Get binary matrices defining synonymous or nonynonymous codon pairs.
     Speed is not important.
     @return: two binary matrices
     """
     ncodons = len(codons)
-    inverse_table = dict((c, i) for i, cs in enumerate(g_code) for c in cs)
+    inverse_table = dict((c, i) for i, cs in enumerate(code) for c in cs)
     syn = np.zeros((ncodons, ncodons), dtype=int)
     for i, ci in enumerate(codons):
         for j, cj in enumerate(codons):
@@ -260,6 +306,8 @@ def read_yang_mtdna_alignment(codons, lines):
         line = line.strip().lower()
         if line in g_mtdna_names or not line:
             if segments:
+                #cdna = ''.join(segments)
+                #dna = string.translate(cdna, string.maketrans('acgt', 'tgca'))
                 dna = ''.join(segments)
                 codons = zip(*[dna[i::3] for i in range(3)])
                 seq = np.array([c_to_i[''.join(c)] for c in codons], dtype=int)
@@ -331,33 +379,41 @@ def main(args):
     #
     # Precompute some ndarrays
     # according to properties of DNA and the genetic code.
-    all_codons = enum_codons()
-    codons = all_codons[:-3]
+    if args.mtdna:
+        code = g_code_mito
+        stop = g_stop_mito
+    else:
+        code = g_code
+        stop = g_stop
+    #
+    all_codons = enum_codons(stop)
+    codons = all_codons[:-len(stop)]
     ts, tv = get_ts_tv(codons)
-    syn, nonsyn = get_syn_nonsyn(codons)
+    syn, nonsyn = get_syn_nonsyn(code, codons)
     compo = get_compo(codons)
     asym_compo = get_asym_compo(codons)
     #
     # check invariants of precomputed ndarrays
     if len(all_codons) != 64:
         raise Exception
-    if len(codons) != 61:
+    if len(codons) != 64 - len(stop):
         raise Exception
     if np.unique(ts).tolist() != [0, 1]:
         raise Exception
     if np.unique(tv).tolist() != [0, 1]:
         raise Exception
     #
-    # check the genetic code for typos
-    table_codons = list(c for cs in g_code for c in cs)
-    if len(g_code) != 21:
-        raise Exception
-    if len(table_codons) != len(set(table_codons)):
-        raise Exception
-    if set(codons) - set(table_codons):
-        raise Exception(set(all_codons) - set(table_codons))
-    if set(table_codons) - set(all_codons):
-        raise Exception(set(table_codons) - set(all_codons))
+    # check the genetic codes for typos
+    for test_code in (g_code, g_code_mito):
+        table_codons = list(c for cs in test_code for c in cs)
+        if len(test_code) != 21:
+            raise Exception
+        if len(table_codons) != len(set(table_codons)):
+            raise Exception
+        if set(codons) - set(table_codons):
+            raise Exception(set(all_codons) - set(table_codons))
+        if set(table_codons) - set(all_codons):
+            raise Exception(set(table_codons) - set(all_codons))
     #
     # Check reversibility of h functions with respect to F,
     # in the notation of Yang and Nielsen 2008.
@@ -386,25 +442,41 @@ def main(args):
         t1, t2 = args.t1, args.t2
     codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
     print 'raw codon total:', np.sum(codon_counts)
-    codon_counts = codon_counts[:61]
+    print 'raw codon counts:', codon_counts
+    codon_counts = codon_counts[:len(codons)]
     print 'non-stop codon total:', np.sum(codon_counts)
-    pseudocount = 1
+    pseudocount = 0
     codon_counts += pseudocount
-    subs_counts = subs_counts[:61, :61]
+    subs_counts = subs_counts[:len(codons), :len(codons)]
     v = codon_counts / float(np.sum(codon_counts))
     log_counts = np.log(codon_counts)
     print 'codon counts including pseudocount:', codon_counts
     print
     #
     #
-    h = get_fixation_genic
+    #h = get_fixation_genic
+    #h = get_fixation_recessive_disease
+    h = get_fixation_dominant_disease
     theta = np.zeros(6)
     fmin_args = (
             subs_counts, log_counts, v,
             h,
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
-    print optimize.fmin(minimize_me, theta, fmin_args, full_output=True)
+    """
+    results = optimize.fmin(
+            minimize_me, theta, fmin_args,
+            maxiter=10000, maxfun=10000,
+            full_output=True)
+    """
+    results = optimize.fmin_bfgs(
+            minimize_me, theta, args=fmin_args,
+            maxiter=10000,
+            full_output=True)
+    print 'results:', results
+    xopt = results[0]
+    print 'optimal solution vector:', xopt
+    print 'exp optimal solution vector:', np.exp(xopt)
     print
 
 if __name__ == '__main__':
