@@ -349,6 +349,10 @@ def get_log_likelihood(P, v, subs_counts):
     @param v: stationary distribution proportional to observed codon counts
     @param subs_counts: observed substitution counts
     """
+    # XXX a debugging
+    if not np.allclose(np.dot(v, P), v):
+        raise Exception((np.dot(v, P), v))
+    #
     return np.sum(subs_counts * np.log(P.T * v))
 
 def minimize_me(
