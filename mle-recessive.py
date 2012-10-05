@@ -350,8 +350,8 @@ def get_log_likelihood(P, v, subs_counts):
     @param subs_counts: observed substitution counts
     """
     # XXX a debugging
-    if not np.allclose(np.dot(v, P), v):
-        raise Exception((np.dot(v, P), v))
+    #if not np.allclose(np.dot(v, P), v):
+        #raise Exception((np.dot(v, P), v))
     #
     return np.sum(subs_counts * np.log(P.T * v))
 
@@ -377,7 +377,9 @@ def minimize_me(
             log_mu, log_kappa, log_omega, log_nt_weights)
     #
     # return the neg log likelihood
-    return -get_log_likelihood(P, v, subs_counts)
+    ret = -get_log_likelihood(P, v, subs_counts)
+    print ret
+    return ret
 
 def main(args):
     #
@@ -459,8 +461,8 @@ def main(args):
     #
     #
     #h = get_fixation_genic
-    #h = get_fixation_recessive_disease
-    h = get_fixation_dominant_disease
+    h = get_fixation_recessive_disease
+    #h = get_fixation_dominant_disease
     theta = np.zeros(6)
     fmin_args = (
             subs_counts, log_counts, v,
@@ -476,6 +478,7 @@ def main(args):
     results = optimize.fmin_bfgs(
             minimize_me, theta, args=fmin_args,
             maxiter=10000,
+            retall=True,
             full_output=True)
     print 'results:', results
     xopt = results[0]
