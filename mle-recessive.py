@@ -251,12 +251,6 @@ def read_yang_alignments(codons, lines):
         alignments.append(alignment)
     return alignments
 
-def grouper(n, iterable, fillvalue=None):
-    "Collect data into fixed-length chunks or blocks"
-    # grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
-    args = [iter(iterable)] * n
-    return izip_longest(fillvalue=fillvalue, *args)
-
 def read_yang_mtdna_alignment(codons, lines):
     c_to_i = dict((c, i) for i, c in enumerate(codons))
     name = None
@@ -391,12 +385,15 @@ def main(args):
     else:
         t1, t2 = args.t1, args.t2
     codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
+    print 'raw codon total:', np.sum(codon_counts)
+    codon_counts = codon_counts[:61]
+    print 'non-stop codon total:', np.sum(codon_counts)
     pseudocount = 1
-    codon_counts = pseudocount + codon_counts[:61]
+    codon_counts += pseudocount
     subs_counts = subs_counts[:61, :61]
     v = codon_counts / float(np.sum(codon_counts))
     log_counts = np.log(codon_counts)
-    print 'codon counts:', codon_counts
+    print 'codon counts including pseudocount:', codon_counts
     print
     #
     #
