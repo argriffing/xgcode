@@ -125,6 +125,20 @@ def enum_codons(stop):
     codons = [''.join(triple) for triple in product('acgt', repeat=3)]
     return sorted(set(codons) - set(stop)) + sorted(stop)
 
+def get_hamming(codons):
+    """
+    Get the hamming distance between codons, in {0, 1, 2, 3}.
+    Speed does not matter.
+    @param codons: sequence of lower case codon strings
+    @return: matrix of hamming distances
+    """
+    ncodons = len(codons)
+    ham = np.zeros((ncodons, ncodons), dtype=int)
+    for i, ci in enumerate(codons):
+        for j, cj in enumerate(codons):
+            ham[i, j] = sum(1 for a, b in zip(ci, cj) if a != b)
+    return ham
+
 def get_ts_tv(codons):
     """
     Get binary matrices defining codon pairs differing by single changes.
@@ -221,7 +235,7 @@ def get_selection_S(F):
     e = np.ones_like(F)
     return np.outer(e, F) - np.outer(F, e)
 
-def get_P(
+def get_Q(
         ts, tv, syn, nonsyn, compo, asym_compo,
         h,
         log_counts,
@@ -245,7 +259,7 @@ def get_P(
     @param log_kappa: free param for transition transversion rate distinction
     @param log_omega: free param for syn nonsyn rate distinction
     @param log_nt_weights: mostly free param array for mutation equilibrium
-    @return: transition matrix
+    @return: rate matrix
     """
     mu = math.exp(log_mu)
     kappa = math.exp(log_kappa)
@@ -255,8 +269,7 @@ def get_P(
     pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * np.exp(
             np.dot(asym_compo, log_nt_weights)) * h(S)
     Q = pre_Q - np.diag(np.sum(pre_Q, axis=1))
-    P = linalg.expm(Q)
-    return P
+    return Q
 
 def read_yang_alignments(codons, lines):
     """
@@ -370,15 +383,15 @@ def minimize_me(
     log_nt_weights = np.array([log_a, log_c, log_g, 0], dtype=float)
     #
     # construct the transition matrix
-    P = get_P(
+    Q = get_Q(
             ts, tv, syn, nonsyn, compo, asym_compo,
             h,
             log_counts,
             log_mu, log_kappa, log_omega, log_nt_weights)
+    P = linalg.expm(Q)
     #
     # return the neg log likelihood
     ret = -get_log_likelihood(P, v, subs_counts)
-    print ret
     return ret
 
 def get_lb_neg_ll(subs_counts):
@@ -402,6 +415,14 @@ def get_lb_neg_ll(subs_counts):
     h = np.sum(-c*math.log(p) for c, p in zip(counts, probs) if c)
     return h
 
+def get_lb_expected_subs(ham, subs_counts):
+    """
+    Get the lower bound of expected substitutions.
+    This is expected minimum possible number of substitutions
+    between aligned codons.
+    """
+    return np.sum(ham * subs_counts) / float(np.sum(subs_counts))
+
 def main(args):
     #
     # Precompute some ndarrays
@@ -419,6 +440,7 @@ def main(args):
     syn, nonsyn = get_syn_nonsyn(code, codons)
     compo = get_compo(codons)
     asym_compo = get_asym_compo(codons)
+    ham = get_hamming(codons)
     #
     # check invariants of precomputed ndarrays
     if len(all_codons) != 64:
@@ -488,17 +510,62 @@ def main(args):
         h = get_fixation_dominant_disease
     else:
         raise Exception
-    theta = np.zeros(6)
+    #
+    # predefine some plausible parameters but not the scaling parameter
+    log_mu = 0
+    log_kappa = 1
+    log_omega = -3
+    log_nt_weights = np.zeros(4)
+    #
+    # get the rate matrix associated with the initial guess
+    Q = get_Q(
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            h,
+            log_counts,
+            log_mu, log_kappa, log_omega, log_nt_weights)
+    #
+    # get the minimum expected number of substitutions between codons
+    mu_empirical = get_lb_expected_subs(ham, subs_counts)
+    mu_implied = -np.sum(np.diag(Q) * v)
+    log_mu = math.log(mu_empirical) - math.log(mu_implied)
+    print 'lower bound on expected mutations per codon site:', mu_empirical
+    print
+    # construct the initial guess
+    theta = np.array([
+        log_mu,
+        log_kappa,
+        log_omega,
+        0,
+        0,
+        0,
+        ])
+    #
+    # get the log likelihood associated with the initial guess
     fmin_args = (
             subs_counts, log_counts, v,
             h,
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
-    results = optimize.fmin_bfgs(
-            minimize_me, theta, args=fmin_args,
-            maxiter=10000,
-            retall=True,
-            full_output=True)
+    initial_cost = minimize_me(theta, *fmin_args)
+    print 'negative log likelihood of initial guess:', initial_cost
+    print
+    #
+    # search for the minimum log likelihood over multiple parameters
+    if args.fmin == 'simplex':
+        results = optimize.fmin(
+                minimize_me, theta, args=fmin_args,
+                maxfun=10000,
+                maxiter=10000,
+                xtol=1e-8,
+                ftol=1e-8,
+                full_output=True)
+    elif args.fmin == 'bfgs':
+        results = optimize.fmin_bfgs(
+                minimize_me, theta, args=fmin_args,
+                maxiter=10000,
+                full_output=True)
+    else:
+        raise Exception
     print 'results:', results
     xopt = results[0]
     print 'optimal solution vector:', xopt
@@ -510,6 +577,10 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--fmin',
+            choices=('simplex', 'bfgs'),
+            default='simplex',
+            help='black box multivariate optimization')
     parser.add_argument('--disease',
             choices=('genic', 'recessive', 'dominant'),
             default='genic',
