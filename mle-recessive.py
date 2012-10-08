@@ -381,6 +381,27 @@ def minimize_me(
     print ret
     return ret
 
+def get_lb_neg_ll(subs_counts):
+    """
+    Get the lower bound negative log likelihood.
+    It uses an entropy-based calculation.
+    @param subs_counts: codon substitution counts
+    """
+    nstates = subs_counts.shape[0]
+    counts = []
+    for i in range(nstates):
+        for j in range(nstates):
+            if i < j:
+                c = subs_counts[i, j] + subs_counts[j, i]
+                counts.append(c)
+            elif i == j:
+                c = subs_counts[i, j]
+                counts.append(c)
+    # return the entropy of the unordered pair count vector
+    probs = np.array(counts, dtype=float) / np.sum(counts)
+    h = np.sum(-c*math.log(p) for c, p in zip(counts, probs) if c)
+    return h
+
 def main(args):
     #
     # Precompute some ndarrays
@@ -459,22 +480,20 @@ def main(args):
     print 'codon counts including pseudocount:', codon_counts
     print
     #
-    #
-    #h = get_fixation_genic
-    h = get_fixation_recessive_disease
-    #h = get_fixation_dominant_disease
+    if args.disease == 'genic':
+        h = get_fixation_genic
+    elif args.disease == 'recessive':
+        h = get_fixation_recessive_disease
+    elif args.disease == 'dominant':
+        h = get_fixation_dominant_disease
+    else:
+        raise Exception
     theta = np.zeros(6)
     fmin_args = (
             subs_counts, log_counts, v,
             h,
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
-    """
-    results = optimize.fmin(
-            minimize_me, theta, fmin_args,
-            maxiter=10000, maxfun=10000,
-            full_output=True)
-    """
     results = optimize.fmin_bfgs(
             minimize_me, theta, args=fmin_args,
             maxiter=10000,
@@ -485,9 +504,16 @@ def main(args):
     print 'optimal solution vector:', xopt
     print 'exp optimal solution vector:', np.exp(xopt)
     print
+    print 'entropy bound on negative log likelihood:'
+    print get_lb_neg_ll(subs_counts)
+    print
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--disease',
+            choices=('genic', 'recessive', 'dominant'),
+            default='genic',
+            help='the mode of natural selection on unpreferred codons')
     parser.add_argument('--mtdna', action='store_true',
             help='read the mtdna file from the website of Ziheng Yang')
     parser.add_argument(

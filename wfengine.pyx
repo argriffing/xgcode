@@ -13,7 +13,7 @@ and uses python numpy arrays for speed and convenience.
 For compilation instructions see
 http://docs.cython.org/src/reference/compilation.html
 For example:
-$ cython wfengine.pyx
+$ cython -a wfengine.pyx
 $ gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing \
       -I/usr/include/python2.7 -o wfengine.so wfengine.c
 """

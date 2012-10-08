@@ -11,7 +11,7 @@ and uses python numpy arrays for speed and convenience.
 For compilation instructions see
 http://docs.cython.org/src/reference/compilation.html
 For example:
-$ cython wfcompens.pyx
+$ cython -a wfcompens.pyx
 $ gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing \
       -I/usr/include/python2.7 -o wfcompens.so wfcompens.c
 """
