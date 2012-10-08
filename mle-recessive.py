@@ -118,7 +118,7 @@ def get_fixation_dominant_disease(x):
 
 def enum_codons(stop):
     """
-    Enumerate lower case codon strings with all three stop codons at the end.
+    Enumerate lower case codon strings with all stop codons at the end.
     Speed does not matter.
     @return: a list of 64 codons
     """
@@ -550,7 +550,7 @@ def main(args):
     print 'negative log likelihood of initial guess:', initial_cost
     print
     #
-    # search for the minimum log likelihood over multiple parameters
+    # search for the minimum negative log likelihood over multiple parameters
     if args.fmin == 'simplex':
         results = optimize.fmin(
                 minimize_me, theta, args=fmin_args,
