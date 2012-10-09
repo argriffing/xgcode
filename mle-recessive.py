@@ -16,6 +16,9 @@ from itertools import product
 import numpy as np
 from scipy import optimize, special, linalg
 
+import jeffopt
+
+
 # http://en.wikipedia.org/wiki/Stop_codon
 g_stop = {'tag', 'taa', 'tga'}
 
@@ -564,6 +567,10 @@ def main(args):
                 minimize_me, theta, args=fmin_args,
                 maxiter=10000,
                 full_output=True)
+    elif args.fmin == 'jeffopt':
+        results = jeffopt.fmin_jeff_unconstrained(
+                minimize_me, theta, args=fmin_args,
+                )
     else:
         raise Exception
     print 'results:', results
@@ -578,7 +585,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--fmin',
-            choices=('simplex', 'bfgs'),
+            choices=('simplex', 'bfgs', 'jeffopt'),
             default='simplex',
             help='black box multivariate optimization')
     parser.add_argument('--disease',
