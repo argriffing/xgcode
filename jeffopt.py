@@ -1,5 +1,5 @@
 """
-This module has a maximimization function implemented by Jeff Thorne.
+This module has a maximization function implemented by Jeff Thorne.
 
 The maximization function has been extracted from its context by Liwen Zou.
 Speed is not really important in this function, or rather the slowness
