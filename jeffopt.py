@@ -108,7 +108,8 @@ class LogitWrap:
         return self.f(special.logit(X), *args)
 
 def fmin_jeff(f, X_guess, args=()):
-    return fmax_jeff(NegWrap(f), X_guess, args)
+    X, lhood = fmax_jeff(NegWrap(f), X_guess, args)
+    return X, -lhood
 
 def fmin_jeff_unconstrained(f, X_guess, args=()):
     X, lhood = fmin_jeff(LogitWrap(f), special.expit(X_guess), args)
