@@ -322,8 +322,6 @@ def read_yang_mtdna_alignment(codons, lines):
         line = line.strip().lower()
         if line in g_mtdna_names or not line:
             if segments:
-                #cdna = ''.join(segments)
-                #dna = string.translate(cdna, string.maketrans('acgt', 'tgca'))
                 dna = ''.join(segments)
                 codons = zip(*[dna[i::3] for i in range(3)])
                 seq = np.array([c_to_i[''.join(c)] for c in codons], dtype=int)
