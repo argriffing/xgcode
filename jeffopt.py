@@ -13,6 +13,9 @@ import unittest
 import numpy as np
 from scipy import special
 
+g_abstol = 1e-6
+g_incfrac = 0.01
+g_stepfrac = 0.1
 
 def _fmax_jeff(f, X, args, i, oldparam, incstep, lasthood):
     """
@@ -46,7 +49,9 @@ def _fmax_jeff(f, X, args, i, oldparam, incstep, lasthood):
                 # in this while loop.
                 incstep /= 2
 
-def fmax_jeff(f, X_guess, args=(), abstol=1e-6, incfrac=0.01, stepfrac=0.1):
+def fmax_jeff(
+        f, X_guess, args=(),
+        abstol=g_abstol, incfrac=g_incfrac, stepfrac=g_stepfrac):
     """
     Parameters have values between 0 and 1.
     Initial guesses are provided.
@@ -107,11 +112,15 @@ class LogitWrap:
     def __call__(self, X, *args):
         return self.f(special.logit(X), *args)
 
-def fmin_jeff(f, X_guess, args=()):
+def fmin_jeff(
+        f, X_guess, args=(),
+        abstol=g_abstol, incfrac=g_incfrac, stepfrac=g_stepfrac):
     X, lhood = fmax_jeff(NegWrap(f), X_guess, args)
     return X, -lhood
 
-def fmin_jeff_unconstrained(f, X_guess, args=()):
+def fmin_jeff_unconstrained(
+        f, X_guess, args=(),
+        abstol=g_abstol, incfrac=g_incfrac, stepfrac=g_stepfrac):
     X, lhood = fmin_jeff(LogitWrap(f), special.expit(X_guess), args)
     return special.logit(X), lhood
 
