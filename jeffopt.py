@@ -2,8 +2,10 @@
 This module has a maximimization function implemented by Jeff Thorne.
 
 The maximization function has been extracted from its context by Liwen Zou.
-Speed is not really important in this function.
-Most of the delay should be within the evaluation itself.
+Speed is not really important in this function, or rather the slowness
+is dominated by the evaluation of the objective function.
+Test using
+$ python -m unittest jeffopt
 """
 
 import unittest
@@ -11,19 +13,6 @@ import unittest
 import numpy as np
 from scipy import special
 
-
-# Stop likelihood maximization when likelihood can no longer be improved  
-# by at least STOPTHRESH in a cycle.
-STOPTHRESH = 1e-6
-#STOPTHRESH = 1e-3
-
-# what proportion of parameter value to be used when calculating approx. slope
-INCFRAC = 0.01
-#INCFRAC = 0.1
-
-# multiply slope by this if 2nd deriv > 0  
-STEPFRAC = 0.1
-#STEPFRAC = 0.5
 
 def _fmax_jeff(f, X, args, i, oldparam, incstep, lasthood):
     """
@@ -44,7 +33,6 @@ def _fmax_jeff(f, X, args, i, oldparam, incstep, lasthood):
         else:
             X[i] = oldparam + incstep
             lhood = f(X, *args)
-            print lhood
             if lhood >= lasthood:
                 return lhood
             elif X[i] == oldparam:
@@ -58,15 +46,18 @@ def _fmax_jeff(f, X, args, i, oldparam, incstep, lasthood):
                 # in this while loop.
                 incstep /= 2
 
-def fmax_jeff(f, X_guess, args=()):
+def fmax_jeff(f, X_guess, args=(), abstol=1e-6, incfrac=0.01, stepfrac=0.1):
     """
     Parameters have values between 0 and 1.
     Initial guesses are provided.
     Some amount of effort has been taken to match
-    the minimization signatures in scipy.
+    the optimization function signatures in scipy.
     @param f: objective function
     @param X_guess: initial guess of parameters
     @param args: extra args for the objective function
+    @param abstol: stop when we fail to improve log likelihood by this much
+    @param incfrac: proportion of param value for approximate slope
+    @param stepfrac: multiply slope by this if 2nd deriv is greater than zero
     @return: best guess, best objective function value
 	"""
     X = X_guess.copy()
@@ -75,12 +66,12 @@ def fmax_jeff(f, X_guess, args=()):
     oldhood = None
     lhood = None
     #
-    while (oldhood is None or lhood - oldhood > STOPTHRESH):
+    while (oldhood is None or lhood - oldhood > abstol):
         oldhood = lhood
         for i in range(nparams):
             lasthood = lhood
             oldparam = X[i]
-            inc = INCFRAC * min((X[i], 1-X[i]))
+            inc = incfrac * min((X[i], 1-X[i]))
             while oldparam + inc > 1 or oldparam - inc < 0:
                 inc /= 2
             if lasthood is None:
@@ -100,9 +91,9 @@ def fmax_jeff(f, X_guess, args=()):
                         plushood + minushood - 2*nowhood)
             else:
                 # little slope step
-                incstep = STEPFRAC * (plushood - nowhood) / inc
+                incstep = stepfrac * (plushood - nowhood) / inc
             lhood = _fmax_jeff(f, X, args, i, oldparam, incstep, lasthood)
-    return lhood, X
+    return X, lhood
 
 class NegWrap:
     def __init__(self, f):
@@ -120,20 +111,23 @@ def fmin_jeff(f, X_guess, args=()):
     return fmax_jeff(NegWrap(f), X_guess, args)
 
 def fmin_jeff_unconstrained(f, X_guess, args=()):
-    lhood, X = fmin_jeff(LogitWrap(f), special.expit(X_guess), args)
-    return lhood, special.logit(X)
+    X, lhood = fmin_jeff(LogitWrap(f), special.expit(X_guess), args)
+    return special.logit(X), lhood
 
 def _ftest(X):
-    # This is an upward curving parabola with min at 0.5.
+    # This is an upward curving parabola with min at f(0.5) = 0.
     x = X[0]
     return x**2 - x + 0.25
 
+
 class TestOpt(unittest.TestCase):
+
     def test_fmax_jeff(self):
         X_guess = np.array([0.123])
         print 'fmax'
         print X_guess
         print fmax_jeff(_ftest, X_guess)
+
     def test_fmin_jeff(self):
         X_guess = np.array([0.123])
         print 'fmin'
