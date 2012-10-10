@@ -23,10 +23,10 @@ g_A, g_G, g_C, g_T = 0, 1, 2, 3
 # possible combinations of ancestral states,
 # but that would be too complicated for our purposes here.
 g_data = [
-        [2954, 141, 17, 16],
-        [165, 1110, 5, 2],
-        [18, 4, 3163, 374],
-        [15, 2, 310, 2411],
+        2954, 141, 17, 16,
+        165, 1110, 5, 2,
+        18, 4, 3163, 374,
+        15, 2, 310, 2411,
         ]
 
 def get_stationary_distribution(X):
@@ -225,6 +225,16 @@ def check_theano_gradient():
         k : 1.0,
         s : 1.0,
         }
+    print T.grad(p_AG).eval({
+        a : 1.0,
+        c : 1.1,
+        e : 1.2,
+        l : 1.3,
+        #b : 1.0,
+        d : 1.4,
+        k : 1.5,
+        #s : 1.0,
+        })
     #print p_AG.eval(mydict)
     #
     # check the stationary distribution when all rates are the same
@@ -310,6 +320,18 @@ def check_theano_gradient():
         k : 1.0,
         s : 1.0,
         })
+    """
+    my_ll = T.dot(
+            [
+                foo,
+                bar,
+                ],
+            g_data,
+            )
+    """
+
+    
+
 
 def main():
     #check_sympy_derivative()
