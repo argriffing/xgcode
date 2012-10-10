@@ -212,26 +212,104 @@ def check_theano_gradient():
     p_TG = pi_G - (p_TG_n1/p_TG_d1) * T.exp(-c1) + (p_TG_n2/p_TG_d2)*T.exp(-c3)
     p_TC = pi_C + (p_TC_n1/p_TC_d1) * T.exp(-c1) + (p_TC_n2/p_TC_d2)*T.exp(-c6)
     p_TT = pi_T + (p_TT_n1/p_TT_d1) * T.exp(-c1) + (p_TT_n2/p_TT_d2)*T.exp(-c6)
-
-
-
-
-    p_AG = pi_G - ( (c2*c4) / (c1*(c3-c1)) ) * T.exp(-c1) + (
-            ( (c2*c4 - a*(c3 - c1)) / (c3*(c3-c1)) ) * T.exp(-c3) )
+    #
+    #
     print pp(p_AG)
-    print pp(p_AG)
-    """
-    print p_AG.eval({
-        a : 1,
-        c : 1,
-        e : 1,
-        l : 1,
-        #b : 1,
-        d : 1,
-        k : 1,
-        #s : 1,
+    mydict = {
+        a : 1.0,
+        c : 1.0,
+        e : 1.0,
+        l : 1.0,
+        b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        s : 1.0,
+        }
+    #print p_AG.eval(mydict)
+    #
+    # check the stationary distribution when all rates are the same
+    print pi_A.eval({
+        a : 1.0,
+        c : 1.0,
+        e : 1.0,
+        l : 1.0,
+        #b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        #s : 1.0,
         })
-    """
+    print pi_G.eval({
+        a : 1.0,
+        c : 1.0,
+        e : 1.0,
+        l : 1.0,
+        #b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        #s : 1.0,
+        })
+    print pi_C.eval({
+        #a : 1.0,
+        c : 1.0,
+        #e : 1.0,
+        l : 1.0,
+        b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        s : 1.0,
+        })
+    print pi_T.eval({
+        #a : 1.0,
+        c : 1.0,
+        #e : 1.0,
+        l : 1.0,
+        b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        s : 1.0,
+        })
+    #
+    # check that denominators are not zero
+    print p_AG_d1.eval({
+        a : 1.0,
+        c : 1.0,
+        e : 1.0,
+        l : 1.0,
+        #b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        #s : 1.0,
+        })
+    print p_AC_d1.eval({
+        #a : 1.0,
+        c : 1.0,
+        #e : 1.0,
+        l : 1.0,
+        b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        s : 1.0,
+        })
+    print p_AG_d2.eval({
+        a : 1.0,
+        c : 1.0,
+        e : 1.0,
+        l : 1.0,
+        #b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        #s : 1.0,
+        })
+    print p_AC_d2.eval({
+        #a : 1.0,
+        c : 1.0,
+        #e : 1.0,
+        l : 1.0,
+        b : 1.0,
+        d : 1.0,
+        k : 1.0,
+        s : 1.0,
+        })
 
 def main():
     #check_sympy_derivative()
