@@ -50,11 +50,11 @@ def ndot(*args):
     return M
 
 def assert_1d(M):
-    if len(M.shape) != 1:
+    if M.ndim != 1:
         raise MatrixError('the array is not 1d')
 
 def assert_2d(M):
-    if len(M.shape) != 2:
+    if M.ndim != 2:
         raise MatrixError('the array is not 2d')
 
 def assert_allclose(A, B):
