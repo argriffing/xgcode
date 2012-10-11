@@ -33,15 +33,36 @@ def minimize_me(Y):
     S = np.log(np.dot(np.diag(v), linalg.expm(Q)))
     return -np.sum(S * g_data)
 
+def minimize_me_symmetrized(Y):
+    a, b, v = transform_params(Y)
+    Q = np.array([
+        [0, a, b, b],
+        [a, 0, b, b],
+        [b, b, 0, a],
+        [b, b, a, 0],
+        ])
+    Q = np.dot(Q, np.diag(v))
+    Q -= np.diag(np.sum(Q, axis=1))
+    va = np.diag(np.sqrt(v))
+    vb = np.diag(np.reciprocal(np.sqrt(v)))
+    W, U = linalg.eigh(np.dot(np.dot(va, Q), vb))
+    M = np.dot(U, np.dot(np.diag(np.exp(W)), U.T))
+    P = np.dot(vb, np.dot(M, va))
+    S = np.log(np.dot(np.diag(v), P))
+    return -np.sum(S * g_data)
+
 def main():
-    results = optimize.fmin(
-            minimize_me, np.zeros(5),
-            maxiter=10000, maxfun=10000, full_output=True)
-    tsrate, tvrate, v = transform_params(results[0])
-    print 'results output from fmin:', results
-    print 'estimated transition rate parameter:', tsrate
-    print 'estimated transversion rate parameter:', tvrate
-    print 'estimated stationary distribution:', v
+    for f in (minimize_me, minimize_me_symmetrized):
+        results = optimize.fmin(
+                f, np.zeros(5),
+                maxiter=10000, maxfun=10000, full_output=True)
+        tsrate, tvrate, v = transform_params(results[0])
+        print '---'
+        print 'results output from fmin:', results
+        print 'estimated transition rate parameter:', tsrate
+        print 'estimated transversion rate parameter:', tvrate
+        print 'estimated stationary distribution:', v
+        print '---'
 
 if __name__ == '__main__':
     main()
