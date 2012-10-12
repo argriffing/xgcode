@@ -61,7 +61,7 @@ g_test_matrices_expm = [
 # The Scaling and Squaring Method for the Matrix Exponential Revisited.
 # b0 through b13
 btable = np.array([
-        64752532480000, 32382376266240000, 7771770303897600,
+        64764752532480000, 32382376266240000, 7771770303897600,
         1187353796428800, 129060195264000, 10559470521600,
         670442572800, 33522128640, 1323241920,
         40840800, 960960, 16380, 182, 1,
@@ -144,9 +144,12 @@ def alg614(U, V):
 
 # from scipy
 def _pade13(A, ident):
+    """
     b = (64764752532480000., 32382376266240000., 7771770303897600.,
     1187353796428800., 129060195264000., 10559470521600., 670442572800.,
     33522128640., 1323241920., 40840800., 960960., 16380., 182., 1.)
+    """
+    b = btable
     A2 = A.dot(A)
     A4 = A2.dot(A2)
     A6 = A4.dot(A2)
@@ -160,7 +163,7 @@ def hardcoded_13_13_pade_approximant(A, I):
     """
     A2 = np.linalg.matrix_power(A, 2)
     A4 = np.linalg.matrix_power(A2, 2)
-    A6 = np.dot(A2, A4)
+    A6 = np.dot(A4, A2)
     U = np.dot(
             A,
             np.dot(
@@ -194,8 +197,8 @@ def alg61(A):
     U, V = alg611(A, m)
     X = alg614(U, V)
     """
-    U, V = hardcoded_13_13_pade_approximant(A, np.eye(A.shape[0]))
-    #U, V = _pade13(A, np.eye(A.shape[0]))
+    #U, V = hardcoded_13_13_pade_approximant(A, np.eye(A.shape[0]))
+    U, V = _pade13(A, np.eye(A.shape[0]))
     r13 = linalg.solve(-U + V, U + V)
     return np.linalg.matrix_power(r13, 2**s)
     """
