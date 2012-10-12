@@ -75,10 +75,8 @@ def expm(A):
 
     """
     n_squarings = 0
-
     A_L1 = linalg.norm(A,1)
     ident = np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
-
     if A_L1 < 1.495585217958292e-002:
         U,V = _pade3(A, ident)
     elif A_L1 < 2.539398330063230e-001:
@@ -92,15 +90,14 @@ def expm(A):
         n_squarings = max(0, int(math.ceil(math.log(A_L1 / maxnorm, 2))))
         A /= 2**n_squarings
         U, V = _pade13(A, ident)
-    print U, V
     R = linalg.solve(-U + V, U + V)
     for i in range(n_squarings):
         R = R.dot(R)
     return R
 
-# implementation of Pade approximations of various degree using the algorithm presented in [Higham 2005]
-# These should apply to both dense and sparse matricies.
-# ident is the identity matrix, which matches A in being sparse or dense.
+# implementation of Pade approximations of various degree
+# using the algorithm presented in [Higham 2005]
+# ident is the identity matrix
 def _pade3(A, ident):
     b = (120., 60., 12., 1.)
     A2 = A.dot(A)
