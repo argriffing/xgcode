@@ -56,23 +56,10 @@ g_test_matrices_expm = [
 def expm(A):
     """
     Compute the matrix exponential using Pade approximation.
-
-    Parameters
-    ----------
-    A : array or sparse matrix, shape(M,M)
-        2D Array or Matrix (sparse or dense) to be exponentiated
-
-    Returns
-    -------
-    expA : array, shape(M,M)
-        Matrix exponential of A
-
-    References
-    ----------
+    Reference is
     N. J. Higham,
     "The Scaling and Squaring Method for the Matrix Exponential Revisited",
     SIAM. J. Matrix Anal. & Appl. 26, 1179 (2005).
-
     """
     n_squarings = 0
     A_L1 = linalg.norm(A,1)
