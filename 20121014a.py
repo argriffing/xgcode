@@ -144,6 +144,29 @@ def eval_f_eigh(Y):
     S = algopy.log(algopy.dot(algopy.diag(v), P))
     return -algopy.sum(S * g_data)
 
+def eval_grad(Y, fn, *moreargs):
+    """
+    compute the gradient of fn in the forward mode of AD
+    """
+    Y = algopy.UTPM.init_jacobian(Y)
+    retval = fn(Y, *moreargs)
+    return algopy.UTPM.extract_jacobian(retval)
+
+def eval_hess(Y, fn, *moreargs):
+    """
+    compute the hessian of fn in the forward mode of AD
+    """
+    Y = algopy.UTPM.init_hessian(Y)
+    retval = fn(Y, *moreargs)
+    return algopy.UTPM.extract_hessian(Y.shape[0], retval)
+
+def eval_grad_eigh(Y):
+    return eval_grad(Y, eval_f_eigh)
+
+def eval_hess_eigh(Y):
+    return eval_hess(Y, eval_f_eigh)
+
+
 def get_form():
     """
     @return: the body of a form
@@ -169,13 +192,13 @@ def get_response_content(fs):
     Y = numpy.zeros(5)
     #
     if fs.use_mle:
-        results = optimize.fmin_ncg(
-            eval_f,
+        results = scipy.optimize.fmin_ncg(
+            eval_f_eigh,
             Y,
-            eval_grad_f,
+            eval_grad_eigh,
             fhess_p=None,
-            fhess=eval_hess_f,
-            args=(q,),
+            fhess=eval_hess_eigh,
+            args=(),
             avextol=1e-05,
             epsilon=1.4901161193847656e-08,
             maxiter=100,
@@ -185,6 +208,23 @@ def get_response_content(fs):
             callback=None)
         Y = results[0]
     #
+    Q = get_numpy_rate_matrix(Y)
+    W = scipy.linalg.eigvals(Q)
+    #
+    print >> out, '--------------------------------'
+    print >> out, 'properties of the function and the point'
+    print >> out, 'at which its Taylor expansion is evaluated'
+    print >> out, '--------------------------------'
+    print >> out, 'Q:'
+    print >> out, Q
+    print >> out, 'Q - Q.T:'
+    print >> out, Q - Q.T
+    print >> out, 'eigenvalues of Q:'
+    print >> out, W
+    print >> out, 'Y:'
+    print >> out, Y
+    print >> out, '--------------------------------'
+    print >> out
     print >> out, '--------------------------------'
     print >> out, ' simple check (functions)       '
     print >> out, '--------------------------------'
@@ -194,7 +234,7 @@ def get_response_content(fs):
     print >> out, 'eval_f_eigh(Y) - eval_f_expm(Y, q)', (
             eval_f_eigh(Y) - eval_f_expm(Y, q))
     print >> out, '--------------------------------'
-    print
+    print >> out
     #
     return out.getvalue()
 
