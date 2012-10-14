@@ -28,7 +28,7 @@ g_data = numpy.array([
         [15, 2, 310, 2411],
         ], dtype=float)
 
-def algopy_expm(A, q=7):
+def algopy_expm(A, q):
     """
     Compute the matrix exponential using Pade approximation.
 
@@ -114,7 +114,7 @@ def eval_f_expm_scipy(Y):
     S = numpy.log(numpy.dot(numpy.diag(v), P))
     return -numpy.sum(S * g_data)
 
-def eval_f_expm(Y, pade_order=7):
+def eval_f_expm(Y, pade_order):
     a, b, v = transform_params(Y)
     Q = algopy.zeros((4,4), dtype=Y)
     Q[0,0] = 0;    Q[0,1] = a;    Q[0,2] = b;    Q[0,3] = b;
@@ -166,6 +166,13 @@ def eval_grad_eigh(Y):
 def eval_hess_eigh(Y):
     return eval_hess(Y, eval_f_eigh)
 
+def eval_grad_expm(Y, q):
+    return eval_grad(Y, eval_f_expm, q)
+
+def eval_hess_expm(Y, q):
+    return eval_hess(Y, eval_f_expm, q)
+
+
 
 def get_form():
     """
@@ -184,11 +191,14 @@ def get_form_out():
     return FormOut.Report()
 
 def get_response_content(fs):
+    numpy.set_printoptions(linewidth=200)
     out = StringIO()
     if fs.q7:
         q = 7
     elif fs.q13:
         q = 13
+    else:
+        raise ValueError
     Y = numpy.zeros(5)
     #
     if fs.use_mle:
@@ -215,24 +225,42 @@ def get_response_content(fs):
     print >> out, 'properties of the function and the point'
     print >> out, 'at which its Taylor expansion is evaluated'
     print >> out, '--------------------------------'
-    print >> out, 'Q:'
-    print >> out, Q
-    print >> out, 'Q - Q.T:'
-    print >> out, Q - Q.T
-    print >> out, 'eigenvalues of Q:'
-    print >> out, W
-    print >> out, 'Y:'
-    print >> out, Y
+    print >> out, 'Q\n', Q
+    print >> out, 'Q - Q.T\n', Q - Q.T
+    print >> out, 'eigenvalues of Q\n', W
+    print >> out, 'Y\n', Y
     print >> out, '--------------------------------'
     print >> out
     print >> out, '--------------------------------'
     print >> out, ' simple check (functions)       '
     print >> out, '--------------------------------'
-    print >> out, 'eval_f_expm_scipy(Y)', eval_f_expm_scipy(Y)
-    print >> out, 'eval_f_expm(Y, q)', eval_f_expm(Y, q)
-    print >> out, 'eval_f_eigh(Y)', eval_f_eigh(Y)
-    print >> out, 'eval_f_eigh(Y) - eval_f_expm(Y, q)', (
+    print >> out, 'eval_f_expm_scipy(Y)\n', eval_f_expm_scipy(Y)
+    print >> out, 'eval_f_expm(Y, q)\n', eval_f_expm(Y, q)
+    print >> out, 'eval_f_eigh(Y)\n', eval_f_eigh(Y)
+    print >> out, 'eval_f_eigh(Y) - eval_f_expm(Y, q)\n', (
             eval_f_eigh(Y) - eval_f_expm(Y, q))
+    print >> out, 'eval_f_eigh(Y) - eval_f_expm_scipy(Y)\n', (
+            eval_f_eigh(Y) - eval_f_expm_scipy(Y))
+    print >> out, 'eval_f_expm(Y, q) - eval_f_expm_scipy(Y)\n', (
+            eval_f_expm(Y, q) - eval_f_expm_scipy(Y))
+    print >> out, '--------------------------------'
+    print >> out
+    print >> out, '--------------------------------'
+    print >> out, ' simple check (gradients)       '
+    print >> out, '--------------------------------'
+    print >> out, 'eval_grad_expm(Y, q)\n', eval_grad_expm(Y, q)
+    print >> out, 'eval_grad_eigh(Y)\n', eval_grad_eigh(Y)
+    print >> out, 'eval_grad_eigh(Y) - eval_grad_expm(Y, q)\n', (
+            eval_grad_eigh(Y) - eval_grad_expm(Y, q))
+    print >> out, '--------------------------------'
+    print >> out
+    print >> out, '--------------------------------'
+    print >> out, ' simple check (hessians)        '
+    print >> out, '--------------------------------'
+    print >> out, 'eval_hess_expm(Y, q)\n', eval_hess_expm(Y, q)
+    print >> out, 'eval_hess_eigh(Y)\n', eval_hess_eigh(Y)
+    print >> out, 'eval_hess_eigh(Y) - eval_hess_expm(Y, q)\n', (
+            eval_hess_eigh(Y) - eval_hess_expm(Y, q))
     print >> out, '--------------------------------'
     print >> out
     #
