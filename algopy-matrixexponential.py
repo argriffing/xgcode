@@ -8,6 +8,76 @@ import numpy as np
 import algopy
 from scipy import optimize, linalg
 
+"""
+# XXX this does not work... and is probably fundamentally flawed
+def algopy_eye(shape, dtype=float, order = 'C'):
+    # Blindly copy and paste algopy zeros from globablfuncs.py
+    # and try to make it do eye instead,
+    # by replacing calls to numpy.zeros to numpy.eye.
+    if np.isscalar(shape):
+        shape = (shape,)
+    if isinstance(dtype, type):
+        return np.eye(shape, dtype=dtype, order=order)
+    elif isinstance(dtype, np.ndarray):
+        return np.eye(shape, dtype=dtype.dtype, order=order)
+    elif isinstance(dtype, algopy.UTPM):
+        D, P = dtype.data.shape[:2]
+        tmp = np.eye((D, P) + shape, dtype = dtype.data.dtype)
+        tmp *= dtype.data.flatten()[0]
+        return dtype.__class__(tmp)
+    elif isinstance(dtype, algopy.Function):
+        return dtype.pushforward(zeros, [shape, dtype, order])
+    else:
+        return np.zeros(shape, dtype=type(dtype), order=order)
+
+def algopy_eye(n, dtype=float):
+    shape = (n, n)
+    M = algopy.zeros(shape, dtype=dtype)
+    algopy.diag(M) = 1
+    return M
+"""
+
+def algopy_eye(n, dtype=float):
+    shape = (n, n)
+    M = algopy.zeros(shape, dtype=dtype)
+    for i in range(n):
+        M[i, i] = 1
+    return M
+
+##############################################
+# This expm stuff was taken from scipy.
+# It has been simplified by removing the sparse matrix implementation
+# and by using a fixed Pade degree of 7
+# instead of a dynamically chosen degree.
+# I vaguely recall that this was the default several years ago.
+
+def algopy_expm(A, n):
+    """
+    Compute the matrix exponential using Pade approximation.
+    Reference --
+    N. J. Higham,
+    "The Scaling and Squaring Method for the Matrix Exponential Revisited",
+    SIAM. J. Matrix Anal. & Appl. 26, 1179 (2005).
+    """
+    # XXX can I get rid of the n argument to this function?
+    # XXX also my algopy_eye function does not work anyway.
+    ident = algopy_eye(n, dtype=A)
+    U, V = _algopy_pade7(A, ident)
+    return algopy.solve(-U + V, U + V)
+
+def _algopy_pade7(A, ident):
+    b = (17297280., 8648640., 1995840., 277200., 25200., 1512., 56., 1.)
+    A2 = algopy.dot(A, A)
+    A4 = algopy.dot(A2, A2)
+    A6 = algopy.dot(A2, A4)
+    U = algopy.dot(A, b[7]*A6 + b[5]*A4 + b[3]*A2 + b[1]*ident)
+    V = b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*ident
+    return U, V
+
+# END expm stuff taken from scipy
+##############################################
+
+
 # AGCT subsititution counts between human and chimp mitochondrial coding dna.
 g_data = np.array([
         [2954, 141, 17, 16],
@@ -61,8 +131,10 @@ def eval_f(Y):
 
     Q = Q * v
     Q -= algopy.diag(algopy.sum(Q, axis=1))
-    B = linalg.expm(Q)
-    S = algopy.log(algopy.dot(algopy.diag(v), B))
+    #P = linalg.expm(Q)
+    # XXX can I get rid of the 4 on the following line?
+    P = algopy_expm(Q, 4)
+    S = algopy.log(algopy.dot(algopy.diag(v), P))
     return -algopy.sum(S * g_data)
 
 def eval_f_eigh(Y):
@@ -87,7 +159,6 @@ def eval_f_eigh(Y):
     va = algopy.diag(algopy.sqrt(v))
     vb = algopy.diag(1./algopy.sqrt(v))
     W, U = algopy.eigh(algopy.dot(algopy.dot(va, Q), vb))
-    #print W
     M = algopy.dot(U, algopy.dot(algopy.diag(algopy.exp(W)), U.T))
     P = algopy.dot(vb, algopy.dot(M, va))
     S = algopy.log(algopy.dot(algopy.diag(v), P))
@@ -108,8 +179,25 @@ def eval_hess_f_eigh(Y):
     Y = algopy.UTPM.init_hessian(Y)
     retval = eval_f_eigh(Y)
     hessian = algopy.UTPM.extract_hessian(5, retval)
-    #print hessian
     return hessian
+
+def eval_grad_f(Y):
+    """
+    compute the gradient of f in the forward mode of AD
+    """
+    Y = algopy.UTPM.init_jacobian(Y)
+    retval = eval_f(Y)
+    return algopy.UTPM.extract_jacobian(retval)
+
+def eval_hess_f(Y):
+    """
+    compute the hessian of f in the forward mode of AD
+    """
+    Y = algopy.UTPM.init_hessian(Y)
+    retval = eval_f(Y)
+    hessian = algopy.UTPM.extract_hessian(5, retval)
+    return hessian
+
 
 def main():
     Y = np.zeros(5)
@@ -138,11 +226,14 @@ def main():
 
     tm = time.time()
     results = optimize.fmin_ncg(
-        eval_f_eigh,             # obj. function
+        #eval_f_eigh,             # obj. function
+        eval_f,
         Y,                  # initial value
-        eval_grad_f_eigh,   # gradient of obj. function
+        #eval_grad_f_eigh,   # gradient of obj. function
+        eval_grad_f,
         fhess_p=None,
-        fhess=eval_hess_f_eigh, # hessian of obj. function
+        #fhess=eval_hess_f_eigh, # hessian of obj. function
+        fhess=eval_hess_f,
         args=(),
         #avextol=1e-04,
         avextol=1e-05,
@@ -155,12 +246,15 @@ def main():
         callback=None)
 
     tsrate, tvrate, v = transform_params(results[0])
-    hess = eval_hess_f_eigh(results[0])
+    #hess = eval_hess_f_eigh(results[0])
+    hess = eval_hess_f(results[0])
     print '--------------------------------'
     print 'time:', time.time() - tm
     print 'results output from fmin:', results
-    print 'objective function value:', eval_f_eigh(results[0])
-    print 'gradient:', eval_grad_f_eigh(results[0])
+    #print 'objective function value:', eval_f_eigh(results[0])
+    print 'objective function value:', eval_f(results[0])
+    #print 'gradient:', eval_grad_f_eigh(results[0])
+    print 'gradient:', eval_grad_f(results[0])
     print 'hessian:', hess
     print 'hess - hess.T:', hess - hess.T
     print 'eigvalsh(hess):', linalg.eigvalsh(hess)
