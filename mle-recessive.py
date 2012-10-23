@@ -323,7 +323,8 @@ def read_yang_mtdna_alignment(codons, lines):
         if line in g_mtdna_names or not line:
             if segments:
                 dna = ''.join(segments)
-                codons = zip(*[dna[i::3] for i in range(3)])
+                #codons = zip(*[dna[i::3] for i in range(3)])
+                codons = [dna[i:i+3] for i in range(0, len(dna), 3)]
                 seq = np.array([c_to_i[''.join(c)] for c in codons], dtype=int)
                 alignment.append((name, seq))
         if line in g_mtdna_names:
@@ -491,6 +492,8 @@ def main(args):
     else:
         t1, t2 = args.t1, args.t2
     codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
+    for a, b in zip(codons, codon_counts):
+        print a, ':', b
     print 'raw codon total:', np.sum(codon_counts)
     print 'raw codon counts:', codon_counts
     codon_counts = codon_counts[:len(codons)]
