@@ -173,6 +173,16 @@ def get_response_content(fs):
         print >> out, kimura_genic(c)
         print >> out
         print >> out
+    print >> out, 'asymptotic(c=0.5, d=0):'
+    print >> out, kimura_1957_54_denominator_analytic_asymptotic(0.5, 0)
+    print >> out
+    #print >> out, 'general_purpose(c=1, d=0):'
+    #print >> out, kimura_1957_54_denominator_analytic_b(1, 0)
+    #print >> out, '(division by zero error)'
+    #print >> out
+    print >> out, 'general_purpose(c=0, d=0.5):'
+    print >> out, kimura_1957_54_denominator_analytic_b(0, 0.5)
+    print >> out
     #
     return out.getvalue()
 
