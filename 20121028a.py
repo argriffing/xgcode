@@ -70,52 +70,57 @@ def get_relative_error_b(c, d):
     z = (y-x) / x
     return refilter(z)
 
+def get_relative_error_c(c, d):
+    x = kimrecessive.denom_quad(c, d)
+    y = kimrecessive.denom_piecewise(c, d)
+    z = (y-x) / x
+    return refilter(z)
+
 def do_integration_demo():
     # http://matplotlib.org/examples/pylab_examples/layer_images.html
-    dc, dd = 0.001, 0.0001
-    c = np.arange(1e-16, 0.1, dc)
-    d = np.arange(-0.05, 0.05, dd)
-    C, D = np.meshgrid(c, d)
-    cmin, cmax, dmin, dmax = np.amin(c), np.amax(c), np.amin(d), np.amax(d)
-    extent = cmin, cmax, dmin, dmax
+    dc, dd = 0.005, 0.005
+    c = np.arange(-0.3, 0.3, dc)
+    d = np.arange(-0.2, 0.2, dd)
+    #C, D = np.meshgrid(c, d)
+    #cmin, cmax, dmin, dmax = np.amin(c), np.amax(c), np.amin(d), np.amax(d)
+    #extent = cmin, cmax, dmin, dmax
+
     fig = plt.figure()
-    #Z = np.vectorize(kimrecessive.denom_quad)(C, D)
-
-    #print C
-    #print D
-
-    Z = np.vectorize(get_relative_error_a)(C, D)
-    im = plt.imshow(
-            #Z, cmap=plt.cm.jet, interpolation='bilinear', extent=extent)
-            Z, cmap=plt.cm.jet, extent=extent)
-    plt.show()
-
-    Z = np.vectorize(get_relative_error_b)(C, D)
-    im = plt.imshow(
-            #Z, cmap=plt.cm.jet, interpolation='bilinear', extent=extent)
-            Z, cmap=plt.cm.jet, extent=extent)
-    plt.show()
 
     """
-    for c in numpy.linspace(-3, 3, 11):
-        for d in numpy.linspace(-0.05, 0.05, 21):
-            x = denom_piecewise(c, d)
-            y = denom_quad(c, d)
-            z = d**2 + (d/c)**2
-            print 'c:         ', c
-            print 'd:         ', d
-            print 'quad:      ', y
-            print 'piecewise: ', x
-            print 'method:    ', z
-            print denom_not_genic(c, d)
-            print denom_near_genic(c, d)
-            if abs(y - x) / y < 1e-6:
-                print 'ok'
-            else:
-                print '*** bad ***'
-            print
-    raise Exception
+    Z = np.zeros((len(d), len(c)))
+    for j, dj in enumerate(d):
+        for i, ci in enumerate(c):
+            Z[j, i] = get_relative_error_a(ci, dj)
+    im = plt.imshow(Z, cmap=plt.cm.jet)
+    plt.show()
+
+    #Z = np.vectorize(get_relative_error_a)(C, D)
+    #im = plt.imshow(Z, cmap=plt.cm.jet, extent=extent)
+    #plt.show()
+
+    Z = np.zeros((len(d), len(c)))
+    for j, dj in enumerate(d):
+        for i, ci in enumerate(c):
+            Z[j, i] = get_relative_error_b(ci, dj)
+    im = plt.imshow(Z, cmap=plt.cm.jet)
+    plt.show()
+
+    #Z = np.vectorize(get_relative_error_b)(C, D)
+    #im = plt.imshow(Z, cmap=plt.cm.jet, extent=extent)
+    #plt.show()
     """
+
+    Z = np.zeros((len(d), len(c)))
+    for j, dj in enumerate(d):
+        for i, ci in enumerate(c):
+            Z[j, i] = get_relative_error_c(ci, dj)
+    im = plt.imshow(Z, cmap=plt.cm.jet)
+    plt.show()
+
+    #Z = np.vectorize(get_relative_error_c)(C, D)
+    #im = plt.imshow(Z, cmap=plt.cm.jet, extent=extent)
+    #plt.show()
 
 def main():
     do_integration_demo()
