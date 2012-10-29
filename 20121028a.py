@@ -77,27 +77,25 @@ def get_relative_error_c(c, d):
     return refilter(z)
 
 def do_integration_demo():
-    # http://matplotlib.org/examples/pylab_examples/layer_images.html
-    dc, dd = 0.005, 0.005
-    c = np.arange(-0.3, 0.3, dc)
-    d = np.arange(-0.2, 0.2, dd)
-    #C, D = np.meshgrid(c, d)
-    #cmin, cmax, dmin, dmax = np.amin(c), np.amax(c), np.amin(d), np.amax(d)
-    #extent = cmin, cmax, dmin, dmax
+    N = 101
+    #c = np.linspace(-100, 100, N)
+    c = np.linspace(-200, 200, N)
+    d = np.linspace(-2, 2, N)
+    #dc, dd = 0.001, 0.001
+    #c = np.arange(1.-0.05, 1.+0.05, dc)
+    #d = np.arange(1.-0.05, 1.+0.05, dd)
+    ##dc, dd = 0.005, 0.005
+    ##c = np.arange(0, 0.3, dc)
+    ##d = np.arange(-0.2, 0.2, dd)
 
     fig = plt.figure()
 
-    """
     Z = np.zeros((len(d), len(c)))
     for j, dj in enumerate(d):
         for i, ci in enumerate(c):
             Z[j, i] = get_relative_error_a(ci, dj)
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()
-
-    #Z = np.vectorize(get_relative_error_a)(C, D)
-    #im = plt.imshow(Z, cmap=plt.cm.jet, extent=extent)
-    #plt.show()
 
     Z = np.zeros((len(d), len(c)))
     for j, dj in enumerate(d):
@@ -106,21 +104,12 @@ def do_integration_demo():
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()
 
-    #Z = np.vectorize(get_relative_error_b)(C, D)
-    #im = plt.imshow(Z, cmap=plt.cm.jet, extent=extent)
-    #plt.show()
-    """
-
     Z = np.zeros((len(d), len(c)))
     for j, dj in enumerate(d):
         for i, ci in enumerate(c):
             Z[j, i] = get_relative_error_c(ci, dj)
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()
-
-    #Z = np.vectorize(get_relative_error_c)(C, D)
-    #im = plt.imshow(Z, cmap=plt.cm.jet, extent=extent)
-    #plt.show()
 
 def main():
     do_integration_demo()

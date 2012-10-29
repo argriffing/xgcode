@@ -56,18 +56,18 @@ def denom_neutral():
 def denom_piecewise(c, d):
     """
     This glues together the analytical solution.
-    It seems to be usually the case that either denom_near_genic
-    or denom_not_genic will give a good solution to the integral,
-    but I have not yet found a good criterion for switching between them.
     This is a second attempt, and this time it is
     with respect to the mpmath hypergeometric function implementations.
     """
-    eps = 1e-8
-    if abs(c) < eps:
+    small_eps = 1e-8
+    large_eps = 1e-3
+    if abs(c) < small_eps:
         return denom_neutral()
-    elif abs(d) < eps:
+    elif abs(d) < small_eps:
         return denom_genic_a(c)
-    elif -1 < d/c < 1e-3:
+    elif abs(d) > 1 - large_eps:
+        return denom_not_genic(c, d)
+    elif -1 < d/c < large_eps:
         return denom_near_genic(c, d)
     else:
         return denom_not_genic(c, d)
