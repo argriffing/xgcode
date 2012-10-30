@@ -85,16 +85,41 @@ def get_lb_expected_subs(ham, subs_counts):
 ##########################################################################
 # algopy stuff involving parameters
 
+def get_fixation_knudsen(S):
+    """
+    This is +gwF = 1/2.
+    """
+    return 1. / kimrecessive.denom_knudsen(0.5*S)
+
 def get_fixation_genic(S):
     return 1. / kimrecessive.denom_genic_a(0.5*S)
 
 def get_fixation_recessive_disease(S):
     sign_S = algopy.sign(S)
-    H = numpy.zeros_like(S)
+    H = algopy.zeros_like(S)
     for i in range(H.shape[0]):
         for j in range(H.shape[1]):
             H[i, j] = 1. / kimrecessive.denom_piecewise(
                     0.5*S[i, j], sign_S[i, j])
+    return H
+
+def get_fixation_dominant_disease(S):
+    sign_S = algopy.sign(S)
+    H = algopy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            H[i, j] = 1. / kimrecessive.denom_piecewise(
+                    0.5*S[i, j], -sign_S[i, j])
+    return H
+
+def get_fixation_unconstrained(S, d):
+    sign_S = algopy.sign(S)
+    D = d * sign_S
+    H = algopy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            H[i, j] = 1. / kimrecessive.denom_piecewise(
+                    0.5*S[i, j], D[i, j])
     return H
 
 def get_selection_F(log_counts, compo, log_nt_weights):
@@ -153,6 +178,24 @@ def get_Q(
     S = get_selection_S(F)
     pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
             algopy.dot(asym_compo, log_nt_weights)) * h(S)
+    Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
+    return Q
+
+def get_Q_unconstrained(
+        ts, tv, syn, nonsyn, compo, asym_compo,
+        h,
+        log_counts,
+        log_mu, log_kappa, log_omega, d, log_nt_weights):
+    """
+    This adds a single parameter.
+    """
+    mu = algopy.exp(log_mu)
+    kappa = algopy.exp(log_kappa)
+    omega = algopy.exp(log_omega)
+    F = get_selection_F(log_counts, compo, log_nt_weights)
+    S = get_selection_S(F)
+    pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
+            algopy.dot(asym_compo, log_nt_weights)) * h(S, d)
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
@@ -262,7 +305,6 @@ def eval_f(
     log_mu = theta[0]
     log_kappa = theta[1]
     log_omega = theta[2]
-    #FIXME: maybe dtype=float for non-algopy?
     log_nt_weights = algopy.zeros(4, dtype=theta)
     log_nt_weights[0] = theta[3]
     log_nt_weights[1] = theta[4]
@@ -280,8 +322,39 @@ def eval_f(
     # return the neg log likelihood
     return -get_log_likelihood(P, v, subs_counts)
 
-#FIXME: copypasted from codon_model.py
-def x_eval_grad_f(theta, *args):
+def eval_f_unconstrained(
+        theta,
+        subs_counts, log_counts, v,
+        h,
+        ts, tv, syn, nonsyn, compo, asym_compo,
+        ):
+    """
+    No dominance/recessivity constraint.
+    @param theta: length seven unconstrained vector of free variables
+    """
+    # unpack theta
+    log_mu = theta[0]
+    log_kappa = theta[1]
+    log_omega = theta[2]
+    d = theta[3]
+    log_nt_weights = algopy.zeros(4, dtype=theta)
+    log_nt_weights[0] = theta[4]
+    log_nt_weights[1] = theta[5]
+    log_nt_weights[2] = theta[6]
+    log_nt_weights[3] = 0
+    #
+    # construct the transition matrix
+    Q = get_Q_unconstrained(
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            h,
+            log_counts,
+            log_mu, log_kappa, log_omega, d, log_nt_weights)
+    P = algopy.expm(Q)
+    #
+    # return the neg log likelihood
+    return -get_log_likelihood(P, v, subs_counts)
+
+def eval_grad_f(theta, *args):
     """
     compute the gradient of f in the forward mode of AD
     """
@@ -289,19 +362,159 @@ def x_eval_grad_f(theta, *args):
     retval = eval_f(theta, *args)
     return algopy.UTPM.extract_jacobian(retval)
 
-#FIXME: copypasted from codon_model.py
-def x_eval_hess_f(theta, *args):
+def eval_hess_f(theta, *args):
     """
     compute the hessian of f in the forward mode of AD
     """
-    n = len(theta)
-    if n != 6:
-        raise Exception(n)
     theta = algopy.UTPM.init_hessian(theta)
     retval = eval_f(theta, *args)
-    return algopy.UTPM.extract_hessian(n, retval)
+    return algopy.UTPM.extract_hessian(len(theta), retval)
 
-def main(args):
+def eval_grad_f_unconstrained(theta, *args):
+    """
+    compute the gradient of f in the forward mode of AD
+    No dominance/recessivity constraint.
+    """
+    theta = algopy.UTPM.init_jacobian(theta)
+    retval = eval_f_unconstrained(theta, *args)
+    return algopy.UTPM.extract_jacobian(retval)
+
+def eval_hess_f_unconstrained(theta, *args):
+    """
+    compute the hessian of f in the forward mode of AD
+    No dominance/recessivity constraint.
+    """
+    theta = algopy.UTPM.init_hessian(theta)
+    retval = eval_f_unconstrained(theta, *args)
+    return algopy.UTPM.extract_hessian(len(theta), retval)
+
+
+def submain_unconstrained_dominance(args):
+    #
+    # Precompute some ndarrays
+    # according to properties of DNA and the genetic code.
+    if args.mtdna:
+        code = npcodon.g_code_mito
+        stop = npcodon.g_stop_mito
+    else:
+        code = npcodon.g_code
+        stop = npcodon.g_stop
+    #
+    all_codons = npcodon.enum_codons(stop)
+    codons = all_codons[:-len(stop)]
+    ts, tv = npcodon.get_ts_tv(codons)
+    syn, nonsyn = npcodon.get_syn_nonsyn(code, codons)
+    compo = npcodon.get_compo(codons)
+    asym_compo = npcodon.get_asym_compo(codons)
+    ham = npcodon.get_hamming(codons)
+    #
+    # read alignments from the file
+    with open(args.infile) as fin:
+        if args.mtdna:
+            alignments = [read_yang_mtdna_alignment(all_codons, fin)]
+        else:
+            alignments = read_yang_alignments(all_codons, fin)
+    print 'read', len(alignments), 'alignments'
+    print
+    #
+    # Extract the codon counts and the substitution counts.
+    # Then compute the empirical codon distribution and log codon counts.
+    if args.mtdna:
+        t1, t2 = g_mtdna_names
+    else:
+        t1, t2 = args.t1, args.t2
+    codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
+    for a, b in zip(codons, codon_counts):
+        print a, ':', b
+    print 'raw codon total:', numpy.sum(codon_counts)
+    print 'raw codon counts:', codon_counts
+    codon_counts = codon_counts[:len(codons)]
+    print 'non-stop codon total:', numpy.sum(codon_counts)
+    pseudocount = 0
+    codon_counts += pseudocount
+    subs_counts = subs_counts[:len(codons), :len(codons)]
+    v = codon_counts / float(numpy.sum(codon_counts))
+    log_counts = numpy.log(codon_counts)
+    print 'codon counts including pseudocount:', codon_counts
+    print
+    #
+    if args.disease == 'unconstrained':
+        h = get_fixation_unconstrained
+    else:
+        raise Exception
+    #
+    # predefine some plausible parameters but not the scaling parameter
+    log_mu = 0
+    log_kappa = 1
+    log_omega = -3
+    d = 0.5
+    log_nt_weights = numpy.zeros(4)
+    #
+    # get the rate matrix associated with the initial guess
+    Q = get_Q_unconstrained(
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            h,
+            log_counts,
+            log_mu, log_kappa, log_omega, d, log_nt_weights)
+    #
+    # get the minimum expected number of substitutions between codons
+    mu_empirical = get_lb_expected_subs(ham, subs_counts)
+    mu_implied = -numpy.sum(numpy.diag(Q) * v)
+    log_mu = math.log(mu_empirical) - math.log(mu_implied)
+    print 'lower bound on expected mutations per codon site:', mu_empirical
+    print
+    # construct the initial guess
+    theta = numpy.array([
+        log_mu,
+        log_kappa,
+        log_omega,
+        d,
+        0,
+        0,
+        0,
+        ])
+    #
+    # get the log likelihood associated with the initial guess
+    fmin_args = (
+            subs_counts, log_counts, v,
+            h,
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            )
+    initial_cost = eval_f_unconstrained(theta, *fmin_args)
+    print 'negative log likelihood of initial guess:',
+    print initial_cost
+    print
+    print 'entropy bound on negative log likelihood:',
+    print get_lb_neg_ll(subs_counts)
+    print
+    #
+    # search for the minimum negative log likelihood over multiple parameters
+    if args.fmin == 'ncg':
+        result = scipy.optimize.fmin_ncg(
+                eval_f_unconstrained,
+                theta,
+                args=fmin_args,
+                fprime=eval_grad_f_unconstrained,
+                fhess=eval_hess_f_unconstrained,
+                maxiter=10000,
+                full_output=True,
+                disp=True,
+                retall=True,
+                )
+    else:
+        raise Exception
+    print 'results:', result
+    xopt = result[0]
+    print 'optimal solution vector:', xopt
+    print 'exp optimal solution vector:', numpy.exp(xopt)
+    print
+    print 'inverse of hessian:'
+    print scipy.linalg.inv(eval_hess_f_unconstrained(xopt, *fmin_args))
+    print
+
+
+
+def submain_constrained_dominance(args):
     #
     # Precompute some ndarrays
     # according to properties of DNA and the genetic code.
@@ -322,7 +535,12 @@ def main(args):
     #
     # Check reversibility of h functions with respect to F,
     # in the notation of Yang and Nielsen 2008.
-    for h in (get_fixation_genic, get_fixation_recessive_disease):
+    for h in (
+            get_fixation_genic,
+            get_fixation_recessive_disease,
+            get_fixation_dominant_disease,
+            get_fixation_knudsen,
+            ):
         F = numpy.array([1.2, 2.3, 0, -1.1])
         S = get_selection_S(F)
         fixation = h(S)
@@ -405,23 +623,33 @@ def main(args):
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
     initial_cost = eval_f(theta, *fmin_args)
-    print 'negative log likelihood of initial guess:', initial_cost
+    print 'negative log likelihood of initial guess:',
+    print initial_cost
+    print
+    print 'entropy bound on negative log likelihood:',
+    print get_lb_neg_ll(subs_counts)
     print
     #
     # search for the minimum negative log likelihood over multiple parameters
     if args.fmin == 'simplex':
         results = scipy.optimize.fmin(
-                eval_f, theta, args=fmin_args,
+                eval_f,
+                theta,
+                args=fmin_args,
                 maxfun=10000,
                 maxiter=10000,
                 xtol=1e-8,
                 ftol=1e-8,
-                full_output=True)
+                full_output=True,
+                )
     elif args.fmin == 'bfgs':
         results = scipy.optimize.fmin_bfgs(
-                eval_f, theta, args=fmin_args,
+                eval_f,
+                theta,
+                args=fmin_args,
                 maxiter=10000,
-                full_output=True)
+                full_output=True,
+                )
     elif args.fmin == 'jeffopt':
         results = jeffopt.fmin_jeff_unconstrained(
                 eval_f, theta, args=fmin_args,
@@ -433,19 +661,23 @@ def main(args):
     print 'optimal solution vector:', xopt
     print 'exp optimal solution vector:', numpy.exp(xopt)
     print
-    print 'entropy bound on negative log likelihood:'
-    print get_lb_neg_ll(subs_counts)
-    print
+
+
+def main(args):
+    if args.disease == 'unconstrained':
+        return submain_unconstrained_dominance(args)
+    else:
+        return submain_constrained_dominance(args)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--fmin',
-            choices=('simplex', 'bfgs', 'jeffopt'),
+            choices=('simplex', 'bfgs', 'jeffopt', 'ncg'),
             default='simplex',
-            help='black box multivariate optimization')
+            help='nonlinear multivariate optimization')
     parser.add_argument('--disease',
-            choices=('genic', 'recessive', 'dominant'),
+            choices=('genic', 'recessive', 'dominant', 'unconstrained'),
             default='genic',
             help='the mode of natural selection on unpreferred codons')
     parser.add_argument('--mtdna', action='store_true',

@@ -17,6 +17,12 @@ import algopy.special
 ###########################################################################
 # These functions are for the analytical solution of a definite integral.
 
+def denom_knudsen(c):
+    """
+    This is +gwF = 1/2.
+    """
+    return algopy.exp(-c)
+
 def denom_complete_dominant(c):
     return algopy.special.dpm_hyp1f1(1.0, 1.5, -2*c)
 
@@ -24,8 +30,8 @@ def denom_complete_recessive(c):
     return algopy.special.dpm_hyp1f1(0.5, 1.5, -2*c)
 
 def denom_not_genic(c, d):
-    if not d:
-        return numpy.nan
+    #if not d:
+        #return numpy.nan
     c2d = c / (2.*d)
     asym_part = algopy.exp(-c)
     sym_a = 1. / (2.*d)
@@ -36,10 +42,10 @@ def denom_not_genic(c, d):
     return asym_part * sym_part
 
 def denom_near_genic(c, d):
-    if not c:
-        return numpy.nan
-    if d in (-1, 1):
-        return numpy.nan
+    #if not c:
+        #return numpy.nan
+    #if d in (-1, 1):
+        #return numpy.nan
     a0 = 1. / (2.*c)
     b01 = 1. / (1.+d)
     b02 = algopy.special.dpm_hyp2f0(1.0, 0.5, (2.*d)/(c*(1.+d)**2))
