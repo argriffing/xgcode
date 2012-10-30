@@ -44,166 +44,9 @@ import algopy.special
 
 import jeffopt
 import kimrecessive
-
-
-# http://en.wikipedia.org/wiki/Stop_codon
-g_stop = {'tag', 'taa', 'tga'}
-
-# http://en.wikipedia.org/wiki/Human_mitochondrial_genetics
-g_stop_mito = {'tag', 'taa', 'aga', 'agg'}
-
-# http://en.wikipedia.org/wiki/File:Transitions-transversions-v3.png
-g_ts = {'ag', 'ga', 'ct', 'tc'}
-g_tv = {'ac', 'ca', 'gt', 'tg', 'at', 'ta', 'cg', 'gc'}
-
-# http://en.wikipedia.org/wiki/DNA_codon_table
-g_code = {
-        ('gct', 'gcc', 'gca', 'gcg'),
-        ('cgt', 'cgc', 'cga', 'cgg', 'aga', 'agg'),
-        ('aat', 'aac'),
-        ('gat', 'gac'),
-        ('tgt', 'tgc'),
-        ('caa', 'cag'),
-        ('gaa', 'gag'),
-        ('ggt', 'ggc', 'gga', 'ggg'),
-        ('cat', 'cac'),
-        ('att', 'atc', 'ata'),
-        ('tta', 'ttg', 'ctt', 'ctc', 'cta', 'ctg'),
-        ('aaa', 'aag'),
-        ('atg',),
-        ('ttt', 'ttc'),
-        ('cct', 'ccc', 'cca', 'ccg'),
-        ('tct', 'tcc', 'tca', 'tcg', 'agt', 'agc'),
-        ('act', 'acc', 'aca', 'acg'),
-        ('tgg',),
-        ('tat', 'tac'),
-        ('gtt', 'gtc', 'gta', 'gtg'),
-        ('taa', 'tga', 'tag'),
-        }
-
-# http://en.wikipedia.org/wiki/Human_mitochondrial_genetics
-g_code_mito = {
-        ('gct', 'gcc', 'gca', 'gcg'),
-        #('cgt', 'cgc', 'cga', 'cgg', 'aga', 'agg'),
-        ('cgt', 'cgc', 'cga', 'cgg'),
-        ('aat', 'aac'),
-        ('gat', 'gac'),
-        ('tgt', 'tgc'),
-        ('caa', 'cag'),
-        ('gaa', 'gag'),
-        ('ggt', 'ggc', 'gga', 'ggg'),
-        ('cat', 'cac'),
-        #('att', 'atc', 'ata'),
-        ('att', 'atc'),
-        ('tta', 'ttg', 'ctt', 'ctc', 'cta', 'ctg'),
-        ('aaa', 'aag'),
-        #('atg',),
-        ('atg', 'ata'),
-        ('ttt', 'ttc'),
-        ('cct', 'ccc', 'cca', 'ccg'),
-        ('tct', 'tcc', 'tca', 'tcg', 'agt', 'agc'),
-        ('act', 'acc', 'aca', 'acg'),
-        #('tgg',),
-        ('tgg', 'tga'),
-        ('tat', 'tac'),
-        ('gtt', 'gtc', 'gta', 'gtg'),
-        #('taa', 'tga', 'tag'),
-        ('tag', 'taa', 'aga', 'agg'),
-        }
+import npcodon
 
 g_mtdna_names = {'human_horai', 'chimp_horai'}
-
-
-##########################################################################
-# precomputation of pure numpy arrays
-
-
-def enum_codons(stop):
-    """
-    Enumerate lower case codon strings with all stop codons at the end.
-    @return: a list of 64 codons
-    """
-    codons = [''.join(triple) for triple in product('acgt', repeat=3)]
-    return sorted(set(codons) - set(stop)) + sorted(stop)
-
-def get_hamming(codons):
-    """
-    Get the hamming distance between codons, in {0, 1, 2, 3}.
-    @param codons: sequence of lower case codon strings
-    @return: matrix of hamming distances
-    """
-    ncodons = len(codons)
-    ham = numpy.zeros((ncodons, ncodons), dtype=int)
-    for i, ci in enumerate(codons):
-        for j, cj in enumerate(codons):
-            ham[i, j] = sum(1 for a, b in zip(ci, cj) if a != b)
-    return ham
-
-def get_ts_tv(codons):
-    """
-    Get binary matrices defining codon pairs differing by single changes.
-    @param codons: sequence of lower case codon strings
-    @return: two binary numpy arrays
-    """
-    ncodons = len(codons)
-    ts = numpy.zeros((ncodons, ncodons), dtype=int)
-    tv = numpy.zeros((ncodons, ncodons), dtype=int)
-    for i, ci in enumerate(codons):
-        for j, cj in enumerate(codons):
-            nts = sum(1 for p in zip(ci,cj) if ''.join(p) in g_ts)
-            ntv = sum(1 for p in zip(ci,cj) if ''.join(p) in g_tv)
-            if nts == 1 and ntv == 0:
-                ts[i, j] = 1
-            if nts == 0 and ntv == 1:
-                tv[i, j] = 1
-    return ts, tv
-
-def get_syn_nonsyn(code, codons):
-    """
-    Get binary matrices defining synonymous or nonynonymous codon pairs.
-    @return: two binary matrices
-    """
-    ncodons = len(codons)
-    inverse_table = dict((c, i) for i, cs in enumerate(code) for c in cs)
-    syn = numpy.zeros((ncodons, ncodons), dtype=int)
-    for i, ci in enumerate(codons):
-        for j, cj in enumerate(codons):
-            if inverse_table[ci] == inverse_table[cj]:
-                syn[i, j] = 1
-    return syn, 1-syn
-
-def get_compo(codons):
-    """
-    Get a matrix defining site-independent nucleotide composition of codons.
-    @return: integer matrix
-    """
-    ncodons = len(codons)
-    compo = numpy.zeros((ncodons, 4), dtype=int)
-    for i, c in enumerate(codons):
-        for j, nt in enumerate('acgt'):
-            compo[i, j] = c.count(nt)
-    return compo
-
-def get_asym_compo(codons):
-    """
-    This is an ugly function.
-    Its purpose is to help determine which is the mutant nucleotide type
-    given an ordered pair of background and mutant codons.
-    This determination is necessary if we want to follow
-    the mutation model of Yang and Nielsen 2008.
-    Entry [i, j, k] of the returned matrix gives the number of positions
-    for which the nucleotides are different between codons i and j and
-    the nucleotide type of codon j is 'acgt'[k].
-    @return: a three dimensional matrix
-    """
-    ncodons = len(codons)
-    asym_compo = numpy.zeros((ncodons, ncodons, 4), dtype=int)
-    for i, ci in enumerate(codons):
-        for j, cj in enumerate(codons):
-            for k, nt in enumerate('acgt'):
-                asym_compo[i, j, k] = sum(1 for a, b in zip(ci, cj) if (
-                    a != b and b == nt))
-    return asym_compo
 
 
 ##########################################################################
@@ -436,41 +279,19 @@ def main(args):
     # Precompute some ndarrays
     # according to properties of DNA and the genetic code.
     if args.mtdna:
-        code = g_code_mito
-        stop = g_stop_mito
+        code = npcodon.g_code_mito
+        stop = npcodon.g_stop_mito
     else:
-        code = g_code
-        stop = g_stop
+        code = npcodon.g_code
+        stop = npcodon.g_stop
     #
-    all_codons = enum_codons(stop)
+    all_codons = npcodon.enum_codons(stop)
     codons = all_codons[:-len(stop)]
-    ts, tv = get_ts_tv(codons)
-    syn, nonsyn = get_syn_nonsyn(code, codons)
-    compo = get_compo(codons)
-    asym_compo = get_asym_compo(codons)
-    ham = get_hamming(codons)
-    #
-    # check invariants of precomputed ndarrays
-    if len(all_codons) != 64:
-        raise Exception
-    if len(codons) != 64 - len(stop):
-        raise Exception
-    if numpy.unique(ts).tolist() != [0, 1]:
-        raise Exception
-    if numpy.unique(tv).tolist() != [0, 1]:
-        raise Exception
-    #
-    # check the genetic codes for typos
-    for test_code in (g_code, g_code_mito):
-        table_codons = list(c for cs in test_code for c in cs)
-        if len(test_code) != 21:
-            raise Exception
-        if len(table_codons) != len(set(table_codons)):
-            raise Exception
-        if set(codons) - set(table_codons):
-            raise Exception(set(all_codons) - set(table_codons))
-        if set(table_codons) - set(all_codons):
-            raise Exception(set(table_codons) - set(all_codons))
+    ts, tv = npcodon.get_ts_tv(codons)
+    syn, nonsyn = npcodon.get_syn_nonsyn(code, codons)
+    compo = npcodon.get_compo(codons)
+    asym_compo = npcodon.get_asym_compo(codons)
+    ham = npcodon.get_hamming(codons)
     #
     # Check reversibility of h functions with respect to F,
     # in the notation of Yang and Nielsen 2008.
@@ -590,7 +411,7 @@ def main(args):
     print
 
 #FIXME: copypasted from codon_model.py
-def eval_f(
+def x_eval_f(
         theta,
         subs_counts, log_counts, v,
         h,
@@ -622,7 +443,7 @@ def eval_f(
     return -get_log_likelihood(P, v, subs_counts)
 
 #FIXME: copypasted from codon_model.py
-def eval_grad_f(theta, *args):
+def x_eval_grad_f(theta, *args):
     """
     compute the gradient of f in the forward mode of AD
     """
@@ -631,7 +452,7 @@ def eval_grad_f(theta, *args):
     return algopy.UTPM.extract_jacobian(retval)
 
 #FIXME: copypasted from codon_model.py
-def eval_hess_f(theta, *args):
+def x_eval_hess_f(theta, *args):
     """
     compute the hessian of f in the forward mode of AD
     """
