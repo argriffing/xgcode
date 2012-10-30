@@ -11,13 +11,18 @@ import unittest
 import numpy
 import scipy
 import scipy.integrate
-import mpmath
 import algopy
 import algopy.special
 
 
 ###########################################################################
 # These functions are for the analytical solution of a definite integral.
+
+def denom_complete_dominant(c):
+    return algopy.special.dpm_hyp1f1(0.5, 1.5, -2*c)
+
+def denom_complete_recessive(c):
+    return algopy.special.dpm_hyp1f1(1.0, 1.5, -2*c)
 
 def denom_not_genic(c, d):
     if not d:
@@ -32,10 +37,9 @@ def denom_not_genic(c, d):
     return asym_part * sym_part
 
 def denom_near_genic(c, d):
-    """
-    This function is better when both |d|<<1 and |d/c|<<1.
-    """
     if not c:
+        return numpy.nan
+    if d in (-1, 1):
         return numpy.nan
     a0 = 1. / (2.*c)
     b01 = 1. / (1.+d)
@@ -62,8 +66,10 @@ def denom_piecewise(c, d):
     small_eps = 1e-8
     large_eps = 1e-3
     if abs(c) < small_eps:
+        #FIXME: this loses Taylor info about c and d
         return denom_neutral()
     elif abs(d) < small_eps:
+        #FIXME: this loses Taylor info about d
         return denom_genic_a(c)
     elif abs(d) > 1 - large_eps:
         return denom_not_genic(c, d)
@@ -89,26 +95,6 @@ def denom_quad(c, d):
             )
     return result[0]
 
-
-def test_analytic_integration_solution():
-    for c in numpy.linspace(-3, 3, 11):
-        for d in numpy.linspace(-0.05, 0.05, 21):
-            x = denom_piecewise(c, d)
-            y = denom_quad(c, d)
-            z = d**2 + (d/c)**2
-            print 'c:         ', c
-            print 'd:         ', d
-            print 'quad:      ', y
-            print 'piecewise: ', x
-            print 'method:    ', z
-            print denom_not_genic(c, d)
-            print denom_near_genic(c, d)
-            if abs(y - x) / y < 1e-6:
-                print 'ok'
-            else:
-                print '*** bad ***'
-            print
-    raise Exception
 
 if __name__ == '__main__':
     unittest.main()
