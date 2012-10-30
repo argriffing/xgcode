@@ -9,6 +9,7 @@ the numerical integration provided by scipy.integrate.quad.
 import unittest
 
 import numpy
+from numpy import testing
 import scipy
 import scipy.integrate
 import algopy
@@ -19,10 +20,10 @@ import algopy.special
 # These functions are for the analytical solution of a definite integral.
 
 def denom_complete_dominant(c):
-    return algopy.special.dpm_hyp1f1(0.5, 1.5, -2*c)
+    return algopy.special.dpm_hyp1f1(1.0, 1.5, -2*c)
 
 def denom_complete_recessive(c):
-    return algopy.special.dpm_hyp1f1(1.0, 1.5, -2*c)
+    return algopy.special.dpm_hyp1f1(0.5, 1.5, -2*c)
 
 def denom_not_genic(c, d):
     if not d:
@@ -96,6 +97,37 @@ def denom_quad(c, d):
     return result[0]
 
 
+class Test_KimuraRecessive(testing.TestCase):
+
+    def test_genic(self):
+        d = 0.0
+        for c in (-0.123, 0.01, 1.23):
+            x = denom_genic_a(c)
+            y = denom_genic_b(c)
+            z = denom_near_genic(c, d)
+            w = denom_quad(c, d)
+            testing.assert_allclose(x, y)
+            testing.assert_allclose(x, z)
+            testing.assert_allclose(x, w)
+
+    def test_complete_dominant(self):
+        d = 1.0
+        for c in (-0.123, 0.01, 1.23):
+            x = denom_complete_dominant(c)
+            y = denom_not_genic(c, d)
+            w = denom_quad(c, d)
+            testing.assert_allclose(x, y)
+            testing.assert_allclose(x, w)
+
+    def test_complete_recessive(self):
+        d = -1.0
+        for c in (-0.123, 0.01, 1.23):
+            x = denom_complete_recessive(c)
+            y = denom_not_genic(c, d)
+            w = denom_quad(c, d)
+            testing.assert_allclose(x, y)
+            testing.assert_allclose(x, w)
+
 if __name__ == '__main__':
-    unittest.main()
+    testing.run_module_suite()
 
