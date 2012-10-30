@@ -13,10 +13,16 @@ import math
 import argparse
 from itertools import product
 
-import numpy as np
-from scipy import optimize, special, linalg
+import numpy
+import scipy
+import scipy.optimize
+import scipy.special
+import scipy.linalg
+import algopy
+import algopy.special
 
 import jeffopt
+import kimrecessive
 
 
 # http://en.wikipedia.org/wiki/Stop_codon
@@ -87,42 +93,13 @@ g_code_mito = {
 g_mtdna_names = {'human_horai', 'chimp_horai'}
 
 
-def get_fixation_genic(x):
-    """
-    This is an h function in the notation of Yang and Nielsen.
-    This should be applicable entrywise to an ndarray.
-    Speed is important.
-    """
-    return 1.0 / special.hyp1f1(1.0, 2.0, -x).real
+##########################################################################
+# precomputation of pure numpy arrays
 
-def get_fixation_recessive_disease(x):
-    """
-    This is an h function in the notation of Yang and Nielsen.
-    This should be applicable entrywise to an ndarray.
-    Speed is important.
-    """
-    xneg = np.clip(x, -np.inf, 0)
-    xpos = np.clip(x, 0, np.inf)
-    a = 1.0 / special.hyp1f1(0.5, 1.5, -xneg).real
-    b = 1.0 / special.hyp1f1(1.0, 1.5, -xpos).real
-    return a + b - 1.0
-
-def get_fixation_dominant_disease(x):
-    """
-    This is an h function in the notation of Yang and Nielsen.
-    This should be applicable entrywise to an ndarray.
-    Speed is important.
-    """
-    xneg = np.clip(x, -np.inf, 0)
-    xpos = np.clip(x, 0, np.inf)
-    a = 1.0 / special.hyp1f1(1.0, 1.5, -xneg).real
-    b = 1.0 / special.hyp1f1(0.5, 1.5, -xpos).real
-    return a + b - 1.0
 
 def enum_codons(stop):
     """
     Enumerate lower case codon strings with all stop codons at the end.
-    Speed does not matter.
     @return: a list of 64 codons
     """
     codons = [''.join(triple) for triple in product('acgt', repeat=3)]
@@ -131,12 +108,11 @@ def enum_codons(stop):
 def get_hamming(codons):
     """
     Get the hamming distance between codons, in {0, 1, 2, 3}.
-    Speed does not matter.
     @param codons: sequence of lower case codon strings
     @return: matrix of hamming distances
     """
     ncodons = len(codons)
-    ham = np.zeros((ncodons, ncodons), dtype=int)
+    ham = numpy.zeros((ncodons, ncodons), dtype=int)
     for i, ci in enumerate(codons):
         for j, cj in enumerate(codons):
             ham[i, j] = sum(1 for a, b in zip(ci, cj) if a != b)
@@ -145,13 +121,12 @@ def get_hamming(codons):
 def get_ts_tv(codons):
     """
     Get binary matrices defining codon pairs differing by single changes.
-    Speed is not important.
     @param codons: sequence of lower case codon strings
     @return: two binary numpy arrays
     """
     ncodons = len(codons)
-    ts = np.zeros((ncodons, ncodons), dtype=int)
-    tv = np.zeros((ncodons, ncodons), dtype=int)
+    ts = numpy.zeros((ncodons, ncodons), dtype=int)
+    tv = numpy.zeros((ncodons, ncodons), dtype=int)
     for i, ci in enumerate(codons):
         for j, cj in enumerate(codons):
             nts = sum(1 for p in zip(ci,cj) if ''.join(p) in g_ts)
@@ -165,12 +140,11 @@ def get_ts_tv(codons):
 def get_syn_nonsyn(code, codons):
     """
     Get binary matrices defining synonymous or nonynonymous codon pairs.
-    Speed is not important.
     @return: two binary matrices
     """
     ncodons = len(codons)
     inverse_table = dict((c, i) for i, cs in enumerate(code) for c in cs)
-    syn = np.zeros((ncodons, ncodons), dtype=int)
+    syn = numpy.zeros((ncodons, ncodons), dtype=int)
     for i, ci in enumerate(codons):
         for j, cj in enumerate(codons):
             if inverse_table[ci] == inverse_table[cj]:
@@ -180,11 +154,10 @@ def get_syn_nonsyn(code, codons):
 def get_compo(codons):
     """
     Get a matrix defining site-independent nucleotide composition of codons.
-    Speed is not important.
     @return: integer matrix
     """
     ncodons = len(codons)
-    compo = np.zeros((ncodons, 4), dtype=int)
+    compo = numpy.zeros((ncodons, 4), dtype=int)
     for i, c in enumerate(codons):
         for j, nt in enumerate('acgt'):
             compo[i, j] = c.count(nt)
@@ -200,17 +173,65 @@ def get_asym_compo(codons):
     Entry [i, j, k] of the returned matrix gives the number of positions
     for which the nucleotides are different between codons i and j and
     the nucleotide type of codon j is 'acgt'[k].
-    Speed is not important.
     @return: a three dimensional matrix
     """
     ncodons = len(codons)
-    asym_compo = np.zeros((ncodons, ncodons, 4), dtype=int)
+    asym_compo = numpy.zeros((ncodons, ncodons, 4), dtype=int)
     for i, ci in enumerate(codons):
         for j, cj in enumerate(codons):
             for k, nt in enumerate('acgt'):
                 asym_compo[i, j, k] = sum(1 for a, b in zip(ci, cj) if (
                     a != b and b == nt))
     return asym_compo
+
+
+##########################################################################
+# these two functions are also pure numpy and speed does not matter
+
+
+def get_lb_neg_ll(subs_counts):
+    """
+    Get the lower bound negative log likelihood.
+    It uses an entropy-based calculation.
+    @param subs_counts: codon substitution counts
+    """
+    nstates = subs_counts.shape[0]
+    counts = []
+    for i in range(nstates):
+        for j in range(nstates):
+            if i < j:
+                c = subs_counts[i, j] + subs_counts[j, i]
+                counts.append(c)
+            elif i == j:
+                c = subs_counts[i, j]
+                counts.append(c)
+    # return the entropy of the unordered pair count vector
+    probs = numpy.array(counts, dtype=float) / numpy.sum(counts)
+    return numpy.sum(-c*math.log(p) for c, p in zip(counts, probs) if c)
+
+def get_lb_expected_subs(ham, subs_counts):
+    """
+    Get the lower bound of expected substitutions.
+    This is expected minimum possible number of substitutions
+    between aligned codons.
+    """
+    return numpy.sum(ham * subs_counts) / float(numpy.sum(subs_counts))
+
+
+##########################################################################
+# algopy stuff involving parameters
+
+def get_fixation_genic(S):
+    return 1. / kimrecessive.denom_genic_a(0.5*S)
+
+def get_fixation_recessive_disease(S):
+    sign_S = algopy.sign(S)
+    H = numpy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            H[i, j] = 1. / kimrecessive.denom_piecewise(
+                    0.5*S[i, j], sign_S[i, j])
+    return H
 
 def get_selection_F(log_counts, compo, log_nt_weights):
     """
@@ -220,23 +241,21 @@ def get_selection_F(log_counts, compo, log_nt_weights):
     are free parameters to be estimated jointly in the
     maximimum likelihood search,
     so this function is inside the optimization loop.
-    Speed matters.
     @param log_counts: logs of empirical codon counts
     @param compo: codon composition as defined in the get_compo function
     @param log_nt_weights: un-normalized log mutation process probabilities
     @return: a log selection for each codon, up to an additive constant
     """
-    return log_counts - np.dot(compo, log_nt_weights)
+    return log_counts - algopy.dot(compo, log_nt_weights)
 
 def get_selection_S(F):
     """
     The F and S notation is from Yang and Nielsen 2008.
-    Speed matters.
     @param F: a selection value for each codon, up to an additive constant
     @return: selection differences F_j - F_i, also known as S_ij
     """
-    e = np.ones_like(F)
-    return np.outer(e, F) - np.outer(F, e)
+    e = algopy.ones_like(F)
+    return algopy.outer(e, F) - algopy.outer(F, e)
 
 def get_Q(
         ts, tv, syn, nonsyn, compo, asym_compo,
@@ -249,7 +268,6 @@ def get_Q(
     The second group is only the fixation function.
     The third group consists of empirically (non-free) estimated parameters.
     The fourth group depends only on free parameters.
-    Speed matters.
     @param ts: indicator for transition
     @param tv: indicator for transversion
     @param syn: indicator for synonymous codons
@@ -264,14 +282,14 @@ def get_Q(
     @param log_nt_weights: mostly free param array for mutation equilibrium
     @return: rate matrix
     """
-    mu = math.exp(log_mu)
-    kappa = math.exp(log_kappa)
-    omega = math.exp(log_omega)
+    mu = algopy.exp(log_mu)
+    kappa = algopy.exp(log_kappa)
+    omega = algopy.exp(log_omega)
     F = get_selection_F(log_counts, compo, log_nt_weights)
     S = get_selection_S(F)
-    pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * np.exp(
-            np.dot(asym_compo, log_nt_weights)) * h(S)
-    Q = pre_Q - np.diag(np.sum(pre_Q, axis=1))
+    pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
+            algopy.dot(asym_compo, log_nt_weights)) * h(S)
+    Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
 def read_yang_alignments(codons, lines):
@@ -296,7 +314,7 @@ def read_yang_alignments(codons, lines):
             continue
         elements = line.split()
         if elements[0] in names:
-            seq = np.array([c_to_i[c] for c in elements[1:]], dtype=int)
+            seq = numpy.array([c_to_i[c] for c in elements[1:]], dtype=int)
             if len(seq) * 3 != expected_len:
                 raise Exception((len(seq) * 3, expected_len))
             alignment.append((elements[0], seq))
@@ -323,9 +341,9 @@ def read_yang_mtdna_alignment(codons, lines):
         if line in g_mtdna_names or not line:
             if segments:
                 dna = ''.join(segments)
-                #codons = zip(*[dna[i::3] for i in range(3)])
                 codons = [dna[i:i+3] for i in range(0, len(dna), 3)]
-                seq = np.array([c_to_i[''.join(c)] for c in codons], dtype=int)
+                seq = numpy.array(
+                        [c_to_i[''.join(c)] for c in codons], dtype=int)
                 alignment.append((name, seq))
         if line in g_mtdna_names:
             name = line
@@ -346,8 +364,8 @@ def get_empirical_summary(ncodons, alignments, t1, t2):
     @param t2: second taxon name
     @return: codon_counts, subs_counts
     """
-    codon_counts = np.zeros(ncodons, dtype=int)
-    subs_counts = np.zeros((ncodons, ncodons), dtype=int)
+    codon_counts = numpy.zeros(ncodons, dtype=int)
+    subs_counts = numpy.zeros((ncodons, ncodons), dtype=int)
     for alignment in alignments:
         d = dict(alignment)
         for i, j in zip(d[t1], d[t2]):
@@ -364,11 +382,7 @@ def get_log_likelihood(P, v, subs_counts):
     @param v: stationary distribution proportional to observed codon counts
     @param subs_counts: observed substitution counts
     """
-    # XXX a debugging
-    #if not np.allclose(np.dot(v, P), v):
-        #raise Exception((np.dot(v, P), v))
-    #
-    return np.sum(subs_counts * np.log(P.T * v))
+    return algopy.sum(subs_counts * algopy.log(P.T * v))
 
 def minimize_me(
         theta,
@@ -382,7 +396,7 @@ def minimize_me(
     #
     # unpack theta
     log_mu, log_kappa, log_omega, log_a, log_c, log_g = theta.tolist()
-    log_nt_weights = np.array([log_a, log_c, log_g, 0], dtype=float)
+    log_nt_weights = numpy.array([log_a, log_c, log_g, 0], dtype=float)
     #
     # construct the transition matrix
     Q = get_Q(
@@ -390,40 +404,11 @@ def minimize_me(
             h,
             log_counts,
             log_mu, log_kappa, log_omega, log_nt_weights)
-    P = linalg.expm(Q)
+    P = algopy.expm(Q)
     #
     # return the neg log likelihood
     ret = -get_log_likelihood(P, v, subs_counts)
     return ret
-
-def get_lb_neg_ll(subs_counts):
-    """
-    Get the lower bound negative log likelihood.
-    It uses an entropy-based calculation.
-    @param subs_counts: codon substitution counts
-    """
-    nstates = subs_counts.shape[0]
-    counts = []
-    for i in range(nstates):
-        for j in range(nstates):
-            if i < j:
-                c = subs_counts[i, j] + subs_counts[j, i]
-                counts.append(c)
-            elif i == j:
-                c = subs_counts[i, j]
-                counts.append(c)
-    # return the entropy of the unordered pair count vector
-    probs = np.array(counts, dtype=float) / np.sum(counts)
-    h = np.sum(-c*math.log(p) for c, p in zip(counts, probs) if c)
-    return h
-
-def get_lb_expected_subs(ham, subs_counts):
-    """
-    Get the lower bound of expected substitutions.
-    This is expected minimum possible number of substitutions
-    between aligned codons.
-    """
-    return np.sum(ham * subs_counts) / float(np.sum(subs_counts))
 
 def main(args):
     #
@@ -449,9 +434,9 @@ def main(args):
         raise Exception
     if len(codons) != 64 - len(stop):
         raise Exception
-    if np.unique(ts).tolist() != [0, 1]:
+    if numpy.unique(ts).tolist() != [0, 1]:
         raise Exception
-    if np.unique(tv).tolist() != [0, 1]:
+    if numpy.unique(tv).tolist() != [0, 1]:
         raise Exception
     #
     # check the genetic codes for typos
@@ -469,11 +454,11 @@ def main(args):
     # Check reversibility of h functions with respect to F,
     # in the notation of Yang and Nielsen 2008.
     for h in (get_fixation_genic, get_fixation_recessive_disease):
-        F = np.array([1.2, 2.3, 0, -1.1])
+        F = numpy.array([1.2, 2.3, 0, -1.1])
         S = get_selection_S(F)
         fixation = h(S)
-        log_ratio = np.log(fixation / fixation.T)
-        if not np.allclose(S, log_ratio):
+        log_ratio = numpy.log(fixation / fixation.T)
+        if not numpy.allclose(S, log_ratio):
             raise Exception((S, log_ratio))
     #
     # read alignments from the file
@@ -494,15 +479,15 @@ def main(args):
     codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
     for a, b in zip(codons, codon_counts):
         print a, ':', b
-    print 'raw codon total:', np.sum(codon_counts)
+    print 'raw codon total:', numpy.sum(codon_counts)
     print 'raw codon counts:', codon_counts
     codon_counts = codon_counts[:len(codons)]
-    print 'non-stop codon total:', np.sum(codon_counts)
+    print 'non-stop codon total:', numpy.sum(codon_counts)
     pseudocount = 0
     codon_counts += pseudocount
     subs_counts = subs_counts[:len(codons), :len(codons)]
-    v = codon_counts / float(np.sum(codon_counts))
-    log_counts = np.log(codon_counts)
+    v = codon_counts / float(numpy.sum(codon_counts))
+    log_counts = numpy.log(codon_counts)
     print 'codon counts including pseudocount:', codon_counts
     print
     #
@@ -519,7 +504,7 @@ def main(args):
     log_mu = 0
     log_kappa = 1
     log_omega = -3
-    log_nt_weights = np.zeros(4)
+    log_nt_weights = numpy.zeros(4)
     #
     # get the rate matrix associated with the initial guess
     Q = get_Q(
@@ -530,12 +515,12 @@ def main(args):
     #
     # get the minimum expected number of substitutions between codons
     mu_empirical = get_lb_expected_subs(ham, subs_counts)
-    mu_implied = -np.sum(np.diag(Q) * v)
+    mu_implied = -numpy.sum(numpy.diag(Q) * v)
     log_mu = math.log(mu_empirical) - math.log(mu_implied)
     print 'lower bound on expected mutations per codon site:', mu_empirical
     print
     # construct the initial guess
-    theta = np.array([
+    theta = numpy.array([
         log_mu,
         log_kappa,
         log_omega,
@@ -556,7 +541,7 @@ def main(args):
     #
     # search for the minimum negative log likelihood over multiple parameters
     if args.fmin == 'simplex':
-        results = optimize.fmin(
+        results = scipy.optimize.fmin(
                 minimize_me, theta, args=fmin_args,
                 maxfun=10000,
                 maxiter=10000,
@@ -564,7 +549,7 @@ def main(args):
                 ftol=1e-8,
                 full_output=True)
     elif args.fmin == 'bfgs':
-        results = optimize.fmin_bfgs(
+        results = scipy.optimize.fmin_bfgs(
                 minimize_me, theta, args=fmin_args,
                 maxiter=10000,
                 full_output=True)
@@ -577,7 +562,7 @@ def main(args):
     print 'results:', results
     xopt = results[0]
     print 'optimal solution vector:', xopt
-    print 'exp optimal solution vector:', np.exp(xopt)
+    print 'exp optimal solution vector:', numpy.exp(xopt)
     print
     print 'entropy bound on negative log likelihood:'
     print get_lb_neg_ll(subs_counts)
