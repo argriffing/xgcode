@@ -6,8 +6,6 @@ Some of the explicit solutions may not be as well behaved numerically as
 the numerical integration provided by scipy.integrate.quad.
 """
 
-import unittest
-
 import numpy
 from numpy import testing
 import scipy
@@ -67,10 +65,8 @@ def denom_piecewise(c, d):
     small_eps = 1e-8
     large_eps = 1e-3
     if abs(c) < small_eps:
-        #FIXME: this loses Taylor info about c and d
         return denom_neutral()
     elif abs(d) < small_eps:
-        #FIXME: this loses Taylor info about d
         return denom_genic_a(c)
     elif abs(d) > 1 - large_eps:
         return denom_not_genic(c, d)
@@ -98,6 +94,17 @@ def denom_quad(c, d):
 
 
 class Test_KimuraRecessive(testing.TestCase):
+
+    def test_neutral(self):
+        c = 0.0
+        for d in (-0.123, 0.01, 1.23):
+            x = denom_neutral()
+            y = denom_genic_a(c)
+            z = denom_not_genic(c, d)
+            w = denom_quad(c, d)
+            testing.assert_allclose(x, y)
+            testing.assert_allclose(x, z)
+            testing.assert_allclose(x, w)
 
     def test_genic(self):
         d = 0.0
