@@ -50,7 +50,7 @@ g_mtdna_names = {'human_horai', 'chimp_horai'}
 
 
 ##########################################################################
-# these two functions are also pure numpy and speed does not matter
+# these two functions are pure numpy and speed does not matter
 
 
 def get_lb_neg_ll(subs_counts):
@@ -248,19 +248,26 @@ def get_log_likelihood(P, v, subs_counts):
     """
     return algopy.sum(subs_counts * algopy.log(P.T * v))
 
-def minimize_me(
+def eval_f(
         theta,
         subs_counts, log_counts, v,
         h,
         ts, tv, syn, nonsyn, compo, asym_compo,
         ):
     """
+    The function formerly known as minimize-me.
     @param theta: length six unconstrained vector of free variables
     """
-    #
     # unpack theta
-    log_mu, log_kappa, log_omega, log_a, log_c, log_g = theta.tolist()
-    log_nt_weights = numpy.array([log_a, log_c, log_g, 0], dtype=float)
+    log_mu = theta[0]
+    log_kappa = theta[1]
+    log_omega = theta[2]
+    #FIXME: maybe dtype=float for non-algopy?
+    log_nt_weights = algopy.zeros(4, dtype=theta)
+    log_nt_weights[0] = theta[3]
+    log_nt_weights[1] = theta[4]
+    log_nt_weights[2] = theta[5]
+    log_nt_weights[3] = 0
     #
     # construct the transition matrix
     Q = get_Q(
@@ -271,8 +278,28 @@ def minimize_me(
     P = algopy.expm(Q)
     #
     # return the neg log likelihood
-    ret = -get_log_likelihood(P, v, subs_counts)
-    return ret
+    return -get_log_likelihood(P, v, subs_counts)
+
+#FIXME: copypasted from codon_model.py
+def x_eval_grad_f(theta, *args):
+    """
+    compute the gradient of f in the forward mode of AD
+    """
+    theta = algopy.UTPM.init_jacobian(theta)
+    retval = eval_f(theta, *args)
+    return algopy.UTPM.extract_jacobian(retval)
+
+#FIXME: copypasted from codon_model.py
+def x_eval_hess_f(theta, *args):
+    """
+    compute the hessian of f in the forward mode of AD
+    """
+    n = len(theta)
+    if n != 6:
+        raise Exception(n)
+    theta = algopy.UTPM.init_hessian(theta)
+    retval = eval_f(theta, *args)
+    return algopy.UTPM.extract_hessian(n, retval)
 
 def main(args):
     #
@@ -377,14 +404,14 @@ def main(args):
             h,
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
-    initial_cost = minimize_me(theta, *fmin_args)
+    initial_cost = eval_f(theta, *fmin_args)
     print 'negative log likelihood of initial guess:', initial_cost
     print
     #
     # search for the minimum negative log likelihood over multiple parameters
     if args.fmin == 'simplex':
         results = scipy.optimize.fmin(
-                minimize_me, theta, args=fmin_args,
+                eval_f, theta, args=fmin_args,
                 maxfun=10000,
                 maxiter=10000,
                 xtol=1e-8,
@@ -392,12 +419,12 @@ def main(args):
                 full_output=True)
     elif args.fmin == 'bfgs':
         results = scipy.optimize.fmin_bfgs(
-                minimize_me, theta, args=fmin_args,
+                eval_f, theta, args=fmin_args,
                 maxiter=10000,
                 full_output=True)
     elif args.fmin == 'jeffopt':
         results = jeffopt.fmin_jeff_unconstrained(
-                minimize_me, theta, args=fmin_args,
+                eval_f, theta, args=fmin_args,
                 )
     else:
         raise Exception
@@ -409,59 +436,6 @@ def main(args):
     print 'entropy bound on negative log likelihood:'
     print get_lb_neg_ll(subs_counts)
     print
-
-#FIXME: copypasted from codon_model.py
-def x_eval_f(
-        theta,
-        subs_counts, log_counts, v,
-        h,
-        ts, tv, syn, nonsyn, compo, asym_compo,
-        ):
-    """
-    @param theta: length six unconstrained vector of free variables
-    """
-
-    # unpack theta
-    log_mu = theta[0]
-    log_kappa = theta[1]
-    log_omega = theta[2]
-    log_nt_weights = algopy.zeros(4, dtype=theta)
-    log_nt_weights[0] = theta[3]
-    log_nt_weights[1] = theta[4]
-    log_nt_weights[2] = theta[5]
-    log_nt_weights[3] = 0
-
-    # construct the transition matrix
-    Q = get_Q(
-            ts, tv, syn, nonsyn, compo, asym_compo,
-            h,
-            log_counts,
-            log_mu, log_kappa, log_omega, log_nt_weights)
-    P = algopy.expm(Q)
-    
-    # return the neg log likelihood
-    return -get_log_likelihood(P, v, subs_counts)
-
-#FIXME: copypasted from codon_model.py
-def x_eval_grad_f(theta, *args):
-    """
-    compute the gradient of f in the forward mode of AD
-    """
-    theta = algopy.UTPM.init_jacobian(theta)
-    retval = eval_f(theta, *args)
-    return algopy.UTPM.extract_jacobian(retval)
-
-#FIXME: copypasted from codon_model.py
-def x_eval_hess_f(theta, *args):
-    """
-    compute the hessian of f in the forward mode of AD
-    """
-    n = len(theta)
-    if n != 6:
-        raise Exception(n)
-    theta = algopy.UTPM.init_hessian(theta)
-    retval = eval_f(theta, *args)
-    return algopy.UTPM.extract_hessian(n, retval)
 
 
 if __name__ == '__main__':
