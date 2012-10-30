@@ -6,6 +6,27 @@ against the genic model of Yang and Nielsen 2008.
 This script does not use so many biological libraries
 because for some reason I am adopting a more matlab-like style.
 All matrices in this script are ndarrays as opposed to actual python matrices.
+.
+Added October 30 2012 --
+This script has been adapted as the codon_model.py example in the python
+automatic differentiation package called algopy.
+Now I am backporting those algopy adaptations back into this more complicated
+mle-recessive.py script to make use of the algopy features.
+This means that some of the arrays that were formerly numpy ndarrays
+are now algopy UTPM objects that mimic arrays and that carry
+nonzero-degree Taylor terms through the log likelihood computation.
+These higher order Taylor terms have a couple of uses.
+One of the uses is to provide gradient and hessian information to
+relatively sophisticated likelihood maximization algorithms
+like the scipy truncated newton or conjugate gradient methods.
+Another use of these higher order terms is to provide estimates of
+parameter uncertainty by taking the inverse of the hessian of the
+negative log likelihood at the max likelihood point as the covariance matrix
+that approximates something like a multivariate normal
+joint posterior distribution of the parameters.
+Although this interpretation as a posterior distribution is probably
+horribly flawed unless it assumes an implicit prior distribution that
+trivially forces this to be a posterior distribution.
 """
 
 import string
@@ -567,6 +588,60 @@ def main(args):
     print 'entropy bound on negative log likelihood:'
     print get_lb_neg_ll(subs_counts)
     print
+
+#FIXME: copypasted from codon_model.py
+def eval_f(
+        theta,
+        subs_counts, log_counts, v,
+        h,
+        ts, tv, syn, nonsyn, compo, asym_compo,
+        ):
+    """
+    @param theta: length six unconstrained vector of free variables
+    """
+
+    # unpack theta
+    log_mu = theta[0]
+    log_kappa = theta[1]
+    log_omega = theta[2]
+    log_nt_weights = algopy.zeros(4, dtype=theta)
+    log_nt_weights[0] = theta[3]
+    log_nt_weights[1] = theta[4]
+    log_nt_weights[2] = theta[5]
+    log_nt_weights[3] = 0
+
+    # construct the transition matrix
+    Q = get_Q(
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            h,
+            log_counts,
+            log_mu, log_kappa, log_omega, log_nt_weights)
+    P = algopy.expm(Q)
+    
+    # return the neg log likelihood
+    return -get_log_likelihood(P, v, subs_counts)
+
+#FIXME: copypasted from codon_model.py
+def eval_grad_f(theta, *args):
+    """
+    compute the gradient of f in the forward mode of AD
+    """
+    theta = algopy.UTPM.init_jacobian(theta)
+    retval = eval_f(theta, *args)
+    return algopy.UTPM.extract_jacobian(retval)
+
+#FIXME: copypasted from codon_model.py
+def eval_hess_f(theta, *args):
+    """
+    compute the hessian of f in the forward mode of AD
+    """
+    n = len(theta)
+    if n != 6:
+        raise Exception(n)
+    theta = algopy.UTPM.init_hessian(theta)
+    retval = eval_f(theta, *args)
+    return algopy.UTPM.extract_hessian(n, retval)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
