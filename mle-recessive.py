@@ -122,6 +122,19 @@ def get_fixation_unconstrained(S, d):
                     0.5*S[i, j], D[i, j])
     return H
 
+def get_fixation_unconstrained_kb(S, d, log_kb):
+    """
+    This uses the Kacser and Burns effect instead of the sign function.
+    """
+    soft_sign_S = algopy.tanh(algopy.exp(log_kb)*S)
+    D = d * soft_sign_S
+    H = algopy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            H[i, j] = 1. / kimrecessive.denom_piecewise(
+                    0.5*S[i, j], D[i, j])
+    return H
+
 def get_selection_F(log_counts, compo, log_nt_weights):
     """
     The F and S notation is from Yang and Nielsen 2008.
@@ -196,6 +209,24 @@ def get_Q_unconstrained(
     S = get_selection_S(F)
     pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
             algopy.dot(asym_compo, log_nt_weights)) * h(S, d)
+    Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
+    return Q
+
+def get_Q_unconstrained_kb(
+        ts, tv, syn, nonsyn, compo, asym_compo,
+        h,
+        log_counts,
+        log_mu, log_kappa, log_omega, d, log_kb, log_nt_weights):
+    """
+    This adds yet another parameter.
+    """
+    mu = algopy.exp(log_mu)
+    kappa = algopy.exp(log_kappa)
+    omega = algopy.exp(log_omega)
+    F = get_selection_F(log_counts, compo, log_nt_weights)
+    S = get_selection_S(F)
+    pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
+            algopy.dot(asym_compo, log_nt_weights)) * h(S, d, log_kb)
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
@@ -354,6 +385,39 @@ def eval_f_unconstrained(
     # return the neg log likelihood
     return -get_log_likelihood(P, v, subs_counts)
 
+def eval_f_unconstrained_kb(
+        theta,
+        subs_counts, log_counts, v,
+        h,
+        ts, tv, syn, nonsyn, compo, asym_compo,
+        ):
+    """
+    No dominance/recessivity constraint.
+    @param theta: length seven unconstrained vector of free variables
+    """
+    # unpack theta
+    log_mu = theta[0]
+    log_kappa = theta[1]
+    log_omega = theta[2]
+    d = theta[3]
+    log_kb = theta[4]
+    log_nt_weights = algopy.zeros(4, dtype=theta)
+    log_nt_weights[0] = theta[5]
+    log_nt_weights[1] = theta[6]
+    log_nt_weights[2] = theta[7]
+    log_nt_weights[3] = 0
+    #
+    # construct the transition matrix
+    Q = get_Q_unconstrained_kb(
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            h,
+            log_counts,
+            log_mu, log_kappa, log_omega, d, log_kb, log_nt_weights)
+    P = algopy.expm(Q)
+    #
+    # return the neg log likelihood
+    return -get_log_likelihood(P, v, subs_counts)
+
 def eval_grad_f(theta, *args):
     """
     compute the gradient of f in the forward mode of AD
@@ -387,6 +451,149 @@ def eval_hess_f_unconstrained(theta, *args):
     theta = algopy.UTPM.init_hessian(theta)
     retval = eval_f_unconstrained(theta, *args)
     return algopy.UTPM.extract_hessian(len(theta), retval)
+
+def eval_grad_f_unconstrained_kb(theta, *args):
+    """
+    compute the gradient of f in the forward mode of AD
+    No dominance/recessivity constraint.
+    """
+    theta = algopy.UTPM.init_jacobian(theta)
+    retval = eval_f_unconstrained_kb(theta, *args)
+    return algopy.UTPM.extract_jacobian(retval)
+
+def eval_hess_f_unconstrained_kb(theta, *args):
+    """
+    compute the hessian of f in the forward mode of AD
+    No dominance/recessivity constraint.
+    """
+    theta = algopy.UTPM.init_hessian(theta)
+    retval = eval_f_unconstrained_kb(theta, *args)
+    return algopy.UTPM.extract_hessian(len(theta), retval)
+
+def submain_unconstrained_dominance_kb(args):
+    #
+    # Precompute some ndarrays
+    # according to properties of DNA and the genetic code.
+    if args.mtdna:
+        code = npcodon.g_code_mito
+        stop = npcodon.g_stop_mito
+    else:
+        code = npcodon.g_code
+        stop = npcodon.g_stop
+    #
+    all_codons = npcodon.enum_codons(stop)
+    codons = all_codons[:-len(stop)]
+    ts, tv = npcodon.get_ts_tv(codons)
+    syn, nonsyn = npcodon.get_syn_nonsyn(code, codons)
+    compo = npcodon.get_compo(codons)
+    asym_compo = npcodon.get_asym_compo(codons)
+    ham = npcodon.get_hamming(codons)
+    #
+    # read alignments from the file
+    with open(args.infile) as fin:
+        if args.mtdna:
+            alignments = [read_yang_mtdna_alignment(all_codons, fin)]
+        else:
+            alignments = read_yang_alignments(all_codons, fin)
+    print 'read', len(alignments), 'alignments'
+    print
+    #
+    # Extract the codon counts and the substitution counts.
+    # Then compute the empirical codon distribution and log codon counts.
+    if args.mtdna:
+        t1, t2 = g_mtdna_names
+    else:
+        t1, t2 = args.t1, args.t2
+    codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
+    for a, b in zip(codons, codon_counts):
+        print a, ':', b
+    print 'raw codon total:', numpy.sum(codon_counts)
+    print 'raw codon counts:', codon_counts
+    codon_counts = codon_counts[:len(codons)]
+    print 'non-stop codon total:', numpy.sum(codon_counts)
+    pseudocount = 0
+    codon_counts += pseudocount
+    subs_counts = subs_counts[:len(codons), :len(codons)]
+    v = codon_counts / float(numpy.sum(codon_counts))
+    log_counts = numpy.log(codon_counts)
+    print 'codon counts including pseudocount:', codon_counts
+    print
+    #
+    if args.disease == 'kacser':
+        h = get_fixation_unconstrained_kb
+    else:
+        raise Exception
+    #
+    # predefine some plausible parameters but not the scaling parameter
+    log_mu = 0
+    log_kappa = 1
+    log_omega = -3
+    d = 0.5
+    log_kb = 0
+    log_nt_weights = numpy.zeros(4)
+    #
+    # get the rate matrix associated with the initial guess
+    Q = get_Q_unconstrained_kb(
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            h,
+            log_counts,
+            log_mu, log_kappa, log_omega, d, log_kb, log_nt_weights)
+    #
+    # get the minimum expected number of substitutions between codons
+    mu_empirical = get_lb_expected_subs(ham, subs_counts)
+    mu_implied = -numpy.sum(numpy.diag(Q) * v)
+    log_mu = math.log(mu_empirical) - math.log(mu_implied)
+    print 'lower bound on expected mutations per codon site:', mu_empirical
+    print
+    # construct the initial guess
+    theta = numpy.array([
+        log_mu,
+        log_kappa,
+        log_omega,
+        d,
+        log_kb,
+        0,
+        0,
+        0,
+        ])
+    #
+    # get the log likelihood associated with the initial guess
+    fmin_args = (
+            subs_counts, log_counts, v,
+            h,
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            )
+    initial_cost = eval_f_unconstrained_kb(theta, *fmin_args)
+    print 'negative log likelihood of initial guess:',
+    print initial_cost
+    print
+    print 'entropy bound on negative log likelihood:',
+    print get_lb_neg_ll(subs_counts)
+    print
+    #
+    # search for the minimum negative log likelihood over multiple parameters
+    if args.fmin == 'ncg':
+        result = scipy.optimize.fmin_ncg(
+                eval_f_unconstrained_kb,
+                theta,
+                args=fmin_args,
+                fprime=eval_grad_f_unconstrained_kb,
+                fhess=eval_hess_f_unconstrained_kb,
+                maxiter=10000,
+                full_output=True,
+                disp=True,
+                retall=True,
+                )
+    else:
+        raise Exception
+    print 'results:', result
+    xopt = result[0]
+    print 'optimal solution vector:', xopt
+    print 'exp optimal solution vector:', numpy.exp(xopt)
+    print
+    print 'inverse of hessian:'
+    print scipy.linalg.inv(eval_hess_f_unconstrained_kb(xopt, *fmin_args))
+    print
 
 
 def submain_unconstrained_dominance(args):
@@ -666,6 +873,8 @@ def submain_constrained_dominance(args):
 def main(args):
     if args.disease == 'unconstrained':
         return submain_unconstrained_dominance(args)
+    elif args.disease == 'kacser':
+        return submain_unconstrained_dominance_kb(args)
     else:
         return submain_constrained_dominance(args)
 
@@ -677,7 +886,9 @@ if __name__ == '__main__':
             default='simplex',
             help='nonlinear multivariate optimization')
     parser.add_argument('--disease',
-            choices=('genic', 'recessive', 'dominant', 'unconstrained'),
+            choices=(
+                'genic', 'recessive', 'dominant',
+                'unconstrained', 'kacser'),
             default='genic',
             help='the mode of natural selection on unpreferred codons')
     parser.add_argument('--mtdna', action='store_true',
