@@ -45,6 +45,7 @@ import algopy.special
 import jeffopt
 import kimrecessive
 import npcodon
+import yangdata
 
 g_mtdna_names = {'human_horai', 'chimp_horai'}
 
