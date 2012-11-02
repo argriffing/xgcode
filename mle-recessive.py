@@ -47,8 +47,6 @@ import kimrecessive
 import npcodon
 import yangdata
 
-g_mtdna_names = {'human_horai', 'chimp_horai'}
-
 
 ##########################################################################
 # these two functions are pure numpy and speed does not matter
@@ -231,110 +229,6 @@ def get_Q_unconstrained_kb(
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
-def read_yang_alignments(codons, lines):
-    """
-    Read the file that Ziheng Yang put on his website.
-    For our purposes,
-    an alignment will be a list of [taxon_name, codon_index_sequence] pairs.
-    @param codons: sequence lowercase codons
-    @param lines: text lines of the alignment
-    @return: list of alignments
-    """
-    names = {'hg18', 'pantro2', 'rhemac2', 'mm8', 'rn4'}
-    # construct the inverse codon map
-    c_to_i = dict((c, i) for i, c in enumerate(codons))
-    # read the alignments
-    alignments = []
-    alignment = []
-    expected_len = None
-    for line in lines:
-        line = line.strip().lower()
-        if not line:
-            continue
-        elements = line.split()
-        if elements[0] in names:
-            seq = numpy.array([c_to_i[c] for c in elements[1:]], dtype=int)
-            if len(seq) * 3 != expected_len:
-                raise Exception((len(seq) * 3, expected_len))
-            alignment.append((elements[0], seq))
-        elif int(elements[0]) == len(names):
-            if len(elements) != 2:
-                raise Exception(elements)
-            expected_len = int(elements[1])
-            if alignment:
-                alignments.append(alignment)
-            alignment = []
-        else:
-            raise Exception(elements[0])
-    if alignment:
-        alignments.append(alignment)
-    return alignments
-
-def read_yang_mtdna_alignment(codons, lines):
-    c_to_i = dict((c, i) for i, c in enumerate(codons))
-    name = None
-    alignment = []
-    segments = []
-    for line in lines:
-        line = line.strip().lower()
-        if line in g_mtdna_names or not line:
-            if segments:
-                dna = ''.join(segments)
-                codons = [dna[i:i+3] for i in range(0, len(dna), 3)]
-                seq = numpy.array(
-                        [c_to_i[''.join(c)] for c in codons], dtype=int)
-                alignment.append((name, seq))
-        if line in g_mtdna_names:
-            name = line
-            segments = []
-        elif not line:
-            name = None
-        else:
-            if name:
-                segments.append(line)
-    return alignment
-
-def get_empirical_summary(ncodons, alignments, t1, t2):
-    """
-    Get substitution counts.
-    It is easy to get empirical codon counts from the substitution counts.
-    This is a helper function for get_codon_counts_from_data_files.
-    @param ncodons: allowed number of codons
-    @param alignments: from the get_yang_alignments function
-    @param t1: first taxon name
-    @param t2: second taxon name
-    @return: subs_counts
-    """
-    subs_counts = numpy.zeros((ncodons, ncodons), dtype=int)
-    for alignment in alignments:
-        d = dict(alignment)
-        for i, j in zip(d[t1], d[t2]):
-            subs_counts[i, j] += 1
-    return subs_counts
-
-def get_subs_counts_from_data_files(args):
-    """
-    @return: numpy ndarray of observed substitution counts
-    """
-    if args.mtdna:
-        code = npcodon.g_code_mito
-        stop = npcodon.g_stop_mito
-    else:
-        code = npcodon.g_code
-        stop = npcodon.g_stop
-    all_codons = npcodon.enum_codons(stop)
-    with open(args.infile) as fin:
-        if args.mtdna:
-            alignments = [read_yang_mtdna_alignment(all_codons, fin)]
-        else:
-            alignments = read_yang_alignments(all_codons, fin)
-    if args.mtdna:
-        t1, t2 = g_mtdna_names
-    else:
-        t1, t2 = args.t1, args.t2
-    subs_counts = get_empirical_summary(64, alignments, t1, t2)
-    return subs_counts
-
 
 def get_log_likelihood(P, v, subs_counts):
     """
@@ -498,7 +392,7 @@ def submain_unconstrained_dominance_kb(args):
     #
     # Precompute some ndarrays
     # according to properties of DNA and the genetic code.
-    if args.mtdna:
+    if args.mtdna or args.force_mtcode:
         code = npcodon.g_code_mito
         stop = npcodon.g_stop_mito
     else:
@@ -513,7 +407,7 @@ def submain_unconstrained_dominance_kb(args):
     asym_compo = npcodon.get_asym_compo(codons)
     ham = npcodon.get_hamming(codons)
     #
-    subs_counts = get_subs_counts_from_data_files(args)
+    subs_counts = yangdata.get_subs_counts_from_data_files(args)
     codon_counts = np.sum(subs_counts, axis=0) + np.sum(subs_counts, axis=1)
     for a, b in zip(codons, codon_counts):
         print a, ':', b
@@ -606,7 +500,7 @@ def submain_unconstrained_dominance(args):
     #
     # Precompute some ndarrays
     # according to properties of DNA and the genetic code.
-    if args.mtdna:
+    if args.mtdna or args.force_mtcode:
         code = npcodon.g_code_mito
         stop = npcodon.g_stop_mito
     else:
@@ -621,7 +515,7 @@ def submain_unconstrained_dominance(args):
     asym_compo = npcodon.get_asym_compo(codons)
     ham = npcodon.get_hamming(codons)
     #
-    subs_counts = get_subs_counts_from_data_files(args)
+    subs_counts = yangdata.get_subs_counts_from_data_files(args)
     codon_counts = np.sum(subs_counts, axis=0) + np.sum(subs_counts, axis=1)
     for a, b in zip(codons, codon_counts):
         print a, ':', b
@@ -713,7 +607,7 @@ def submain_constrained_dominance(args):
     #
     # Precompute some ndarrays
     # according to properties of DNA and the genetic code.
-    if args.mtdna:
+    if args.mtdna or args.force_mtcode:
         code = npcodon.g_code_mito
         stop = npcodon.g_stop_mito
     else:
@@ -728,7 +622,7 @@ def submain_constrained_dominance(args):
     asym_compo = npcodon.get_asym_compo(codons)
     ham = npcodon.get_hamming(codons)
     #
-    subs_counts = get_subs_counts_from_data_files(args)
+    subs_counts = yangdata.get_subs_counts_from_data_files(args)
     codon_counts = numpy.sum(subs_counts, axis=0) + numpy.sum(
             subs_counts, axis=1)
     for a, b in zip(codons, codon_counts):
@@ -815,7 +709,21 @@ def submain_constrained_dominance(args):
                 )
     elif args.fmin == 'jeffopt':
         results = jeffopt.fmin_jeff_unconstrained(
-                eval_f, theta, args=fmin_args,
+                eval_f,
+                theta,
+                args=fmin_args,
+                )
+    elif args.fmin == 'ncg':
+        results = scipy.optimize.fmin_ncg(
+                eval_f,
+                theta,
+                args=fmin_args,
+                fprime=eval_grad_f,
+                fhess=eval_hess_f,
+                maxiter=10000,
+                full_output=True,
+                disp=True,
+                retall=True,
                 )
     else:
         raise Exception
@@ -854,18 +762,26 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--fmin',
+    parser.add_argument(
+            '--fmin',
             choices=('simplex', 'bfgs', 'jeffopt', 'ncg'),
             default='simplex',
             help='nonlinear multivariate optimization')
-    parser.add_argument('--disease',
+    parser.add_argument(
+            '--disease',
             choices=(
                 'genic', 'recessive', 'dominant',
                 'unconstrained', 'kacser'),
             default='genic',
             help='the mode of natural selection on unpreferred codons')
-    parser.add_argument('--mtdna', action='store_true',
+    parser.add_argument(
+            '--mtdna',
+            action='store_true',
             help='read the mtdna file from the website of Ziheng Yang')
+    parser.add_argument(
+            '--force-mtcode',
+            action='store_true',
+            help='use the mitochondrial genetic code and stop codons')
     parser.add_argument(
             '--infile',
             help='codon alignment input file using the format of Ziheng Yang',

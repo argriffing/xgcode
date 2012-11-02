@@ -95,7 +95,7 @@ def get_subs_counts_from_data_files(args):
     """
     @return: numpy ndarray of observed substitution counts
     """
-    if args.mtdna:
+    if args.mtdna or args.force_mtcode:
         code = npcodon.g_code_mito
         stop = npcodon.g_stop_mito
     else:
@@ -107,6 +107,7 @@ def get_subs_counts_from_data_files(args):
             alignments = [read_yang_mtdna_alignment(all_codons, fin)]
         else:
             alignments = read_yang_alignments(all_codons, fin)
+    print 'number of alignments read:', len(alignments)
     if args.mtdna:
         t1, t2 = g_mtdna_names
     else:

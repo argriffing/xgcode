@@ -24,10 +24,10 @@ def denom_knudsen(c):
     return algopy.exp(-c)
 
 def denom_complete_dominant(c):
-    return algopy.special.dpm_hyp1f1(1.0, 1.5, -2*c)
+    return algopy.special.hyp1f1(1.0, 1.5, -2*c)
 
 def denom_complete_recessive(c):
-    return algopy.special.dpm_hyp1f1(0.5, 1.5, -2*c)
+    return algopy.special.hyp1f1(0.5, 1.5, -2*c)
 
 def denom_not_genic(c, d):
     #if not d:
@@ -54,7 +54,7 @@ def denom_near_genic(c, d):
     return a0 * (b01 * b02 - b11 * b12)
 
 def denom_genic_a(c):
-    return algopy.special.dpm_hyp1f1(1., 2., -2.*c)
+    return algopy.special.hyp1f1(1., 2., -2.*c)
 
 def denom_genic_b(c):
     return (1. - algopy.exp(-2*c)) / (2*c)
