@@ -295,22 +295,45 @@ def read_yang_mtdna_alignment(codons, lines):
 
 def get_empirical_summary(ncodons, alignments, t1, t2):
     """
-    Get codon counts and substitution counts.
+    Get substitution counts.
+    It is easy to get empirical codon counts from the substitution counts.
+    This is a helper function for get_codon_counts_from_data_files.
     @param ncodons: allowed number of codons
     @param alignments: from the get_yang_alignments function
     @param t1: first taxon name
     @param t2: second taxon name
-    @return: codon_counts, subs_counts
+    @return: subs_counts
     """
-    codon_counts = numpy.zeros(ncodons, dtype=int)
     subs_counts = numpy.zeros((ncodons, ncodons), dtype=int)
     for alignment in alignments:
         d = dict(alignment)
         for i, j in zip(d[t1], d[t2]):
-            codon_counts[i] += 1
-            codon_counts[j] += 1
             subs_counts[i, j] += 1
-    return codon_counts, subs_counts
+    return subs_counts
+
+def get_subs_counts_from_data_files(args):
+    """
+    @return: numpy ndarray of observed substitution counts
+    """
+    if args.mtdna:
+        code = npcodon.g_code_mito
+        stop = npcodon.g_stop_mito
+    else:
+        code = npcodon.g_code
+        stop = npcodon.g_stop
+    all_codons = npcodon.enum_codons(stop)
+    with open(args.infile) as fin:
+        if args.mtdna:
+            alignments = [read_yang_mtdna_alignment(all_codons, fin)]
+        else:
+            alignments = read_yang_alignments(all_codons, fin)
+    if args.mtdna:
+        t1, t2 = g_mtdna_names
+    else:
+        t1, t2 = args.t1, args.t2
+    subs_counts = get_empirical_summary(64, alignments, t1, t2)
+    return subs_counts
+
 
 def get_log_likelihood(P, v, subs_counts):
     """
@@ -489,35 +512,17 @@ def submain_unconstrained_dominance_kb(args):
     asym_compo = npcodon.get_asym_compo(codons)
     ham = npcodon.get_hamming(codons)
     #
-    # read alignments from the file
-    with open(args.infile) as fin:
-        if args.mtdna:
-            alignments = [read_yang_mtdna_alignment(all_codons, fin)]
-        else:
-            alignments = read_yang_alignments(all_codons, fin)
-    print 'read', len(alignments), 'alignments'
-    print
-    #
-    # Extract the codon counts and the substitution counts.
-    # Then compute the empirical codon distribution and log codon counts.
-    if args.mtdna:
-        t1, t2 = g_mtdna_names
-    else:
-        t1, t2 = args.t1, args.t2
-    codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
+    subs_counts = get_subs_counts_from_data_files(args)
+    codon_counts = np.sum(subs_counts, axis=0) + np.sum(subs_counts, axis=1)
     for a, b in zip(codons, codon_counts):
         print a, ':', b
     print 'raw codon total:', numpy.sum(codon_counts)
     print 'raw codon counts:', codon_counts
     codon_counts = codon_counts[:len(codons)]
     print 'non-stop codon total:', numpy.sum(codon_counts)
-    pseudocount = 0
-    codon_counts += pseudocount
     subs_counts = subs_counts[:len(codons), :len(codons)]
     v = codon_counts / float(numpy.sum(codon_counts))
     log_counts = numpy.log(codon_counts)
-    print 'codon counts including pseudocount:', codon_counts
-    print
     #
     if args.disease == 'kacser':
         h = get_fixation_unconstrained_kb
@@ -615,35 +620,17 @@ def submain_unconstrained_dominance(args):
     asym_compo = npcodon.get_asym_compo(codons)
     ham = npcodon.get_hamming(codons)
     #
-    # read alignments from the file
-    with open(args.infile) as fin:
-        if args.mtdna:
-            alignments = [read_yang_mtdna_alignment(all_codons, fin)]
-        else:
-            alignments = read_yang_alignments(all_codons, fin)
-    print 'read', len(alignments), 'alignments'
-    print
-    #
-    # Extract the codon counts and the substitution counts.
-    # Then compute the empirical codon distribution and log codon counts.
-    if args.mtdna:
-        t1, t2 = g_mtdna_names
-    else:
-        t1, t2 = args.t1, args.t2
-    codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
+    subs_counts = get_subs_counts_from_data_files(args)
+    codon_counts = np.sum(subs_counts, axis=0) + np.sum(subs_counts, axis=1)
     for a, b in zip(codons, codon_counts):
         print a, ':', b
     print 'raw codon total:', numpy.sum(codon_counts)
     print 'raw codon counts:', codon_counts
     codon_counts = codon_counts[:len(codons)]
     print 'non-stop codon total:', numpy.sum(codon_counts)
-    pseudocount = 0
-    codon_counts += pseudocount
     subs_counts = subs_counts[:len(codons), :len(codons)]
     v = codon_counts / float(numpy.sum(codon_counts))
     log_counts = numpy.log(codon_counts)
-    print 'codon counts including pseudocount:', codon_counts
-    print
     #
     if args.disease == 'unconstrained':
         h = get_fixation_unconstrained
@@ -740,50 +727,18 @@ def submain_constrained_dominance(args):
     asym_compo = npcodon.get_asym_compo(codons)
     ham = npcodon.get_hamming(codons)
     #
-    # Check reversibility of h functions with respect to F,
-    # in the notation of Yang and Nielsen 2008.
-    for h in (
-            get_fixation_genic,
-            get_fixation_recessive_disease,
-            get_fixation_dominant_disease,
-            get_fixation_knudsen,
-            ):
-        F = numpy.array([1.2, 2.3, 0, -1.1])
-        S = get_selection_S(F)
-        fixation = h(S)
-        log_ratio = numpy.log(fixation / fixation.T)
-        if not numpy.allclose(S, log_ratio):
-            raise Exception((S, log_ratio))
-    #
-    # read alignments from the file
-    with open(args.infile) as fin:
-        if args.mtdna:
-            alignments = [read_yang_mtdna_alignment(all_codons, fin)]
-        else:
-            alignments = read_yang_alignments(all_codons, fin)
-    print 'read', len(alignments), 'alignments'
-    print
-    #
-    # Extract the codon counts and the substitution counts.
-    # Then compute the empirical codon distribution and log codon counts.
-    if args.mtdna:
-        t1, t2 = g_mtdna_names
-    else:
-        t1, t2 = args.t1, args.t2
-    codon_counts, subs_counts = get_empirical_summary(64, alignments, t1, t2)
+    subs_counts = get_subs_counts_from_data_files(args)
+    codon_counts = numpy.sum(subs_counts, axis=0) + numpy.sum(
+            subs_counts, axis=1)
     for a, b in zip(codons, codon_counts):
         print a, ':', b
     print 'raw codon total:', numpy.sum(codon_counts)
     print 'raw codon counts:', codon_counts
     codon_counts = codon_counts[:len(codons)]
     print 'non-stop codon total:', numpy.sum(codon_counts)
-    pseudocount = 0
-    codon_counts += pseudocount
     subs_counts = subs_counts[:len(codons), :len(codons)]
     v = codon_counts / float(numpy.sum(codon_counts))
     log_counts = numpy.log(codon_counts)
-    print 'codon counts including pseudocount:', codon_counts
-    print
     #
     if args.disease == 'genic':
         h = get_fixation_genic
@@ -871,6 +826,23 @@ def submain_constrained_dominance(args):
 
 
 def main(args):
+    #
+    # Check reversibility of h functions with respect to F,
+    # in the notation of Yang and Nielsen 2008.
+    for h in (
+            get_fixation_genic,
+            get_fixation_recessive_disease,
+            get_fixation_dominant_disease,
+            get_fixation_knudsen,
+            ):
+        F = numpy.array([1.2, 2.3, 0, -1.1])
+        S = get_selection_S(F)
+        fixation = h(S)
+        log_ratio = numpy.log(fixation / fixation.T)
+        if not numpy.allclose(S, log_ratio):
+            raise Exception((S, log_ratio))
+    #
+    # Do the main analysis.
     if args.disease == 'unconstrained':
         return submain_unconstrained_dominance(args)
     elif args.disease == 'kacser':
