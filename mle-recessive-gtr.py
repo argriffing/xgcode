@@ -35,6 +35,7 @@ import algopy.special
 import kimrecessive
 import npcodon
 import yangdata
+import jeffopt
 
 
 ##########################################################################
@@ -253,7 +254,6 @@ def eval_f(
     log_g[3] = theta[4]
     log_g[4] = theta[5]
     log_g[5] = 0
-    g = algopy.exp(log_g)
     log_omega = theta[6]
     log_nt_weights = algopy.zeros(4, dtype=theta)
     log_nt_weights[0] = theta[7]
@@ -266,7 +266,7 @@ def eval_f(
             gtr, syn, nonsyn, compo, asym_compo,
             h,
             log_counts,
-            log_mu, g, log_omega, log_nt_weights)
+            log_mu, log_g, log_omega, log_nt_weights)
     P = algopy.expm(Q)
     #
     # return the neg log likelihood
@@ -287,7 +287,6 @@ def eval_f_unconstrained(
     log_g[3] = theta[4]
     log_g[4] = theta[5]
     log_g[5] = 0
-    g = algopy.exp(log_g)
     log_omega = theta[6]
     d = theta[7]
     log_nt_weights = algopy.zeros(4, dtype=theta)
@@ -301,7 +300,7 @@ def eval_f_unconstrained(
             gtr, syn, nonsyn, compo, asym_compo,
             h,
             log_counts,
-            log_mu, g, log_omega, d, log_nt_weights)
+            log_mu, log_g, log_omega, d, log_nt_weights)
     P = algopy.expm(Q)
     #
     # return the neg log likelihood
@@ -322,7 +321,6 @@ def eval_f_unconstrained_kb(
     log_g[3] = theta[4]
     log_g[4] = theta[5]
     log_g[5] = 0
-    g = algopy.exp(log_g)
     log_omega = theta[6]
     d = theta[7]
     log_kb = theta[8]
@@ -337,7 +335,7 @@ def eval_f_unconstrained_kb(
             gtr, syn, nonsyn, compo, asym_compo,
             h,
             log_counts,
-            log_mu, g, log_omega, d, log_kb, log_nt_weights)
+            log_mu, log_g, log_omega, d, log_kb, log_nt_weights)
     P = algopy.expm(Q)
     #
     # return the neg log likelihood
@@ -415,7 +413,8 @@ def submain_unconstrained_dominance_kb(args):
     ham = npcodon.get_hamming(codons)
     #
     subs_counts = yangdata.get_subs_counts_from_data_files(args)
-    codon_counts = np.sum(subs_counts, axis=0) + np.sum(subs_counts, axis=1)
+    codon_counts = (
+            numpy.sum(subs_counts, axis=0) + numpy.sum(subs_counts, axis=1))
     for a, b in zip(codons, codon_counts):
         print a, ':', b
     print 'raw codon total:', numpy.sum(codon_counts)
@@ -522,7 +521,8 @@ def submain_unconstrained_dominance(args):
     ham = npcodon.get_hamming(codons)
     #
     subs_counts = yangdata.get_subs_counts_from_data_files(args)
-    codon_counts = np.sum(subs_counts, axis=0) + np.sum(subs_counts, axis=1)
+    codon_counts = (
+            numpy.sum(subs_counts, axis=0) + numpy.sum(subs_counts, axis=1))
     for a, b in zip(codons, codon_counts):
         print a, ':', b
     print 'raw codon total:', numpy.sum(codon_counts)
@@ -627,8 +627,8 @@ def submain_constrained_dominance(args):
     ham = npcodon.get_hamming(codons)
     #
     subs_counts = yangdata.get_subs_counts_from_data_files(args)
-    codon_counts = numpy.sum(subs_counts, axis=0) + numpy.sum(
-            subs_counts, axis=1)
+    codon_counts = (
+            numpy.sum(subs_counts, axis=0) + numpy.sum(subs_counts, axis=1))
     for a, b in zip(codons, codon_counts):
         print a, ':', b
     print 'raw codon total:', numpy.sum(codon_counts)
@@ -719,9 +719,10 @@ def submain_constrained_dominance(args):
         results = scipy.optimize.fmin_ncg(
                 eval_f,
                 theta,
-                args=fmin_args,
                 fprime=eval_grad_f,
                 fhess=eval_hess_f,
+                args=fmin_args,
+                avextol=1e-6,
                 maxiter=10000,
                 full_output=True,
                 disp=True,
@@ -733,6 +734,9 @@ def submain_constrained_dominance(args):
     xopt = results[0]
     print 'optimal solution vector:', xopt
     print 'exp optimal solution vector:', numpy.exp(xopt)
+    print
+    print 'inverse of hessian:'
+    print scipy.linalg.inv(eval_hess_f(xopt, *fmin_args))
     print
 
 
@@ -748,6 +752,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
+            '--fmin',
+            choices=('simplex', 'bfgs', 'jeffopt', 'ncg'),
+            default='simplex',
+            help='nonlinear multivariate optimization')
+    parser.add_argument(
             '--disease',
             choices=(
                 'genic', 'recessive', 'dominant',
@@ -758,6 +767,10 @@ if __name__ == '__main__':
             '--mtdna',
             action='store_true',
             help='read the mtdna file from the website of Ziheng Yang')
+    parser.add_argument(
+            '--force-mtcode',
+            action='store_true',
+            help='use the mitochondrial genetic code and stop codons')
     parser.add_argument(
             '--infile',
             help='codon alignment input file using the format of Ziheng Yang',
