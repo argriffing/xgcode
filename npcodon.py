@@ -18,6 +18,9 @@ g_stop_mito = {'tag', 'taa', 'aga', 'agg'}
 g_ts = {'ag', 'ga', 'ct', 'tc'}
 g_tv = {'ac', 'ca', 'gt', 'tg', 'at', 'ta', 'cg', 'gc'}
 
+# an ordered tuple of unordered pairs for a gtr model
+g_nuc_gtr = ('ac', 'ag', 'at', 'cg', 'ct', 'gt')
+
 # http://en.wikipedia.org/wiki/DNA_codon_table
 g_code = {
         ('gct', 'gcc', 'gca', 'gcg'),
@@ -109,6 +112,34 @@ def get_ts_tv(codons):
                 tv[i, j] = 1
     return ts, tv
 
+def get_gtr(codons):
+    """
+    This is a generalization of get_ts_tv.
+    It returns a higher dimensional ndarray
+    whose shape is (ncodons, ncodons, 6) where the dimension of the last
+    axis is the number of upper off-diagonal entries in a nucleotide
+    rate matrix, that is, 4*(4-1)/2 = 6.
+    The value of M[i, j, k] is 1 if codons i and j differ at exactly
+    one nucleotide position and k is the type of the unordered difference,
+    otherwise M[i, j, k] is 0.
+    This is a very sparse and wasteful representation,
+    but it is nice for vectorization.
+    @param codons: sequence of lower case codon strings
+    @return: a numpy array of ndim 3
+    """
+    ncodons = len(codons)
+    ham = get_hamming(codons)
+    M = numpy.zeros((ncodons, ncodons, 6), dtype=int)
+    for i, ci in enumerate(codons):
+        for j, cj in enumerate(codons):
+            if ham[i, j] == 1:
+                for k, pk in enumerate(g_nuc_gtr):
+                    if any(ci[a]+cj[a]==pk for a in range(3)):
+                        M[i, j, k] = 1
+                    if any(cj[a]+ci[a]==pk for a in range(3)):
+                        M[i, j, k] = 1
+    return M
+
 def get_syn_nonsyn(code, codons):
     """
     Get binary matrices defining synonymous or nonynonymous codon pairs.
@@ -167,11 +198,13 @@ class Test_NumpyCodons(testing.TestCase):
         compo = get_compo(codons)
         asym_compo = get_asym_compo(codons)
         ham = get_hamming(codons)
+        gtr = get_gtr(codons)
         # check some invariants
         testing.assert_equal(len(all_codons), 64)
         testing.assert_equal(len(codons), 64 - len(stop))
         testing.assert_equal(numpy.unique(ts), [0, 1])
         testing.assert_equal(numpy.unique(tv), [0, 1])
+        testing.assert_equal(numpy.unique(gtr), [0, 1])
         # check the genetic code for typos
         table_codons = list(c for cs in code for c in cs)
         testing.assert_equal(len(code), 21)
