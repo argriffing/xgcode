@@ -477,7 +477,18 @@ def submain_unconstrained_dominance_kb(args):
     print
     #
     # search for the minimum negative log likelihood over multiple parameters
-    if args.fmin == 'ncg':
+    if args.fmin == 'simplex':
+        results = scipy.optimize.fmin(
+                eval_f_unconstrained_kb,
+                theta,
+                args=fmin_args,
+                maxfun=10000,
+                maxiter=10000,
+                xtol=1e-8,
+                ftol=1e-8,
+                full_output=True,
+                )
+    elif args.fmin == 'ncg':
         result = scipy.optimize.fmin_ncg(
                 eval_f_unconstrained_kb,
                 theta,

@@ -76,6 +76,12 @@ def get_relative_error_c(c, d):
     z = (y-x) / x
     return refilter(z)
 
+def get_relative_error_d(c, d):
+    x = kimrecessive.denom_quad(c, d)
+    y = kimrecessive.denom_near_genic_combo(c, d)
+    z = (y-x) / x
+    return refilter(z)
+
 def do_integration_demo():
     N = 101
     #c = np.linspace(-100, 100, N)
@@ -90,24 +96,37 @@ def do_integration_demo():
 
     fig = plt.figure()
 
+    """
     Z = np.zeros((len(d), len(c)))
     for j, dj in enumerate(d):
         for i, ci in enumerate(c):
             Z[j, i] = get_relative_error_a(ci, dj)
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()
+    """
 
+    """
     Z = np.zeros((len(d), len(c)))
     for j, dj in enumerate(d):
         for i, ci in enumerate(c):
             Z[j, i] = get_relative_error_b(ci, dj)
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()
+    """
 
+    """
     Z = np.zeros((len(d), len(c)))
     for j, dj in enumerate(d):
         for i, ci in enumerate(c):
             Z[j, i] = get_relative_error_c(ci, dj)
+    im = plt.imshow(Z, cmap=plt.cm.jet)
+    plt.show()
+    """
+
+    Z = np.zeros((len(d), len(c)))
+    for j, dj in enumerate(d):
+        for i, ci in enumerate(c):
+            Z[j, i] = get_relative_error_d(ci, dj)
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()
 

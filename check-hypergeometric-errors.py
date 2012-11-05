@@ -31,6 +31,12 @@ def sp_hyp2f0_type2(a1, a2, x):
     y, err = scipy.special.hyp2f0(a1, a2, x, convergence_type)
     return y
 
+def sp_hyp2f0_type1_combo(a1, a2, x):
+    if x < 0:
+        return sp_hyp2f0_type1(a1, a2, x)
+    else:
+        return (-1/x)**a1 * scipy.special.hyperu(a1, 1+a1-a2, (-1/x))
+
 def show_error(a, expected, observed):
     print len(a), len(expected), len(observed)
     for ai, ei, oi in zip(a, expected, observed):
