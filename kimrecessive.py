@@ -56,6 +56,10 @@ def denom_not_genic(c, d):
 def denom_near_genic_combo(c, d):
     a0 = 1. / (2.*c)
     b01 = 1. / (1.+d)
+    z1 = (2.*d)/(c*(1.+d)**2)
+    z2 = (2.*d)/(c*(1.-d)**2)
+    z1_recip = (c*(1.+d)**2) / (2.*d)
+    #FIXME: unfinished
     b02 = _hyp2f0_combo(1.0, 0.5, (2.*d)/(c*(1.+d)**2))
     b11 = algopy.exp(-2.*c) / (1.-d)
     b12 = _hyp2f0_combo(1.0, 0.5, (2.*d)/(c*(1.-d)**2))
