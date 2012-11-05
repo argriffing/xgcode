@@ -105,6 +105,46 @@ def denom_piecewise(c, d):
     else:
         return denom_not_genic(c, d)
 
+def denom_hyperu_b(c, d):
+    """
+    This uses only algopy.special.hyperu(1.0, 1.5, x).
+    It is only meaningful when c and d have different signs,
+    but for now do not enforce this.
+    """
+    prefix = algopy.exp(-c)
+    a1 = algopy.exp(-c)
+    a2 = (1. - d) / (4. * d)
+    a3 = algopy.special.hyperu(1.0, 1.5, -c*(1-d)**2 / (2. * d))
+    b1 = algopy.exp(c)
+    b2 = (1. + d) / (4. * d)
+    b3 = algopy.special.hyperu(1.0, 1.5, -c*(1+d)**2 / (2. * d))
+    return prefix * (a1 * a2 * a3 - b1 * b2 * b3)
+
+def denom_hyp1f1_b(c, d):
+    """
+    This uses only algopy.special.hyp1f1(1.0, 1.5, x).
+    """
+    prefix = algopy.exp(-c)
+    a1 = algopy.exp(c)
+    a2 = (1. + d) / (2. * d)
+    a3 = algopy.special.hyp1f1(1.0, 1.5, -c*(1+d)**2 / (2. * d))
+    b1 = algopy.exp(-c)
+    b2 = (1. - d) / (2. * d)
+    b3 = algopy.special.hyp1f1(1.0, 1.5, -c*(1-d)**2 / (2. * d))
+    return prefix * (a1 * a2 * a3 - b1 * b2 * b3)
+
+def denom_hyp2f0_b(c, d):
+    prefix = algopy.exp(-c)
+    a1 = algopy.exp(c)
+    a2 = 1. / (2. * c)
+    a3 = 1. / (1. + d)
+    a4 = algopy.special.hyp2f0(1.0, 0.5, (2. * d) / (c * (1. + d)**2))
+    b1 = algopy.exp(-c)
+    b2 = 1. / (2. * c)
+    b3 = 1. / (1. - d)
+    b4 = algopy.special.hyp2f0(1.0, 0.5, (2. * d) / (c * (1. - d)**2))
+    return prefix * (a1 * a2 * a3 * a4 - b1 * b2 * b3 * b4)
+
 
 ###########################################################################
 # These functions are for the numerical solution of a definite integral.
@@ -121,7 +161,6 @@ def denom_quad(c, d):
             full_output=1,
             )
     return result[0]
-
 
 class Test_KimuraRecessive(testing.TestCase):
 
