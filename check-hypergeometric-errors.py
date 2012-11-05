@@ -21,6 +21,12 @@ def float_mp_hyp2f0(a1, a2, x):
     except TypeError as e:
         return numpy.nan
 
+def float_mp_hyperu(a, b, x):
+    try:
+        return float(mpmath.hyperu(a, b, x))
+    except TypeError as e:
+        return numpy.nan
+
 def sp_hyp2f0_type1(a1, a2, x):
     convergence_type = 1
     y, err = scipy.special.hyp2f0(a1, a2, x, convergence_type)
@@ -45,8 +51,11 @@ def show_error(a, expected, observed):
 def main():
     mp_hyp1f1 = numpy.vectorize(float_mp_hyp1f1)
     mp_hyp2f0 = numpy.vectorize(float_mp_hyp2f0)
+    mp_hyperu = numpy.vectorize(float_mp_hyperu)
     #a_pos = numpy.power(10, numpy.linspace(-10, 10, 21))
-    a_pos = numpy.power(10, numpy.linspace(-5, 5, 21))
+    #a_pos = numpy.power(10, numpy.linspace(-5, 5, 21))
+    #a_pos = numpy.power(10, 1 + numpy.linspace(-1, 1, 21))
+    a_pos = numpy.power(18, 1 + 0.1*numpy.linspace(-1, 1, 21))
     a_neg = -a_pos
     a = numpy.hstack([a_neg, a_pos])
     print len(a_neg)
@@ -90,6 +99,11 @@ def main():
     expected = mp_hyp2f0(1.0, 0.5, a)
     observed = sp_hyp2f0_type2(1.0, 0.5, a)
     show_error(a, expected, observed)
+    print
+    print 'hyperu convergence:'
+    expected = mp_hyperu(1.0, 1.5, a_pos)
+    observed = scipy.special.hyperu(1.0, 1.5, a_pos)
+    show_error(a_pos, expected, observed)
     print
 
 
