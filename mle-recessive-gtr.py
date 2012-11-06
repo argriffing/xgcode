@@ -488,6 +488,12 @@ def submain_unconstrained_dominance_kb(args):
                 ftol=1e-8,
                 full_output=True,
                 )
+    elif args.fmin == 'jeffopt':
+        result = jeffopt.fmin_jeff_unconstrained(
+                eval_f_unconstrained_kb,
+                theta,
+                args=fmin_args,
+                )
     elif args.fmin == 'ncg':
         result = scipy.optimize.fmin_ncg(
                 eval_f_unconstrained_kb,
