@@ -145,6 +145,23 @@ def denom_hyp2f0_b(c, d):
     b4 = algopy.special.hyp2f0(1.0, 0.5, (2. * d) / (c * (1. - d)**2))
     return prefix * (a1 * a2 * a3 * a4 - b1 * b2 * b3 * b4)
 
+def denom_dawsn_b(c, d):
+    p1 = scipy.exp(-c)
+    p2 = 1. / (scipy.sqrt(c) * scipy.sqrt(2*d))
+    a1 = scipy.exp(-c)
+    a2 = scipy.special.dawsn((d-1)*scipy.sqrt(c) / scipy.sqrt(2*d))
+    b1 = scipy.exp(c)
+    b2 = scipy.special.dawsn((d+1)*scipy.sqrt(c) / scipy.sqrt(2*d))
+    return p1 * p2 * (a1 * a2 + b1 * b2)
+
+def denom_erfi_b(c, d):
+    p1 = scipy.sqrt(scipy.pi)
+    p2 = 1. / (2 * scipy.sqrt(c) * scipy.sqrt(2*d))
+    p3 = scipy.exp(-(c*(1.+d)*(1.+d)) / (2.*d))
+    a = scipy.special.erfi((scipy.sqrt(c)*(1.+d))/scipy.sqrt(2*d))
+    b = scipy.special.erfi((scipy.sqrt(c)*(1.-d))/scipy.sqrt(2*d))
+    return p1 * p2 * p3 * (a - b)
+
 
 ###########################################################################
 # These functions are for the numerical solution of a definite integral.
