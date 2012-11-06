@@ -32,7 +32,7 @@ trivially forces this to be a posterior distribution.
 import string
 import math
 import argparse
-from itertools import product
+import functools
 
 import numpy
 import scipy
@@ -46,6 +46,13 @@ import jeffopt
 import kimrecessive
 import npcodon
 import yangdata
+
+#FIXME:
+# this script is currently broken as I am in the process
+# of moving the function optimization parts into their own
+# separate function.
+# This new function will take as arguments the function to be optimized,
+# and the initial guess, and information about the optimization strategy.
 
 
 ##########################################################################
@@ -336,57 +343,22 @@ def eval_f_unconstrained_kb(
     # return the neg log likelihood
     return -get_log_likelihood(P, v, subs_counts)
 
-def eval_grad_f(theta, *args):
+def eval_grad(f, theta, *args):
     """
-    compute the gradient of f in the forward mode of AD
-    """
-    theta = algopy.UTPM.init_jacobian(theta)
-    retval = eval_f(theta, *args)
-    return algopy.UTPM.extract_jacobian(retval)
-
-def eval_hess_f(theta, *args):
-    """
-    compute the hessian of f in the forward mode of AD
-    """
-    theta = algopy.UTPM.init_hessian(theta)
-    retval = eval_f(theta, *args)
-    return algopy.UTPM.extract_hessian(len(theta), retval)
-
-def eval_grad_f_unconstrained(theta, *args):
-    """
-    compute the gradient of f in the forward mode of AD
-    No dominance/recessivity constraint.
+    Compute the gradient of f in the forward mode of automatic differentiation.
     """
     theta = algopy.UTPM.init_jacobian(theta)
-    retval = eval_f_unconstrained(theta, *args)
+    retval = f(theta, *args)
     return algopy.UTPM.extract_jacobian(retval)
 
-def eval_hess_f_unconstrained(theta, *args):
+def eval_hess(f, theta, *args):
     """
-    compute the hessian of f in the forward mode of AD
-    No dominance/recessivity constraint.
-    """
-    theta = algopy.UTPM.init_hessian(theta)
-    retval = eval_f_unconstrained(theta, *args)
-    return algopy.UTPM.extract_hessian(len(theta), retval)
-
-def eval_grad_f_unconstrained_kb(theta, *args):
-    """
-    compute the gradient of f in the forward mode of AD
-    No dominance/recessivity constraint.
-    """
-    theta = algopy.UTPM.init_jacobian(theta)
-    retval = eval_f_unconstrained_kb(theta, *args)
-    return algopy.UTPM.extract_jacobian(retval)
-
-def eval_hess_f_unconstrained_kb(theta, *args):
-    """
-    compute the hessian of f in the forward mode of AD
-    No dominance/recessivity constraint.
+    Compute the hessian of f in the forward mode of automatic differentiation.
     """
     theta = algopy.UTPM.init_hessian(theta)
-    retval = eval_f_unconstrained_kb(theta, *args)
+    retval = f(theta, *args)
     return algopy.UTPM.extract_hessian(len(theta), retval)
+
 
 def submain_unconstrained_dominance_kb(args):
     #
@@ -686,8 +658,15 @@ def submain_constrained_dominance(args):
     print 'entropy bound on negative log likelihood:',
     print get_lb_neg_ll(subs_counts)
     print
-    #
-    # search for the minimum negative log likelihood over multiple parameters
+    do_opt(args, eval_f, theta)
+
+def do_opt(args, f, theta):
+    """
+    @param args: directly parsed from the command line
+    @param f: function to minimize
+    @param theta: initial guess
+    """
+    #FIXME: finish this thing
     if args.fmin == 'simplex':
         results = scipy.optimize.fmin(
                 eval_f,
@@ -738,6 +717,7 @@ def main(args):
     #
     # Check reversibility of h functions with respect to F,
     # in the notation of Yang and Nielsen 2008.
+    #FIXME: move these tests into kimrecessive
     for h in (
             get_fixation_genic,
             get_fixation_recessive_disease,
@@ -762,6 +742,14 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    #FIXME: the quadrature option is not yet enabled
+    """
+    parser.add_argument(
+            '--integrate',
+            choices=('quadrature', 'special'),
+            default='quadrature',
+            help='quadrature vs. functions like hyp1f1 for integration')
+    """
     parser.add_argument(
             '--fmin',
             choices=('simplex', 'bfgs', 'jeffopt', 'ncg'),

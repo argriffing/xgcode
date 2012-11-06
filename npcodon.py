@@ -112,9 +112,36 @@ def get_ts_tv(codons):
                 tv[i, j] = 1
     return ts, tv
 
+def get_exch_ts_tv(codons):
+    """
+    This is a more sophisticated version of get_ts_tv.
+    Or alternatively it is a more restricted version of get_gtr.
+    It returns an ndim-3 matrix whose shape is (ncodons, ncodons, 2)
+    where the third axis specifies transitions and transversions.
+    The name exch refers to exchangeability, because this function
+    precomputes an ndarray that is used as a component to help build
+    the part of the rate matrix that corresponds
+    to the nucleotide exchangeability (as opposed to overall rate,
+    or nucleotide equilibrium probabilities,
+    or mutation-selection codon exchangeability) in the codon rate matrix.
+    @param codons: sequence of lower case codon strings
+    @return: a numpy array of ndim 3
+    """
+    ncodons = len(codons)
+    ham = get_hamming(codons)
+    M = numpy.zeros((ncodons, ncodons, 2), dtype=int)
+    for i, ci in enumerate(codons):
+        for j, cj in enumerate(codons):
+            if ham[i, j] == 1:
+                if any(a+b in g_ts for a,b in zip(ci,cj)):
+                    M[i, j, 0] = 1
+                if any(a+b in g_tv for a,b in zip(ci,cj)):
+                    M[i, j, 1] = 1
+    return M
+
 def get_gtr(codons):
     """
-    This is a generalization of get_ts_tv.
+    This is a generalization of get_ts_tv_exch.
     It returns a higher dimensional ndarray
     whose shape is (ncodons, ncodons, 6) where the dimension of the last
     axis is the number of upper off-diagonal entries in a nucleotide
