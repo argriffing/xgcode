@@ -214,6 +214,35 @@ def get_asym_compo(codons):
                     a != b and b == nt))
     return asym_compo
 
+def get_lb_neg_ll(subs_counts):
+    """
+    Get the lower bound negative log likelihood.
+    It uses an entropy-based calculation.
+    @param subs_counts: codon substitution counts
+    """
+    nstates = subs_counts.shape[0]
+    counts = []
+    for i in range(nstates):
+        for j in range(nstates):
+            if i < j:
+                c = subs_counts[i, j] + subs_counts[j, i]
+                counts.append(c)
+            elif i == j:
+                c = subs_counts[i, j]
+                counts.append(c)
+    # return the entropy of the unordered pair count vector
+    probs = numpy.array(counts, dtype=float) / numpy.sum(counts)
+    return -numpy.sum(c*math.log(p) for c, p in zip(counts, probs) if c)
+
+def get_lb_expected_subs(ham, subs_counts):
+    """
+    Get the lower bound of expected substitutions.
+    This is expected minimum possible number of substitutions
+    between aligned codons.
+    """
+    return numpy.sum(ham * subs_counts) / float(numpy.sum(subs_counts))
+
+
 
 class Test_NumpyCodons(testing.TestCase):
 

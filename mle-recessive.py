@@ -50,39 +50,6 @@ import yangdata
 
 
 ##########################################################################
-# these two functions are pure numpy and speed does not matter
-
-
-def get_lb_neg_ll(subs_counts):
-    """
-    Get the lower bound negative log likelihood.
-    It uses an entropy-based calculation.
-    @param subs_counts: codon substitution counts
-    """
-    nstates = subs_counts.shape[0]
-    counts = []
-    for i in range(nstates):
-        for j in range(nstates):
-            if i < j:
-                c = subs_counts[i, j] + subs_counts[j, i]
-                counts.append(c)
-            elif i == j:
-                c = subs_counts[i, j]
-                counts.append(c)
-    # return the entropy of the unordered pair count vector
-    probs = numpy.array(counts, dtype=float) / numpy.sum(counts)
-    return numpy.sum(-c*math.log(p) for c, p in zip(counts, probs) if c)
-
-def get_lb_expected_subs(ham, subs_counts):
-    """
-    Get the lower bound of expected substitutions.
-    This is expected minimum possible number of substitutions
-    between aligned codons.
-    """
-    return numpy.sum(ham * subs_counts) / float(numpy.sum(subs_counts))
-
-
-##########################################################################
 # algopy stuff involving parameters
 
 def get_fixation_knudsen(S):
@@ -427,7 +394,7 @@ def submain_unconstrained_dominance_kb(args):
             log_mu, log_kappa, log_omega, d, log_kb, log_nt_weights)
     #
     # get the minimum expected number of substitutions between codons
-    mu_empirical = get_lb_expected_subs(ham, subs_counts)
+    mu_empirical = npcodon.get_lb_expected_subs(ham, subs_counts)
     mu_implied = -numpy.sum(numpy.diag(Q) * v)
     log_mu = math.log(mu_empirical) - math.log(mu_implied)
     print 'lower bound on expected mutations per codon site:', mu_empirical
@@ -455,7 +422,7 @@ def submain_unconstrained_dominance_kb(args):
     print initial_cost
     print
     print 'entropy bound on negative log likelihood:',
-    print get_lb_neg_ll(subs_counts)
+    print npcodon.get_lb_neg_ll(subs_counts)
     print
     do_opt(args, eval_f_unconstrained_kb, theta, fmin_args)
 
@@ -517,7 +484,7 @@ def submain_unconstrained_dominance(args):
             log_mu, log_kappa, log_omega, d, log_nt_weights)
     #
     # get the minimum expected number of substitutions between codons
-    mu_empirical = get_lb_expected_subs(ham, subs_counts)
+    mu_empirical = npcodon.get_lb_expected_subs(ham, subs_counts)
     mu_implied = -numpy.sum(numpy.diag(Q) * v)
     log_mu = math.log(mu_empirical) - math.log(mu_implied)
     print 'lower bound on expected mutations per codon site:', mu_empirical
@@ -544,7 +511,7 @@ def submain_unconstrained_dominance(args):
     print initial_cost
     print
     print 'entropy bound on negative log likelihood:',
-    print get_lb_neg_ll(subs_counts)
+    print npcodon.get_lb_neg_ll(subs_counts)
     print
     do_opt(args, eval_f_unconstrained, theta, fmin_args)
 
@@ -605,7 +572,7 @@ def submain_constrained_dominance(args):
             log_mu, log_kappa, log_omega, log_nt_weights)
     #
     # get the minimum expected number of substitutions between codons
-    mu_empirical = get_lb_expected_subs(ham, subs_counts)
+    mu_empirical = npcodon.get_lb_expected_subs(ham, subs_counts)
     mu_implied = -numpy.sum(numpy.diag(Q) * v)
     log_mu = math.log(mu_empirical) - math.log(mu_implied)
     print 'lower bound on expected mutations per codon site:', mu_empirical
@@ -631,7 +598,7 @@ def submain_constrained_dominance(args):
     print initial_cost
     print
     print 'entropy bound on negative log likelihood:',
-    print get_lb_neg_ll(subs_counts)
+    print npcodon.get_lb_neg_ll(subs_counts)
     print
     do_opt(args, eval_f, theta, fmin_args)
 
