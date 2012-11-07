@@ -47,13 +47,6 @@ import kimrecessive
 import npcodon
 import yangdata
 
-#FIXME:
-# this script is currently broken as I am in the process
-# of moving the function optimization parts into their own
-# separate function.
-# This new function will take as arguments the function to be optimized,
-# and the initial guess, and information about the optimization strategy.
-
 
 ##########################################################################
 # these two functions are pure numpy and speed does not matter
@@ -343,23 +336,6 @@ def eval_f_unconstrained_kb(
     # return the neg log likelihood
     return -get_log_likelihood(P, v, subs_counts)
 
-def eval_grad(f, theta, *args):
-    """
-    Compute the gradient of f in the forward mode of automatic differentiation.
-    """
-    theta = algopy.UTPM.init_jacobian(theta)
-    retval = f(theta, *args)
-    return algopy.UTPM.extract_jacobian(retval)
-
-def eval_hess(f, theta, *args):
-    """
-    Compute the hessian of f in the forward mode of automatic differentiation.
-    """
-    theta = algopy.UTPM.init_hessian(theta)
-    retval = f(theta, *args)
-    return algopy.UTPM.extract_hessian(len(theta), retval)
-
-
 def submain_unconstrained_dominance_kb(args):
     #
     # Precompute some ndarrays
@@ -380,7 +356,8 @@ def submain_unconstrained_dominance_kb(args):
     ham = npcodon.get_hamming(codons)
     #
     subs_counts = yangdata.get_subs_counts_from_data_files(args)
-    codon_counts = np.sum(subs_counts, axis=0) + np.sum(subs_counts, axis=1)
+    codon_counts = (
+            numpy.sum(subs_counts, axis=0) + numpy.sum(subs_counts, axis=1))
     for a, b in zip(codons, codon_counts):
         print a, ':', b
     print 'raw codon total:', numpy.sum(codon_counts)
@@ -442,30 +419,7 @@ def submain_unconstrained_dominance_kb(args):
     print 'entropy bound on negative log likelihood:',
     print get_lb_neg_ll(subs_counts)
     print
-    #
-    # search for the minimum negative log likelihood over multiple parameters
-    if args.fmin == 'ncg':
-        result = scipy.optimize.fmin_ncg(
-                eval_f_unconstrained_kb,
-                theta,
-                args=fmin_args,
-                fprime=eval_grad_f_unconstrained_kb,
-                fhess=eval_hess_f_unconstrained_kb,
-                maxiter=10000,
-                full_output=True,
-                disp=True,
-                retall=True,
-                )
-    else:
-        raise Exception
-    print 'results:', result
-    xopt = result[0]
-    print 'optimal solution vector:', xopt
-    print 'exp optimal solution vector:', numpy.exp(xopt)
-    print
-    print 'inverse of hessian:'
-    print scipy.linalg.inv(eval_hess_f_unconstrained_kb(xopt, *fmin_args))
-    print
+    do_opt(args, eval_f_unconstrained_kb, theta, fmin_args)
 
 
 def submain_unconstrained_dominance(args):
@@ -488,7 +442,8 @@ def submain_unconstrained_dominance(args):
     ham = npcodon.get_hamming(codons)
     #
     subs_counts = yangdata.get_subs_counts_from_data_files(args)
-    codon_counts = np.sum(subs_counts, axis=0) + np.sum(subs_counts, axis=1)
+    codon_counts = (
+            numpy.sum(subs_counts, axis=0) + numpy.sum(subs_counts, axis=1))
     for a, b in zip(codons, codon_counts):
         print a, ':', b
     print 'raw codon total:', numpy.sum(codon_counts)
@@ -548,30 +503,7 @@ def submain_unconstrained_dominance(args):
     print 'entropy bound on negative log likelihood:',
     print get_lb_neg_ll(subs_counts)
     print
-    #
-    # search for the minimum negative log likelihood over multiple parameters
-    if args.fmin == 'ncg':
-        result = scipy.optimize.fmin_ncg(
-                eval_f_unconstrained,
-                theta,
-                args=fmin_args,
-                fprime=eval_grad_f_unconstrained,
-                fhess=eval_hess_f_unconstrained,
-                maxiter=10000,
-                full_output=True,
-                disp=True,
-                retall=True,
-                )
-    else:
-        raise Exception
-    print 'results:', result
-    xopt = result[0]
-    print 'optimal solution vector:', xopt
-    print 'exp optimal solution vector:', numpy.exp(xopt)
-    print
-    print 'inverse of hessian:'
-    print scipy.linalg.inv(eval_hess_f_unconstrained(xopt, *fmin_args))
-    print
+    do_opt(args, eval_f_unconstrained, theta, fmin_args)
 
 
 
@@ -658,18 +590,37 @@ def submain_constrained_dominance(args):
     print 'entropy bound on negative log likelihood:',
     print get_lb_neg_ll(subs_counts)
     print
-    do_opt(args, eval_f, theta)
+    do_opt(args, eval_f, theta, fmin_args)
 
-def do_opt(args, f, theta):
+
+def eval_grad(f, theta, *args):
+    """
+    Compute the gradient of f in the forward mode of automatic differentiation.
+    """
+    theta = algopy.UTPM.init_jacobian(theta)
+    retval = f(theta, *args)
+    return algopy.UTPM.extract_jacobian(retval)
+
+def eval_hess(f, theta, *args):
+    """
+    Compute the hessian of f in the forward mode of automatic differentiation.
+    """
+    theta = algopy.UTPM.init_hessian(theta)
+    retval = f(theta, *args)
+    return algopy.UTPM.extract_hessian(len(theta), retval)
+
+def do_opt(args, f, theta, fmin_args):
     """
     @param args: directly parsed from the command line
     @param f: function to minimize
-    @param theta: initial guess
+    @param theta: initial guess of parameter values
+    @param fmin_args: data and other precomputed things independent of theta
     """
-    #FIXME: finish this thing
+    g = functools.partial(eval_grad, f)
+    h = functools.partial(eval_hess, f)
     if args.fmin == 'simplex':
         results = scipy.optimize.fmin(
-                eval_f,
+                f,
                 theta,
                 args=fmin_args,
                 maxfun=10000,
@@ -680,7 +631,7 @@ def do_opt(args, f, theta):
                 )
     elif args.fmin == 'bfgs':
         results = scipy.optimize.fmin_bfgs(
-                eval_f,
+                f,
                 theta,
                 args=fmin_args,
                 maxiter=10000,
@@ -688,17 +639,17 @@ def do_opt(args, f, theta):
                 )
     elif args.fmin == 'jeffopt':
         results = jeffopt.fmin_jeff_unconstrained(
-                eval_f,
+                f,
                 theta,
                 args=fmin_args,
                 )
     elif args.fmin == 'ncg':
         results = scipy.optimize.fmin_ncg(
-                eval_f,
+                f,
                 theta,
                 args=fmin_args,
-                fprime=eval_grad_f,
-                fhess=eval_hess_f,
+                fprime=g,
+                fhess=h,
                 maxiter=10000,
                 full_output=True,
                 disp=True,
@@ -710,6 +661,9 @@ def do_opt(args, f, theta):
     xopt = results[0]
     print 'optimal solution vector:', xopt
     print 'exp optimal solution vector:', numpy.exp(xopt)
+    print
+    print 'inverse of hessian:'
+    print scipy.linalg.inv(h(xopt, *fmin_args))
     print
 
 
