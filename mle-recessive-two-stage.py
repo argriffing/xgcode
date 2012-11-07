@@ -26,10 +26,11 @@ import yangdata
 
 
 ##########################################################################
-# algopy stuff involving parameters
-#
 # These two functions could possibly be moved out of this module.
 # But they could depend on algopy in other contexts.
+# For example if you need the gradient with respect to the nucleotide weights,
+# then these functions would need to be algopy-enabled.
+# But in this script that is not the case.
 
 def get_selection_F(log_counts, compo, log_nt_weights):
     """
@@ -38,7 +39,7 @@ def get_selection_F(log_counts, compo, log_nt_weights):
     One of the four log weights is zero and the other three
     are free parameters to be estimated jointly in the
     maximimum likelihood search,
-    so this function is inside the optimization loop.
+    so this function is inside an optimization loop.
     @param log_counts: logs of empirical codon counts
     @param compo: codon composition as defined in the get_compo function
     @param log_nt_weights: un-normalized log mutation process probabilities
@@ -57,17 +58,11 @@ def get_selection_S(F):
 
 
 ##########################################################################
-# algopy stuff involving parameters
-
-def get_fixation_unconstrained(S, d):
-    sign_S = algopy.sign(S)
-    D = d * sign_S
-    H = algopy.zeros_like(S)
-    for i in range(H.shape[0]):
-        for j in range(H.shape[1]):
-            H[i, j] = 1. / kimrecessive.denom_piecewise(
-                    0.5*S[i, j], D[i, j])
-    return H
+# In this script, these functions do not require algopy.
+# Instead we use numerical quadrature and do not explicitly track
+# the gradient with respect to the d parameter
+# or with respect to any of the mutational process nucleotide
+# equilibrium parameters that help to define S.
 
 def get_fixation_unconstrained_quad(S, d):
     """
@@ -82,6 +77,23 @@ def get_fixation_unconstrained_quad(S, d):
             H[i, j] = 1. / kimrecessive.denom_quad(
                     0.5*S[i, j], D[i, j])
     return H
+
+def get_Q_suffix(
+        compo, asym_compo,
+        log_counts,
+        d, log_nt_weights):
+    """
+    This is specific to the model of recessivity.
+    """
+    F = get_selection_F(log_counts, compo, log_nt_weights)
+    S = get_selection_S(F)
+    pre_Q_suffix = algopy.exp(algopy.dot(asym_compo, log_nt_weights))
+    pre_Q_suffix *= get_fixation_unconstrained_quad(S, d)
+    return pre_Q_suffix
+
+
+##########################################################################
+# algopy stuff involving parameters
 
 def get_Q_prefix(
         ts, tv, syn, nonsyn,
@@ -104,37 +116,13 @@ def get_Q_prefix(
     omega = algopy.exp(log_omega)
     return mu * (kappa * ts + tv) * (omega * nonsyn + syn)
 
-def get_Q_postfix_recessivity(
-        compo, asym_compo,
-        h,
-        log_counts,
-        d, log_nt_weights):
+def get_Q(pre_Q_prefix, pre_Q_suffix):
     """
-    This is specific to the model of recessivity.
+    @param pre_Q_prefix: this is an algopy aware ndarray
+    @param pre_Q_suffix: this is a numpy ndarray
+    @return: an algopy aware ndarray
     """
-    F = get_selection_F(log_counts, compo, log_nt_weights)
-    S = get_selection_S(F)
-    pre_Q_postfix = algopy.exp(algopy.dot(asym_compo, log_nt_weights)) * h(S, d)
-    return pre_Q_postfix
-    Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
-    return Q
-
-#FIXME: remove
-def get_Q_unconstrained(
-        ts, tv, syn, nonsyn, compo, asym_compo,
-        h,
-        log_counts,
-        log_mu, log_kappa, log_omega, d, log_nt_weights):
-    """
-    This adds a single parameter.
-    """
-    mu = algopy.exp(log_mu)
-    kappa = algopy.exp(log_kappa)
-    omega = algopy.exp(log_omega)
-    F = get_selection_F(log_counts, compo, log_nt_weights)
-    S = get_selection_S(F)
-    pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
-            algopy.dot(asym_compo, log_nt_weights)) * h(S, d)
+    pre_Q = pre_Q_prefix * pre_Q_suffix
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
@@ -146,19 +134,19 @@ def get_log_likelihood(P, v, subs_counts):
     @param v: stationary distribution proportional to observed codon counts
     @param subs_counts: observed substitution counts
     """
-    score_matrix_transpose = P.T * v
-    return algopy.sum(subs_counts * algopy.log(score_matrix_transpose))
+    score_matrix = P.T * v
+    return algopy.sum(subs_counts * algopy.log(score_matrix))
 
 def inner_eval_f(
         theta,
-        pre_Q_postfix,
+        pre_Q_suffix,
         subs_counts, v,
         ts, tv, syn, nonsyn,
         ):
     """
     This function is meant to be optimized with the help of algopy and ncg.
     @param theta: vector of unconstrained free variables
-    @param pre_Q_postfix: this has estimates from the outer ML loop
+    @param pre_Q_suffix: this has estimates from the outer ML loop
     @param subs_counts: empirical substitution counts
     @param v: empirical codon distribution
     @param ts: precomputed nucleotide transition mask
@@ -173,46 +161,61 @@ def inner_eval_f(
     pre_Q_prefix = get_Q_prefix(
             ts, tv, syn, nonsyn,
             log_mu, log_kappa, log_omega)
-    pre_Q = pre_Q_prefix * pre_Q_postfix
-    Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
+    Q = get_Q(pre_Q_prefix, pre_Q_suffix)
     P = algopy.expm(Q)
     return -get_log_likelihood(P, v, subs_counts)
 
 def eval_f_unconstrained(
         theta,
-        subs_counts, log_counts, v,
-        h,
+        mu_empirical, subs_counts, log_counts, v,
         ts, tv, syn, nonsyn, compo, asym_compo,
         ):
     """
+    This function depends on the recessivity model.
+    Nothing passed into this function is algopy aware.
     @param theta: vector of unconstrained free variables
+    @return: negative log likelihood
     """
     d = theta[0]
-    log_nt_weights = numpy.zeros(4, dtype=theta)
+    log_nt_weights = numpy.zeros(4)
     log_nt_weights[0] = theta[1]
     log_nt_weights[1] = theta[2]
     log_nt_weights[2] = theta[3]
     log_nt_weights[3] = 0
-    # laboriously construct this matrix
-    pre_Q_postfix = get_Q_postfix_recessivity(
+    # construct the suffix matrix using slow numerical integration
+    pre_Q_suffix = get_Q_suffix(
             compo, asym_compo,
-            h,
             log_counts,
-            d, log_nt_weights)
-    #
-    # construct the transition matrix
-    Q = get_Q_unconstrained(
-            ts, tv, syn, nonsyn, compo, asym_compo,
-            h,
-            log_counts,
-            log_mu, log_kappa, log_omega, d, log_nt_weights)
-    P = algopy.expm(Q)
-    #
+            d, log_nt_weights,
+            )
+    #FIXME: use info from prev iterations to construct this guess
+    # Construct an initial guess for the inner optimization.
+    # log of generic scaling parameter
+    # log of transition vs. transversion exchangeability ratio
+    # log of nonsynonymous vs. synonymous exchangeability ratio
+    log_mu = 0.0
+    log_kappa = 1.0
+    log_omega = -1.0
+    # re-estimate the generic scaling parameter
+    pre_Q_prefix = get_Q_prefix(
+            ts, tv, syn, nonsyn,
+            log_mu, log_kappa, log_omega)
+    Q = get_Q(pre_Q_prefix, pre_Q_suffix)
+    mu_implied = -numpy.dot(numpy.diag(Q), v)
+    log_mu = math.log(mu_empirical) - math.log(mu_implied)
+    # get conditional max likelihood estimates of the three inner parameters
+    fmin_args = (
+            pre_Q_suffix,
+            subs_counts, v,
+            ts, tv, syn, nonsyn,
+            )
+    inner_guess = numpy.array([log_mu, log_kappa, log_omega])
+    f = inner_eval_f
     g = functools.partial(eval_grad, f)
     h = functools.partial(eval_hess, f)
     results = scipy.optimize.fmin_ncg(
             f,
-            theta,
+            inner_guess,
             args=fmin_args,
             fprime=g,
             fhess=h,
@@ -224,8 +227,8 @@ def eval_f_unconstrained(
             )
     xopt = results[0]
     yopt = results[1]
-    print 'xopt:', xopt
-    print 'yopt:', yopt
+    print 'inner xopt:', xopt
+    print 'inner neg log likelihood:', yopt
     return yopt
 
 
@@ -261,60 +264,27 @@ def submain_unconstrained_dominance(args):
     v = codon_counts / float(numpy.sum(codon_counts))
     log_counts = numpy.log(codon_counts)
     #
-    if args.disease == 'unconstrained':
-        if args.integrate == 'quadrature':
-            h = get_fixation_unconstrained_quad
-        elif args.integrate == 'special':
-            h = get_fixation_unconstrained
-        else:
-            raise Exception
-    else:
-        raise Exception
-    #
-    # predefine some plausible parameters but not the scaling parameter
-    log_mu = 0
-    log_kappa = 1
-    log_omega = -3
-    d = 0.5
-    log_nt_weights = numpy.zeros(4)
-    #
-    # get the rate matrix associated with the initial guess
-    Q = get_Q_unconstrained(
-            ts, tv, syn, nonsyn, compo, asym_compo,
-            h,
-            log_counts,
-            log_mu, log_kappa, log_omega, d, log_nt_weights)
-    #
     # get the minimum expected number of substitutions between codons
     mu_empirical = npcodon.get_lb_expected_subs(ham, subs_counts)
-    mu_implied = -numpy.sum(numpy.diag(Q) * v)
-    log_mu = math.log(mu_empirical) - math.log(mu_implied)
     print 'lower bound on expected mutations per codon site:', mu_empirical
     print
-    # construct the initial guess
+    print 'entropy lower bound on negative log likelihood:',
+    print npcodon.get_lb_neg_ll(subs_counts)
+    print
+    #
+    # initialize parameter value guesses
+    d = 0.5
+    log_nt_weights = numpy.zeros(4)
     theta = numpy.array([
-        log_mu,
-        log_kappa,
-        log_omega,
         d,
         0,
         0,
         0,
         ])
-    #
-    # get the log likelihood associated with the initial guess
     fmin_args = (
-            subs_counts, log_counts, v,
-            h,
+            mu_empirical, subs_counts, log_counts, v,
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
-    initial_cost = eval_f_unconstrained(theta, *fmin_args)
-    print 'negative log likelihood of initial guess:',
-    print initial_cost
-    print
-    print 'entropy bound on negative log likelihood:',
-    print npcodon.get_lb_neg_ll(subs_counts)
-    print
     f = eval_f_unconstrained
     results = scipy.optimize.fmin(
             f,
@@ -326,7 +296,6 @@ def submain_unconstrained_dominance(args):
             ftol=1e-8,
             full_output=True,
             )
-
     print 'results:', results
     xopt = results[0]
     print 'optimal solution vector:', xopt

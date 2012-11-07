@@ -232,7 +232,7 @@ def get_lb_neg_ll(subs_counts):
                 counts.append(c)
     # return the entropy of the unordered pair count vector
     probs = numpy.array(counts, dtype=float) / numpy.sum(counts)
-    return -numpy.sum(c*math.log(p) for c, p in zip(counts, probs) if c)
+    return -numpy.sum(c*numpy.log(p) for c, p in zip(counts, probs) if c)
 
 def get_lb_expected_subs(ham, subs_counts):
     """

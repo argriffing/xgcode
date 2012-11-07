@@ -168,7 +168,7 @@ def denom_erfi_b(c, d):
 
 
 def denom_integrand(x, c, d):
-    return algopy.exp(-2*c*d*x*(1-x) - 2*c*x)
+    return numpy.exp(-2*c*d*x*(1-x) - 2*c*x)
 
 def denom_quad(c, d):
     result = scipy.integrate.quad(
