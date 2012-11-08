@@ -127,7 +127,8 @@ def get_Q(pre_Q_prefix, pre_Q_suffix):
     return Q
 
 def help_log_lik(a, b):
-    return a*b
+    #return a*b
+    return b*a
 
 def get_log_likelihood(P, v, subs_counts):
     """
@@ -250,7 +251,7 @@ def submain_unconstrained_dominance(args):
     #
     # Precompute some ndarrays
     # according to properties of DNA and the genetic code.
-    if args.mtdna or args.force_mtcode:
+    if args.mtdna:
         code = npcodon.g_code_mito
         stop = npcodon.g_stop_mito
     else:
@@ -287,7 +288,7 @@ def submain_unconstrained_dominance(args):
     print
     #
     # initialize parameter value guesses
-    d = -0.5
+    d = 0.5
     theta = numpy.array([
         d,
         0, 0, 0,

@@ -13,6 +13,8 @@ import scipy.integrate
 import algopy
 import algopy.special
 
+import kimengine
+
 
 
 def _hyp2f0_combo(a1, a2, x):
@@ -172,7 +174,8 @@ def denom_integrand(x, c, d):
 
 def denom_quad(c, d):
     result = scipy.integrate.quad(
-            denom_integrand,
+            #denom_integrand,
+            kimengine.kimura_integrand,
             0., 1.,
             args=(c,d),
             full_output=1,

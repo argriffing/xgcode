@@ -95,7 +95,7 @@ def get_subs_counts_from_data_files(args):
     """
     @return: numpy ndarray of observed substitution counts
     """
-    if args.mtdna or args.force_mtcode:
+    if args.mtdna:
         code = npcodon.g_code_mito
         stop = npcodon.g_stop_mito
     else:
