@@ -87,7 +87,7 @@ def get_Q_suffix(
     """
     F = get_selection_F(log_counts, compo, log_nt_weights)
     S = get_selection_S(F)
-    pre_Q_suffix = algopy.exp(algopy.dot(asym_compo, log_nt_weights))
+    pre_Q_suffix = numpy.exp(numpy.dot(asym_compo, log_nt_weights))
     pre_Q_suffix *= get_fixation_unconstrained_quad(S, d)
     return pre_Q_suffix
 
@@ -126,6 +126,9 @@ def get_Q(pre_Q_prefix, pre_Q_suffix):
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
+def help_log_lik(a, b):
+    return a*b
+
 def get_log_likelihood(P, v, subs_counts):
     """
     The stationary distribution of P is empirically derived.
@@ -134,8 +137,14 @@ def get_log_likelihood(P, v, subs_counts):
     @param v: stationary distribution proportional to observed codon counts
     @param subs_counts: observed substitution counts
     """
-    score_matrix = P.T * v
-    return algopy.sum(subs_counts * algopy.log(score_matrix))
+    #FIXME: this function has been broken up for optimization debugging
+    #score_matrix = P.T * v
+    score_matrix = algopy.dot(algopy.diag(v), P)
+    log_score_matrix = algopy.log(score_matrix)
+    #log_likelihoods = subs_counts * log_score_matrix
+    log_likelihoods = help_log_lik(subs_counts, log_score_matrix)
+    log_likelihood = algopy.sum(log_likelihoods)
+    return log_likelihood
 
 def inner_eval_f(
         theta,
@@ -169,6 +178,7 @@ def eval_f_unconstrained(
         theta,
         mu_empirical, subs_counts, log_counts, v,
         ts, tv, syn, nonsyn, compo, asym_compo,
+        boxed_guess,
         ):
     """
     This function depends on the recessivity model.
@@ -193,23 +203,26 @@ def eval_f_unconstrained(
     # log of generic scaling parameter
     # log of transition vs. transversion exchangeability ratio
     # log of nonsynonymous vs. synonymous exchangeability ratio
-    log_mu = 0.0
-    log_kappa = 1.0
-    log_omega = -1.0
-    # re-estimate the generic scaling parameter
-    pre_Q_prefix = get_Q_prefix(
-            ts, tv, syn, nonsyn,
-            log_mu, log_kappa, log_omega)
-    Q = get_Q(pre_Q_prefix, pre_Q_suffix)
-    mu_implied = -numpy.dot(numpy.diag(Q), v)
-    log_mu = math.log(mu_empirical) - math.log(mu_implied)
+    if boxed_guess[0] is None:
+        log_mu = 0.0
+        log_kappa = 1.0
+        log_omega = -1.0
+        # re-estimate the generic scaling parameter
+        pre_Q_prefix = get_Q_prefix(
+                ts, tv, syn, nonsyn,
+                log_mu, log_kappa, log_omega)
+        Q = get_Q(pre_Q_prefix, pre_Q_suffix)
+        mu_implied = -numpy.dot(numpy.diag(Q), v)
+        log_mu = math.log(mu_empirical) - math.log(mu_implied)
+        inner_guess = numpy.array([log_mu, log_kappa, log_omega])
+    else:
+        inner_guess = boxed_guess[0]
     # get conditional max likelihood estimates of the three inner parameters
     fmin_args = (
             pre_Q_suffix,
             subs_counts, v,
             ts, tv, syn, nonsyn,
             )
-    inner_guess = numpy.array([log_mu, log_kappa, log_omega])
     f = inner_eval_f
     g = functools.partial(eval_grad, f)
     h = functools.partial(eval_hess, f)
@@ -229,6 +242,7 @@ def eval_f_unconstrained(
     yopt = results[1]
     print 'inner xopt:', xopt
     print 'inner neg log likelihood:', yopt
+    boxed_guess[0] = xopt
     return yopt
 
 
@@ -273,17 +287,16 @@ def submain_unconstrained_dominance(args):
     print
     #
     # initialize parameter value guesses
-    d = 0.5
-    log_nt_weights = numpy.zeros(4)
+    d = -0.5
     theta = numpy.array([
         d,
-        0,
-        0,
-        0,
-        ])
+        0, 0, 0,
+        ], dtype=float)
+    boxed_guess = [None]
     fmin_args = (
             mu_empirical, subs_counts, log_counts, v,
             ts, tv, syn, nonsyn, compo, asym_compo,
+            boxed_guess,
             )
     f = eval_f_unconstrained
     results = scipy.optimize.fmin(
@@ -301,9 +314,9 @@ def submain_unconstrained_dominance(args):
     print 'optimal solution vector:', xopt
     print 'exp optimal solution vector:', numpy.exp(xopt)
     print
-    print 'inverse of hessian:'
-    print scipy.linalg.inv(h(xopt, *fmin_args))
-    print
+    #print 'inverse of hessian:'
+    #print scipy.linalg.inv(h(xopt, *fmin_args))
+    #print
 
 
 def eval_grad(f, theta, *args):
