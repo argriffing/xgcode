@@ -61,12 +61,18 @@ def get_selection_S(F):
 # equilibrium parameters that help to define S.
 
 def get_fixation_unconstrained_quad(S, d):
-    """
-    Use numerical quadrature.
-    Do not bother trying to use algopy for this.
-    """
     sign_S = numpy.sign(S)
     D = d * sign_S
+    H = numpy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            H[i, j] = 1. / kimrecessive.denom_quad(
+                    0.5*S[i, j], D[i, j])
+    return H
+
+def get_fixation_kacser_quad(S, d, log_kb):
+    soft_sign_S = numpy.tanh(numpy.exp(log_kb)*S)
+    D = d * soft_sign_S
     H = numpy.zeros_like(S)
     for i in range(H.shape[0]):
         for j in range(H.shape[1]):
@@ -85,6 +91,19 @@ def get_Q_suffix(
     S = get_selection_S(F)
     pre_Q_suffix = numpy.exp(numpy.dot(asym_compo, log_nt_weights))
     pre_Q_suffix *= get_fixation_unconstrained_quad(S, d)
+    return pre_Q_suffix
+
+def get_Q_suffix_kacser(
+        compo, asym_compo,
+        log_counts,
+        d, log_kb, log_nt_weights):
+    """
+    This is specific to the model of recessivity.
+    """
+    F = get_selection_F(log_counts, compo, log_nt_weights)
+    S = get_selection_S(F)
+    pre_Q_suffix = numpy.exp(numpy.dot(asym_compo, log_nt_weights))
+    pre_Q_suffix *= get_fixation_kacser_quad(S, d, log_kb)
     return pre_Q_suffix
 
 
@@ -383,6 +402,81 @@ def eval_f_unconstrained_gtr(
     boxed_guess[0] = xopt
     return yopt
 
+def eval_f_kacser_gtr(
+        theta,
+        mu_empirical, subs_counts, log_counts, v,
+        gtr, syn, nonsyn, compo, asym_compo,
+        boxed_guess,
+        ):
+    """
+    This function depends on the recessivity model.
+    Nothing passed into this function is algopy aware.
+    @param theta: vector of unconstrained free variables
+    @return: negative log likelihood
+    """
+    print 'outer params:', theta
+    print 'outer params exp:', numpy.exp(theta)
+    d = theta[0]
+    log_kb = theta[1]
+    log_nt_weights = numpy.zeros(4)
+    log_nt_weights[0] = theta[2]
+    log_nt_weights[1] = theta[3]
+    log_nt_weights[2] = theta[4]
+    log_nt_weights[3] = 0
+    # construct the suffix matrix using slow numerical integration
+    pre_Q_suffix = get_Q_suffix_kacser(
+            compo, asym_compo,
+            log_counts,
+            d, log_kb, log_nt_weights,
+            )
+    # Construct an initial guess for the inner optimization.
+    if boxed_guess[0] is None:
+        log_mu = 0.0
+        log_gtr_exch = numpy.zeros(6)
+        log_omega = -1.0
+        # re-estimate the generic scaling parameter
+        pre_Q_prefix = get_Q_prefix_gtr(
+                gtr, syn, nonsyn,
+                log_mu, log_gtr_exch, log_omega)
+        Q = get_Q(pre_Q_prefix, pre_Q_suffix)
+        mu_implied = -numpy.dot(numpy.diag(Q), v)
+        log_mu = math.log(mu_empirical) - math.log(mu_implied)
+        inner_guess = numpy.array([
+            log_mu,
+            0, 0, 0, 0, 0,
+            log_omega,
+            ])
+    else:
+        inner_guess = boxed_guess[0]
+    # get conditional max likelihood estimates of the three inner parameters
+    fmin_args = (
+            pre_Q_suffix,
+            subs_counts, v,
+            gtr, syn, nonsyn,
+            )
+    f = inner_eval_f_gtr
+    g = functools.partial(eval_grad, f)
+    h = functools.partial(eval_hess, f)
+    results = scipy.optimize.fmin_ncg(
+            f,
+            inner_guess,
+            args=fmin_args,
+            fprime=g,
+            fhess=h,
+            maxiter=10000,
+            avextol=1e-6,
+            full_output=True,
+            disp=True,
+            retall=True,
+            )
+    xopt = results[0]
+    yopt = results[1]
+    print 'inner xopt:', xopt
+    print 'inner xopt exp:', numpy.exp(xopt)
+    print 'inner neg log likelihood:', yopt
+    boxed_guess[0] = xopt
+    return yopt
+
 
 def submain_unconstrained_dominance(args):
     #
@@ -509,18 +603,6 @@ def submain_unconstrained_dominance_gtr(args):
             boxed_guess,
             )
     f = eval_f_unconstrained_gtr
-    """
-    results = scipy.optimize.fmin(
-            f,
-            theta,
-            args=fmin_args,
-            maxfun=10000,
-            maxiter=10000,
-            xtol=1e-8,
-            ftol=1e-8,
-            full_output=True,
-            )
-    """
     results = scipy.optimize.minimize(
             f,
             theta,
@@ -528,7 +610,76 @@ def submain_unconstrained_dominance_gtr(args):
             method='Nelder-Mead',
             )
     print 'results:', results
-    xopt = results[0]
+    xopt = results.x
+    print 'optimal solution vector:', xopt
+    print 'exp optimal solution vector:', numpy.exp(xopt)
+    print
+    #print 'inverse of hessian:'
+    #print scipy.linalg.inv(h(xopt, *fmin_args))
+    #print
+
+def submain_kacser_dominance_gtr(args):
+    #
+    # Precompute some ndarrays
+    # according to properties of DNA and the genetic code.
+    if args.mtdna:
+        code = npcodon.g_code_mito
+        stop = npcodon.g_stop_mito
+    else:
+        code = npcodon.g_code
+        stop = npcodon.g_stop
+    #
+    all_codons = npcodon.enum_codons(stop)
+    codons = all_codons[:-len(stop)]
+    gtr = npcodon.get_gtr(codons)
+    syn, nonsyn = npcodon.get_syn_nonsyn(code, codons)
+    compo = npcodon.get_compo(codons)
+    asym_compo = npcodon.get_asym_compo(codons)
+    ham = npcodon.get_hamming(codons)
+    #
+    subs_counts = yangdata.get_subs_counts_from_data_files(args)
+    codon_counts = (
+            numpy.sum(subs_counts, axis=0) + numpy.sum(subs_counts, axis=1))
+    for a, b in zip(codons, codon_counts):
+        print a, ':', b
+    print 'raw codon total:', numpy.sum(codon_counts)
+    print 'raw codon counts:', codon_counts
+    codon_counts = codon_counts[:len(codons)]
+    print 'non-stop codon total:', numpy.sum(codon_counts)
+    subs_counts = subs_counts[:len(codons), :len(codons)]
+    v = codon_counts / float(numpy.sum(codon_counts))
+    log_counts = numpy.log(codon_counts)
+    #
+    # get the minimum expected number of substitutions between codons
+    mu_empirical = npcodon.get_lb_expected_subs(ham, subs_counts)
+    print 'lower bound on expected mutations per codon site:', mu_empirical
+    print
+    print 'entropy lower bound on negative log likelihood:',
+    print npcodon.get_lb_neg_ll(subs_counts)
+    print
+    #
+    # initialize parameter value guesses
+    d = 0.5
+    log_kb = 0
+    theta = numpy.array([
+        d, log_kb,
+        0, 0, 0,
+        ], dtype=float)
+    boxed_guess = [None]
+    fmin_args = (
+            mu_empirical, subs_counts, log_counts, v,
+            gtr, syn, nonsyn, compo, asym_compo,
+            boxed_guess,
+            )
+    f = eval_f_kacser_gtr
+    results = scipy.optimize.minimize(
+            f,
+            theta,
+            args=fmin_args,
+            method='Nelder-Mead',
+            )
+    print 'results:', results
+    xopt = results.x
     print 'optimal solution vector:', xopt
     print 'exp optimal solution vector:', numpy.exp(xopt)
     print
@@ -555,12 +706,14 @@ def eval_hess(f, theta, *args):
 
 
 def main(args):
-    if args.mutexch == 'hky':
+    if args.mutexch == 'hky' and args.disease == 'unconstrained':
         return submain_unconstrained_dominance(args)
-    elif args.mutexch == 'gtr':
+    elif args.mutexch == 'gtr' and args.disease == 'unconstrained':
         return submain_unconstrained_dominance_gtr(args)
+    elif args.mutexch == 'gtr' and args.disease == 'kacser':
+        return submain_kacser_dominance_gtr(args)
     else:
-        raise Exception
+        raise Exception('unimplemented or invalid parameter combination')
 
 
 if __name__ == '__main__':
@@ -570,6 +723,11 @@ if __name__ == '__main__':
             choices=('hky', 'gtr'),
             default='hky',
             help='model of mutational exchangeability')
+    parser.add_argument(
+            '--disease',
+            choices=('unconstrained', 'kacser'),
+            default='unconstrained',
+            help='model of recessivity or dominance of selection')
     parser.add_argument(
             '--mtdna',
             action='store_true',
