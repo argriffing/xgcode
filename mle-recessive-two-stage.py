@@ -124,25 +124,32 @@ def get_Q(pre_Q_prefix, pre_Q_suffix):
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
-def help_log_lik(a, b):
-    #return a*b
-    return b*a
-
-def get_log_likelihood(P, v, subs_counts):
+def get_log_likelihood(pre_Q_prefix, pre_Q_suffix, v, subs_counts):
     """
     The stationary distribution of P is empirically derived.
     It is proportional to the codon counts by construction.
-    @param P: a transition matrix using codon counts and free parameters
+    @param pre_Q_prefix: component of hadamard decomposition of pre_Q
+    @param pre_Q_suffix: component of hadamard decomposition of pre_Q
     @param v: stationary distribution proportional to observed codon counts
     @param subs_counts: observed substitution counts
     """
-    #FIXME: this function has been broken up for optimization debugging
-    #score_matrix = P.T * v
-    score_matrix = algopy.dot(algopy.diag(v), P)
-    log_score_matrix = algopy.log(score_matrix)
-    #log_likelihoods = subs_counts * log_score_matrix
-    log_likelihoods = help_log_lik(subs_counts, log_score_matrix)
-    log_likelihood = algopy.sum(log_likelihoods)
+    Q = get_Q(pre_Q_prefix, pre_Q_suffix)
+    #
+    P = algopy.expm(Q)
+    #
+    # This untested eigh approach is way too slow because of the algopy eigh.
+    """
+    Da = numpy.diag(numpy.sqrt(v))
+    Db = numpy.diag(numpy.reciprocal(numpy.sqrt(v)))
+    Q_symmetrized = algopy.dot(Da, algopy.dot(Q, Db))
+    w, V = algopy.eigh(Q_symmetrized)
+    W_exp = algopy.diag(algopy.exp(w))
+    P_symmetrized = algopy.dot(V, algopy.dot(W_exp, V.T))
+    P = algopy.dot(Db, algopy.dot(P_symmetrized, Da))
+    """
+    #
+    log_score_matrix = algopy.log(algopy.dot(algopy.diag(v), P))
+    log_likelihood = algopy.sum(log_score_matrix * subs_counts)
     return log_likelihood
 
 def get_Q_prefix(
@@ -211,9 +218,7 @@ def inner_eval_f(
     pre_Q_prefix = get_Q_prefix(
             ts, tv, syn, nonsyn,
             log_mu, log_kappa, log_omega)
-    Q = get_Q(pre_Q_prefix, pre_Q_suffix)
-    P = algopy.expm(Q)
-    return -get_log_likelihood(P, v, subs_counts)
+    return -get_log_likelihood(pre_Q_prefix, pre_Q_suffix, v, subs_counts)
 
 def inner_eval_f_gtr(
         theta,
@@ -245,9 +250,7 @@ def inner_eval_f_gtr(
     pre_Q_prefix = get_Q_prefix_gtr(
             gtr, syn, nonsyn,
             log_mu, log_gtr_exch, log_omega)
-    Q = get_Q(pre_Q_prefix, pre_Q_suffix)
-    P = algopy.expm(Q)
-    return -get_log_likelihood(P, v, subs_counts)
+    return -get_log_likelihood(pre_Q_prefix, pre_Q_suffix, v, subs_counts)
 
 def eval_f_unconstrained(
         theta,
