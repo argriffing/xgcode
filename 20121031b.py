@@ -51,7 +51,7 @@ def get_response_content(fs):
     #C = numpy.array([-0.5, -0.2, 0.2, 0.5], dtype=float)
     #C = numpy.array([-1.0, -0.4, 0.4, 1.0], dtype=float)
     C = numpy.array([-2.0, -0.5, 0.5, 2.0], dtype=float)
-    Z = numpy.linspace(-3, 3, 101)
+    Z = numpy.linspace(-5, 5, 101)
     # get the data for the R table
     arr = []
     for z in Z:
