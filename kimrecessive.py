@@ -11,6 +11,7 @@ import math
 import numpy
 from numpy import testing
 import scipy
+import scipy.special
 import scipy.integrate
 import algopy
 import algopy.special
@@ -240,6 +241,23 @@ def denom_quad(c, d):
     if x == 0 or not numpy.isfinite(x):
         print 'denom_quad is weird:', x, c, d
     return x
+
+def denom_fixed_quad(c, d, quad_x, quad_w):
+    """
+    This function is compatible with algopy.
+    Please precompute the quad x and w using p_roots or something.
+    For example
+    quad_x, quad_w = scipy.special.orthogonal.p_roots(nroots)
+    @param c: large positive means mutant is more fit
+    @param d: large positive means mutant is dominant as opposed to recessive
+    @param quad_x: quadrature points in the interval [-1, 1]
+    @param quad_w: corresponding quadrature weights
+    """
+    a = 0.0
+    b = 1.0
+    x = (b-a)*(quad_x+1)/2. + a
+    sf = (b - a) / 2.
+    return sf * algopy.dot(algopy.exp(-2*c*d*x*(1-x) - 2*c*x), quad_w)
 
 class Test_KimuraRecessive(testing.TestCase):
 

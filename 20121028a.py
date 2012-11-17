@@ -128,7 +128,7 @@ def get_relative_error_e7(c, d):
     return refilter(z)
 
 def do_integration_demo():
-    N = 301
+    N = 101
     #d = np.linspace(-5, 5, N) / 10000.
     #c = np.linspace(-100, 100, N) / 10.
     #d = np.linspace(-5, 5, N) / 3.
@@ -156,7 +156,6 @@ def do_integration_demo():
     ##c = np.arange(0, 0.3, dc)
     ##d = np.arange(-0.2, 0.2, dd)
 
-    fig = plt.figure()
 
     """
     Z = np.zeros((len(d), len(c)))
@@ -233,6 +232,8 @@ def do_integration_demo():
 
     Z = np.zeros((len(d), len(c)))
     W = np.zeros((len(d), len(c)))
+    nroots = 101
+    quad_x, quad_w = scipy.special.orthogonal.p_roots(nroots)
     for j, dj in enumerate(d):
         for i, ci in enumerate(c):
             x = kimrecessive.denom_quad(ci, dj)
@@ -240,13 +241,15 @@ def do_integration_demo():
             #y = kimengine.denom_poly(ci, dj)
             #y = kimrecessive.denom_hyperu_b(ci, dj)
             #y = kimrecessive.denom_erfcx_b(ci, dj)
-            y = kimrecessive.denom_combo_b(ci, dj)
+            y = kimrecessive.denom_fixed_quad(ci, dj, quad_x, quad_w)
+            #y = kimrecessive.denom_combo_b(ci, dj)
             w = abs(y - x) / abs(x)
             W[j, i] = w
             Z[j, i] = refilter(w)
     print numpy.max(W)
-    #im = plt.imshow(Z, cmap=plt.cm.jet)
-    #plt.show()
+    fig = plt.figure()
+    im = plt.imshow(Z, cmap=plt.cm.jet)
+    plt.show()
 
 
 def main():
