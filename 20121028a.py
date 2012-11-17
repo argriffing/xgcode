@@ -18,6 +18,7 @@ import algopy
 import matplotlib.pyplot as plt
 import matplotlib
 
+import kimengine
 import kimrecessive
 import Form
 import FormOut
@@ -43,7 +44,9 @@ def refilter(z):
     @param z: a relative error
     @return: a more qualitative description of the error
     """
-    if not numpy.isfinite(z):
+    if numpy.isnan(z):
+        return 7.
+    elif not numpy.isfinite(z):
         return 6.
     elif abs(z) < 1e-12:
         return 0.
@@ -112,12 +115,40 @@ def get_relative_error_e5(c, d):
     z = (y-x) / x
     return refilter(z)
 
+def get_relative_error_e6(c, d):
+    x = kimrecessive.denom_quad(c, d)
+    y = kimrecessive.denom_combo_b(c, d)
+    z = (y - x) / x
+    return refilter(z)
+
+def get_relative_error_e7(c, d):
+    x = kimrecessive.denom_quad(c, d)
+    y = kimrecessive.denom_poly_b(c, d)
+    z = (y - x) / x
+    return refilter(z)
+
 def do_integration_demo():
-    N = 101
+    N = 301
+    #d = np.linspace(-5, 5, N) / 10000.
+    #c = np.linspace(-100, 100, N) / 10.
+    #d = np.linspace(-5, 5, N) / 3.
+    #c = np.linspace(-100, 100, N) / 3.
+    d = np.linspace(-5, 5, N)
+    c = np.linspace(-100, 100, N)
+    #d = np.linspace(-1, 1, N) * 0.25
+    #c = np.linspace(-1, 1, N) * 0.02
+    #d = np.linspace(-3, 3, N) / 10.
+    #c = np.linspace(-30, 30, N) / 10.
+    #d = np.linspace(-3, 3, N) / 10000.
+    #c = np.linspace(-30, 30, N) / 10000.
+    #d = np.linspace(-3, 3, N)
+    #c = np.linspace(-30, 30, N)
+    #d = np.linspace(-4, 4, N)
+    #c = np.linspace(-40, 40, N)
+    #c = np.linspace(-20, 20, N)
+    #d = np.linspace(-.2, .2, N)
     #c = np.linspace(-100, 100, N)
     #c = np.linspace(-200, 200, N)
-    c = np.linspace(-20, 20, N)
-    d = np.linspace(-2, 2, N)
     #dc, dd = 0.001, 0.001
     #c = np.arange(1.-0.05, 1.+0.05, dc)
     #d = np.arange(1.-0.05, 1.+0.05, dd)
@@ -191,14 +222,32 @@ def do_integration_demo():
             Z[j, i] = get_relative_error_e4(ci, dj)
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()
-    """
 
     Z = np.zeros((len(d), len(c)))
     for j, dj in enumerate(d):
         for i, ci in enumerate(c):
-            Z[j, i] = get_relative_error_e5(ci, dj)
+            Z[j, i] = get_relative_error_e6(ci, dj)
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()
+    """
+
+    Z = np.zeros((len(d), len(c)))
+    W = np.zeros((len(d), len(c)))
+    for j, dj in enumerate(d):
+        for i, ci in enumerate(c):
+            x = kimrecessive.denom_quad(ci, dj)
+            #y = kimrecessive.denom_poly_b(ci, dj)
+            #y = kimengine.denom_poly(ci, dj)
+            #y = kimrecessive.denom_hyperu_b(ci, dj)
+            #y = kimrecessive.denom_erfcx_b(ci, dj)
+            y = kimrecessive.denom_combo_b(ci, dj)
+            w = abs(y - x) / abs(x)
+            W[j, i] = w
+            Z[j, i] = refilter(w)
+    print numpy.max(W)
+    #im = plt.imshow(Z, cmap=plt.cm.jet)
+    #plt.show()
+
 
 def main():
     do_integration_demo()

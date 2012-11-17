@@ -6,6 +6,8 @@ Some of the explicit solutions may not be as well behaved numerically as
 the numerical integration provided by scipy.integrate.quad.
 """
 
+import math
+
 import numpy
 from numpy import testing
 import scipy
@@ -122,6 +124,31 @@ def denom_hyperu_b(c, d):
     b3 = algopy.special.hyperu(1.0, 1.5, -c*(1+d)**2 / (2. * d))
     return prefix * (a1 * a2 * a3 - b1 * b2 * b3)
 
+def denom_erfcx_b(c, d):
+    """
+    Try a new scipy function by Steven Johnson.
+    This is related to the hyperu function; see the Wolfram Functions website.
+    U(1, 3/2, z)
+    = exp(z)*sqrt(pi)*erfc(sqrt(z))/sqrt(z)
+    = sqrt(pi)*erfcx(sqrt(z))/sqrt(z)
+    """
+    a_arg = (scipy.sqrt(-c)*(1.-d))/scipy.sqrt(2*d)
+    b_arg = (scipy.sqrt(-c)*(1.+d))/scipy.sqrt(2*d)
+    #a_arg = -c*(1-d)**2 / (2. * d)
+    #b_arg = -c*(1+d)**2 / (2. * d)
+    prefix = scipy.exp(-c)
+    a1 = scipy.exp(-c)
+    a2 = (1. - d) / (4. * d)
+    #a3 = scipy.special.erfcx(scipy.sqrt(a_arg)) * (
+            #scipy.sqrt(math.pi) / scipy.sqrt(a_arg))
+    a3 = scipy.special.erfcx(a_arg) * (scipy.sqrt(math.pi) / a_arg)
+    b1 = scipy.exp(c)
+    b2 = (1. + d) / (4. * d)
+    #b3 = scipy.special.erfcx(scipy.sqrt(b_arg)) * (
+            #scipy.sqrt(math.pi) / scipy.sqrt(b_arg))
+    b3 = scipy.special.erfcx(b_arg) * (scipy.sqrt(math.pi) / b_arg)
+    return prefix * (a1 * a2 * a3 - b1 * b2 * b3)
+
 def denom_hyp1f1_b(c, d):
     """
     This uses only algopy.special.hyp1f1(1.0, 1.5, x).
@@ -157,12 +184,41 @@ def denom_dawsn_b(c, d):
     return p1 * p2 * (a1 * a2 + b1 * b2)
 
 def denom_erfi_b(c, d):
+    """
+    This could involve square roots of negative numbers.
+    Therefore it cannot be directly transcribed into algopy.
+    But perhaps it could be broken up into pieces and then transcribed,
+    if I can use some algebra to cancel out the imaginary numbers
+    and then take square roots of only non-negative numbers.
+    """
     p1 = scipy.sqrt(scipy.pi)
     p2 = 1. / (2 * scipy.sqrt(c) * scipy.sqrt(2*d))
     p3 = scipy.exp(-(c*(1.+d)*(1.+d)) / (2.*d))
-    a = scipy.special.erfi((scipy.sqrt(c)*(1.+d))/scipy.sqrt(2*d))
-    b = scipy.special.erfi((scipy.sqrt(c)*(1.-d))/scipy.sqrt(2*d))
-    return p1 * p2 * p3 * (a - b)
+    a_arg = (scipy.sqrt(c)*(1.+d))/scipy.sqrt(2*d)
+    b_arg = (scipy.sqrt(c)*(1.-d))/scipy.sqrt(2*d)
+    a = scipy.special.erfi(a_arg)
+    b = scipy.special.erfi(b_arg)
+    x = p1 * p2 * p3 * (a - b)
+    if not numpy.isfinite(x):
+        print c, d, (a_arg, a), (b_arg, b)
+    return x
+
+def denom_combo_b(c, d):
+    small_eps = 1e-4
+    big_eps = 1e-2
+    if abs(c) < big_eps and abs(d) < 0.5:
+        return kimengine.denom_poly(c, d)
+    elif abs(c) < small_eps:
+        return denom_hyp1f1_b(c, d)
+    elif abs(d) < small_eps:
+        return denom_hyp2f0_b(c, d)
+    elif abs(1-d) < small_eps:
+        return denom_erfi_b(c, d)
+    elif abs(1+d) < small_eps:
+        return denom_erfi_b(c, d)
+    else:
+        # this function is good almost everywhere
+        return denom_erfcx_b(c, d)
 
 
 ###########################################################################
@@ -180,7 +236,10 @@ def denom_quad(c, d):
             args=(c,d),
             full_output=1,
             )
-    return result[0]
+    x = result[0]
+    if x == 0 or not numpy.isfinite(x):
+        print 'denom_quad is weird:', x, c, d
+    return x
 
 class Test_KimuraRecessive(testing.TestCase):
 
