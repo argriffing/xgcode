@@ -30,7 +30,7 @@ def get_selection_S(F):
     e = numpy.ones_like(F)
     return numpy.outer(e, F) - numpy.outer(F, e)
 
-def get_sparse_D(
+def get_D(
         gtr, compo,
         log_counts,
         d, log_kb, log_nt_weights, log_repop,
@@ -40,7 +40,7 @@ def get_sparse_D(
     S = get_selection_S(F) * numpy.exp(log_repop)
     soft_sign_S = numpy.tanh(numpy.exp(log_kb)*S)
     D = d * soft_sign_S
-    return numpy.sum(gtr, axis=2) * D
+    return D
 
 def construct_args():
     Args = collections.namedtuple('Args',
@@ -110,8 +110,14 @@ def get_response_content(fs):
         0])
     log_repop = -0.01399715
     #
-    D = get_sparse_D(
-            gtr, compo, log_counts, d, log_kb, log_nt_weights, log_repop)
+    D = get_D(
+            gtr, compo,
+            log_counts, d, log_kb, log_nt_weights, log_repop)
+    print >> out, D
+    print >> out, numpy.unique(D)
+    mask = numpy.sum(gtr, axis=2)
+    D = D * mask
+    print >> out, 'unique in mask:', numpy.unique(mask)
     print >> out, D
     print >> out, numpy.unique(D)
     #

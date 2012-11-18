@@ -15,8 +15,6 @@ import scipy
 import scipy.special
 import scipy.integrate
 import algopy
-import matplotlib.pyplot as plt
-import matplotlib
 
 import kimengine
 import kimrecessive
@@ -232,8 +230,7 @@ def do_integration_demo():
 
     Z = np.zeros((len(d), len(c)))
     W = np.zeros((len(d), len(c)))
-    nroots = 101
-    quad_x, quad_w = scipy.special.orthogonal.p_roots(nroots)
+    quad_x, quad_w = kimrecessive.precompute_quadrature(0, 1, 101)
     for j, dj in enumerate(d):
         for i, ci in enumerate(c):
             x = kimrecessive.denom_quad(ci, dj)
@@ -247,6 +244,7 @@ def do_integration_demo():
             W[j, i] = w
             Z[j, i] = refilter(w)
     print numpy.max(W)
+    import matplotlib.pyplot as plt
     fig = plt.figure()
     im = plt.imshow(Z, cmap=plt.cm.jet)
     plt.show()

@@ -49,6 +49,10 @@ import npcodon
 import yangdata
 
 
+# Precompute some ndarrays for quadrature.
+g_quad_x, g_quad_w = kimrecessive.precompute_quadrature(0.0, 1.0, 101)
+
+
 ##########################################################################
 # algopy stuff involving parameters
 
@@ -79,6 +83,31 @@ def get_fixation_dominant_disease(S):
                     0.5*S[i, j], -sign_S[i, j])
     return H
 
+def get_fixation_unconstrained_fquad(S, d, x, w, codon_neighbor_mask):
+    """
+    In this function name, fquad means "fixed quadrature."
+    The S ndarray with ndim=2 depends on free parameters.
+    The d parameter is itself a free parameter.
+    So both of those things are algopy objects carrying Taylor information.
+    On the other hand, x and w are precomputed ndim=1 ndarrays
+    which are not carrying around extra Taylor information.
+    @param S: array of selection differences
+    @param d: parameter that controls dominance vs. recessivity
+    @param x: precomputed roots for quadrature
+    @param w: precomputed weights for quadrature
+    @param codon_neighbor_mask: only compute entries neighboring pairs
+    """
+    #TODO: possibly use a mirror symmetry to double the speed
+    sign_S = algopy.sign(S)
+    D = d * sign_S
+    H = algopy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            if codon_neighbor_mask[i, j]:
+                H[i, j] = 1. / kimrecessive.denom_fixed_quad(
+                        0.5*S[i, j], D[i, j], x, w)
+    return H
+
 def get_fixation_unconstrained(S, d):
     sign_S = algopy.sign(S)
     D = d * sign_S
@@ -87,6 +116,22 @@ def get_fixation_unconstrained(S, d):
         for j in range(H.shape[1]):
             H[i, j] = 1. / kimrecessive.denom_piecewise(
                     0.5*S[i, j], D[i, j])
+    return H
+
+def get_fixation_unconstrained_kb_fquad(
+        S, d, log_kb, x, w, codon_neighbor_mask):
+    """
+    This uses the Kacser and Burns effect instead of the sign function.
+    """
+    #TODO: possibly use a mirror symmetry to double the speed
+    soft_sign_S = algopy.tanh(algopy.exp(log_kb)*S)
+    D = d * soft_sign_S
+    H = algopy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            if codon_neighbor_mask[i, j]:
+                H[i, j] = 1. / kimrecessive.denom_fixed_quad(
+                        0.5*S[i, j], D[i, j], x, w)
     return H
 
 def get_fixation_unconstrained_kb(S, d, log_kb):
@@ -197,13 +242,19 @@ def get_Q_unconstrained(
     """
     This adds a single parameter.
     """
+    #FIXME: constructing this each time seems wasteful
+    codon_neighbor_mask = ts + tv
+    #FIXME: this is being hacked to use fixed-order quadrature
+    #FIXME: and to disregard the h parameter
     mu = algopy.exp(log_mu)
     kappa = algopy.exp(log_kappa)
     omega = algopy.exp(log_omega)
     F = get_selection_F(log_counts, compo, log_nt_weights)
     S = get_selection_S(F)
+    H = get_fixation_unconstrained_fquad(
+            S, d, g_quad_x, g_quad_w, codon_neighbor_mask)
     pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
-            algopy.dot(asym_compo, log_nt_weights)) * h(S, d)
+            algopy.dot(asym_compo, log_nt_weights)) * H
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
@@ -215,13 +266,19 @@ def get_Q_unconstrained_kb(
     """
     This adds yet another parameter.
     """
+    #FIXME: constructing this each time seems wasteful
+    codon_neighbor_mask = ts + tv
+    #FIXME: this is being hacked to use fixed-order quadrature
+    #FIXME: and to disregard the h parameter
     mu = algopy.exp(log_mu)
     kappa = algopy.exp(log_kappa)
     omega = algopy.exp(log_omega)
     F = get_selection_F(log_counts, compo, log_nt_weights)
     S = get_selection_S(F)
+    H = get_fixation_unconstrained_kb_fquad(
+            S, d, log_kb, g_quad_x, g_quad_w, codon_neighbor_mask)
     pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
-            algopy.dot(asym_compo, log_nt_weights)) * h(S, d, log_kb)
+            algopy.dot(asym_compo, log_nt_weights)) * H
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
     return Q
 
@@ -235,8 +292,7 @@ def get_log_likelihood(P, v, subs_counts):
     @param subs_counts: observed substitution counts
     """
     score_matrix_transpose = P.T * v
-    print numpy.min(score_matrix_transpose)
-    return algopy.sum(subs_counts * algopy.log(score_matrix_transpose))
+    return algopy.sum(algopy.log(score_matrix_transpose) * subs_counts)
 
 def eval_f(
         theta,
@@ -334,7 +390,9 @@ def eval_f_unconstrained_kb(
     P = algopy.expm(Q)
     #
     # return the neg log likelihood
-    return -get_log_likelihood(P, v, subs_counts)
+    neg_log_likelihood = -get_log_likelihood(P, v, subs_counts)
+    print neg_log_likelihood
+    return neg_log_likelihood
 
 def submain_unconstrained_dominance_kb(args):
     #
@@ -368,6 +426,7 @@ def submain_unconstrained_dominance_kb(args):
     v = codon_counts / float(numpy.sum(codon_counts))
     log_counts = numpy.log(codon_counts)
     #
+    """
     if args.disease == 'kacser':
         if args.integrate == 'quadrature':
             h = get_fixation_unconstrained_kb_quad
@@ -377,6 +436,8 @@ def submain_unconstrained_dominance_kb(args):
             raise Exception
     else:
         raise Exception
+    """
+    h = None
     #
     # predefine some plausible parameters but not the scaling parameter
     log_mu = 0
@@ -459,6 +520,7 @@ def submain_unconstrained_dominance(args):
     v = codon_counts / float(numpy.sum(codon_counts))
     log_counts = numpy.log(codon_counts)
     #
+    """
     if args.disease == 'unconstrained':
         if args.integrate == 'quadrature':
             h = get_fixation_unconstrained_quad
@@ -468,7 +530,9 @@ def submain_unconstrained_dominance(args):
             raise Exception
     else:
         raise Exception
-    #
+    """
+    #FIXME: the h parameter is becoming obsolete
+    h = None
     # predefine some plausible parameters but not the scaling parameter
     log_mu = 0
     log_kappa = 1
@@ -644,8 +708,11 @@ def do_opt(args, f, theta, fmin_args):
                 f,
                 theta,
                 args=fmin_args,
+                #fprime=g,
                 maxiter=10000,
                 full_output=True,
+                disp=True,
+                retall=True,
                 )
     elif args.fmin == 'jeffopt':
         results = jeffopt.fmin_jeff_unconstrained(
@@ -695,11 +762,13 @@ def main(args):
         if not numpy.allclose(S, log_ratio):
             raise Exception((S, log_ratio))
     #
+    """
     if args.integrate == 'quadrature' and args.fmin == 'ncg':
         raise Exception(
                 'cannot use the combination of quadrature '
                 'for the solution of the Kimura integral '
                 'together with ncg for the max likelihood search')
+    """
     #
     # Do the main analysis.
     if args.disease == 'unconstrained':

@@ -38,6 +38,9 @@ import yangdata
 import jeffopt
 
 
+# Precompute some ndarrays for quadrature.
+g_quad_x, g_quad_w = kimrecessive.precompute_quadrature(0.0, 1.0, 101)
+
 
 ##########################################################################
 # algopy stuff involving parameters
@@ -72,6 +75,31 @@ def get_fixation_dominant_disease(S):
                     0.5*S[i, j], -sign_S[i, j])
     return H
 
+def get_fixation_unconstrained_fquad(S, d, x, w, codon_neighbor_mask):
+    """
+    In this function name, fquad means "fixed quadrature."
+    The S ndarray with ndim=2 depends on free parameters.
+    The d parameter is itself a free parameter.
+    So both of those things are algopy objects carrying Taylor information.
+    On the other hand, x and w are precomputed ndim=1 ndarrays
+    which are not carrying around extra Taylor information.
+    @param S: array of selection differences
+    @param d: parameter that controls dominance vs. recessivity
+    @param x: precomputed roots for quadrature
+    @param w: precomputed weights for quadrature
+    @param codon_neighbor_mask: only compute entries neighboring pairs
+    """
+    #TODO: possibly use a mirror symmetry to double the speed
+    sign_S = algopy.sign(S)
+    D = d * sign_S
+    H = algopy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            if codon_neighbor_mask[i, j]:
+                H[i, j] = 1. / kimrecessive.denom_fixed_quad(
+                        0.5*S[i, j], D[i, j], x, w)
+    return H
+
 def get_fixation_unconstrained(S, d):
     sign_S = algopy.sign(S)
     D = d * sign_S
@@ -80,6 +108,22 @@ def get_fixation_unconstrained(S, d):
         for j in range(H.shape[1]):
             H[i, j] = 1. / kimrecessive.denom_piecewise(
                     0.5*S[i, j], D[i, j])
+    return H
+
+def get_fixation_unconstrained_kb_fquad(
+        S, d, log_kb, x, w, codon_neighbor_mask):
+    """
+    This uses the Kacser and Burns effect instead of the sign function.
+    """
+    #TODO: possibly use a mirror symmetry to double the speed
+    soft_sign_S = algopy.tanh(algopy.exp(log_kb)*S)
+    D = d * soft_sign_S
+    H = algopy.zeros_like(S)
+    for i in range(H.shape[0]):
+        for j in range(H.shape[1]):
+            if codon_neighbor_mask[i, j]:
+                H[i, j] = 1. / kimrecessive.denom_fixed_quad(
+                        0.5*S[i, j], D[i, j], x, w)
     return H
 
 def get_fixation_unconstrained_kb(S, d, log_kb):
@@ -199,7 +243,7 @@ def get_log_likelihood(P, v, subs_counts):
     @param v: stationary distribution proportional to observed codon counts
     @param subs_counts: observed substitution counts
     """
-    return algopy.sum(subs_counts * algopy.log(P.T * v))
+    return algopy.sum(algopy.log(P.T * v) * subs_counts)
 
 def eval_f(
         theta,

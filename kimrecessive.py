@@ -242,22 +242,36 @@ def denom_quad(c, d):
         print 'denom_quad is weird:', x, c, d
     return x
 
-def denom_fixed_quad(c, d, quad_x, quad_w):
+def precompute_quadrature(a, b, npoints):
+    """
+    This is for Gaussian quadrature.
+    This function exists because computers are not as fast as we would like.
+    Two arrays are returned.
+    For the recessivity kimura integral,
+    the arguments should be something like a=0, b=1, npoints=101.
+    @param a: definite integral lower bound
+    @param b: definite integral upper bound
+    @param npoints: during quadrature evaluate the function at this many points
+    @return: roots, weights
+    """
+    x_raw, w_raw = scipy.special.orthogonal.p_roots(npoints)
+    c = (b - a) / 2.
+    x = c * (x_raw + 1) + a
+    w = c * w_raw
+    return x, w
+
+def denom_fixed_quad(c, d, x, w):
     """
     This function is compatible with algopy.
-    Please precompute the quad x and w using p_roots or something.
-    For example
-    quad_x, quad_w = scipy.special.orthogonal.p_roots(nroots)
+    The x and w params should be precomputed with a=0, b=1.
     @param c: large positive means mutant is more fit
     @param d: large positive means mutant is dominant as opposed to recessive
-    @param quad_x: quadrature points in the interval [-1, 1]
-    @param quad_w: corresponding quadrature weights
+    @param x: quadrature points in the interval [0, 1]
+    @param w: corresponding nonneg quadrature weights summing to 1
     """
-    a = 0.0
-    b = 1.0
-    x = (b-a)*(quad_x+1)/2. + a
-    sf = (b - a) / 2.
-    return sf * algopy.dot(algopy.exp(-2*c*d*x*(1-x) - 2*c*x), quad_w)
+    neg_two_c_x = -2*c*x
+    y = algopy.exp(neg_two_c_x*(d*(1-x) + 1))
+    return algopy.dot(y, w)
 
 class Test_KimuraRecessive(testing.TestCase):
 
