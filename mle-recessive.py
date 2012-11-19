@@ -83,6 +83,20 @@ def get_fixation_dominant_disease(S):
                     0.5*S[i, j], -sign_S[i, j])
     return H
 
+def get_fixation_unconstrained_fquad_cython(S, d, mask):
+    """
+    This is not compatible with algopy.
+    In this function name, fquad means "fixed quadrature."
+    The S ndarray with ndim=2 depends on free parameters.
+    The d parameter is itself a free parameter.
+    The mask specifies which codon pairs are mutational neighbors.
+    @param S: array of selection differences
+    @param d: parameter that controls dominance vs. recessivity
+    @param mask: only compute entries of neighboring codon pairs
+    """
+    H = 1. / kimrecessive.denom_fixed_quad_cython(0.5*S, d*numpy.sign(S), mask)
+    return H
+
 def get_fixation_unconstrained_fquad(S, d, x, w, codon_neighbor_mask):
     """
     In this function name, fquad means "fixed quadrature."
@@ -95,7 +109,7 @@ def get_fixation_unconstrained_fquad(S, d, x, w, codon_neighbor_mask):
     @param d: parameter that controls dominance vs. recessivity
     @param x: precomputed roots for quadrature
     @param w: precomputed weights for quadrature
-    @param codon_neighbor_mask: only compute entries neighboring pairs
+    @param codon_neighbor_mask: only compute entries of neighboring codon pairs
     """
     #TODO: possibly use a mirror symmetry to double the speed
     sign_S = algopy.sign(S)
@@ -251,8 +265,10 @@ def get_Q_unconstrained(
     omega = algopy.exp(log_omega)
     F = get_selection_F(log_counts, compo, log_nt_weights)
     S = get_selection_S(F)
-    H = get_fixation_unconstrained_fquad(
-            S, d, g_quad_x, g_quad_w, codon_neighbor_mask)
+    #H = get_fixation_unconstrained_fquad(
+            #S, d, g_quad_x, g_quad_w, codon_neighbor_mask)
+    H = get_fixation_unconstrained_fquad_cython(
+            S, d, codon_neighbor_mask)
     pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
             algopy.dot(asym_compo, log_nt_weights)) * H
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
@@ -356,7 +372,7 @@ def eval_f_unconstrained(
     #
     # return the neg log likelihood
     neg_log_likelihood = -get_log_likelihood(P, v, subs_counts)
-    print neg_log_likelihood
+    #print neg_log_likelihood
     return neg_log_likelihood
 
 def eval_f_unconstrained_kb(
@@ -391,7 +407,7 @@ def eval_f_unconstrained_kb(
     #
     # return the neg log likelihood
     neg_log_likelihood = -get_log_likelihood(P, v, subs_counts)
-    print neg_log_likelihood
+    #print neg_log_likelihood
     return neg_log_likelihood
 
 def submain_unconstrained_dominance_kb(args):
@@ -709,6 +725,7 @@ def do_opt(args, f, theta, fmin_args):
                 theta,
                 args=fmin_args,
                 #fprime=g,
+                epsilon=1e-7,
                 maxiter=10000,
                 full_output=True,
                 disp=True,
@@ -739,9 +756,9 @@ def do_opt(args, f, theta, fmin_args):
     print 'optimal solution vector:', xopt
     print 'exp optimal solution vector:', numpy.exp(xopt)
     print
-    print 'inverse of hessian:'
-    print scipy.linalg.inv(h(xopt, *fmin_args))
-    print
+    #print 'inverse of hessian:'
+    #print scipy.linalg.inv(h(xopt, *fmin_args))
+    #print
 
 
 def main(args):

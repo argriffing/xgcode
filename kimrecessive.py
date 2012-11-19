@@ -273,6 +273,13 @@ def denom_fixed_quad(c, d, x, w):
     y = algopy.exp(neg_two_c_x*(d*(1-x) + 1))
     return algopy.dot(y, w)
 
+def denom_fixed_quad_cython(C, D, mask):
+    """
+    This is not compatible with algopy.
+    """
+    out = numpy.ones_like(C)
+    return kimengine.kimura_integral_2d_masked_inplace(C, D, mask, out)
+
 class Test_KimuraRecessive(testing.TestCase):
 
     def test_neutral(self):
