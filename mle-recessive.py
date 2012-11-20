@@ -132,6 +132,14 @@ def get_fixation_unconstrained(S, d):
                     0.5*S[i, j], D[i, j])
     return H
 
+def get_fixation_unconstrained_kb_fquad_cython(S, d, log_kb, mask):
+    """
+    This uses the Kacser and Burns effect instead of the sign function.
+    """
+    D = d * numpy.tanh(numpy.exp(log_kb) * S)
+    H = 1. / kimrecessive.denom_fixed_quad_cython(0.5*S, D, mask)
+    return H
+
 def get_fixation_unconstrained_kb_fquad(
         S, d, log_kb, x, w, codon_neighbor_mask):
     """
@@ -291,8 +299,10 @@ def get_Q_unconstrained_kb(
     omega = algopy.exp(log_omega)
     F = get_selection_F(log_counts, compo, log_nt_weights)
     S = get_selection_S(F)
-    H = get_fixation_unconstrained_kb_fquad(
-            S, d, log_kb, g_quad_x, g_quad_w, codon_neighbor_mask)
+    #H = get_fixation_unconstrained_kb_fquad(
+            #S, d, log_kb, g_quad_x, g_quad_w, codon_neighbor_mask)
+    H = get_fixation_unconstrained_kb_fquad_cython(
+            S, d, log_kb, codon_neighbor_mask)
     pre_Q = mu * (kappa * ts + tv) * (omega * nonsyn + syn) * algopy.exp(
             algopy.dot(asym_compo, log_nt_weights)) * H
     Q = pre_Q - algopy.diag(algopy.sum(pre_Q, axis=1))
@@ -372,7 +382,7 @@ def eval_f_unconstrained(
     #
     # return the neg log likelihood
     neg_log_likelihood = -get_log_likelihood(P, v, subs_counts)
-    #print neg_log_likelihood
+    print neg_log_likelihood
     return neg_log_likelihood
 
 def eval_f_unconstrained_kb(
@@ -407,7 +417,7 @@ def eval_f_unconstrained_kb(
     #
     # return the neg log likelihood
     neg_log_likelihood = -get_log_likelihood(P, v, subs_counts)
-    #print neg_log_likelihood
+    print neg_log_likelihood
     return neg_log_likelihood
 
 def submain_unconstrained_dominance_kb(args):
@@ -459,7 +469,8 @@ def submain_unconstrained_dominance_kb(args):
     log_mu = 0
     log_kappa = 1
     log_omega = -3
-    d = 0.5
+    d = 1.6
+    #d = 0.5
     log_kb = 0
     log_nt_weights = numpy.zeros(4)
     #
@@ -553,7 +564,9 @@ def submain_unconstrained_dominance(args):
     log_mu = 0
     log_kappa = 1
     log_omega = -3
-    d = 0.5
+    d = 1.6
+    #d = 0.5
+    #d = -1.2
     log_nt_weights = numpy.zeros(4)
     #
     # get the rate matrix associated with the initial guess
@@ -725,7 +738,7 @@ def do_opt(args, f, theta, fmin_args):
                 theta,
                 args=fmin_args,
                 #fprime=g,
-                epsilon=1e-7,
+                #epsilon=1e-7,
                 maxiter=10000,
                 full_output=True,
                 disp=True,
@@ -736,6 +749,7 @@ def do_opt(args, f, theta, fmin_args):
                 f,
                 theta,
                 args=fmin_args,
+                #abstol=1e-8,
                 )
     elif args.fmin == 'ncg':
         results = scipy.optimize.fmin_ncg(
@@ -744,10 +758,41 @@ def do_opt(args, f, theta, fmin_args):
                 args=fmin_args,
                 fprime=g,
                 fhess=h,
+                avextol=1e-6,
                 maxiter=10000,
                 full_output=True,
                 disp=True,
                 retall=True,
+                )
+    elif args.fmin == 'slsqp':
+        results = scipy.optimize.minimize(
+                f,
+                theta,
+                args=fmin_args,
+                method='SLSQP',
+                jac=g,
+                )
+    elif args.fmin == 'powell':
+        results = scipy.optimize.minimize(
+                f,
+                theta,
+                args=fmin_args,
+                method='Powell',
+                )
+    elif args.fmin == 'cg':
+        results = scipy.optimize.minimize(
+                f,
+                theta,
+                args=fmin_args,
+                method='CG',
+                jac=g,
+                )
+    elif args.fmin == 'anneal':
+        results = scipy.optimize.minimize(
+                f,
+                theta,
+                args=fmin_args,
+                method='Anneal',
                 )
     else:
         raise Exception
@@ -805,7 +850,9 @@ if __name__ == '__main__':
             help='quadrature vs. functions like hyp1f1 for integration')
     parser.add_argument(
             '--fmin',
-            choices=('simplex', 'bfgs', 'jeffopt', 'ncg'),
+            choices=(
+                'simplex', 'bfgs', 'jeffopt', 'ncg',
+                'slsqp', 'powell', 'cg', 'anneal'),
             default='simplex',
             help='nonlinear multivariate optimization')
     parser.add_argument(

@@ -80,13 +80,9 @@ def denom_poly(double c, double d):
 @cython.wraparound(False)
 @cython.cdivision(True)
 cdef double _kimura_integral_scalar(double c, double d) nogil:
-    #"""
-    #This uses fixed-order (non-adaptive) Gaussian quadrature.
-    #Note that because of symmetry
-    #it would be possible to use only half as many hardcoded constants.
-    #http://scipy-lectures.github.com/advanced/advanced_numpy/index.html#
-    #solution-building-an-ufunc-from-scratch
-    #"""
+    # This uses fixed-order (non-adaptive) Gaussian quadrature.
+    # Note that because of symmetry
+    # it would be possible to use only half as many hardcoded constants.
 
     cdef double *quad_points = [
             1.40330235114061175e-04,   7.39244005122874359e-04,
@@ -197,6 +193,7 @@ cdef double _kimura_integral_scalar(double c, double d) nogil:
     cdef double u = 0.0
     cdef double x = 0.0
     cdef double w = 0.0
+    cdef int i = 0
     for i in range(101):
         x = quad_points[i]
         w = quad_weights[i]
