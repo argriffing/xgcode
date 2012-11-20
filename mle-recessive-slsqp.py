@@ -1,32 +1,10 @@
 """
-This is currently a script but later it should be web accessible.
-First version is October 4 2012.
-It is for testing a pure recessive disease codon preference model
-against the genic model of Yang and Nielsen 2008.
-This script does not use so many biological libraries
-because for some reason I am adopting a more matlab-like style.
-All matrices in this script are ndarrays as opposed to actual python matrices.
+Use explicit equality and inequality constraints with natural parameterization.
+
+This is as opposed to manually eliminating constraints and redundant variables.
 .
-Added October 30 2012 --
-This script has been adapted as the codon_model.py example in the python
-automatic differentiation package called algopy.
-Now I am backporting those algopy adaptations back into this more complicated
-mle-recessive.py script to make use of the algopy features.
-This means that some of the arrays that were formerly numpy ndarrays
-are now algopy UTPM objects that mimic arrays and that carry
-nonzero-degree Taylor terms through the log likelihood computation.
-These higher order Taylor terms have a couple of uses.
-One of the uses is to provide gradient and hessian information to
-relatively sophisticated likelihood maximization algorithms
-like the scipy truncated newton or conjugate gradient methods.
-Another use of these higher order terms is to provide estimates of
-parameter uncertainty by taking the inverse of the hessian of the
-negative log likelihood at the max likelihood point as the covariance matrix
-that approximates something like a multivariate normal
-joint posterior distribution of the parameters.
-Although this interpretation as a posterior distribution is probably
-horribly flawed unless it assumes an implicit prior distribution that
-trivially forces this to be a posterior distribution.
+Well that did not work out so well.
+Apparently matlab fmincon is better than the scipy slsqp optimization.
 """
 
 import string
@@ -34,6 +12,7 @@ import math
 import argparse
 import functools
 import warnings
+import logging
 
 import numpy
 import scipy
@@ -651,34 +630,26 @@ def submain_constrained_dominance(args):
     else:
         raise Exception
     #
-    # predefine some plausible parameters but not the scaling parameter
-    log_mu = 0
-    log_kappa = 1
-    log_omega = -3
-    log_nt_weights = numpy.zeros(4)
+    # initialize parameter values
+    mu_r = 1.0
+    kappa = 2.0
+    omega = 0.1
+    #pA = 0.25
+    #pC = 0.25
+    #pG = 0.25
+    #pT = 0.25
+    theta = numpy.array([mu_r, kappa, omega, 0, 0, 0, 0])
     #
-    # get the rate matrix associated with the initial guess
-    Q = get_Q(
+    # adjust the expected rate parameter
+    Q = get_Q_slsqp(
             ts, tv, syn, nonsyn, compo, asym_compo,
             h,
-            log_counts,
-            log_mu, log_kappa, log_omega, log_nt_weights)
-    #
-    # get the minimum expected number of substitutions between codons
-    mu_empirical = npcodon.get_lb_expected_subs(ham, subs_counts)
-    mu_implied = -numpy.sum(numpy.diag(Q) * v)
-    log_mu = math.log(mu_empirical) - math.log(mu_implied)
-    print 'lower bound on expected mutations per codon site:', mu_empirical
-    print
-    # construct the initial guess
-    theta = numpy.array([
-        log_mu,
-        log_kappa,
-        log_omega,
-        0,
-        0,
-        0,
-        ])
+            log_counts, v,
+            theta)
+    expected_rate = -algopy.dot(algopy.diag(Q), v)
+    mu_n = 1. / expected_rate
+    mu_r = npcodon.get_lb_expected_subs(ham, subs_counts)
+    theta = numpy.array([mu_r, kappa, omega, 0, 0, 0, 0])
     #
     # get the log likelihood associated with the initial guess
     fmin_args = (
@@ -712,6 +683,92 @@ def eval_hess(f, theta, *args):
     retval = f(theta, *args)
     return algopy.UTPM.extract_hessian(len(theta), retval)
 
+def get_Q_slsqp(
+        ts, tv, syn, nonsyn, compo, asym_compo,
+        h,
+        log_counts, v,
+        theta):
+    #FIXME: hardcoded for selection without recessivity parameters
+    #
+    # unpack theta
+    branch_length = theta[0]
+    kappa = theta[1]
+    omega = theta[2]
+    """
+    nt_probs = algopy.zeros(4, dtype=theta)
+    nt_probs[0] = theta[3]
+    nt_probs[1] = theta[4]
+    nt_probs[2] = theta[5]
+    nt_probs[3] = 1.0 - algopy.sum(nt_probs)
+    print nt_probs
+    log_nt_weights = algopy.log(nt_probs)
+    """
+    log_nt_weights = theta[-4:]
+    #
+    F = get_selection_F(log_counts, compo, log_nt_weights)
+    S = get_selection_S(F)
+    pre_Q_exch = (kappa * ts + tv) * (omega * nonsyn + syn)
+    pre_Q = pre_Q_exch * algopy.exp(
+            algopy.dot(asym_compo, log_nt_weights)) * h(S)
+    rates = algopy.sum(pre_Q, axis=1)
+    Q = pre_Q - algopy.diag(rates)
+    Q *= branch_length / algopy.dot(rates, v)
+    return Q
+
+def f_eqcons(
+        theta,
+        subs_counts, log_counts, v,
+        h,
+        ts, tv, syn, nonsyn, compo, asym_compo,
+        ):
+    #FIXME: obsolete
+    #FIXME: hardcoded for selection without recessivity parameters
+    #
+    # Init the array of values that should be zero when the equality
+    # constraints are satisfied.
+    equality_violations = algopy.zeros(2, dtype=theta)
+    """
+    #
+    # Add the equality constraint for the expected rate.
+    # This is easily computed through the rate matrix.
+    Q = get_Q_slsqp(
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            h,
+            log_counts, v,
+            theta)
+    expected_rate = -algopy.dot(algopy.diag(Q), v)
+    equality_violations[0] = theta[0] - expected_rate
+    """
+    #
+    # Add the equality constraint for the mutational process
+    # nucleotide equilibrium distribution.
+    equality_violations[0] = algopy.sum(theta[-4:])
+    #
+    return equality_violations
+
+def eval_f(
+        theta,
+        subs_counts, log_counts, v,
+        h,
+        ts, tv, syn, nonsyn, compo, asym_compo,
+        ):
+    """
+    The function formerly known as minimize-me.
+    @param theta: length six unconstrained vector of free variables
+    """
+    #
+    # construct the rate matrix and the transition matrix
+    Q = get_Q_slsqp(
+            ts, tv, syn, nonsyn, compo, asym_compo,
+            h,
+            log_counts, v,
+            theta)
+    P = algopy.expm(Q)
+    #
+    # return the neg log likelihood
+    neg_log_likelihood = -get_log_likelihood(P, v, subs_counts)
+    return neg_log_likelihood
+
 def do_opt(args, f, theta, fmin_args):
     """
     @param args: directly parsed from the command line
@@ -719,120 +776,43 @@ def do_opt(args, f, theta, fmin_args):
     @param theta: initial guess of parameter values
     @param fmin_args: data and other precomputed things independent of theta
     """
-    g = functools.partial(eval_grad, f)
-    h = functools.partial(eval_hess, f)
-    if args.fmin == 'simplex':
-        results = scipy.optimize.fmin(
-                f,
-                theta,
-                args=fmin_args,
-                maxfun=10000,
-                maxiter=10000,
-                xtol=1e-8,
-                ftol=1e-8,
-                full_output=True,
-                )
-    elif args.fmin == 'bfgs':
-        results = scipy.optimize.fmin_bfgs(
-                f,
-                theta,
-                args=fmin_args,
-                #fprime=g,
-                #epsilon=1e-7,
-                maxiter=10000,
-                full_output=True,
-                disp=True,
-                retall=True,
-                )
-    elif args.fmin == 'jeffopt':
-        results = jeffopt.fmin_jeff_unconstrained(
-                f,
-                theta,
-                args=fmin_args,
-                #abstol=1e-8,
-                )
-    elif args.fmin == 'ncg':
-        results = scipy.optimize.fmin_ncg(
-                f,
-                theta,
-                args=fmin_args,
-                fprime=g,
-                fhess=h,
-                avextol=1e-6,
-                maxiter=10000,
-                full_output=True,
-                disp=True,
-                retall=True,
-                )
-    elif args.fmin == 'slsqp':
-        results = scipy.optimize.minimize(
-                f,
-                theta,
-                args=fmin_args,
-                method='SLSQP',
-                jac=g,
-                )
-    elif args.fmin == 'powell':
-        results = scipy.optimize.minimize(
-                f,
-                theta,
-                args=fmin_args,
-                method='Powell',
-                )
-    elif args.fmin == 'cg':
-        results = scipy.optimize.minimize(
-                f,
-                theta,
-                args=fmin_args,
-                method='CG',
-                jac=g,
-                )
-    elif args.fmin == 'anneal':
-        results = scipy.optimize.minimize(
-                f,
-                theta,
-                args=fmin_args,
-                method='Anneal',
-                )
-    else:
-        raise Exception
+    #FIXME: this is currently hardcoded for genic selection
+    # 0: expected number of substitutions per site
+    #XXX# 1: normalizing rate constant
+    # 2: kappa transition/transversion ratio
+    # 3: omega synonymous/nonsynonymous ratio
+    # 4: mutational process equilibrium frequency of A
+    # 5: mutational process equilibrium frequency of C
+    # 6: mutational process equilibrium frequency of G
+    #XXX# 7: mutational process equilibrium frequency of T
+    results = scipy.optimize.fmin_slsqp(
+            f,
+            theta,
+            f_eqcons=f_eqcons,
+            bounds = [
+                (1e-5, 1e1),
+                (1e-5, 1e3),
+                (1e-5, 1e3),
+                #(0.0, 1.0),
+                #(0.0, 1.0),
+                #(0.0, 1.0),
+                #(0.0, 1.0),
+                (-numpy.inf, numpy.inf),
+                (-numpy.inf, numpy.inf),
+                (-numpy.inf, numpy.inf),
+                (-numpy.inf, numpy.inf),
+                ],
+            fprime=functools.partial(eval_grad, f),
+            fprime_eqcons=functools.partial(eval_grad, f_eqcons),
+            args=fmin_args,
+            iter=10000,
+            disp=2,
+            full_output=True,
+            )
     print 'results:', results
-    xopt = results[0]
-    print 'optimal solution vector:', xopt
-    print 'exp optimal solution vector:', numpy.exp(xopt)
-    print
-    #print 'inverse of hessian:'
-    #print scipy.linalg.inv(h(xopt, *fmin_args))
-    #print
 
 
 def main(args):
-    #
-    # Check reversibility of h functions with respect to F,
-    # in the notation of Yang and Nielsen 2008.
-    #FIXME: move these tests into kimrecessive
-    for h in (
-            get_fixation_genic,
-            get_fixation_recessive_disease,
-            get_fixation_dominant_disease,
-            get_fixation_knudsen,
-            ):
-        F = numpy.array([1.2, 2.3, 0, -1.1])
-        S = get_selection_S(F)
-        fixation = h(S)
-        log_ratio = numpy.log(fixation / fixation.T)
-        if not numpy.allclose(S, log_ratio):
-            raise Exception((S, log_ratio))
-    #
-    """
-    if args.integrate == 'quadrature' and args.fmin == 'ncg':
-        raise Exception(
-                'cannot use the combination of quadrature '
-                'for the solution of the Kimura integral '
-                'together with ncg for the max likelihood search')
-    """
-    #
-    # Do the main analysis.
     if args.disease == 'unconstrained':
         return submain_unconstrained_dominance(args)
     elif args.disease == 'kacser':
@@ -843,18 +823,6 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-            '--integrate',
-            choices=('quadrature', 'special'),
-            default='quadrature',
-            help='quadrature vs. functions like hyp1f1 for integration')
-    parser.add_argument(
-            '--fmin',
-            choices=(
-                'simplex', 'bfgs', 'jeffopt', 'ncg',
-                'slsqp', 'powell', 'cg', 'anneal'),
-            default='simplex',
-            help='nonlinear multivariate optimization')
     parser.add_argument(
             '--disease',
             choices=(
