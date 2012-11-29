@@ -27,6 +27,12 @@ joint posterior distribution of the parameters.
 Although this interpretation as a posterior distribution is probably
 horribly flawed unless it assumes an implicit prior distribution that
 trivially forces this to be a posterior distribution.
+.
+Added November 28 2012 --
+An interface pyipopt has been added which lets me use the Ipopt solver.
+My github has a branch that gives a nice interface to Ipopt
+for unconstrained problems only.
+Later I will try to add an improved interface for constrained problems.
 """
 
 import string
@@ -42,12 +48,12 @@ import scipy.special
 import scipy.linalg
 import algopy
 import algopy.special
+import pyipopt
 
 import jeffopt
 import kimrecessive
 import npcodon
 import yangdata
-
 
 # Precompute some ndarrays for quadrature.
 g_quad_x, g_quad_w = kimrecessive.precompute_quadrature(0.0, 1.0, 101)
@@ -321,10 +327,10 @@ def get_log_likelihood(P, v, subs_counts):
     return algopy.sum(algopy.log(score_matrix_transpose) * subs_counts)
 
 def eval_f(
-        theta,
         subs_counts, log_counts, v,
         h,
         ts, tv, syn, nonsyn, compo, asym_compo,
+        theta,
         ):
     """
     The function formerly known as minimize-me.
@@ -352,10 +358,10 @@ def eval_f(
     return -get_log_likelihood(P, v, subs_counts)
 
 def eval_f_unconstrained(
-        theta,
         subs_counts, log_counts, v,
         h,
         ts, tv, syn, nonsyn, compo, asym_compo,
+        theta,
         ):
     """
     No dominance/recessivity constraint.
@@ -386,10 +392,10 @@ def eval_f_unconstrained(
     return neg_log_likelihood
 
 def eval_f_unconstrained_kb(
-        theta,
         subs_counts, log_counts, v,
         h,
         ts, tv, syn, nonsyn, compo, asym_compo,
+        theta,
         ):
     """
     No dominance/recessivity constraint.
@@ -505,14 +511,17 @@ def submain_unconstrained_dominance_kb(args):
             h,
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
-    initial_cost = eval_f_unconstrained_kb(theta, *fmin_args)
+    f = functools.partial(eval_f_unconstrained_kb, *fmin_args)
+    #initial_cost = eval_f_unconstrained_kb(theta, *fmin_args)
+    initial_cost = f(theta)
     print 'negative log likelihood of initial guess:',
     print initial_cost
     print
     print 'entropy bound on negative log likelihood:',
     print npcodon.get_lb_neg_ll(subs_counts)
     print
-    do_opt(args, eval_f_unconstrained_kb, theta, fmin_args)
+    #do_opt(args, eval_f_unconstrained_kb, theta, fmin_args)
+    do_opt(args, f, theta)
 
 
 def submain_unconstrained_dominance(args):
@@ -599,14 +608,17 @@ def submain_unconstrained_dominance(args):
             h,
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
-    initial_cost = eval_f_unconstrained(theta, *fmin_args)
+    f = functools.partial(eval_f_unconstrained, *fmin_args)
+    #initial_cost = eval_f_unconstrained(theta, *fmin_args)
+    initial_cost = f(theta)
     print 'negative log likelihood of initial guess:',
     print initial_cost
     print
     print 'entropy bound on negative log likelihood:',
     print npcodon.get_lb_neg_ll(subs_counts)
     print
-    do_opt(args, eval_f_unconstrained, theta, fmin_args)
+    #do_opt(args, eval_f_unconstrained, theta, fmin_args)
+    do_opt(args, f, theta)
 
 
 
@@ -686,16 +698,21 @@ def submain_constrained_dominance(args):
             h,
             ts, tv, syn, nonsyn, compo, asym_compo,
             )
-    initial_cost = eval_f(theta, *fmin_args)
+    f = functools.partial(eval_f, *fmin_args)
+    #initial_cost = eval_f(theta, *fmin_args)
+    initial_cost = f(theta)
     print 'negative log likelihood of initial guess:',
     print initial_cost
     print
     print 'entropy bound on negative log likelihood:',
     print npcodon.get_lb_neg_ll(subs_counts)
     print
-    do_opt(args, eval_f, theta, fmin_args)
+    #do_opt(args, eval_f, theta, fmin_args)
+    do_opt(args, f, theta)
 
 
+
+#FIXME: remove *args
 def eval_grad(f, theta, *args):
     """
     Compute the gradient of f in the forward mode of automatic differentiation.
@@ -704,6 +721,7 @@ def eval_grad(f, theta, *args):
     retval = f(theta, *args)
     return algopy.UTPM.extract_jacobian(retval)
 
+#FIXME: remove *args
 def eval_hess(f, theta, *args):
     """
     Compute the hessian of f in the forward mode of automatic differentiation.
@@ -712,13 +730,17 @@ def eval_hess(f, theta, *args):
     retval = f(theta, *args)
     return algopy.UTPM.extract_hessian(len(theta), retval)
 
-def do_opt(args, f, theta, fmin_args):
+#def do_opt(args, f, theta, fmin_args):
+def do_opt(args, f, theta):
     """
     @param args: directly parsed from the command line
     @param f: function to minimize
     @param theta: initial guess of parameter values
-    @param fmin_args: data and other precomputed things independent of theta
     """
+    #FIXME: remove fmin_args
+    #@param fmin_args: data and other precomputed things independent of theta
+    fmin_args = tuple()
+
     g = functools.partial(eval_grad, f)
     h = functools.partial(eval_hess, f)
     if args.fmin == 'simplex':
@@ -794,6 +816,13 @@ def do_opt(args, f, theta, fmin_args):
                 args=fmin_args,
                 method='Anneal',
                 )
+    elif args.fmin == 'ipopt':
+        results = pyipopt.fmin_unconstrained(
+                f,
+                theta,
+                fprime=g,
+                fhess=h,
+                )
     else:
         raise Exception
     print 'results:', results
@@ -852,7 +881,7 @@ if __name__ == '__main__':
             '--fmin',
             choices=(
                 'simplex', 'bfgs', 'jeffopt', 'ncg',
-                'slsqp', 'powell', 'cg', 'anneal'),
+                'slsqp', 'powell', 'cg', 'anneal', 'ipopt'),
             default='simplex',
             help='nonlinear multivariate optimization')
     parser.add_argument(
