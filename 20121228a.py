@@ -9,6 +9,7 @@ import scipy.linalg
 
 import Form
 import FormOut
+from MatrixUtil import ndot
 
 def get_form():
     """
@@ -32,11 +33,13 @@ def assert_reversibility(Q, v):
     nstates = v.shape[0]
     if Q.shape != (nstates, nstates):
         raise Exception
-    if not np.all(np.greater_equal(v, np.zeros(nstates))):
+    if not np.all(np.greater_equal(v, 0)):
         raise Exception
     if not np.allclose(np.sum(v), 1):
         raise Exception
-    if not np.all(np.less(np.diag(Q), np.zeros(nstates))):
+    if not np.all(np.less(np.diag(Q), 0)):
+        raise Exception
+    if not np.all(np.greater_equal(Q - np.diag(np.diag(Q)), 0)):
         raise Exception
     if not np.allclose(np.dot(v, Q), 0):
         raise Exception
@@ -74,7 +77,9 @@ def get_plain_rate_matrix():
         [0, 0, 1, 0],
         ], dtype=float)
     Q = pre_Q - np.diag(np.sum(pre_Q, axis=1))
-    return Q
+    v_trans = 0.5 * np.ones(2)
+    v_recur = 0.5 * np.ones(2)
+    return Q, v_trans, v_recur
 
 def get_random_structured_rate_matrix():
     """
@@ -92,18 +97,39 @@ def get_random_structured_rate_matrix():
     Q = pre_Q - np.diag(np.sum(pre_Q, axis=1))
     v = np.hstack((np.zeros_like(v_trans), v_recur))
     assert_reversibility(Q, v)
-    return Q
+    return Q, v_trans, v_recur
 
 def get_response_content(fs):
     if fs.plain:
-        Q = get_plain_rate_matrix()
+        Q, v_trans, v_recur = get_plain_rate_matrix()
     elif fs.rand:
-        Q = get_random_structured_rate_matrix()
+        Q, v_trans, v_recur = get_random_structured_rate_matrix()
     else:
         raise Exception
+    nstates = Q.shape[0]
     w, vl, vr = scipy.linalg.eig(Q, left=True, right=True)
     vl_inv = scipy.linalg.inv(vl)
     vr_inv = scipy.linalg.inv(vr)
+    #
+    # do weird things with the sylvester equation
+    n = nstates / 2
+    A_syl = Q[:n, :n]
+    B_syl = -Q[n:, n:]
+    Q_syl = -Q[:n, n:]
+    X = scipy.linalg.solve_sylvester(A_syl, B_syl, Q_syl)
+    T = np.array(np.bmat([
+        [np.eye(n), X],
+        [np.zeros((n, n)), np.eye(n)],
+        ]))
+    T_inv = scipy.linalg.inv(T)
+    #
+    # do stuff with the stationary distributions of the separate processes
+    v_trans_recur = np.hstack((v_trans, v_recur))
+    D_sqrt = np.diag(np.sqrt(v_trans_recur))
+    D_sqrt_recip = np.diag(np.reciprocal(np.sqrt(v_trans_recur)))
+    block_diag = ndot(D_sqrt, T_inv, Q, T, D_sqrt_recip)
+    w, U = scipy.linalg.eigh(block_diag)
+    w_full = np.diag(ndot(U.T, D_sqrt, T_inv, Q, T, D_sqrt_recip, U))
     #
     np.set_printoptions(
             linewidth=1000000,
@@ -139,6 +165,31 @@ def get_response_content(fs):
     print >> out
     print >> out, 'vr w inv(vr):'
     print >> out, np.dot(vr, np.dot(np.diag(w), vr_inv))
+    print >> out
+    print >> out
+    print >> out, 'sylvester equation stuff...'
+    print >> out
+    print >> out, 'X:'
+    print >> out, X
+    print >> out
+    print >> out, 'T:'
+    print >> out, T
+    print >> out
+    print >> out, 'inv(T):'
+    print >> out, T_inv
+    print >> out
+    print >> out, 'inv(T) Q T:'
+    print >> out, np.dot(T_inv, np.dot(Q, T))
+    print >> out
+    print >> out, 'U.T D^(1/2) inv(T) Q T D^(-1/2) U:'
+    print >> out, ndot(U.T, D_sqrt, T_inv, Q, T, D_sqrt_recip, U)
+    print >> out
+    print >> out, 'expm(Q):'
+    print >> out, scipy.linalg.expm(Q)
+    print >> out
+    print >> out, 'T D^-1/2 U exp(w) U.T D^1/2 T^-1'
+    print >> out, ndot(
+            T, D_sqrt_recip, U, np.diag(np.exp(w_full)), U.T, D_sqrt, T_inv)
     print >> out
     return out.getvalue()
 
