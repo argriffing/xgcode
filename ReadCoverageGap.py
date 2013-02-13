@@ -14,8 +14,8 @@ import math
 import itertools
 
 import numpy as np
+import scipy.misc
 import scipy.stats
-import scipy.maxentropy
 from scipy.special import gammaln
 
 import Util
@@ -200,7 +200,7 @@ class Homozygous:
         accum += n * self.per_n
         accum -= sum_log_factorials
         log_scaled_likelihoods = [obs*self.log_coeff for obs in observation]
-        accum += scipy.maxentropy.logsumexp(log_scaled_likelihoods)
+        accum += scipy.misc.logsumexp(log_scaled_likelihoods)
         log_likelihood = accum - self.log_nstates
         if math.isnan(log_likelihood):
             raise ValueError('nan')
@@ -257,7 +257,7 @@ class Heterozygous:
         accum += n * self.per_n
         accum -= sum_log_factorials
         log_scaled_likelihoods = [(a+b)*self.log_coeff for a, b in itertools.combinations(observation, 2)]
-        accum += scipy.maxentropy.logsumexp(log_scaled_likelihoods)
+        accum += scipy.misc.logsumexp(log_scaled_likelihoods)
         log_likelihood = accum - self.log_nstates_choose_two
         if math.isnan(log_likelihood):
             raise ValueError('nan')
@@ -320,7 +320,7 @@ class Good(CachedSuperstate):
         log_likelihoods = [m.get_log_likelihood(observation) for m in self.states]
         weighted_log_likelihoods = [ll + log_p for ll, log_p in zip(log_likelihoods, self.log_distribution)]
         ll, index = max((ll, i) for i, ll in enumerate(weighted_log_likelihoods))
-        log_likelihood = scipy.maxentropy.logsumexp(weighted_log_likelihoods)
+        log_likelihood = scipy.misc.logsumexp(weighted_log_likelihoods)
         if math.isnan(log_likelihood):
             raise ValueError('nan')
         return log_likelihood, index
@@ -379,7 +379,7 @@ class Bad(CachedSuperstate):
         """
         log_likelihoods = [m.get_log_likelihood(observation) for m in self.states]
         ll, index = max((ll, i) for i, ll in enumerate(log_likelihoods))
-        log_likelihood = scipy.maxentropy.logsumexp(log_likelihoods) - self.log_nstates
+        log_likelihood = scipy.misc.logsumexp(log_likelihoods) - self.log_nstates
         if math.isnan(log_likelihood):
             raise ValueError('nan')
         return log_likelihood, index

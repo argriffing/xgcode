@@ -13,8 +13,8 @@ import random
 import math
 
 import numpy as np
+import scipy.misc
 import scipy.stats
-import scipy.maxentropy
 
 import Util
 import StatsUtil
@@ -84,7 +84,7 @@ class Mixture:
                 for state in self.states]
         weighted_lls = [ll + log_p
                 for ll, log_p in zip(log_likelihoods, self.log_distribution)]
-        obs_ll = scipy.maxentropy.logsumexp(weighted_lls)
+        obs_ll = scipy.misc.logsumexp(weighted_lls)
         return [math.exp(ll - obs_ll) for ll in weighted_lls]
 
     def sample_observation(self):
@@ -104,7 +104,7 @@ class Mixture:
             return float('-inf')
         weighted_log_likelihoods = [ll + log_p
                 for ll, log_p in zip(log_likelihoods, self.log_distribution)]
-        return scipy.maxentropy.logsumexp(weighted_log_likelihoods)
+        return scipy.misc.logsumexp(weighted_log_likelihoods)
 
 
 class UniformMixture:
@@ -130,7 +130,7 @@ class UniformMixture:
         log_likelihoods = [state.get_log_likelihood(observation) for state in self.states]
         if all(ll==float('-inf') for ll in log_likelihoods):
             return float('-inf')
-        log_likelihood = scipy.maxentropy.logsumexp(log_likelihoods) - math.log(len(self.states))
+        log_likelihood = scipy.misc.logsumexp(log_likelihoods) - math.log(len(self.states))
         return log_likelihood
 
 

@@ -20,7 +20,7 @@ import itertools
 import math
 import argparse
 
-import scipy
+import scipy.misc
 
 from SnippetUtil import HandlingError
 import Form
@@ -129,7 +129,7 @@ def get_response_content(fs):
                 obs[1]*log_PA + obs[2]*log_Pr + obs[3]*log_Pr,
                 obs[1]*log_Pr + obs[2]*log_PA + obs[3]*log_Pr,
                 obs[1]*log_Pr + obs[2]*log_Pr + obs[3]*log_PA]
-        condmaxpost = math.exp(max(logs) - scipy.maxentropy.logsumexp(logs))
+        condmaxpost = math.exp(max(logs) - scipy.misc.logsumexp(logs))
         # get the posterior probability distribution
         maxpost = posterior_polymorphism * condmaxpost
         # show the inference for this position
@@ -178,7 +178,7 @@ def main(args):
                 obs[1]*log_PA + obs[2]*log_Pr + obs[3]*log_Pr,
                 obs[1]*log_Pr + obs[2]*log_PA + obs[3]*log_Pr,
                 obs[1]*log_Pr + obs[2]*log_Pr + obs[3]*log_PA]
-        condmaxpost = math.exp(max(logs) - scipy.maxentropy.logsumexp(logs))
+        condmaxpost = math.exp(max(logs) - scipy.misc.logsumexp(logs))
         # get the posterior probability distribution
         maxpost = posterior_polymorphism * condmaxpost
         # show the annotation for this position

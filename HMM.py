@@ -12,7 +12,7 @@ import math
 import itertools
 
 import numpy as np
-import scipy.maxentropy
+import scipy.misc
 
 import Util
 import TransitionMatrix
@@ -242,12 +242,12 @@ class TrainedModel:
         # get the distribution at each position
         distributions = []
         for log_distribution_lists in total_accum:
-            distribution = [scipy.maxentropy.logsumexp(x) for x in log_distribution_lists]
+            distribution = [scipy.misc.logsumexp(x) for x in log_distribution_lists]
             distribution = [d - max(distribution) for d in distribution]
             distribution = [math.exp(d) for d in distribution]
             distribution = [d / sum(distribution) for d in distribution]
             distributions.append(distribution)
-        total_probability = math.exp(scipy.maxentropy.logsumexp(total_log_sums))
+        total_probability = math.exp(scipy.misc.logsumexp(total_log_sums))
         return distributions, total_probability
 
     def naive_forward_durbin(self, observations):
