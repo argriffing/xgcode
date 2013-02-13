@@ -60,7 +60,7 @@ def get_response_content(fs):
         best_objective, best_assignment = min(pairs)
         best_cluster = set(i for i in range(n) if best_assignment[i] == 1)
     if fs.min:
-        best_cluster = StoerWagner.stoer_wagner_min_cut(A.tolist())
+        best_cluster = StoerWagner.stoer_wagner_min_cut(A)
         complement = set(range(n)) - best_cluster
         best_objective = sum(A[i][j] for i in best_cluster for j in complement)
     # get the smaller of the two clusters
