@@ -71,8 +71,8 @@ def gen_random_weighted_binary_trees():
     Generate examples.
     Maybe one of these examples will be a counterexample to some statement.
     """
-    #nleaves_allowed = [3, 4, 5, 6, 7, 8, 9, 10]
-    nleaves_allowed = [4]
+    nleaves_allowed = [3, 4, 5, 6, 7, 8, 9, 10]
+    #nleaves_allowed = [4]
     while True:
         ntips = random.choice(nleaves_allowed)
         narts = ntips - 2
@@ -132,12 +132,63 @@ def fiedler_cut_valuator(A):
     return v[:, 1]
 
 def harmonic_extension(A, tip_valuations):
-    pass
+    """
+    This extension uses the 'Laplacian matrix' and the 'accompanying matrix'.
+    @param A: weighted undirected adjacency matrix with tips first
+    @param valuations: valuations associated with the first part of A
+    @return: extension of valuations to the remaining vertices
+    """
+    MatrixUtil.assert_symmetric(A)
+    MatrixUtil.assert_nonnegative(A)
+    MatrixUtil.assert_hollow(A)
+    nverts = A.shape[0]
+    ntips = tip_valuations.shape[0]
+    narts = nverts - ntips
+    L = np.diag(np.sum(A, axis=1)) - A
+    acc = -np.dot(L[:ntips, -narts:], scipy.linalg.inv(L[-narts:, -narts:]))
+    if acc.shape != (ntips, narts):
+        raise Exception('unexpected shape of accompanying matrix')
+    MatrixUtil.assert_positive(acc)
+    return np.dot(tip_valuations, acc)
 
 def combinatorial_extension(A, tip_valuations):
-    pass
+    """
+    This extension uses {-1, +1} valuations to minimize zero-crossings.
+    It currently uses brute force.
+    A more sophisticated approach would minimize not the number of
+    zero-crossings, but would instead minimize the number of
+    connected components induced by the valuation sign cut.
+    @param A: weighted undirected adjacency matrix with tips first
+    @param valuations: valuations associated with the first part of A
+    @return: extension of valuations to the remaining vertices
+    """
+    MatrixUtil.assert_symmetric(A)
+    MatrixUtil.assert_nonnegative(A)
+    MatrixUtil.assert_hollow(A)
+    nverts = A.shape[0]
+    ntips = tip_valuations.shape[0]
+    narts = nverts - ntips
+    # get some arbitrarily directed edges from the adjacency matrix
+    edges = []
+    for i in range(nverts):
+        for j in range(i+1, nverts):
+            if A[i, j] > 0:
+                edges.append((i, j))
+    # use brute force to get the best sign valuation of internal vertices
+    best_art_vals = None
+    best_ncrossings = None
+    for art_vals in itertools.product((-1, 1), repeat=narts):
+        vfull = np.concatenate((tip_valuations, art_vals))
+        ncrossings = 0
+        for i, j in edges:
+            if A[i, j] * vfull[i] * vfull[j] < 0:
+                ncrossings += 1
+        if best_art_vals is None or ncrossings < best_ncrossings:
+            best_art_vals = art_vals
+            best_ncrossings = ncrossings
+    return np.array(best_art_vals, dtype=float)
 
-def check_generic_cut(valuator, A):
+def check_generic_cut(valuator, extendor, A):
     """
     The input matrix is expected to have a certain block structure.
     In particular, the leaf vertices are expected to
@@ -169,14 +220,8 @@ def check_generic_cut(valuator, A):
     tip_valuations = valuator(A_tips)
     tip_valuations -= np.mean(tip_valuations)
     tip_valuations /= np.linalg.norm(tip_valuations)
-    # compute the harmonic extension via the "accompanying matrix"
-    acc = -np.dot(L[:ntips, -narts:], scipy.linalg.inv(L[-narts:, -narts:]))
-    if acc.shape != (ntips, narts):
-        raise Exception('unexpected shape of accompanying matrix')
-    MatrixUtil.assert_positive(acc)
-    art_valuations = np.dot(tip_valuations, acc)
+    art_valuations = extendor(A, tip_valuations)
     valuations = np.concatenate((tip_valuations, art_valuations))
-    # count "zero crossings" of the valuations of vertices along edges
     ncrossings = 0
     for i in range(nverts):
         for j in range(i+1, nverts):
@@ -203,15 +248,23 @@ def get_response_content(fs):
 
     # define the cut strategy
     if fs.min_cut:
-        check_cut = functools.partial(check_generic_cut, min_cut_valuator)
+        valuator = min_cut_valuator
     elif fs.fiedler_cut:
-        check_cut = functools.partial(check_generic_cut, fiedler_cut_valuator)
+        valuator = fiedler_cut_valuator
+    else:
+        raise Exception
+
+    # define the extension strategy
+    if fs.harmonic_extension:
+        extendor = harmonic_extension
+    elif fs.combinatorial_extension:
+        extendor = combinatorial_extension
     else:
         raise Exception
 
     # look for a tree for which the harmonic extension of the cut is bad
     ret = combobreaker.run_checker(
-            check_cut,
+            functools.partial(check_generic_cut, valuator, extendor),
             gen_random_weighted_binary_trees(),
             nseconds=nseconds,
             niterations=None,
