@@ -1,64 +1,198 @@
 """
-Check the harmonic extension of min cut on a tree.
+Check the harmonic extensions of cuts of the Schur complement in a tree.
 """
-
-#XXX write this thing
 
 from StringIO import StringIO
 import itertools
 import math
+import random
+import functools
 
 import numpy as np
 import scipy.linalg
 
 import Form
 import FormOut
+import MatrixUtil
+import StoerWagner
 from MatrixUtil import ndot
+import combobreaker
+
 
 def get_form():
     """
     @return: the body of a form
     """
     return [
-            #Form.Integer('N', 'population size', 3, low=1, high=5),
+            Form.RadioGroup('cut_options', 'cut option', [
+                Form.RadioItem('min_cut', 'min cut', True),
+                Form.RadioItem('fiedler_cut', 'fiedler cut')]),
+            Form.RadioGroup('check_options', 'compatibility check', [
+                Form.RadioItem('harmonic_extension',
+                    'harmonic extension', True),
+                Form.RadioItem('combinatorial_extension',
+                    'combinatorial extension')]),
             ]
 
 def get_form_out():
     return FormOut.Report()
 
-def hamdist(a, b):
-    return sum(1 for x, y in zip(a, b) if x != y)
-
-def get_jeff_mut_trans(ascii_states, mu):
-    k = len(ascii_states)
-    mmu = np.zeros((k, k))
-    for i, si in enumerate(ascii_states):
-        for j, sj in enumerate(ascii_states):
-            h = hamdist(si, sj)
-            mmu[i, j] = (mu ** h) * ((1 - mu) ** (2 - h))
-    return mmu
-
-def get_mut_rate_matrix(ascii_states):
-    k = len(ascii_states)
-    pre_Q = np.zeros((k, k))
-    for i, si in enumerate(ascii_states):
-        for j, sj in enumerate(ascii_states):
-            if hamdist(si, sj) == 1:
-                pre_Q[i, j] = 1
-    Q = pre_Q - np.diag(np.sum(pre_Q, axis=1))
-    return Q
-
-def get_equivalent_rate(mu):
+def sample_tree(nleaves):
     """
-    Get a rate that gives an expm matrix with the same entries as Jeff has.
+    Sample an unweighted binary tree with a given number of leaves.
+    @param nleaves: number of leaves in the sampled tree
+    @return: V, E
     """
-    return -0.25 * math.log(1 - 4*mu*(1-mu))
+    if nleaves < 3:
+        raise Exception('too few requested leaves')
+    V = {0, 1}
+    E = {frozenset([0, 1])}
+    leaves = {0, 1}
+    for i in range(nleaves-2):
+        v = random.choice(list(leaves))
+        leaves.remove(v)
+        va = len(V)
+        vb = va + 1
+        for nat in (va, vb):
+            V.add(nat)
+            leaves.add(nat)
+            E.add(frozenset([v, nat]))
+    return V, E
+
+def get_unweighted_vertex_degrees(V, E):
+    degrees = dict((v, 0) for v in V)
+    for a, b in E:
+        degrees[a] += 1
+        degrees[b] += 1
+    return degrees
+
+def gen_random_weighted_binary_trees():
+    """
+    Generate examples.
+    Maybe one of these examples will be a counterexample to some statement.
+    """
+    #nleaves_allowed = [3, 4, 5, 6, 7, 8, 9, 10]
+    nleaves_allowed = [4]
+    while True:
+        ntips = random.choice(nleaves_allowed)
+        narts = ntips - 2
+        nverts = ntips + narts
+        V, E = sample_tree(ntips)
+        if len(V) != nverts:
+            raise Exception('expected a nontrivial unrooted binary tree')
+        # get unweighted vertex degrees
+        degrees = get_unweighted_vertex_degrees(V, E)
+        # get the tips and the points of articulation
+        tips = sorted(v for v, d in degrees.items() if d == 1)
+        arts = sorted(v for v, d in degrees.items() if d == 3)
+        if len(tips) != ntips:
+            raise Exception('expected a nontrivial unrooted binary tree')
+        if len(arts) != narts:
+            raise Exception('expected a nontrivial unrooted binary tree')
+        # relabel the vertices so that leaves are first
+        vtrans = dict((v, i) for i, v in enumerate(tips + arts))
+        E = set(frozenset([vtrans[a], vtrans[b]]) for a, b in E)
+        # construct the weighted adjacency matrix
+        A = np.zeros((nverts, nverts), dtype=float)
+        for a, b in E:
+            w = np.random.exponential()
+            A[a, b] = w
+            A[b, a] = w
+        yield A
+
+def min_cut_valuator(A):
+    """
+    @param A: a symmetric weighted adjacency matrix
+    @return: a valuation of the indices of the adjacency matrix
+    """
+    MatrixUtil.assert_symmetric(A)
+    MatrixUtil.assert_nonnegative(A)
+    MatrixUtil.assert_hollow(A)
+    nverts = A.shape[0]
+    v_pos = StoerWagner.stoer_wagner_min_cut(A)
+    v_neg = set(range(nverts)) - v_pos
+    valuations = np.zeros(nverts, dtype=float)
+    for v in v_pos:
+        valuations[v] = 1
+    for v in v_neg:
+        valuations[v] = -1
+    return valuations
+
+def fiedler_cut_valuator(A):
+    """
+    @param A: a symmetric weighted adjacency matrix
+    @return: a valuation of the indices of the adjacency matrix
+    """
+    MatrixUtil.assert_symmetric(A)
+    MatrixUtil.assert_nonnegative(A)
+    MatrixUtil.assert_hollow(A)
+    nverts = A.shape[0]
+    L = np.diag(np.sum(A, axis=1)) - A
+    w, v = scipy.linalg.eigh(L)
+    return v[:, 1]
+
+def harmonic_extension(A, tip_valuations):
+    pass
+
+def combinatorial_extension(A, tip_valuations):
+    pass
+
+def check_generic_cut(valuator, A):
+    """
+    The input matrix is expected to have a certain block structure.
+    In particular, the leaf vertices are expected to
+    precede the points of articulation.
+    Because the tree is expected to be an unrooted binary tree,
+    the relative number of leaves and points of articulation
+    is determined by the size of the adjacency matrix.
+    @param A: adjacency matrix of an unrooted edge-weighted binary tree
+    @return: True if a counterexample is found
+    """
+    MatrixUtil.assert_symmetric(A)
+    MatrixUtil.assert_nonnegative(A)
+    MatrixUtil.assert_hollow(A)
+    nverts = A.shape[0]
+    if nverts < 4:
+        raise Exception('expected at least four vertices')
+    if nverts % 2 != 0:
+        raise Exception('expected an even number of vertices')
+    ntips = nverts / 2 + 1
+    narts = nverts / 2 - 1
+    # get the schur complement laplacian and its associated adjacency matrix
+    L = np.diag(np.sum(A, axis=1)) - A
+    L_tips = L[:ntips, :ntips] - ndot(
+            L[:ntips, -narts:],
+            scipy.linalg.inv(L[-narts:, -narts:]),
+            L[-narts:, :ntips],
+            )
+    A_tips = np.diag(np.diag(L_tips)) - L_tips
+    tip_valuations = valuator(A_tips)
+    tip_valuations -= np.mean(tip_valuations)
+    tip_valuations /= np.linalg.norm(tip_valuations)
+    # compute the harmonic extension via the "accompanying matrix"
+    acc = -np.dot(L[:ntips, -narts:], scipy.linalg.inv(L[-narts:, -narts:]))
+    if acc.shape != (ntips, narts):
+        raise Exception('unexpected shape of accompanying matrix')
+    MatrixUtil.assert_positive(acc)
+    art_valuations = np.dot(tip_valuations, acc)
+    valuations = np.concatenate((tip_valuations, art_valuations))
+    # count "zero crossings" of the valuations of vertices along edges
+    ncrossings = 0
+    for i in range(nverts):
+        for j in range(i+1, nverts):
+            if valuations[i] * valuations[j] * A[i, j] < 0:
+                ncrossings += 1
+    if ncrossings != 1:
+        # found a counterexample!
+        print ncrossings
+        print A
+        return True
+
 
 def get_response_content(fs):
 
-    mu = 0.025
-    ascii_states = ['AB', 'Ab', 'aB', 'ab']
-    k = len(ascii_states)
+    # define the amount of time we will search
+    nseconds = 5
 
     # set up print options
     np.set_printoptions(
@@ -67,34 +201,23 @@ def get_response_content(fs):
             )
     out = StringIO()
 
-    # show the original transition matrix
-    mmu = get_jeff_mut_trans(ascii_states, mu)
-    print >> out, 'original transition matrix:'
-    print >> out, mmu
-    print >> out
-    print >> out, 'logm of original transition matrix:'
-    print >> out, scipy.linalg.logm(mmu)
-    print >> out
-    print >> out
+    # define the cut strategy
+    if fs.min_cut:
+        check_cut = functools.partial(check_generic_cut, min_cut_valuator)
+    elif fs.fiedler_cut:
+        check_cut = functools.partial(check_generic_cut, fiedler_cut_valuator)
+    else:
+        raise Exception
 
-    # show a transition matrix derived from a rate matrix
-    Q = get_mut_rate_matrix(ascii_states)
-    print >> out, 'a scaled rate matrix:'
-    print >> out, mu*Q
-    print >> out
-    print >> out, 'expm of the scaled rate matrix:'
-    print >> out, scipy.linalg.expm(mu*Q)
-    print >> out
-    print >> out
+    # look for a tree for which the harmonic extension of the cut is bad
+    ret = combobreaker.run_checker(
+            check_cut,
+            gen_random_weighted_binary_trees(),
+            nseconds=nseconds,
+            niterations=None,
+            )
 
-    # do a thing
-    mu_adjusted = get_equivalent_rate(mu)
-    print >> out, 'adjusted mu:'
-    print >> out, mu_adjusted
-    print >> out
-    print >> out, 'expm of the scaled adjusted rate matrix:'
-    print >> out, scipy.linalg.expm(mu_adjusted*Q)
-    print >> out
+    print >> out, ret
 
     # show the result
     return out.getvalue()

@@ -76,7 +76,8 @@ def run_checker(
         nseconds=None, niterations=None):
     """
     Return a RunInfo object containing the final state.
-    @param states: a state iterator, probably a generator object
+    @param checker: a function to check each value
+    @param values: a state iterator, probably a generator object
     @param nseconds: a time limit
     @param niterations: a limit on the number of iterations
     """
