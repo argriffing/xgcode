@@ -218,9 +218,14 @@ def check_generic_cut(valuator, extendor, A):
             )
     A_tips = np.diag(np.diag(L_tips)) - L_tips
     tip_valuations = valuator(A_tips)
-    tip_valuations -= np.mean(tip_valuations)
-    tip_valuations /= np.linalg.norm(tip_valuations)
+    #tip_valuations -= np.mean(tip_valuations)
+    #tip_valuations /= np.linalg.norm(tip_valuations)
     art_valuations = extendor(A, tip_valuations)
+    #ntip_pos = sum(1 for v in tip_valuations if v > 0)
+    #ntip_neg = sum(1 for v in tip_valuations if v < 0)
+    #nart_pos = sum(1 for v in art_valuations if v > 0)
+    #nart_neg = sum(1 for v in art_valuations if v < 0)
+    #print ((ntip_pos, ntip_neg), (nart_pos, nart_neg))
     valuations = np.concatenate((tip_valuations, art_valuations))
     ncrossings = 0
     for i in range(nverts):
