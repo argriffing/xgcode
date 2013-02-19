@@ -40,6 +40,8 @@ def get_form():
     @return: the body of a form
     """
     return [
+            Form.Float('blink_birth', 'tolerance birth rate', '0.01'),
+            Form.Float('blink_death', 'tolerance death rate', '0.02'),
             ]
 
 def get_form_out():
@@ -127,7 +129,6 @@ def blinkize(pre_Q, blink_birth, blink_death):
     @param blink_death: a rate
     @return: a new 'blink-ized' pre-rate matrix
     """
-    MatrixUtil.assert_symmetric(pre_Q)
     n = pre_Q.shape[0]
     
     # pre-compute some properties of the new rate matrix
@@ -135,6 +136,15 @@ def blinkize(pre_Q, blink_birth, blink_death):
     adj_toggle_on = get_toggle_on_adjacency(expo_states)
     adj_toggle_off = get_toggle_off_adjacency(expo_states)
     adj_observable = get_observable_adjacency(expo_states)
+
+    # check some invariants
+    if np.any(adj_toggle_on * adj_toggle_off):
+        raise Exception
+    adj_toggle_either = adj_toggle_on + adj_toggle_off
+    MatrixUtil.assert_symmetric(adj_toggle_either)
+    MatrixUtil.assert_symmetric(adj_observable)
+    if np.any(adj_toggle_either * adj_observable):
+        raise Exception
 
     # initialize the new rate matrix
     nblinks = len(expo_states)
@@ -157,6 +167,16 @@ def blinkize(pre_Q, blink_birth, blink_death):
     # return the newly constructed pre-rate matrix
     return pre_blink
 
+def pre_Q_to_Q(pre_Q):
+    return pre_Q - np.diag(np.sum(pre_Q, axis=1))
+
+def sample_reversible_pre_Q(n):
+    M = np.exp(np.random.randn(n, n))
+    S = M + M.T
+    weights = np.exp(np.random.randn(n))
+    v = weights / np.sum(weights)
+    pre_Q = np.dot(S, np.diag(v))
+    return pre_Q
 
 def get_response_content(fs):
 
@@ -170,16 +190,67 @@ def get_response_content(fs):
             )
     out = StringIO()
 
-    n = 3
-    blink_birth = 0.1
-    blink_death = 0.2
-    W = np.exp(np.random.randn(n, n))
-    pre_Q = W + W.T
+    # set up some process parameters
+    blink_birth = fs.blink_birth
+    blink_death = fs.blink_death
+    if blink_birth < 0:
+        raise Exception
+    if blink_death < 0:
+        raise Exception
+
+    # define the original rate matrix
+    #pre_Q = np.exp(np.random.randn(3, 3))
+    """
+    pre_Q = np.array([
+        [0.0, 0.5],
+        [0.1, 0.0],
+        ], dtype=float)
+    pre_Q = np.array([
+        [0.0, 0.3, 0.1],
+        [0.1, 0.0, 0.3],
+        [0.1, 0.1, 0.0],
+        ], dtype=float)
+    pre_Q = np.array([
+        [0.0, 3.0, 0.1],
+        [0.1, 0.0, 3.0],
+        [0.1, 0.1, 0.0],
+        ], dtype=float)
+    pre_Q = np.array([
+        [0.00, 6.00, 0.00],
+        [0.00, 0.00, 6.00],
+        [0.01, 0.00, 0.00],
+        ], dtype=float)
+    """
+    pre_Q = sample_reversible_pre_Q(4)
+
+    # construct the derived rate matrix
     pre_blink = blinkize(pre_Q, blink_birth, blink_death)
+
+    # check stationary distributions
+    Q = pre_Q_to_Q(pre_Q)
+    W, V = scipy.linalg.eig(Q.T)
+    v = V[:, np.argmin(np.abs(W))]
+    v /= np.sum(v)
+    print >> out, Q
+    print >> out, W
+    print >> out, v
     print >> out
-    print >> out, pre_Q
+
+    Q_blink = pre_Q_to_Q(pre_blink)
+    W, V = scipy.linalg.eig(Q_blink.T)
+    v = V[:, np.argmin(np.abs(W))]
+    v /= np.sum(v)
+    print >> out, Q_blink
+    print >> out, W
+    print >> out, v
     print >> out
-    print >> out, pre_blink
+
+    n = pre_Q.shape[0]
+    expo = get_expanded_states(n)
+    x = np.zeros(n)
+    for i, (perm, mask) in enumerate(expo):
+        x[perm[0]] += v[i]
+    print >> out, x
     print >> out
 
     # show the result
