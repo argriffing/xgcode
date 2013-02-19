@@ -200,6 +200,7 @@ def get_response_content(fs):
 
     # define the original rate matrix
     #pre_Q = np.exp(np.random.randn(3, 3))
+    #pre_Q = sample_reversible_pre_Q(4)
     """
     pre_Q = np.array([
         [0.0, 0.5],
@@ -215,13 +216,12 @@ def get_response_content(fs):
         [0.1, 0.0, 3.0],
         [0.1, 0.1, 0.0],
         ], dtype=float)
+    """
     pre_Q = np.array([
         [0.00, 6.00, 0.00],
         [0.00, 0.00, 6.00],
         [0.01, 0.00, 0.00],
         ], dtype=float)
-    """
-    pre_Q = sample_reversible_pre_Q(4)
 
     # construct the derived rate matrix
     pre_blink = blinkize(pre_Q, blink_birth, blink_death)
