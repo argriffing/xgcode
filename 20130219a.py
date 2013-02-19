@@ -61,7 +61,7 @@ def get_toggle_on_adjacency(expo_states):
     @return: a binary adjacency matrix
     """
     nstates = len(expo_states)
-    adjacency = np.zero((nstates, nstates), dtype=int)
+    adjacency = np.zeros((nstates, nstates), dtype=int)
     for i in range(nstates):
         for j in range(nstates):
             perm_i, mask_i = expo_states[i]
@@ -72,14 +72,14 @@ def get_toggle_on_adjacency(expo_states):
                 adjacency[i, j] = 1
     return adjacency
 
-def get_toggle_on_adjacency(expo_states):
+def get_toggle_off_adjacency(expo_states):
     """
     Precompute this design matrix.
     @param expo_states: expanded states with permutations and masks
     @return: a binary adjacency matrix
     """
     nstates = len(expo_states)
-    adjacency = np.zero((nstates, nstates), dtype=int)
+    adjacency = np.zeros((nstates, nstates), dtype=int)
     for i in range(nstates):
         for j in range(nstates):
             perm_i, mask_i = expo_states[i]
@@ -98,7 +98,7 @@ def get_observable_adjacency(expo_states):
     @return: a binary adjacency matrix
     """
     nstates = len(expo_states)
-    adjacency = np.zero((nstates, nstates), dtype=int)
+    adjacency = np.zeros((nstates, nstates), dtype=int)
     for i in range(nstates):
         for j in range(nstates):
             perm_i, mask_i = expo_states[i]
@@ -170,8 +170,17 @@ def get_response_content(fs):
             )
     out = StringIO()
 
-    for x in get_expanded_states(3):
-        print >> out, x
+    n = 3
+    blink_birth = 0.1
+    blink_death = 0.2
+    W = np.exp(np.random.randn(n, n))
+    pre_Q = W + W.T
+    pre_blink = blinkize(pre_Q, blink_birth, blink_death)
+    print >> out
+    print >> out, pre_Q
+    print >> out
+    print >> out, pre_blink
+    print >> out
 
     # show the result
     return out.getvalue()
