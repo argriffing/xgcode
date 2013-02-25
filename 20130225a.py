@@ -1,7 +1,7 @@
 """
-Check more properties of a rate matrix augmented with hidden binary variables.
+Check equivalence of resistance and commute distances.
 
-This assumes a non-reversible 3-state continuous time Markov process.
+Use the GraphPCA paper for reference.
 """
 
 from StringIO import StringIO
@@ -24,25 +24,16 @@ def get_form():
     @return: the body of a form
     """
     return [
-            Form.Float('rate_01', 'rate A --> B',
-                '1', low_exclusive=0),
-            Form.Float('rate_12', 'rate B --> C',
-                '0.01', low_exclusive=0),
-            Form.Float('rate_20', 'rate C --> A',
-                '0.01', low_exclusive=0),
-            Form.Float('blink_birth', 'tolerance birth rate',
-                '0.00000001', low_exclusive=0),
-            Form.Float('blink_death', 'tolerance death rate',
-                '0.0001', low_inclusive=0),
             ]
 
 def get_form_out():
     return FormOut.Report()
 
-def get_response_content(fs):
+def sample_symmetric_pre_L(n):
+    B = np.exp(np.random.randn(n, n))
+    return B + B.T
 
-    # define the amount of time we will search
-    nseconds = 5
+def get_response_content(fs):
 
     # set up print options
     np.set_printoptions(
@@ -51,50 +42,56 @@ def get_response_content(fs):
             )
     out = StringIO()
 
-    # set up some process parameters
-    blink_birth = fs.blink_birth
-    blink_death = fs.blink_death
-    rate_01 = fs.rate_01
-    rate_12 = fs.rate_12
-    rate_20 = fs.rate_20
+    # define the number of vertices in the graph
+    n = 6
 
-    # define the original rate matrix
-    pre_Q = np.array([
-        [0, rate_01, 0],
-        [0, 0, rate_12],
-        [rate_20, 0, 0],
-        ], dtype=float)
+    # sample a symmetric pre-Laplacian matrix
+    pre_L = sample_symmetric_pre_L(n)
+    L = np.diag(np.sum(pre_L, axis=1)) - pre_L
 
-    # construct the derived rate matrix
-    pre_blink = binarytolerance.blinkize(pre_Q, blink_birth, blink_death)
+    # compute Gower's centered distance matrix
+    G = scipy.linalg.pinv(L)
 
-    # check stationary distributions
-    Q = binarytolerance.pre_Q_to_Q(pre_Q)
-    W, V = scipy.linalg.eig(Q.T)
-    v = V[:, np.argmin(np.abs(W))]
-    v /= np.sum(v)
-    #print >> out, Q
-    #print >> out, W
-    print >> out, 'original process stationary distribution:'
-    print >> out, v
+    # compute the resistance distance matrix
+    R = np.zeros_like(G)
+    R += np.outer(np.diag(G), np.ones(n))
+    R += np.outer(np.ones(n), np.diag(G))
+    R -= 2 * G
+
+    # construct a non-expm transition matrix associated to the graph
+    d = np.diag(L)
+    P = np.eye(n) - np.dot(np.diag(np.reciprocal(d)), L)
+
+    # compute first passage times according to GraphPCA
+    M = np.zeros_like(P)
+    for i in range(n):
+        for k in range(n):
+            for j in range(n):
+                M[i, k] += d[j] * (G[i, j] - G[i, k] - G[k, j] + G[k, k])
+
+    # compute commute times according to GraphPCA
+    N = M + M.T
+
+    # compute the graph volume
+    volume = np.sum(d)
+
+    print >> out, 'Laplacian matrix:'
+    print >> out, L
     print >> out
-
-    Q_blink = binarytolerance.pre_Q_to_Q(pre_blink)
-    W, V = scipy.linalg.eig(Q_blink.T)
-    v = V[:, np.argmin(np.abs(W))]
-    v /= np.sum(v)
-    #print >> out, Q_blink
-    #print >> out, W
-    #print >> out, v
-    #print >> out
-
-    n = pre_Q.shape[0]
-    expo = binarytolerance.get_expanded_states(n)
-    x = np.zeros(n)
-    for i, (perm, mask) in enumerate(expo):
-        x[perm[0]] += v[i]
-    print >> out, 'blink-ized stationary distribution:'
-    print >> out, x
+    print >> out, "Gower's centered matrix:"
+    print >> out, G
+    print >> out
+    print >> out, 'Resistance distance matrix:'
+    print >> out, R
+    print >> out
+    print >> out, 'Non-expm transition matrix associated to the graph:'
+    print >> out, P
+    print >> out
+    print >> out, 'Expected first-passage times:'
+    print >> out, M
+    print >> out
+    print >> out, 'Commute times divided by graph volume:'
+    print >> out, N / volume
     print >> out
 
     # show the result
