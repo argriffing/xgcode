@@ -70,7 +70,7 @@ def get_response_content(fs):
 
     # define the original rate matrix
     #pre_Q = np.exp(np.random.randn(3, 3))
-    #pre_Q = sample_reversible_pre_Q(4)
+    pre_Q = binarytolerance.sample_reversible_pre_Q(4)
     """
     pre_Q = np.array([
         [0.0, 0.5],
@@ -86,12 +86,12 @@ def get_response_content(fs):
         [0.1, 0.0, 3.0],
         [0.1, 0.1, 0.0],
         ], dtype=float)
-    """
     pre_Q = np.array([
         [0.00, 6.00, 0.00],
         [0.00, 0.00, 6.00],
         [0.01, 0.00, 0.00],
         ], dtype=float)
+    """
 
     # construct the derived rate matrix
     pre_blink = binarytolerance.blinkize(pre_Q, blink_birth, blink_death)
@@ -101,9 +101,12 @@ def get_response_content(fs):
     W, V = scipy.linalg.eig(Q.T)
     v = V[:, np.argmin(np.abs(W))]
     v /= np.sum(v)
+    v_mutational = v
     print >> out, Q
     print >> out, W
+    print >> out, 'mutational process amino acid stationary distribution:'
     print >> out, v
+    print >> out, np.sum(v)
     print >> out
 
     Q_blink = binarytolerance.pre_Q_to_Q(pre_blink)
@@ -112,7 +115,9 @@ def get_response_content(fs):
     v /= np.sum(v)
     print >> out, Q_blink
     print >> out, W
+    print >> out, 'full stationary distribution:'
     print >> out, v
+    print >> out, np.sum(v)
     print >> out
 
     n = pre_Q.shape[0]
@@ -120,7 +125,35 @@ def get_response_content(fs):
     x = np.zeros(n)
     for i, (perm, mask) in enumerate(expo):
         x[perm[0]] += v[i]
+    print >> out, 'marginal amino acid stationary distribution:'
     print >> out, x
+    print >> out, np.sum(x)
+    print >> out
+
+    # Attempt to construct the full stationary distribution as the product
+    # of the mutational process amino acid stationary probability
+    # and a binomial stationary probability of the blinking process.
+    n = pre_Q.shape[0]
+    p_on = blink_birth / (blink_birth + blink_death)
+    p_off = blink_death / (blink_birth + blink_death)
+    blink_factorial = math.factorial(n-1)
+    expo = binarytolerance.get_expanded_states(n)
+    x = np.ones(len(expo), dtype=float)
+    for i, (perm, mask) in enumerate(expo):
+        # Account for the amino acid residue mutational probability.
+        x[i] *= v_mutational[perm[0]]
+        # Account for the blinking permutations.
+        x[i] /= blink_factorial
+        # Account for the binomial probability of blinks.
+        n_on = sum(mask[1:])
+        n_off = (n-1) - n_on
+        #x[i] *= scipy.special.binom(n_on, p_on)
+        #x[i] *= scipy.stats.binom.pmf(n_on, n-1, p_on)
+        x[i] *= p_on ** n_on
+        x[i] *= p_off ** n_off
+    print >> out, 'attempt to construct the full stationary distribution:'
+    print >> out, x
+    print >> out, np.sum(x)
     print >> out
 
     # show the result
