@@ -59,6 +59,53 @@ def get_form():
 def get_form_out():
     return FormOut.Report()
 
+def two_state_expm(a, b, t):
+    """
+    Compute the matrix exponential of a continuous time Markov process.
+    The Markov process has only two states and is defined by the two rates.
+    @param a: rate of change from first state to second state
+    @param b: rate of change from second state to first state
+    @param t: elapsed time
+    @return: a conditional transition matrix
+    """
+    r = a + b
+    p = scipy.exp(-r*t)
+    P = np.array([
+        [p*a + b, a - a*p],
+        [b - b*p, a + b*p],
+        ], dtype=float) / r
+    return P
+
+def get_pq_init_off(a, w, r, t):
+    """
+    Compute differential equations evaluated at the given time.
+    @param a: rate from off to on
+    @param w: rate from on to off
+    @param r: poisson event rate
+    @param t: elapsed time
+    @return: p, q
+    """
+    x = scipy.sqrt(scipy.square(a + r + w) - 4*a*r)
+    denom = 2 * x * scipy.exp(t * (x + a + r + w) / 2)
+    p = (scipy.exp(t*x)*(x + r + w - a) + (x - r - w + a)) / denom
+    q = (2 * a * (scipy.exp(t * x) - 1)) / denom
+    return p, q
+
+def get_pq_init_on(a, w, r, t):
+    """
+    Compute differential equations evaluated at the given time.
+    @param a: rate from off to on
+    @param w: rate from on to off
+    @param r: poisson event rate
+    @param t: elapsed time
+    @return: p, q
+    """
+    x = scipy.sqrt(scipy.square(a + r + w) - 4*a*r)
+    denom = 2 * x * scipy.exp(t * (x + a + r + w) / 2)
+    p = (2 * w * (scipy.exp(t * x) - 1)) / denom
+    q = (scipy.exp(t*x)*(x - r - w + a) + (x + r + w - a)) / denom
+    return p, q
+
 def get_response_content(fs):
 
     # set up print options
@@ -70,30 +117,69 @@ def get_response_content(fs):
 
     # read the specified parameter values
     a = fs.lam
-    r = fs.alpha
     w = fs.mu
+    r = fs.alpha
     t = fs.duration
+    if fs.initial_on:
+        b_0 = 1
+    if fs.initial_off:
+        b_0 = 0
+    if fs.final_on:
+        b_t = 1
+    if fs.final_off:
+        b_t = 0
 
+    """
     # You should be able to prove that this value
     # is real when all of a, r, w are positive.
     x_sqr = scipy.square(a + r + w) - 4*a*r
     x = scipy.sqrt(x_sqr)
 
-    # Write the equivalent expression for x.
+    # Write the equivalent expression for the square of x
+    # in a way that is more obviously positive.
     x_sqr_b = (scipy.square(scipy.sqrt(a) - scipy.sqrt(r)) + w) * (
             a + r + w + 2*scipy.sqrt(a*r))
 
-    # report some values
+    # Compute the solutions of differential equations, using Mathematica.
+    # The corresponding system of differential equations is
+    # p'[t] == -a*p[t] + w*q[t]
+    # q'[t] == a*p[t] - (w+r)*q[t]
+    # p[0] == 1
+    # q[0] == 0
+    #
     denom = 2 * x * scipy.exp(t * (x + a + r + w) / 2)
     p = (scipy.exp(t*x)*(x + r + w - a) + (x - r - w + a)) / denom
     q = (2 * a * (scipy.exp(t * x) - 1)) / denom
+    """
+
+    if b_0 == 1:
+        p, q = get_pq_init_on(a, w, r, t)
+    if b_0 == 0:
+        p, q = get_pq_init_off(a, w, r, t)
+
+    # remember that
+    # p is no trans and off
+    # q is no trans and on
+    conditional_markov = two_state_expm(a, w, t)[b_0, b_t]
+    if b_t == 0:
+        endpoint_conditioned_prob = p / conditional_markov
+    if b_t == 1:
+        endpoint_conditioned_prob = q / conditional_markov
+    
+    # report some values
     print >> out, 'differential equation solutions at the given time'
     print >> out, 'p(t):', p
     print >> out, 'q(t):', q
     print >> out
-    print >> out, 'to prove no imaginary numbers, these two things are equal'
-    print >> out, x_sqr
-    print >> out, x_sqr_b
+    #print >> out, 'to prove no imaginary numbers, these two things are equal'
+    #print >> out, x_sqr
+    #print >> out, x_sqr_b
+    #print >> out
+    print >> out, 'probability of no Poisson event unconditional on final state'
+    print >> out, 'p(t) + q(t):', p + q
+    print >> out
+    print >> out, 'endpoint conditioned prob of no Poisson event'
+    print >> out, endpoint_conditioned_prob
     print >> out
 
     # show the result
