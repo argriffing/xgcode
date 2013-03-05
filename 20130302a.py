@@ -106,6 +106,24 @@ def get_pq_init_on(a, w, r, t):
     q = (scipy.exp(t*x)*(x - r - w + a) + (x + r + w - a)) / denom
     return p, q
 
+def expm_shortcut(a, w, r, t):
+    """
+    This is a simpler approach that uses matrix exponential.
+    It uses a continuous time Markov process with three states.
+    @param a: rate from off to on
+    @param w: rate from on to off
+    @param r: poisson event rate
+    @param t: elapsed time
+    """
+    pre_Q = np.array([
+        [0, a, 0],
+        [w, 0, r],
+        [0, 0, 0],
+        ], dtype=float)
+    Q = pre_Q - np.diag(np.sum(pre_Q, axis=1))
+    P = scipy.linalg.expm(Q*t)
+    return P
+
 def get_response_content(fs):
 
     # set up print options
@@ -180,6 +198,9 @@ def get_response_content(fs):
     print >> out
     print >> out, 'endpoint conditioned prob of no Poisson event'
     print >> out, endpoint_conditioned_prob
+    print >> out
+    print >> out, 'matrix exponential shortcut:'
+    print >> out, expm_shortcut(a, w, r, t)
     print >> out
 
     # show the result
