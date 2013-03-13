@@ -1,14 +1,12 @@
-"""Given a distance matrix, get a covariance-like neighbor joining matrix.
-
-Given a distance matrix,
-get the covariance matrix implied by neighbor joining.
+"""
+Given a distance matrix, get a covariance-like neighbor joining matrix.
 """
 
 from StringIO import StringIO
 
 import numpy as np
+import scipy
 
-from SnippetUtil import HandlingError
 import MatrixUtil
 import Form
 import FormOut
@@ -31,15 +29,28 @@ def get_form_out():
     return FormOut.Matrix()
 
 def get_response_content(fs):
+    out = StringIO()
     # read the distance matrix
     D = fs.matrix
     n = len(D)
     # get the list of implied variances
     V = [sum(row) / (n - 2) for row in D]
     # create the sigma matrix
-    sigma = np.zeros((n,n))
+    sigma = np.empty((n,n))
     for i in range(n):
         for j in range(n):
-            sigma[i][j] = (V[i] + V[j] - D[i][j]) / 2
+            sigma[i][j] = (V[i] + V[j] - D[i][j]) / 2.0
+    # compute the eigendecomposition
+    w, v = scipy.linalg.eigh(sigma)
+    # write the response
+    print >> out, 'covariance-like matrix:'
+    print >> out, MatrixUtil.m_to_string(sigma)
+    print >> out
+    print >> out, 'eigenvalues:'
+    print >> out, w
+    print >> out
+    print >> out, 'eigenvectors:'
+    print >> out, v
+    print >> out
     # return the response
-    return MatrixUtil.m_to_string(sigma) + '\n'
+    return out.getvalue().rstrip()
