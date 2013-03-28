@@ -1,5 +1,5 @@
 """
-Check properties of an ising-like model.
+Check properties of an ising-like chain model x0--x1--x2.
 """
 
 from StringIO import StringIO
