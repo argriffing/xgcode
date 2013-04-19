@@ -7,6 +7,7 @@ import random
 import math
 
 import numpy as np
+import scipy.linalg
 
 import Form
 import FormOut
@@ -100,9 +101,12 @@ def get_response_content(fs):
     # initial state, final state, state
     dwell_times = np.zeros((2, 2, 2), dtype=float)
 
+    # initial state, final state
+    endpoint_counts = np.zeros((2, 2), dtype=float)
+
     # get the path samples and track some stats
     T = 1.0
-    npaths = 1000
+    npaths = 10000
     for i in range(npaths):
         t_counts = np.zeros((2, 2), dtype=float)
         d_times = np.zeros(2, dtype=float)
@@ -125,9 +129,48 @@ def get_response_content(fs):
         final_state = state
         if final_state not in (0, 1):
             continue
+        endpoint_counts[initial_state, final_state] += 1
         transition_counts[initial_state, final_state] += t_counts
         dwell_times[initial_state, final_state] += d_times
 
+    # interact
+    n = 3
+    interact = np.zeros((n, n), dtype=float)
+    for k in range(n):
+        for l in range(n):
+            if k == l:
+                interact[k, l] = T * math.exp(w[k] * T)
+            else:
+                exp_diff = math.exp(w[k] * T) - math.exp(w[l] * T)
+                mu_diff = w[k] - w[l]
+                interact[k, l] = exp_diff / mu_diff
+
+    # tau
+    tau = np.zeros((n, n, n, n), dtype=float)
+    for sa in range(n):
+        for sb in range(n):
+            for i in range(n):
+                for j in range(n):
+                    for k in range(n):
+                        alpha = U[sa, k] * V[k, i]
+                        accum = 0.0
+                        for l in range(n):
+                            beta = U[j, l] * V[l, sb]
+                            accum += beta * interact[k, l]
+                        tau[sa, sb, i, j] += alpha * accum
+
+    # compute expected wait
+    M = scipy.linalg.expm(T * Q)
+    expected_wait = np.zeros((n, n, n), dtype=float)
+    expected_usage = np.zeros((n, n, n, n), dtype=float)
+    for sa in range(n):
+        for sb in range(n):
+            for i in range(n):
+                expected_wait[sa, sb, i] = (
+                        tau[sa, sb, i, i] / M[sa, sb])
+                for j in range(n):
+                    expected_usage[sa, sb, i, j] = (
+                            Q[i, j] * tau[sa, sb, i, j] / M[sa, sb])
 
     # report stuff
     print >> out, 'rate a:', a
@@ -159,10 +202,19 @@ def get_response_content(fs):
         for b in (0, 1):
             print >> out, 'path', a, '--->', b
             print >> out, 'transition counts:'
-            print >> out, transition_counts[a, b]
+            print >> out, transition_counts[a, b] / endpoint_counts[a, b]
             print >> out, 'dwell times:'
-            print >> out, dwell_times[a, b]
+            print >> out, dwell_times[a, b] / endpoint_counts[a, b]
             print >> out
+    #print >> out, 'tau:'
+    #print >> out, tau
+    #print >> out
+    print >> out, 'expected dwell times:'
+    print >> out, expected_wait
+    print >> out
+    print >> out, 'expected transition usages:'
+    print >> out, expected_usage
+    print >> out
 
     # show the result
     return out.getvalue()
