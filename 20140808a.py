@@ -91,13 +91,24 @@ def get_response_content(fs):
     print >> out, D
     print >> out
 
+    # Report the Gower matrix.
+    G = Euclid.edm_to_dccov(D)
+    print >> out, 'gower matrix:'
+    print >> out, G
+    print >> out, 'diag:', np.diag(G)
+    print >> out
+
     # Compute the corresponding Laplacian matrix.
-    L_comb = Euclid.edm_to_laplacian(D)
+    L_comb = scipy.linalg.pinvh(G)
     w, wpinv = get_spectral_info(L_comb)
+    w, v = scipy.linalg.eigh(L_comb)
     print >> out, 'leaf combinatorial Laplacian matrix:'
     print >> out, L_comb
+    print >> out, 'diag:', np.diag(L_comb)
     print >> out, 'spectrum:', w
     print >> out, 'pinv spectrum:', wpinv
+    print >> out, 'eigenvectors:'
+    print >> out, v
     print >> out
 
     # Compute the normalized Laplacian matrix.
